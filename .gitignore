@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Local data & generated index — corpus is user-provided, index is rebuildable
+data/corpus/*
+!data/corpus/.gitkeep
+data/index/*
+!data/index/.gitkeep
+
+.env

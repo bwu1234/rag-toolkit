@@ -1,0 +1,23 @@
+[
+  {
+    "id": "sample-001",
+    "query": "What is the return policy?",
+    "expected_doc_ids": ["policies.pdf"],
+    "expected_answer": "The return policy allows returns within 30 days of purchase with a receipt.",
+    "_note": "Replace expected_doc_ids with actual document ids from your corpus, and expected_answer with a reference answer."
+  },
+  {
+    "id": "sample-002",
+    "query": "How do I reset my password?",
+    "expected_doc_ids": ["user-guide.pdf", "faq.md"],
+    "expected_answer": "To reset your password, go to the login page and click 'Forgot password', then follow the instructions sent to your email.",
+    "_note": "expected_doc_ids accepts multiple documents — any retrieved chunk whose document_id appears in this list counts as a hit."
+  },
+  {
+    "id": "sample-003",
+    "query": "What are the system requirements?",
+    "expected_doc_ids": ["installation-guide.pdf"],
+    "expected_answer": "The system requires at least 8 GB of RAM and a 64-bit operating system.",
+    "_note": "This sample has no expected_doc_ids match in a default empty corpus — it will count as a miss, which is the expected behavior."
+  }
+]
