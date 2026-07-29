@@ -198,6 +198,56 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
   convention above), the right *value* differs by reranker: a cross-encoder's
   sigmoid-squashed logit and a raw cosine similarity are not the same scale.
   Retune `retrieval.min_score` when changing `reranker.provider`.
+- **Query expansion** (`retrieval.expansion`, `rag/retrieval/expansion.py`) runs
+  *before* retrieval and turns one query into several. `QueryExpander` returns an
+  `ExpandedQuery` with separate `dense`/`sparse` lists, because a transformation
+  that helps embedding search can hurt keyword search:
+  - `hyde` — generate a hypothetical answer passage and embed *that*, closing the
+    shape mismatch between a short question and the long declarative passage that
+    answers it. The invented passage goes to the embedder only; **BM25 keeps the
+    real question**, since matching literal invented terms ("1,000 requests per
+    minute") retrieves on words that may appear nowhere in the corpus.
+  - `multi_query` — generate rephrasings, retrieve for each, fuse. Both retrievers
+    get all of them: a rephrasing is still a real question, so BM25 gains
+    vocabulary rather than noise.
+- Expansion needed no new retrieval code path. Every (query, retriever) pair
+  yields one ranked list and `reciprocal_rank_fusion` folds them all together —
+  hybrid mode was already fusing two lists, expansion just makes more of them.
+  Rank-based fusion is what makes this safe: the lists come from different
+  queries *and* different scoring functions, and RRF compares only positions.
+  A single ranked list still skips fusion entirely, so unexpanded dense
+  retrieval is byte-for-byte what it was, similarity scores included.
+- `top_k` is per *ranked list*, not per query — N queries pull N×`top_k`
+  candidates before fusion narrows the union back to `top_k`. Expansion buys
+  recall to fuse over, not a larger final candidate set.
+- Expanders fail open like `QueryCondenser`: a raising client or unparseable
+  reply falls back to the original query rather than failing the search. HyDE
+  with `num_documents > 1` keeps whichever passages it did get.
+- Expansion reaches **stage 2 as well**: `Reranker.rerank` takes a *list* of
+  queries (`ExpandedQuery.rerank`), and `CrossEncoderReranker` scores every
+  candidate against every query, folding the per-query logits together via
+  `reranker.aggregate`. Without this, expansion was self-defeating — a
+  vocabulary gap the rewrites closed at retrieval time was reintroduced the
+  moment scoring fell back to the user's original wording, so the right chunk
+  got retrieved and then scored ~0 and cut by `min_score`.
+- `reranker.aggregate` is the knob that decides what expansion *means*:
+  - `max` (default) — relevant if *any* phrasing says so. This is what lets a
+    rephrasing rescue a chunk the original wording scored near zero.
+  - `mean` — averages log-odds, requiring broader agreement; suppresses chunks
+    only one (possibly drifting) rewrite liked.
+  Combining happens in logit space, before the sigmoid, so there's one
+  normalization point. `max` is monotonic through a sigmoid so its placement is
+  immaterial; `mean` is log-odds pooling. With one query the two are identical,
+  so the unexpanded path is unaffected either way.
+- `ExpandedQuery` carries **three** lists, one per consumer, because each accepts
+  different text: `dense` (embedded — free-form, a hypothetical passage is fine),
+  `sparse` (BM25 — literal terms only), and `rerank` (cross-encoder — must be
+  **question-shaped**, since these models are trained on (query, passage) pairs
+  and a passage in the query slot is off-distribution). HyDE therefore keeps its
+  invention in `dense` alone; multi-query's rephrasings, being real questions,
+  populate all three. `queries[0]` is always the user's actual question.
+- Cost: reranking N queries means N× the cross-encoder pairs. They go through one
+  `predict()` call so the per-call overhead isn't multiplied, but the compute is.
 - Retrieval/reranker tests are hermetic and don't require model weights or a
   running daemon: `Retriever` is tested against fakes for `EmbeddingModel`,
   `VectorStore`, and `Reranker` that record what they're called with;
@@ -382,6 +432,28 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
 - Chunking is character-based fixed-size with overlap; token-aware and
   structure-aware/semantic chunking are deferred until the end-to-end
   pipeline is proven (both fit behind the existing `Chunker` interface).
+- Query expansion defaults to `none` and is unmeasured on this corpus: the
+  shipped `data/eval/eval_set.json` still references placeholder documents
+  (`policies.pdf`, `user-guide.pdf`, …) that aren't in `data/corpus/`, so every
+  retrieval metric reads 0.000 regardless of settings. Fix the eval set before
+  tuning `expansion`, `min_score`, or anything else — right now there is no
+  signal to tune against.
+- Expansion can't help *stage 1* at the current corpus size (9 chunks): `top_k: 20`
+  means every query already retrieves every chunk, so fusion has nothing to
+  recover. All the observable effect at this size comes from reranking against
+  the expanded queries — which does change outcomes ("Can I get my erased files
+  back?" goes from 0 results to 1 with `multi_query` + `aggregate: max`), but
+  surfaced the right *document* and the wrong *chunk* on the run inspected.
+- Expansion makes retrieval **non-deterministic**: rephrasings and HyDE passages
+  differ per run, so the same query can score differently and cross the
+  `min_score` floor on one run and not the next. Worth remembering when a result
+  seems to change for no reason, and a reason to hold expansion fixed while
+  tuning anything else.
+- HyDE's failure mode is domain drift, and it's severe on ambiguous queries: on
+  this corpus, "How do I raise my throttling ceiling?" produced a confident
+  hypothetical passage about reactor coolant loops and terminal code 99-DELTA.
+  `include_original: true` (the default) exists precisely so a generation that
+  wanders can't sink the search.
 - `retrieval.min_score` is tuned by hand against the eval set; there's no
   calibration step, and its meaningful range shifts with the reranker. Set it
   too high and answerable questions get refused; too low and it does nothing.

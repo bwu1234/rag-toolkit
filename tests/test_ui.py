@@ -218,3 +218,27 @@ def test_format_answer_notices_reports_both_when_both_apply() -> None:
 
 def test_format_answer_notices_is_empty_for_a_plain_answer() -> None:
     assert format_answer_notices(ChatAnswer(answer="a")) == []
+
+
+def test_format_answer_notices_reports_query_expansion() -> None:
+    answer = ChatAnswer(answer="a", search_queries=["hypothetical passage", "original"])
+
+    [notice] = format_answer_notices(answer)
+
+    assert "2" in notice and "expanded" in notice.lower()
+
+
+def test_format_answer_notices_reports_all_three_interventions() -> None:
+    answer = ChatAnswer(
+        answer="a",
+        rewritten_query="a standalone question",
+        search_queries=["q1", "q2"],
+        dropped_below_min_score=2,
+    )
+
+    assert len(format_answer_notices(answer)) == 3
+
+
+def test_sidebar_config_summary_includes_query_expansion() -> None:
+    summary = sidebar_config_summary(RagConfig())
+    assert "Query expansion" in summary

@@ -38,8 +38,10 @@ class _FakeRetriever:
         *,
         candidate_count: int | None = None,
         dropped: int = 0,
+        search_queries: list[str] | None = None,
     ) -> None:
         self.results = results
+        self.search_queries = search_queries or []
         # Default to "the index had exactly what we returned" -- tests that care
         # about the no-context branches set these explicitly.
         self.candidate_count = candidate_count if candidate_count is not None else len(results)
@@ -52,6 +54,7 @@ class _FakeRetriever:
             chunks=self.results,
             candidate_count=self.candidate_count,
             dropped_below_min_score=self.dropped,
+            search_queries=self.search_queries,
         )
 
 
@@ -84,9 +87,12 @@ def _service(
     *,
     candidate_count: int | None = None,
     dropped: int = 0,
+    search_queries: list[str] | None = None,
 ):
     results = results if results is not None else [_scored("a", "Refunds within 30 days.", page=2)]
-    retriever = _FakeRetriever(results, candidate_count=candidate_count, dropped=dropped)
+    retriever = _FakeRetriever(
+        results, candidate_count=candidate_count, dropped=dropped, search_queries=search_queries
+    )
     llm_client = _FakeLLMClient(reply)
     service = ChatService(retriever=retriever, llm_client=llm_client, condenser=condenser)
     return service, retriever, llm_client
@@ -373,3 +379,23 @@ def test_blank_query_answer_is_distinct_from_the_no_context_answers() -> None:
 
     assert "question" in blank.lower()
     assert blank != _service(results=[], candidate_count=0)[0].ask("q").answer
+
+
+def test_answer_reports_the_expanded_search_queries() -> None:
+    service, *_ = _service(search_queries=["a hypothetical passage", "the original question"])
+
+    answer = service.ask("the original question")
+
+    assert answer.search_queries == ["a hypothetical passage", "the original question"]
+
+
+def test_answer_reports_no_search_queries_when_expansion_is_off() -> None:
+    service, *_ = _service()
+
+    assert service.ask("a question").search_queries == []
+
+
+def test_no_context_answer_still_reports_the_expanded_queries() -> None:
+    service, *_ = _service(results=[], candidate_count=4, dropped=4, search_queries=["q1", "q2"])
+
+    assert service.ask("a question").search_queries == ["q1", "q2"]

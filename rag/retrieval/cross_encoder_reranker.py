@@ -14,11 +14,14 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Literal
 
 from rag.retrieval.reranker import Reranker, normalize_rerank_score, rescored
 from rag.vectorstore.base import ScoredChunk
 
 logger = logging.getLogger(__name__)
+
+RerankAggregation = Literal["max", "mean"]
 
 
 class CrossEncoderReranker(Reranker):
@@ -30,20 +33,32 @@ class CrossEncoderReranker(Reranker):
     downloading or holding several hundred MB of model weights in memory.
     """
 
-    def __init__(self, model: str) -> None:
+    def __init__(self, model: str, *, aggregate: RerankAggregation = "max") -> None:
         self.model_name = model
+        self.aggregate: RerankAggregation = aggregate
         self._model: object | None = None
 
-    def rerank(self, query: str, candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
-        if not candidates:
+    def rerank(self, queries: list[str], candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
+        if not candidates or not queries:
             return []
 
-        pairs = [(query, candidate.text) for candidate in candidates]
-        raw_scores = self._cross_encoder.predict(pairs)
+        # Every (query, candidate) pair goes through one predict() call: the
+        # model batches internally, so N queries cost N× the pairs but not N×
+        # the per-call overhead. That N× is the real price of reranking an
+        # expanded query, and why `retrieval.expansion` isn't free after stage 1.
+        count = len(candidates)
+        pairs = [(query, candidate.text) for query in queries for candidate in candidates]
+        raw_scores = [float(score) for score in self._cross_encoder.predict(pairs)]
+
+        # `pairs` is query-major: candidate i under query j sits at j*count + i.
+        scores_per_candidate = [
+            [raw_scores[query_index * count + index] for query_index in range(len(queries))]
+            for index in range(count)
+        ]
 
         rescored_candidates = [
-            rescored(candidate, normalize_rerank_score(float(raw_score)))
-            for candidate, raw_score in zip(candidates, raw_scores)
+            rescored(candidate, normalize_rerank_score(self._combine(scores)))
+            for candidate, scores in zip(candidates, scores_per_candidate)
         ]
         rescored_candidates.sort(key=lambda chunk: chunk.score, reverse=True)
         # Ranking only -- the relevance floor lives in `Retriever` (config:
@@ -51,6 +66,27 @@ class CrossEncoderReranker(Reranker):
         # including `NoOpReranker`. Filtering here would leave pure vector
         # retrieval with no floor at all.
         return rescored_candidates[:top_k]
+
+    def _combine(self, scores: list[float]) -> float:
+        """Fold one candidate's per-query logits into a single relevance score.
+
+        Combining happens in *logit* space, before the sigmoid, so there's
+        exactly one normalization point. `max` is monotonic through the sigmoid
+        so the choice is immaterial there; averaging log-odds is the standard
+        way to pool independent judgments and is what `mean` does.
+
+        - `max` (default) — the candidate is relevant if *any* phrasing of the
+          question judges it relevant. This is what makes multi-query expansion
+          pay off: a chunk the user's original wording scores near zero can be
+          rescued by a rephrasing that uses the corpus's vocabulary.
+        - `mean` — the candidate must satisfy the phrasings *on average*. More
+          conservative, and it punishes a chunk that only one rewrite liked --
+          useful when a drifting rewrite keeps dragging in off-topic material.
+        """
+
+        if self.aggregate == "mean":
+            return sum(scores) / len(scores)
+        return max(scores)
 
     @property
     def _cross_encoder(self):  # type: ignore[no-untyped-def]

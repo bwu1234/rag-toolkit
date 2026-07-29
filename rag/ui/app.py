@@ -106,9 +106,25 @@ def _render_events(events: list[PipelineEvent]) -> None:
 
 
 def _render_notices(answer: ChatAnswer) -> None:
-    """Render what the pipeline changed (rewritten query, withheld passages)."""
+    """Render what the pipeline changed (rewritten query, expansion, withheld passages)."""
     for notice in format_answer_notices(answer):
         st.caption(notice)
+
+
+def _render_search_queries(answer: ChatAnswer) -> None:
+    """Render the expanded search queries behind a collapsed expander.
+
+    Collapsed because HyDE emits multi-sentence hypothetical passages that
+    would dwarf the answer -- and, being invented, must not read as corpus
+    content. The caption above says how many there were; this is for when
+    you're debugging why retrieval found what it found.
+    """
+    if not answer.search_queries:
+        return
+    with st.expander(f"🔎 {len(answer.search_queries)} search query/queries", expanded=False):
+        st.caption("Generated to search with — not corpus content, and not necessarily true.")
+        for rank, search_query in enumerate(answer.search_queries, start=1):
+            st.markdown(f"**{rank}.** {search_query}")
 
 
 def _render_citations(answer: ChatAnswer) -> None:
@@ -134,6 +150,7 @@ def _render_history() -> None:
                 _render_events(msg.get("events", []))
                 if msg.get("answer"):
                     _render_notices(msg["answer"])
+                    _render_search_queries(msg["answer"])
                     _render_citations(msg["answer"])
 
 
@@ -181,6 +198,7 @@ def _handle_query(query: str, chat_service: ChatService) -> None:
 
         st.markdown(answer.answer)
         _render_notices(answer)
+        _render_search_queries(answer)
         _render_citations(answer)
 
     st.session_state["messages"].append(

@@ -68,11 +68,12 @@ class Citation:
 class ChatAnswer:
     """The full result of a chat turn: the model's answer, its sources, and what shaped them.
 
-    The two trailing fields exist so every caller -- not just the one UI that
-    happens to pass an `on_event` sink -- can see the two places this pipeline
-    silently changes what the user asked for or what it answered from. A
-    rewritten question and a filtered-away passage are both things a user would
-    want to know about, and neither is visible in the answer text.
+    The three trailing fields exist so every caller -- not just the one UI that
+    happens to pass an `on_event` sink -- can see the places this pipeline
+    silently changes what the user asked for or what it answered from: the
+    question was rewritten for a follow-up, it was expanded into several
+    searches, or passages were withheld. None of that is visible in the answer
+    text, and all of it explains results a user might otherwise find baffling.
     """
 
     answer: str
@@ -81,6 +82,8 @@ class ChatAnswer:
     """The standalone question retrieval actually used, when condensing changed it."""
     dropped_below_min_score: int = 0
     """Reranked passages withheld by the `retrieval.min_score` floor."""
+    search_queries: list[str] = field(default_factory=list)
+    """Every query searched, when HyDE / multi-query expansion generated more than one."""
 
 
 def _to_citation(chunk: ScoredChunk) -> Citation:
@@ -190,6 +193,7 @@ class ChatService:
             citations=citations,
             rewritten_query=rewritten_query,
             dropped_below_min_score=result.dropped_below_min_score,
+            search_queries=result.search_queries,
         )
 
     def _no_context_answer(
@@ -220,4 +224,5 @@ class ChatService:
             citations=[],
             rewritten_query=rewritten_query,
             dropped_below_min_score=result.dropped_below_min_score,
+            search_queries=result.search_queries,
         )

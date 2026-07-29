@@ -53,6 +53,7 @@ def _to_response(answer: ChatAnswer) -> ChatResponse:
         citations=[_to_citation_model(c) for c in answer.citations],
         rewritten_query=answer.rewritten_query,
         dropped_below_min_score=answer.dropped_below_min_score,
+        search_queries=answer.search_queries,
     )
 
 

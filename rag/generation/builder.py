@@ -18,8 +18,11 @@ from rag.retrieval.builder import build_retriever
 def build_chat_service(config: RagConfig) -> ChatService:
     """Construct a `ChatService` with all components selected per `config`."""
 
-    retriever = build_retriever(config)
     llm_client = get_llm_client(config.llm)
+    # Share the one client: query expansion (HyDE / multi-query) generates
+    # text too, and it should talk to the same daemon over the same connection
+    # rather than opening a parallel one.
+    retriever = build_retriever(config, llm_client)
 
     # The condenser shares the chat client rather than getting its own: same
     # provider, same model, one connection. Building it is free (no I/O), and

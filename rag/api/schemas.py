@@ -83,3 +83,13 @@ class ChatResponse(BaseModel):
             "rests on fewer sources than the pipeline was willing to consider."
         ),
     )
+    search_queries: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Every query actually searched, when `retrieval.expansion` generated "
+            "more than one (HyDE passages, multi-query rephrasings). Empty when "
+            "the question was searched as-is. With HyDE these are invented "
+            "passages, not facts -- they exist to be matched against, and should "
+            "never be presented to a user as corpus content."
+        ),
+    )

@@ -96,6 +96,42 @@ class RerankerConfig(BaseModel):
 
     provider: Literal["none", "cross_encoder"] = "none"
     model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # How to fold a candidate's per-query scores into one, when
+    # `retrieval.expansion` produced several question phrasings. `max` keeps a
+    # chunk that any phrasing found relevant -- the setting that lets multi-query
+    # expansion actually change the final ranking rather than only stage 1.
+    # `mean` requires broader agreement and suppresses chunks only one rewrite
+    # liked. No effect with `retrieval.expansion.provider: none`.
+    aggregate: Literal["max", "mean"] = "max"
+
+
+class QueryExpansionConfig(BaseModel):
+    """Pre-retrieval query transformation. `none` keeps retrieval LLM-free.
+
+    - ``hyde`` — generate a hypothetical answer passage and embed *that*,
+      closing the shape mismatch between a short question and the long
+      declarative passage that answers it.
+    - ``multi_query`` — generate several rephrasings, retrieve for each, and
+      fuse the ranked lists, so the corpus's choice of vocabulary matters less.
+
+    Both add an LLM call to the retrieval path (and `hyde` with
+    ``num_documents > 1`` adds one per document), plus one embedding round trip
+    per generated query. That's a real latency cost on every search, which is
+    why the default is `none`: turn one on and measure with
+    `python -m rag.eval.retrieval_eval` rather than assuming it helps.
+    """
+
+    provider: Literal["none", "hyde", "multi_query"] = "none"
+    num_queries: int = Field(
+        default=3, ge=1, le=10, description="multi_query: rephrasings to generate (excluding the original)"
+    )
+    num_documents: int = Field(
+        default=1, ge=1, le=5, description="hyde: hypothetical passages to generate and embed"
+    )
+    include_original: bool = Field(
+        default=True,
+        description="hyde: also embed the user's real question, so a bad generation can't sink the search",
+    )
 
 
 class RetrievalConfig(BaseModel):
@@ -126,6 +162,7 @@ class RetrievalConfig(BaseModel):
     # `none`. Those scales differ, so retune this when switching providers.
     # 0.0 (the default) disables filtering.
     min_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Drop final results scoring below this")
+    expansion: QueryExpansionConfig = QueryExpansionConfig()
 
 
 class ChatConfig(BaseModel):
