@@ -30,9 +30,8 @@ class CrossEncoderReranker(Reranker):
     downloading or holding several hundred MB of model weights in memory.
     """
 
-    def __init__(self, model: str, *, min_score: float = 0.0) -> None:
+    def __init__(self, model: str) -> None:
         self.model_name = model
-        self.min_score = min_score
         self._model: object | None = None
 
     def rerank(self, query: str, candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
@@ -47,8 +46,11 @@ class CrossEncoderReranker(Reranker):
             for candidate, raw_score in zip(candidates, raw_scores)
         ]
         rescored_candidates.sort(key=lambda chunk: chunk.score, reverse=True)
-        above_threshold = [chunk for chunk in rescored_candidates if chunk.score >= self.min_score]
-        return above_threshold[:top_k]
+        # Ranking only -- the relevance floor lives in `Retriever` (config:
+        # `retrieval.min_score`) so it applies whichever reranker is selected,
+        # including `NoOpReranker`. Filtering here would leave pure vector
+        # retrieval with no floor at all.
+        return rescored_candidates[:top_k]
 
     @property
     def _cross_encoder(self):  # type: ignore[no-untyped-def]

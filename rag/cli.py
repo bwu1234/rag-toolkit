@@ -217,14 +217,28 @@ def _cmd_retrieve(args: argparse.Namespace) -> None:
     print(
         f"Retrieval: mode={config.retrieval.mode}  top_k={config.retrieval.top_k}  "
         f"rerank_top_k={config.retrieval.rerank_top_k}  "
-        f"reranker={config.reranker.provider}"
+        f"reranker={config.reranker.provider}  min_score={config.retrieval.min_score}"
         + (f"  rrf_k={config.retrieval.rrf_k}" if config.retrieval.mode == "hybrid" else "")
     )
 
-    results = retriever.retrieve(args.query)
+    outcome = retriever.retrieve(args.query)
+    results = outcome.chunks
     if not results:
-        print("\nNo results -- is the index empty? Build it with `python -m rag.cli index`.")
+        if outcome.candidate_count == 0:
+            print("\nNo candidates at all -- is the index empty? Build it with `python -m rag.cli index`.")
+        else:
+            print(
+                f"\nNo results above the relevance floor: {outcome.candidate_count} candidate(s) "
+                f"retrieved, all {outcome.dropped_below_min_score} reranked result(s) scored below "
+                f"min_score={config.retrieval.min_score}. Lower it to see them."
+            )
         return
+
+    if outcome.dropped_below_min_score:
+        print(
+            f"\nWithheld {outcome.dropped_below_min_score} result(s) scoring below "
+            f"min_score={config.retrieval.min_score}."
+        )
 
     print(f"\nTop {len(results)} result(s):")
     for rank, chunk in enumerate(results, start=1):
@@ -252,7 +266,18 @@ def _cmd_chat(args: argparse.Namespace) -> None:
 
     result = chat_service.ask(args.query)
 
+    # The CLI is single-shot, so `rewritten_query` is only ever set here if a
+    # future caller passes history -- printed anyway so the two things the
+    # pipeline does silently are visible from every entrypoint, not just the UI.
+    if result.rewritten_query:
+        print(f"Retrieved for: {result.rewritten_query!r}")
+
     print(f"\nAnswer:\n{result.answer}")
+    if result.dropped_below_min_score:
+        print(
+            f"\n({result.dropped_below_min_score} passage(s) withheld below "
+            f"min_score={config.retrieval.min_score})"
+        )
     if result.citations:
         print(f"\nCitations ({len(result.citations)}):")
         for rank, citation in enumerate(result.citations, start=1):

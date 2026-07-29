@@ -111,6 +111,7 @@ def _retriever(
     rerank_top_k: int = 3,
     mode: str = "dense",
     rrf_k: int = 60,
+    min_score: float = 0.0,
 ) -> tuple[Retriever, _FakeEmbedder, _FakeVectorStore, Reranker, _FakeSparseIndex | None]:
     embedder = _FakeEmbedder()
     candidates = candidates if candidates is not None else [_scored("a"), _scored("b"), _scored("c")]
@@ -130,6 +131,7 @@ def _retriever(
         sparse_index=sparse,
         mode=mode,  # type: ignore[arg-type]
         rrf_k=rrf_k,
+        min_score=min_score,
     )
     return retriever, embedder, vector_store, reranker, sparse
 
@@ -163,7 +165,7 @@ def test_retrieve_returns_rerankers_output() -> None:
     candidates = [_scored("a"), _scored("b"), _scored("c")]
     retriever, *_ = _retriever(candidates=candidates, rerank_top_k=2)
 
-    results = retriever.retrieve("query")
+    results = retriever.retrieve("query").chunks
 
     # _FakeReranker reverses and truncates to top_k=2.
     assert [r.chunk_id for r in results] == ["c", "b"]
@@ -197,7 +199,7 @@ def test_retrieve_reports_fusion_event_in_hybrid_mode() -> None:
 def test_retrieve_on_blank_query_returns_empty_without_calling_anything() -> None:
     retriever, embedder, vector_store, reranker, sparse = _retriever(mode="hybrid")
 
-    assert retriever.retrieve("   ") == []
+    assert retriever.retrieve("   ").chunks == []
     assert embedder.queries == []
     assert vector_store.queries == []
     assert reranker.calls == []
@@ -208,7 +210,7 @@ def test_retrieve_with_noop_reranker_is_pure_vector_search_truncated_to_rerank_t
     candidates = [_scored("a", 0.9), _scored("b", 0.5), _scored("c", 0.1)]
     retriever, *_ = _retriever(candidates=candidates, reranker=NoOpReranker(), rerank_top_k=2)
 
-    results = retriever.retrieve("query")
+    results = retriever.retrieve("query").chunks
 
     assert [r.chunk_id for r in results] == ["a", "b"]
 
@@ -216,7 +218,7 @@ def test_retrieve_with_noop_reranker_is_pure_vector_search_truncated_to_rerank_t
 def test_retrieve_on_empty_index_returns_empty_list() -> None:
     retriever, *_ = _retriever(candidates=[])
 
-    assert retriever.retrieve("query") == []
+    assert retriever.retrieve("query").chunks == []
 
 
 def test_hybrid_mode_requires_sparse_index() -> None:
@@ -247,7 +249,7 @@ def test_hybrid_queries_both_dense_and_sparse_then_fuses() -> None:
         rrf_k=60,
     )
 
-    results = retriever.retrieve("SKU-42 refund")
+    results = retriever.retrieve("SKU-42 refund").chunks
 
     assert embedder.queries == ["SKU-42 refund"]
     assert len(vector_store.queries) == 1
@@ -270,7 +272,7 @@ def test_hybrid_falls_back_to_dense_when_sparse_empty() -> None:
         rerank_top_k=2,
     )
 
-    results = retriever.retrieve("query")
+    results = retriever.retrieve("query").chunks
 
     assert [r.chunk_id for r in results] == ["a", "b"]
 
@@ -285,7 +287,122 @@ def test_dense_mode_does_not_query_sparse_index() -> None:
         rerank_top_k=5,
     )
 
-    results = retriever.retrieve("query")
+    results = retriever.retrieve("query").chunks
 
     assert [r.chunk_id for r in results] == ["dense-only"]
     assert sparse is not None and sparse.queries == []
+
+
+# ---------------------------------------------------------------------------
+# min_score — the relevance floor on final results
+# ---------------------------------------------------------------------------
+
+
+def test_retrieve_drops_results_below_min_score() -> None:
+    candidates = [_scored("a", 0.9), _scored("b", 0.4), _scored("c", 0.05)]
+    retriever, *_rest = _retriever(
+        candidates=candidates, reranker=NoOpReranker(), rerank_top_k=5, min_score=0.3
+    )
+
+    results = retriever.retrieve("query").chunks
+
+    assert [r.chunk_id for r in results] == ["a", "b"]
+
+
+def test_retrieve_returns_nothing_when_every_result_is_below_min_score() -> None:
+    # The case the floor exists for: a vector store always hands back its
+    # nearest neighbours, however distant. Without a floor an off-corpus
+    # question still arrives at the LLM with a full set of passages.
+    candidates = [_scored("a", 0.1), _scored("b", 0.05)]
+    retriever, *_rest = _retriever(
+        candidates=candidates, reranker=NoOpReranker(), rerank_top_k=5, min_score=0.5
+    )
+
+    assert retriever.retrieve("an off-corpus question").chunks == []
+
+
+def test_min_score_of_zero_keeps_every_reranked_result() -> None:
+    candidates = [_scored("a", 0.9), _scored("b", 0.0)]
+    retriever, *_rest = _retriever(
+        candidates=candidates, reranker=NoOpReranker(), rerank_top_k=5, min_score=0.0
+    )
+
+    assert [r.chunk_id for r in retriever.retrieve("query").chunks] == ["a", "b"]
+
+
+def test_min_score_applies_to_reranker_scores_not_vector_scores() -> None:
+    """The floor runs *after* reranking, so it reads the reranker's judgment."""
+
+    class _ConstantReranker(Reranker):
+        def __init__(self, score: float) -> None:
+            self.score = score
+
+        def rerank(self, query, candidates, top_k):  # type: ignore[no-untyped-def]
+            from dataclasses import replace
+
+            return [replace(c, score=self.score) for c in candidates][:top_k]
+
+    # High vector scores, but the reranker judges everything irrelevant.
+    retriever, *_rest = _retriever(
+        candidates=[_scored("a", 0.99), _scored("b", 0.98)],
+        reranker=_ConstantReranker(0.02),
+        rerank_top_k=5,
+        min_score=0.3,
+    )
+
+    assert retriever.retrieve("query").chunks == []
+
+
+def test_rerank_event_reports_how_many_were_dropped() -> None:
+    retriever, *_rest = _retriever(
+        candidates=[_scored("a", 0.9), _scored("b", 0.1)],
+        reranker=NoOpReranker(),
+        rerank_top_k=5,
+        min_score=0.5,
+    )
+
+    events = []
+    retriever.retrieve("query", on_event=events.append)
+
+    [rerank_event] = [e for e in events if e.stage == "rerank"]
+    assert "1 dropped below min_score" in rerank_event.message
+
+
+def test_retrieve_reports_candidate_count_and_drops() -> None:
+    retriever, *_rest = _retriever(
+        candidates=[_scored("a", 0.9), _scored("b", 0.1), _scored("c", 0.05)],
+        reranker=NoOpReranker(),
+        rerank_top_k=5,
+        min_score=0.5,
+    )
+
+    outcome = retriever.retrieve("query")
+
+    assert [c.chunk_id for c in outcome.chunks] == ["a"]
+    assert outcome.candidate_count == 3
+    assert outcome.dropped_below_min_score == 2
+
+
+def test_retrieve_distinguishes_an_empty_index_from_an_all_filtered_result() -> None:
+    """`candidate_count` is what lets ChatService tell the two apart."""
+    empty_index, *_rest = _retriever(candidates=[], reranker=NoOpReranker())
+    all_filtered, *_rest2 = _retriever(
+        candidates=[_scored("a", 0.1)], reranker=NoOpReranker(), min_score=0.9
+    )
+
+    empty = empty_index.retrieve("query")
+    filtered = all_filtered.retrieve("query")
+
+    assert empty.chunks == [] and empty.candidate_count == 0 and empty.dropped_below_min_score == 0
+    assert filtered.chunks == [] and filtered.candidate_count == 1
+    assert filtered.dropped_below_min_score == 1
+
+
+def test_retrieve_on_blank_query_reports_an_empty_result() -> None:
+    retriever, *_rest = _retriever()
+
+    outcome = retriever.retrieve("   ")
+
+    assert outcome.chunks == []
+    assert outcome.candidate_count == 0
+    assert outcome.dropped_below_min_score == 0

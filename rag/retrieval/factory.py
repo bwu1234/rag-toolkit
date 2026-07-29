@@ -19,7 +19,7 @@ def get_reranker(config: RerankerConfig) -> Reranker:
         return NoOpReranker()
 
     if config.provider == "cross_encoder":
-        return CrossEncoderReranker(model=config.model, min_score=config.min_score)
+        return CrossEncoderReranker(model=config.model)
 
     raise ValueError(
         f"Unknown reranker provider: {config.provider!r}. "

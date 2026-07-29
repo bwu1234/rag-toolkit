@@ -96,12 +96,6 @@ class RerankerConfig(BaseModel):
 
     provider: Literal["none", "cross_encoder"] = "none"
     model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-    # Below this normalized [0, 1] score, a candidate is dropped rather than
-    # padded in just to fill out `rerank_top_k` -- a low score means the
-    # cross-encoder itself judged the pair irrelevant, not that a good match
-    # was ranked low. 0.0 (the default) disables filtering, keeping the
-    # original "always return exactly top_k" behavior for anyone relying on it.
-    min_score: float = 0.0
 
 
 class RetrievalConfig(BaseModel):
@@ -119,6 +113,42 @@ class RetrievalConfig(BaseModel):
     mode: Literal["dense", "hybrid"] = "dense"
     # RRF constant from Cormack et al.; 60 is the widely used default.
     rrf_k: int = Field(default=60, gt=0, description="RRF rank constant: score += 1 / (rrf_k + rank)")
+    # Relevance floor applied to the *final* results, after reranking. Without
+    # it a vector store always returns its nearest `top_k` neighbours no matter
+    # how distant they are, so an off-corpus question still arrives at the LLM
+    # with a full set of irrelevant passages to "ground" itself in. Dropping
+    # everything below the floor is what lets `ChatService` distinguish "no
+    # relevant context" from "empty index".
+    #
+    # The threshold is read against whatever the last stage's score means (see
+    # the `Reranker` score convention): a cross-encoder's sigmoid-squashed
+    # logit with `reranker.provider: cross_encoder`, raw cosine similarity with
+    # `none`. Those scales differ, so retune this when switching providers.
+    # 0.0 (the default) disables filtering.
+    min_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Drop final results scoring below this")
+
+
+class ChatConfig(BaseModel):
+    """Turn-level behaviour of the chat pipeline (as opposed to retrieval tuning).
+
+    `condense_history` controls conversational query rewriting: with it on, a
+    follow-up like "what about part-time staff?" is rewritten into a
+    standalone question using the preceding turns before it's embedded.
+    Retrieval has no memory of its own -- embedding the raw follow-up searches
+    the corpus for the literal words "what about part-time staff", which is
+    almost never what the user meant.
+
+    Costs one extra LLM round trip per turn that has history; set to `false`
+    for a purely one-shot assistant (the CLI's `chat` command, the eval
+    pipeline) where there's never any history to condense anyway.
+    """
+
+    condense_history: bool = True
+    max_history_turns: int = Field(
+        default=6,
+        ge=0,
+        description="Most recent turns fed to the condenser (keeps the rewrite prompt bounded)",
+    )
 
 
 class RagConfig(BaseModel):
@@ -131,6 +161,7 @@ class RagConfig(BaseModel):
     vector_store: VectorStoreConfig = VectorStoreConfig()
     reranker: RerankerConfig = RerankerConfig()
     retrieval: RetrievalConfig = RetrievalConfig()
+    chat: ChatConfig = ChatConfig()
 
 
 def load_config(path: str | Path | None = None) -> RagConfig:

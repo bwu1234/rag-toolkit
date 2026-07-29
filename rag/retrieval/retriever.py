@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import time
+from dataclasses import dataclass, field
 from typing import Literal
 
 from rag.embedding.base import EmbeddingModel
@@ -33,13 +34,33 @@ logger = logging.getLogger(__name__)
 RetrievalMode = Literal["dense", "hybrid"]
 
 
+@dataclass(frozen=True)
+class RetrievalResult:
+    """The chunks retrieval settled on, plus how it got there.
+
+    `retrieve` returns this rather than a bare list because "no results" has
+    two very different causes that callers need to tell apart: nothing came
+    back from the index at all (empty or unbuilt), versus candidates came back
+    and every one of them scored below `min_score`. Only the retriever knows
+    which happened, and the distinction is the difference between telling a
+    user "run the indexer" and "the corpus doesn't cover this" -- so it's
+    reported explicitly rather than reconstructed by guesswork downstream.
+    """
+
+    chunks: list[ScoredChunk] = field(default_factory=list)
+    candidate_count: int = 0
+    """Stage-1 candidates (post-fusion, pre-rerank). 0 means the index gave us nothing."""
+    dropped_below_min_score: int = 0
+    """Reranked results discarded by the `min_score` floor."""
+
+
 class Retriever:
     """Embeds a query, searches (dense or hybrid), and reranks the results.
 
     Each stage is an injected interface (`EmbeddingModel`, `VectorStore`,
     optional `SparseIndex`, `Reranker`) -- `Retriever` contains no
     provider-specific logic of its own, only the orchestration and the knobs
-    that shape it (`top_k`, `rerank_top_k`, `mode`, `rrf_k`).
+    that shape it (`top_k`, `rerank_top_k`, `mode`, `rrf_k`, `min_score`).
     """
 
     def __init__(
@@ -53,6 +74,7 @@ class Retriever:
         sparse_index: SparseIndex | None = None,
         mode: RetrievalMode = "dense",
         rrf_k: int = DEFAULT_RRF_K,
+        min_score: float = 0.0,
     ) -> None:
         if mode == "hybrid" and sparse_index is None:
             raise ValueError(
@@ -67,14 +89,23 @@ class Retriever:
         self.rerank_top_k = rerank_top_k
         self.mode: RetrievalMode = mode
         self.rrf_k = rrf_k
+        self.min_score = min_score
 
-    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> list[ScoredChunk]:
+    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> RetrievalResult:
         """Return the `rerank_top_k` chunks most relevant to `query`, best first.
 
         Stage 1 (``top_k`` candidates, denser still for hybrid before fusion)
         is intentionally wider than stage 2's output -- it gives the reranker
         enough material to recover relevant chunks that pure first-stage
         ranking placed lower, which is the entire reason to rerank at all.
+
+        Results scoring below `min_score` are dropped, so this can legitimately
+        return fewer than `rerank_top_k` chunks -- or none at all for a query
+        the corpus has nothing to say about. Empty `chunks` is the signal
+        `ChatService` uses to skip generation instead of grounding an answer in
+        whatever happened to be nearest; the counts alongside it are what let
+        `ChatService` explain *which* kind of nothing it got (see
+        `RetrievalResult`).
 
         `on_event`, if given, is called once per completed stage (embedding,
         search, fusion, rerank) with a `PipelineEvent` -- e.g. so the UI can
@@ -83,7 +114,7 @@ class Retriever:
         """
 
         if not query.strip():
-            return []
+            return RetrievalResult()
 
         if self.mode == "hybrid":
             candidates = self._hybrid_candidates(query, on_event)
@@ -98,15 +129,22 @@ class Retriever:
         )
 
         start = time.monotonic()
-        results = self._reranker.rerank(query, candidates, top_k=self.rerank_top_k)
+        reranked = self._reranker.rerank(query, candidates, top_k=self.rerank_top_k)
+        results = [chunk for chunk in reranked if chunk.score >= self.min_score]
+        dropped = len(reranked) - len(results)
         emit(
             on_event,
             start,
             "rerank",
-            f"Reranked {len(candidates)} candidate(s) down to {len(results)} result(s)",
+            f"Reranked {len(candidates)} candidate(s) down to {len(results)} result(s)"
+            + (f" ({dropped} dropped below min_score={self.min_score})" if dropped else ""),
         )
-        logger.info("Reranked down to %d result(s)", len(results))
-        return results
+        logger.info("Reranked down to %d result(s) (%d below min_score)", len(results), dropped)
+        return RetrievalResult(
+            chunks=results,
+            candidate_count=len(candidates),
+            dropped_below_min_score=dropped,
+        )
 
     def _dense_candidates(self, query: str, on_event: EventSink | None) -> list[ScoredChunk]:
         start = time.monotonic()

@@ -38,4 +38,5 @@ def build_retriever(config: RagConfig) -> Retriever:
         sparse_index=sparse_index,
         mode=config.retrieval.mode,
         rrf_k=config.retrieval.rrf_k,
+        min_score=config.retrieval.min_score,
     )

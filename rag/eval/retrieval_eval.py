@@ -76,7 +76,7 @@ def run_retrieval_eval(dataset: EvalDataset, retriever: Retriever) -> EvalReport
     results: list[SampleResult] = []
 
     for sample in dataset:
-        chunks = retriever.retrieve(sample.query)
+        chunks = retriever.retrieve(sample.query).chunks
         retrieved_doc_ids = [c.document_id for c in chunks]
 
         results.append(
