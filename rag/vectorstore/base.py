@@ -65,6 +65,20 @@ class VectorStore(ABC):
         """
         raise NotImplementedError
 
+    def get_metadatas(self, ids: list[str]) -> dict[str, dict[str, Any]]:
+        """Return a mapping of chunk_id -> stored metadata for `ids`.
+
+        Missing ids should be absent from the returned mapping. This helper
+        allows the indexing pipeline to detect unchanged chunks (e.g. via a
+        stored content hash in metadata) and skip re-embedding them.
+
+        Default implementation returns an empty mapping for backends that do
+        not support metadata lookups; adapters that can return stored metadata
+        should override this method for incremental indexing support.
+        """
+        # By default, assume no metadata exists for any id.
+        return {}
+
     @abstractmethod
     def query(self, embedding: list[float], top_k: int) -> list[ScoredChunk]:
         """Return the `top_k` chunks most similar to `embedding`, best first."""

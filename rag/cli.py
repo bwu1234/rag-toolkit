@@ -148,13 +148,50 @@ def _cmd_index(args: argparse.Namespace) -> None:
     print(f"Vector store: {config.vector_store.provider} (collection={config.vector_store.collection_name!r}, dir={paths.index_dir})")
     print(f"Sparse index: BM25 ({bm25_index_path(paths.index_dir).name})")
 
+    import hashlib
+
     for start in range(0, len(chunks), _INDEX_BATCH_SIZE):
         batch = chunks[start : start + _INDEX_BATCH_SIZE]
-        vectors = embedder.embed_documents([chunk.text for chunk in batch])
-        store.upsert(batch, vectors)
-        sparse.upsert(batch)
+
+        # Compute a stable content hash per chunk so we can skip re-embedding
+        # chunks whose text hasn't changed since the last index run.
+        batch_ids = [c.id for c in batch]
+        new_hashes = {c.id: hashlib.sha256(c.text.encode("utf-8")).hexdigest() for c in batch}
+
+        # Ask the store which ids already exist and what metadata they carry.
+        existing = store.get_metadatas(batch_ids)
+
+        # Determine which chunks actually changed (or are new) by comparing
+        # the stored `content_hash` metadata against the freshly computed one.
+        to_update: list[Chunk] = []
+        for c in batch:
+            stored = existing.get(c.id, {})
+            stored_hash = stored.get("content_hash")
+            if stored_hash != new_hashes[c.id]:
+                # Build a fresh Chunk with an index-time content_hash set in
+                # metadata — Chunk is frozen, so create a new instance.
+                updated_meta = dict(c.metadata)
+                updated_meta["content_hash"] = new_hashes[c.id]
+                updated = type(c)(
+                    id=c.id,
+                    text=c.text,
+                    document_id=c.document_id,
+                    source=c.source,
+                    doc_type=c.doc_type,
+                    metadata=updated_meta,
+                )
+                to_update.append(updated)
+
+        if not to_update:
+            print(f"  skipped {len(batch)} unchanged chunk(s)")
+            # still mark progress for the CLI user
+            continue
+
+        vectors = embedder.embed_documents([chunk.text for chunk in to_update])
+        store.upsert(to_update, vectors)
+        sparse.upsert(to_update)
         done = min(start + _INDEX_BATCH_SIZE, len(chunks))
-        print(f"  embedded + upserted {done}/{len(chunks)} chunk(s)")
+        print(f"  embedded + upserted {len(to_update)} (changed) / {done}/{len(chunks)} chunk(s)")
 
     sparse.flush()
     print(

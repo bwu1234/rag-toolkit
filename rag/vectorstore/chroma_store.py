@@ -54,6 +54,9 @@ class ChromaVectorStore(VectorStore):
         if not chunks:
             return
 
+        # Flatten chunk metadata (including any index-time fields like
+        # `content_hash`) and upsert into Chroma. The caller is responsible
+        # for computing and attaching content hashes to `chunk.metadata`.
         self._collection.upsert(
             ids=[chunk.id for chunk in chunks],
             embeddings=embeddings,
@@ -61,6 +64,28 @@ class ChromaVectorStore(VectorStore):
             metadatas=[self._to_chroma_metadata(chunk) for chunk in chunks],
         )
         logger.info("Upserted %d chunk(s) into collection %r", len(chunks), self._collection_name)
+
+    def get_metadatas(self, ids: list[str]) -> dict[str, dict[str, Any]]:
+        """Return stored metadata for the given chunk ids.
+
+        The returned mapping includes only ids that exist in the collection.
+        Useful for incremental indexing: callers can compare a stored
+        `content_hash` (if present) against a freshly computed hash to detect
+        unchanged chunks.
+        """
+        if not ids:
+            return {}
+
+        result = self._collection.get(ids=ids, include=["metadatas", "documents"])
+        out: dict[str, dict[str, Any]] = {}
+        # `result` contains parallel arrays under keys 'ids', 'metadatas', 'documents'
+        for cid, meta, doc in zip(result.get("ids", []), result.get("metadatas", []), result.get("documents", [])):
+            # Chroma stores only primitive metadata values; return as-is.
+            out[cid] = dict(meta or {})
+            # also expose stored document text under a well-known key for callers
+            # that might want to sanity-check or diff text (optional).
+            out[cid]["_document_text"] = doc
+        return out
 
     def query(self, embedding: list[float], top_k: int) -> list[ScoredChunk]:
         if self.count() == 0:
