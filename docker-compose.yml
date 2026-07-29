@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  ollama:
+    # Ollama image can be pinned via environment override; default uses 'latest'.
+    image: ${OLLAMA_IMAGE:-ghcr.io/ollama/ollama:latest}
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./data/ollama:/var/lib/ollama
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: uvicorn rag.api.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./:/app:cached
+    ports:
+      - "8000:8000"
+    environment:
+      - RAG_CONFIG_PATH=/app/rag/config/config.yaml
+    depends_on:
+      - ollama
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: streamlit run rag/ui/app.py --server.port 8501 --server.address 0.0.0.0
+    volumes:
+      - ./:/app:cached
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
+# If you prefer a dedicated Chroma server image, set CHROMA_IMAGE and add
+# an additional service entry. By default, the Python client uses local
+# persistent mode (no server container) so a separate Chroma container is
+# not included here.
+
+# Example usage:
+#   OLLAMA_IMAGE=ghcr.io/ollama/ollama:stable docker-compose up --build
+# Then visit http://localhost:8501 for the Streamlit UI and http://localhost:8000 for the API.
