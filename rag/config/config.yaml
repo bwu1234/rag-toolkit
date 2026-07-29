@@ -32,7 +32,6 @@ vector_store:
 reranker:
   provider: cross_encoder
   model: cross-encoder/ms-marco-MiniLM-L-6-v2
-  min_score: 0.1
 
 retrieval:
   # hybrid = dense vector search + BM25 keyword search, fused with RRF
@@ -40,3 +39,12 @@ retrieval:
   top_k: 20
   rerank_top_k: 5
   rrf_k: 60
+  # Relevance floor on the final results. Scale depends on the active
+  # reranker -- retune when changing reranker.provider. 0.0 disables it.
+  min_score: 0.1
+
+chat:
+  # Rewrite follow-up questions into standalone ones (using recent turns)
+  # before retrieval. Costs one extra LLM call per turn that has history.
+  condense_history: true
+  max_history_turns: 6

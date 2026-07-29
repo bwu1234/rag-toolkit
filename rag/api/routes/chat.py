@@ -12,8 +12,9 @@ import logging
 
 from fastapi import APIRouter, Depends, Request
 
-from rag.api.schemas import ChatRequest, ChatResponse, CitationModel
+from rag.api.schemas import ChatRequest, ChatResponse, ChatTurnModel, CitationModel
 from rag.generation.chat_service import ChatAnswer, ChatService, Citation
+from rag.generation.query_rewriter import ChatTurn
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,10 @@ def get_chat_service(request: Request) -> ChatService:
     return request.app.state.chat_service
 
 
+def _to_chat_turn(turn: ChatTurnModel) -> ChatTurn:
+    return ChatTurn(role=turn.role, content=turn.content)
+
+
 def _to_citation_model(citation: Citation) -> CitationModel:
     return CitationModel(
         chunk_id=citation.chunk_id,
@@ -43,11 +48,16 @@ def _to_citation_model(citation: Citation) -> CitationModel:
 
 
 def _to_response(answer: ChatAnswer) -> ChatResponse:
-    return ChatResponse(answer=answer.answer, citations=[_to_citation_model(c) for c in answer.citations])
+    return ChatResponse(
+        answer=answer.answer,
+        citations=[_to_citation_model(c) for c in answer.citations],
+        rewritten_query=answer.rewritten_query,
+        dropped_below_min_score=answer.dropped_below_min_score,
+    )
 
 
 @router.post("/chat", response_model=ChatResponse, summary="Ask a question of the indexed corpus")
 def chat(payload: ChatRequest, chat_service: ChatService = Depends(get_chat_service)) -> ChatResponse:
-    logger.info("Received chat query: %r", payload.query)
-    answer = chat_service.ask(payload.query)
+    logger.info("Received chat query: %r (%d prior turn(s))", payload.query, len(payload.history))
+    answer = chat_service.ask(payload.query, history=[_to_chat_turn(turn) for turn in payload.history])
     return _to_response(answer)

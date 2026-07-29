@@ -186,6 +186,18 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
   lighter-weight option (e.g. an LLM-based reranker via the existing Ollama
   client) — the user chose accuracy and a proven, purpose-built model over
   minimizing dependencies for this component.
+- `retrieval.min_score` is a relevance floor applied to the *final* results,
+  after reranking, inside `Retriever` — not inside any one reranker. A vector
+  store always returns its nearest `top_k` neighbours however distant they are,
+  so without a floor an off-corpus question still reaches the LLM with a full
+  set of irrelevant passages to "ground" itself in. Living in `Retriever` means
+  it applies to `NoOpReranker` (pure vector retrieval) too, and it's what lets
+  `ChatService`'s empty-retrieval branch mean "nothing relevant" rather than
+  just "empty index".
+- Because the floor reads whatever the last stage's score means (per the score
+  convention above), the right *value* differs by reranker: a cross-encoder's
+  sigmoid-squashed logit and a raw cosine similarity are not the same scale.
+  Retune `retrieval.min_score` when changing `reranker.provider`.
 - Retrieval/reranker tests are hermetic and don't require model weights or a
   running daemon: `Retriever` is tested against fakes for `EmbeddingModel`,
   `VectorStore`, and `Reranker` that record what they're called with;
@@ -226,7 +238,59 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
   just generation) for a blank query or empty retrieval results — both are
   cases where a generated answer could only be a hallucination. This keeps the
   no-context path fast, free, and honest about what the corpus does/doesn't
-  contain.
+  contain. There are **three** distinct short-circuit messages, not one: blank
+  query, nothing in the index (`candidate_count == 0`), and candidates found
+  but all below `retrieval.min_score`. The last two are different problems with
+  different fixes ("run the indexer" vs. "your corpus doesn't cover this"), so
+  collapsing them into one string would waste the distinction the floor exists
+  to create.
+- `Retriever.retrieve` returns a `RetrievalResult` (chunks + `candidate_count`
+  + `dropped_below_min_score`), not a bare list, precisely so `ChatService` can
+  tell those two cases apart. Only the retriever knows which happened, and
+  threading it through mutable retriever state would break under FastAPI's
+  concurrent requests — so it's returned explicitly. Callers that only want the
+  chunks (`rag/eval/retrieval_eval.py`, the `retrieve` CLI command) take
+  `.chunks`.
+- `ChatAnswer` carries `rewritten_query` and `dropped_below_min_score` so the
+  pipeline's two silent interventions — searching for a different question than
+  the user typed, and withholding passages it retrieved — are visible to
+  *every* caller, not just the one that passes an `on_event` sink. `PipelineEvent`
+  remains the debug trace; these two fields are the user-facing contract.
+  `rewritten_query` is `None` when condensing didn't run or didn't change
+  anything, so callers never render "rewritten to: \<the same question\>".
+- **Retrieval is unconditional** — every non-blank query goes through the full
+  pipeline; there's no classifier or router deciding whether the corpus is
+  needed. That's the right default for a corpus Q&A tool (every question is
+  supposed to be corpus-shaped) and the common shape in production RAG. The
+  alternative — exposing search as a tool and letting the LLM decide when to
+  call it — is what a general-purpose assistant needs, and would replace both
+  the always-retrieve decision and the condense step below.
+- Multi-turn queries are handled by condensing, not by passing history to the
+  answering model: `QueryCondenser` (`rag/generation/query_rewriter.py`)
+  rewrites a follow-up plus recent turns into one standalone question, and that
+  rewrite drives *both* retrieval and the generation prompt. Retrieval is
+  stateless, so embedding a raw "what about part-time staff?" searches for
+  those literal words; and `build_rag_prompt` renders passages plus a single
+  question with no conversation of its own, so the answering model needs the
+  resolved question too. Enabled via `chat.condense_history` (on by default),
+  bounded by `chat.max_history_turns`.
+- The condenser reuses the pipeline's existing `LLMClient` rather than
+  building its own, and only runs on a turn that actually *has* history — so
+  the CLI, the eval pipeline, and every first turn pay nothing for it. It
+  fails open: an LLM error or empty rewrite logs and falls back to the original
+  query, which is exactly what the pipeline used before condensing existed.
+- All three entrypoints surface both facts, in the shape that fits them: the
+  UI renders them as captions under the answer bubble (`format_answer_notices`)
+  rather than only inside the collapsed pipeline trace, so a user re-reading an
+  old turn doesn't have to open a debug panel; the API returns them as
+  `ChatResponse.rewritten_query` / `.dropped_below_min_score`; the CLI prints
+  them around the answer, and its `retrieve` command distinguishes "no
+  candidates" from "all below the floor" with a hint to lower `min_score`.
+- `history` is supplied by the caller, never stored server-side — the API takes
+  it in `ChatRequest.history` and holds no session state, so it stays
+  restartable and horizontally scalable. The Streamlit UI derives it from
+  `st.session_state["messages"]` via `history_from_messages`, which skips
+  failed turns (whose `content` is an error banner, not a reply).
 - The FastAPI app (`rag/api/main.py`) builds one `ChatService` at startup via
   a `lifespan` handler and stores it on `app.state` — routes never re-read
   config or reconnect to Ollama/Chroma per request. `routes/chat.py` exposes
@@ -239,6 +303,9 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
   wire contract can evolve (versioning, extra fields) independently of
   pipeline internals, and routes are the only place that translates between
   them.
+- `QueryCondenser` is tested (`tests/test_query_rewriter.py`) against a fake
+  `LLMClient` — prompt assembly, history truncation, quote stripping, and both
+  fail-open paths (empty rewrite, raising client) — with no daemon involved.
 - API tests are hermetic: `test_llm.py` mocks Ollama's HTTP transport
   (mirroring `test_embedding.py`), `test_chat_service.py` and `test_prompts.py`
   use fakes/plain assertions with no I/O, and `test_api.py` drives the real
@@ -292,6 +359,13 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
   `{"role", "content", "answer"}` dicts — `answer` carries the full
   `ChatAnswer` (including citations) so each assistant bubble can render
   collapsible citation cards on re-render without re-querying.
+- The pipeline trace defaults to **expanded** and stays that way, controlled by
+  a sidebar checkbox (`st.session_state["expand_trace"]`, seeded in
+  `_init_session` before the widget is created so the widget owns the key
+  afterwards). Both render paths read it — the live `st.status` block when a
+  turn completes, and `_render_events` when history re-renders — so the trace
+  doesn't snap shut on the next turn. Untick it to get the old collapsed
+  behavior.
 - Error handling covers two failure modes: startup failure (Ollama/Chroma
   unreachable when `build_chat_service` is called — shown as a full-page
   error with instructions) and per-query failure (exception inside
@@ -308,6 +382,16 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
 - Chunking is character-based fixed-size with overlap; token-aware and
   structure-aware/semantic chunking are deferred until the end-to-end
   pipeline is proven (both fit behind the existing `Chunker` interface).
+- `retrieval.min_score` is tuned by hand against the eval set; there's no
+  calibration step, and its meaningful range shifts with the reranker. Set it
+  too high and answerable questions get refused; too low and it does nothing.
+- Query condensing costs an extra LLM round trip on every turn that has
+  history, and the rewrite is only as good as the local model. The rewritten
+  query is reported back on `ChatAnswer`/`ChatResponse` and shown in the UI, so
+  a bad rewrite is at least visible — but nothing detects or corrects one.
+- Conversation history is never shown to the *answering* model, only to the
+  condenser. Questions whose answer depends on the thread rather than on the
+  corpus ("summarize what you just told me") aren't served by this design.
 - Reranking is opt-in via config (`reranker.provider: none` is still the
   default in `config.yaml`); switch to `cross_encoder` to enable it. A
   pure-LLM reranker (reusing the existing `LLMClient`/Ollama setup) remains

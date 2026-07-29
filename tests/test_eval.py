@@ -32,7 +32,7 @@ from rag.eval.answer_eval import (
     run_answer_eval,
 )
 from rag.generation.chat_service import ChatAnswer, ChatService, Citation
-from rag.retrieval.retriever import Retriever
+from rag.retrieval.retriever import RetrievalResult, Retriever
 from rag.vectorstore.base import ScoredChunk
 
 
@@ -60,9 +60,9 @@ class _FakeRetriever(Retriever):
         self._chunks = chunks
         self.seen_queries: list[str] = []
 
-    def retrieve(self, query: str) -> list[ScoredChunk]:
+    def retrieve(self, query: str) -> RetrievalResult:
         self.seen_queries.append(query)
-        return self._chunks
+        return RetrievalResult(chunks=self._chunks, candidate_count=len(self._chunks))
 
 
 class _FakeChatService(ChatService):

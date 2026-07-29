@@ -11,11 +11,14 @@ from __future__ import annotations
 
 from rag.config.settings import RagConfig
 from rag.events import PipelineEvent
-from rag.generation.chat_service import Citation
+from rag.generation.chat_service import ChatAnswer, Citation
+from rag.generation.query_rewriter import ChatTurn
 from rag.ui.helpers import (
+    format_answer_notices,
     format_citation_label,
     format_citation_preview,
     format_event_line,
+    history_from_messages,
     sidebar_config_summary,
 )
 
@@ -136,3 +139,82 @@ def test_format_event_line_omits_timing_when_absent() -> None:
     event = PipelineEvent(stage="no_context", message="No relevant chunks found")
     line = format_event_line(event)
     assert "ms" not in line
+
+
+# ---------------------------------------------------------------------------
+# history_from_messages
+# ---------------------------------------------------------------------------
+
+
+def _answer(text: str = "an answer") -> ChatAnswer:
+    return ChatAnswer(answer=text, citations=[])
+
+
+def test_history_from_messages_converts_completed_turns() -> None:
+    messages = [
+        {"role": "user", "content": "what is the refund policy?", "answer": None},
+        {"role": "assistant", "content": "Refunds within 30 days.", "answer": _answer(), "events": []},
+    ]
+
+    assert history_from_messages(messages) == [
+        ChatTurn(role="user", content="what is the refund policy?"),
+        ChatTurn(role="assistant", content="Refunds within 30 days."),
+    ]
+
+
+def test_history_from_messages_skips_failed_assistant_turns() -> None:
+    # A failed turn stores an error banner as `content` with no ChatAnswer --
+    # feeding that to the condenser would have it rewrite around the error.
+    messages = [
+        {"role": "user", "content": "what is the refund policy?", "answer": None},
+        {"role": "assistant", "content": "⚠️ Error: connection refused", "answer": None, "events": []},
+    ]
+
+    assert history_from_messages(messages) == [
+        ChatTurn(role="user", content="what is the refund policy?")
+    ]
+
+
+def test_history_from_messages_on_an_empty_conversation() -> None:
+    assert history_from_messages([]) == []
+
+
+def test_history_from_messages_keeps_no_context_answers() -> None:
+    # "I don't have any indexed information" is a real turn, not a failure.
+    messages = [
+        {"role": "user", "content": "unrelated question", "answer": None},
+        {"role": "assistant", "content": "I don't have any indexed information…", "answer": _answer(), "events": []},
+    ]
+
+    assert len(history_from_messages(messages)) == 2
+
+
+# ---------------------------------------------------------------------------
+# format_answer_notices
+# ---------------------------------------------------------------------------
+
+
+def test_format_answer_notices_reports_a_rewritten_query() -> None:
+    answer = ChatAnswer(answer="a", rewritten_query="What is the refund policy for part-time staff?")
+
+    [notice] = format_answer_notices(answer)
+
+    assert "What is the refund policy for part-time staff?" in notice
+
+
+def test_format_answer_notices_reports_withheld_passages() -> None:
+    answer = ChatAnswer(answer="a", dropped_below_min_score=3)
+
+    [notice] = format_answer_notices(answer)
+
+    assert "3" in notice and "withheld" in notice.lower()
+
+
+def test_format_answer_notices_reports_both_when_both_apply() -> None:
+    answer = ChatAnswer(answer="a", rewritten_query="a standalone question", dropped_below_min_score=2)
+
+    assert len(format_answer_notices(answer)) == 2
+
+
+def test_format_answer_notices_is_empty_for_a_plain_answer() -> None:
+    assert format_answer_notices(ChatAnswer(answer="a")) == []

@@ -32,9 +32,11 @@ from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.logging_config import configure_logging
 from rag.ui.helpers import (
+    format_answer_notices,
     format_citation_label,
     format_citation_preview,
     format_event_line,
+    history_from_messages,
     sidebar_config_summary,
 )
 
@@ -68,12 +70,23 @@ def _load_chat_service() -> tuple[ChatService, RagConfig]:
 # ---------------------------------------------------------------------------
 
 
+_EXPAND_TRACE_KEY = "expand_trace"
+
+
 def _init_session() -> None:
     if "messages" not in st.session_state:
         # Each message: {"role": "user"|"assistant", "content": str,
         #                "answer": ChatAnswer | None,
         #                "events": list[PipelineEvent]}
         st.session_state["messages"] = []
+    # Seeded before the sidebar checkbox is created so the widget picks this up
+    # as its initial value; afterwards the widget owns the key.
+    st.session_state.setdefault(_EXPAND_TRACE_KEY, True)
+
+
+def _trace_expanded() -> bool:
+    """Whether pipeline traces should render expanded (sidebar preference)."""
+    return bool(st.session_state.get(_EXPAND_TRACE_KEY, True))
 
 
 # ---------------------------------------------------------------------------
@@ -82,12 +95,20 @@ def _init_session() -> None:
 
 
 def _render_events(events: list[PipelineEvent]) -> None:
-    """Render a completed pipeline trace as a collapsed status block."""
+    """Render a completed pipeline trace, expanded per the sidebar preference."""
     if not events:
         return
-    with st.status(f"Pipeline trace ({len(events)} step(s))", state="complete", expanded=False):
+    with st.status(
+        f"Pipeline trace ({len(events)} step(s))", state="complete", expanded=_trace_expanded()
+    ):
         for event in events:
             st.write(format_event_line(event))
+
+
+def _render_notices(answer: ChatAnswer) -> None:
+    """Render what the pipeline changed (rewritten query, withheld passages)."""
+    for notice in format_answer_notices(answer):
+        st.caption(notice)
 
 
 def _render_citations(answer: ChatAnswer) -> None:
@@ -112,11 +133,16 @@ def _render_history() -> None:
             if msg["role"] == "assistant":
                 _render_events(msg.get("events", []))
                 if msg.get("answer"):
+                    _render_notices(msg["answer"])
                     _render_citations(msg["answer"])
 
 
 def _handle_query(query: str, chat_service: ChatService) -> None:
     """Add the user message, run the pipeline, and append the assistant reply."""
+    # Snapshot the conversation *before* appending the current question -- the
+    # condenser wants the turns preceding the query, not the query itself.
+    history = history_from_messages(st.session_state["messages"])
+
     # Show and persist the user message immediately.
     st.session_state["messages"].append({"role": "user", "content": query, "answer": None})
     with st.chat_message("user"):
@@ -136,7 +162,7 @@ def _handle_query(query: str, chat_service: ChatService) -> None:
                 status.write(format_event_line(event))
 
             try:
-                answer = chat_service.ask(query, on_event=_on_event)
+                answer = chat_service.ask(query, history=history, on_event=_on_event)
             except Exception as exc:  # noqa: BLE001
                 logger.exception("Error during chat service call")
                 status.update(label="Pipeline failed", state="error", expanded=True)
@@ -147,9 +173,14 @@ def _handle_query(query: str, chat_service: ChatService) -> None:
                 )
                 return
 
-            status.update(label=f"Pipeline trace ({len(events)} step(s))", state="complete", expanded=False)
+            status.update(
+                label=f"Pipeline trace ({len(events)} step(s))",
+                state="complete",
+                expanded=_trace_expanded(),
+            )
 
         st.markdown(answer.answer)
+        _render_notices(answer)
         _render_citations(answer)
 
     st.session_state["messages"].append(
@@ -181,6 +212,11 @@ def main() -> None:
         st.title("⚙️ Config")
         st.markdown(sidebar_config_summary(config))
         st.divider()
+        st.checkbox(
+            "Keep pipeline trace expanded",
+            key=_EXPAND_TRACE_KEY,
+            help="Show each turn's retrieve → rerank → generate steps without having to click in.",
+        )
         if st.button("🗑️ Clear chat history"):
             st.session_state["messages"] = []
             st.rerun()
