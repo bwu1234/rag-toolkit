@@ -113,4 +113,5 @@ def test_sidebar_config_summary_reflects_config_values() -> None:
     assert config.reranker.provider in summary
     assert str(config.retrieval.top_k) in summary
     assert str(config.retrieval.rerank_top_k) in summary
+    assert config.retrieval.mode in summary
     assert config.vector_store.collection_name in summary

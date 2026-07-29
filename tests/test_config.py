@@ -24,6 +24,16 @@ def test_load_config_reads_repo_yaml() -> None:
     cfg = load_config()
     assert cfg.embedding.model == "qwen3-embedding:0.6b"
     assert cfg.vector_store.collection_name == "rag_corpus"
+    assert cfg.retrieval.mode == "hybrid"
+    assert cfg.retrieval.rrf_k == 60
+
+
+def test_default_retrieval_mode_is_dense() -> None:
+    """Pydantic defaults stay dense so missing keys don't flip behavior."""
+
+    cfg = RagConfig()
+    assert cfg.retrieval.mode == "dense"
+    assert cfg.retrieval.rrf_k == 60
 
 
 def test_load_config_missing_file_falls_back_to_defaults(tmp_path: Path) -> None:

@@ -30,6 +30,7 @@ def sidebar_config_summary(config: RagConfig) -> str:
         f"**Embedder:** `{config.embedding.provider}:{config.embedding.model}`",
         f"**LLM:** `{config.llm.provider}:{config.llm.model}`",
         f"**Reranker:** `{config.reranker.provider}`",
+        f"**Retrieval mode:** `{config.retrieval.mode}`",
         f"**Retrieve top-k:** {config.retrieval.top_k} → rerank to {config.retrieval.rerank_top_k}",
         f"**Vector store:** `{config.vector_store.provider}` "
         f"(`{config.vector_store.collection_name}`)",

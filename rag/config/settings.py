@@ -95,10 +95,20 @@ class RerankerConfig(BaseModel):
 
 
 class RetrievalConfig(BaseModel):
-    """Controls how many candidates are pulled from the vector store and kept after reranking."""
+    """Controls candidate retrieval, fusion, and post-rerank width.
 
-    top_k: int = Field(default=20, gt=0, description="Candidates retrieved from the vector store")
+    `mode`:
+      - ``dense``  — vector similarity only (original behavior)
+      - ``hybrid`` — dense + BM25 keyword search fused with Reciprocal Rank
+        Fusion (RRF), then optionally reranked. Recovers exact keyword hits
+        (acronyms, IDs, names) that pure embedding search often misses.
+    """
+
+    top_k: int = Field(default=20, gt=0, description="Candidates retrieved per retriever (dense and/or BM25)")
     rerank_top_k: int = Field(default=5, gt=0, description="Final number of chunks passed to the LLM after reranking")
+    mode: Literal["dense", "hybrid"] = "dense"
+    # RRF constant from Cormack et al.; 60 is the widely used default.
+    rrf_k: int = Field(default=60, gt=0, description="RRF rank constant: score += 1 / (rrf_k + rank)")
 
 
 class RagConfig(BaseModel):

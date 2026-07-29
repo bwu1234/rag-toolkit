@@ -18,6 +18,7 @@ from rag.ingestion.cleaners import clean_documents, clean_text
 from rag.ingestion.loaders import load_corpus
 from rag.logging_config import configure_logging
 from rag.retrieval.builder import build_retriever
+from rag.retrieval.sparse import BM25Index, bm25_index_path
 from rag.vectorstore.factory import get_vector_store
 
 logger = logging.getLogger(__name__)
@@ -133,23 +134,33 @@ def _cmd_index(args: argparse.Namespace) -> None:
 
     embedder = get_embedder(config.embedding)
     store = get_vector_store(config.vector_store, paths.index_dir)
+    # Always maintain the BM25 text index alongside the vector store so
+    # switching retrieval.mode to hybrid later does not require re-embedding.
+    sparse = BM25Index(bm25_index_path(paths.index_dir))
 
     if args.reset:
         logger.info("Resetting collection %r before indexing", config.vector_store.collection_name)
         store.reset()
+        sparse.reset()
 
     print(f"\n{len(documents)} document(s) -> {len(chunks)} chunk(s) to index")
     print(f"Embedder: {config.embedding.provider}:{config.embedding.model} ({config.embedding.base_url})")
     print(f"Vector store: {config.vector_store.provider} (collection={config.vector_store.collection_name!r}, dir={paths.index_dir})")
+    print(f"Sparse index: BM25 ({bm25_index_path(paths.index_dir).name})")
 
     for start in range(0, len(chunks), _INDEX_BATCH_SIZE):
         batch = chunks[start : start + _INDEX_BATCH_SIZE]
         vectors = embedder.embed_documents([chunk.text for chunk in batch])
         store.upsert(batch, vectors)
+        sparse.upsert(batch)
         done = min(start + _INDEX_BATCH_SIZE, len(chunks))
         print(f"  embedded + upserted {done}/{len(chunks)} chunk(s)")
 
-    print(f"\nIndex now holds {store.count()} chunk(s) (dimensions={embedder.dimensions})")
+    sparse.flush()
+    print(
+        f"\nIndex now holds {store.count()} vector chunk(s) "
+        f"+ {sparse.count()} BM25 chunk(s) (dimensions={embedder.dimensions})"
+    )
 
 
 def _cmd_retrieve(args: argparse.Namespace) -> None:
@@ -167,8 +178,10 @@ def _cmd_retrieve(args: argparse.Namespace) -> None:
 
     print(f"\nQuery: {args.query!r}")
     print(
-        f"Retrieval: top_k={config.retrieval.top_k}  rerank_top_k={config.retrieval.rerank_top_k}  "
+        f"Retrieval: mode={config.retrieval.mode}  top_k={config.retrieval.top_k}  "
+        f"rerank_top_k={config.retrieval.rerank_top_k}  "
         f"reranker={config.reranker.provider}"
+        + (f"  rrf_k={config.retrieval.rrf_k}" if config.retrieval.mode == "hybrid" else "")
     )
 
     results = retriever.retrieve(args.query)
