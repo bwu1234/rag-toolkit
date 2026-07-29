@@ -11,8 +11,10 @@ without spinning up FastAPI.
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass, field
 
+from rag.events import EventSink, PipelineEvent, emit
 from rag.generation.llm import LLMClient
 from rag.generation.prompts import SYSTEM_PROMPT, build_rag_prompt
 from rag.retrieval.retriever import Retriever
@@ -76,25 +78,38 @@ class ChatService:
         self._retriever = retriever
         self._llm_client = llm_client
 
-    def ask(self, query: str) -> ChatAnswer:
+    def ask(self, query: str, *, on_event: EventSink | None = None) -> ChatAnswer:
         """Answer `query`, grounded in (and citing) the retrieved context.
 
         Returns an empty-citation `ChatAnswer` without calling the LLM at all
         when the query is blank or retrieval finds nothing -- both are cases
         where a generated answer could only be a hallucination, and skipping
         the LLM call keeps the no-context path fast and free.
+
+        `on_event`, if given, is called once per completed pipeline stage
+        (retrieval's own sub-stages, prompt assembly, generation) with a
+        `PipelineEvent` -- the seam the UI uses to show a from-prompt-to-answer
+        trace. Purely observational: omitting it changes no return value.
         """
 
         if not query.strip():
             return ChatAnswer(answer=_NO_CONTEXT_ANSWER, citations=[])
 
-        chunks = self._retriever.retrieve(query)
+        chunks = self._retriever.retrieve(query, on_event=on_event)
         if not chunks:
             logger.info("No chunks retrieved for query %r -- skipping generation", query)
+            if on_event is not None:
+                on_event(PipelineEvent(stage="no_context", message="No relevant chunks found -- skipping generation"))
             return ChatAnswer(answer=_NO_CONTEXT_ANSWER, citations=[])
 
+        start = time.monotonic()
         prompt = build_rag_prompt(query, chunks)
+        emit(on_event, start, "prompt", f"Built prompt from {len(chunks)} passage(s)")
+
+        start = time.monotonic()
         answer = self._llm_client.generate(prompt, system=SYSTEM_PROMPT)
+        emit(on_event, start, "generate", "Generated answer")
+
         citations = [_to_citation(chunk) for chunk in chunks]
 
         logger.info("Answered query %r with %d citation(s)", query, len(citations))

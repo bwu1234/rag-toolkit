@@ -2,7 +2,7 @@
 
 Mirrors `EmbeddingModel`: pipeline code (the chat service, eval pipeline)
 depends only on this ABC, never on a concrete provider's SDK or HTTP API --
-swapping the local Ollama-served `qwen3.5:4b` for a hosted Anthropic/OpenAI
+swapping the local Ollama-served `qwen3.5:9b-mlx` for a hosted Anthropic/OpenAI
 model is a config change plus one adapter.
 """
 

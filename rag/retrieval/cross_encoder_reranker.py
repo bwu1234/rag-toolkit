@@ -13,6 +13,7 @@ for anyone who'd rather not pay that cost.
 from __future__ import annotations
 
 import logging
+import os
 
 from rag.retrieval.reranker import Reranker, normalize_rerank_score, rescored
 from rag.vectorstore.base import ScoredChunk
@@ -29,8 +30,9 @@ class CrossEncoderReranker(Reranker):
     downloading or holding several hundred MB of model weights in memory.
     """
 
-    def __init__(self, model: str) -> None:
+    def __init__(self, model: str, *, min_score: float = 0.0) -> None:
         self.model_name = model
+        self.min_score = min_score
         self._model: object | None = None
 
     def rerank(self, query: str, candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
@@ -45,7 +47,8 @@ class CrossEncoderReranker(Reranker):
             for candidate, raw_score in zip(candidates, raw_scores)
         ]
         rescored_candidates.sort(key=lambda chunk: chunk.score, reverse=True)
-        return rescored_candidates[:top_k]
+        above_threshold = [chunk for chunk in rescored_candidates if chunk.score >= self.min_score]
+        return above_threshold[:top_k]
 
     @property
     def _cross_encoder(self):  # type: ignore[no-untyped-def]
@@ -54,6 +57,11 @@ class CrossEncoderReranker(Reranker):
             # (and the `torch` it pulls in) is the heaviest dependency in the
             # project, and importing it costs real time even when the
             # configured reranker provider is `"none"`.
+            # `USE_TF=0` steers `transformers` (a sentence-transformers dep) away
+            # from its TensorFlow integration -- this project only ever uses the
+            # torch backend, and a TF install with a mismatched Keras version
+            # would otherwise crash the import.
+            os.environ.setdefault("USE_TF", "0")
             from sentence_transformers import CrossEncoder
 
             logger.info("Loading cross-encoder reranker model %r (first use)", self.model_name)

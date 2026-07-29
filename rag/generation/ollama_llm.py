@@ -34,12 +34,14 @@ class OllamaLLMClient(LLMClient):
         *,
         temperature: float = 0.2,
         max_tokens: int = 1024,
+        think: bool = False,
         timeout: float = 120.0,
     ) -> None:
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.think = think
         # `trust_env=False`: see `OllamaEmbedder` -- a loopback connection to
         # Ollama should never go through the system proxy.
         self._client = httpx.Client(base_url=self.base_url, timeout=timeout, trust_env=False)
@@ -57,6 +59,7 @@ class OllamaLLMClient(LLMClient):
                     "model": self.model,
                     "messages": messages,
                     "stream": False,
+                    "think": self.think,
                     "options": {
                         "temperature": self.temperature,
                         "num_predict": self.max_tokens,

@@ -10,10 +10,12 @@ verifying; everything else in ``app.py`` is thin Streamlit wiring.
 from __future__ import annotations
 
 from rag.config.settings import RagConfig
+from rag.events import PipelineEvent
 from rag.generation.chat_service import Citation
 from rag.ui.helpers import (
     format_citation_label,
     format_citation_preview,
+    format_event_line,
     sidebar_config_summary,
 )
 
@@ -115,3 +117,22 @@ def test_sidebar_config_summary_reflects_config_values() -> None:
     assert str(config.retrieval.rerank_top_k) in summary
     assert config.retrieval.mode in summary
     assert config.vector_store.collection_name in summary
+
+
+# ---------------------------------------------------------------------------
+# format_event_line
+# ---------------------------------------------------------------------------
+
+
+def test_format_event_line_includes_stage_message_and_timing() -> None:
+    event = PipelineEvent(stage="embed", message="Embedded query into a 1024-dim vector", elapsed_ms=12.3)
+    line = format_event_line(event)
+    assert "embed" in line
+    assert "Embedded query into a 1024-dim vector" in line
+    assert "12 ms" in line
+
+
+def test_format_event_line_omits_timing_when_absent() -> None:
+    event = PipelineEvent(stage="no_context", message="No relevant chunks found")
+    line = format_event_line(event)
+    assert "ms" not in line

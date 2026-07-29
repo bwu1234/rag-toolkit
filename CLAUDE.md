@@ -2,7 +2,7 @@
 
 Retrieval-Augmented Generation system, built up milestone by
 milestone. Local-first by default: Ollama serves both embeddings
-(`qwen3-embedding:0.6b`) and chat (`qwen3.5:4b`); Chroma is the vector store.
+(`qwen3-embedding:0.6b`) and chat (`qwen3.5:9b-mlx`); Chroma is the vector store.
 
 ## Status
 
@@ -25,7 +25,7 @@ implementations can be swapped via config alone:
 | `EmbeddingModel` | `rag/embedding/base.py` | Ollama (`qwen3-embedding:0.6b`) |
 | `VectorStore` | `rag/vectorstore/base.py` | Chroma (persistent, local) |
 | `Reranker` | `rag/retrieval/reranker.py` | none (pure vector retrieval) initially |
-| `LLMClient` | `rag/generation/llm.py` | Ollama (`qwen3.5:4b`, via `/api/chat`) |
+| `LLMClient` | `rag/generation/llm.py` | Ollama (`qwen3.5:9b-mlx`, via `/api/chat`) |
 
 To add a new implementation: subclass the relevant ABC, register it in that
 module's factory function, and select it via `provider:` in

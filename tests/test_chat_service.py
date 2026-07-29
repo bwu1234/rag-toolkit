@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from rag.events import EventSink
 from rag.generation.chat_service import ChatService, Citation
 from rag.vectorstore.base import ScoredChunk
 
@@ -33,7 +34,7 @@ class _FakeRetriever:
         self.results = results
         self.queries: list[str] = []
 
-    def retrieve(self, query: str) -> list[ScoredChunk]:
+    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> list[ScoredChunk]:
         self.queries.append(query)
         return self.results
 
@@ -101,6 +102,35 @@ def test_ask_on_empty_retrieval_skips_generation_and_explains() -> None:
     assert result.answer
     assert retriever.queries == ["an unanswerable question"]
     assert llm_client.calls == [], "the LLM should never be called when there's no context to ground it in"
+
+
+def test_ask_reports_prompt_and_generate_events() -> None:
+    service, *_ = _service()
+
+    events = []
+    service.ask("a question", on_event=events.append)
+
+    stages = [event.stage for event in events]
+    assert stages == ["prompt", "generate"]
+    assert all(event.elapsed_ms is not None for event in events)
+
+
+def test_ask_on_empty_retrieval_reports_no_context_event() -> None:
+    service, *_ = _service(results=[])
+
+    events = []
+    service.ask("an unanswerable question", on_event=events.append)
+
+    assert [event.stage for event in events] == ["no_context"]
+
+
+def test_ask_on_blank_query_reports_no_events() -> None:
+    service, *_ = _service()
+
+    events = []
+    service.ask("   ", on_event=events.append)
+
+    assert events == []
 
 
 def test_ask_drops_non_integer_page_metadata() -> None:

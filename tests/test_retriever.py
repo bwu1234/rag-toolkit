@@ -169,6 +169,31 @@ def test_retrieve_returns_rerankers_output() -> None:
     assert [r.chunk_id for r in results] == ["c", "b"]
 
 
+def test_retrieve_reports_embed_vector_search_and_rerank_events_in_dense_mode() -> None:
+    retriever, *_ = _retriever(mode="dense")
+
+    events = []
+    retriever.retrieve("query", on_event=events.append)
+
+    assert [event.stage for event in events] == ["embed", "vector_search", "rerank"]
+    assert all(event.elapsed_ms is not None for event in events)
+
+
+def test_retrieve_reports_fusion_event_in_hybrid_mode() -> None:
+    retriever, *_ = _retriever(mode="hybrid")
+
+    events = []
+    retriever.retrieve("query", on_event=events.append)
+
+    assert [event.stage for event in events] == [
+        "embed",
+        "vector_search",
+        "sparse_search",
+        "fusion",
+        "rerank",
+    ]
+
+
 def test_retrieve_on_blank_query_returns_empty_without_calling_anything() -> None:
     retriever, embedder, vector_store, reranker, sparse = _retriever(mode="hybrid")
 

@@ -18,9 +18,11 @@ Two retrieval modes (selected via ``retrieval.mode`` in config):
 from __future__ import annotations
 
 import logging
+import time
 from typing import Literal
 
 from rag.embedding.base import EmbeddingModel
+from rag.events import EventSink, emit
 from rag.retrieval.reranker import Reranker
 from rag.retrieval.rrf import DEFAULT_RRF_K, reciprocal_rank_fusion
 from rag.retrieval.sparse import SparseIndex
@@ -66,22 +68,27 @@ class Retriever:
         self.mode: RetrievalMode = mode
         self.rrf_k = rrf_k
 
-    def retrieve(self, query: str) -> list[ScoredChunk]:
+    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> list[ScoredChunk]:
         """Return the `rerank_top_k` chunks most relevant to `query`, best first.
 
         Stage 1 (``top_k`` candidates, denser still for hybrid before fusion)
         is intentionally wider than stage 2's output -- it gives the reranker
         enough material to recover relevant chunks that pure first-stage
         ranking placed lower, which is the entire reason to rerank at all.
+
+        `on_event`, if given, is called once per completed stage (embedding,
+        search, fusion, rerank) with a `PipelineEvent` -- e.g. so the UI can
+        show a live trace. It's purely an observation hook: omitting it
+        changes nothing about retrieval behavior or its return value.
         """
 
         if not query.strip():
             return []
 
         if self.mode == "hybrid":
-            candidates = self._hybrid_candidates(query)
+            candidates = self._hybrid_candidates(query, on_event)
         else:
-            candidates = self._dense_candidates(query)
+            candidates = self._dense_candidates(query, on_event)
 
         logger.info(
             "Retrieved %d candidate(s) via mode=%s for query %r",
@@ -90,21 +97,38 @@ class Retriever:
             query,
         )
 
+        start = time.monotonic()
         results = self._reranker.rerank(query, candidates, top_k=self.rerank_top_k)
+        emit(
+            on_event,
+            start,
+            "rerank",
+            f"Reranked {len(candidates)} candidate(s) down to {len(results)} result(s)",
+        )
         logger.info("Reranked down to %d result(s)", len(results))
         return results
 
-    def _dense_candidates(self, query: str) -> list[ScoredChunk]:
+    def _dense_candidates(self, query: str, on_event: EventSink | None) -> list[ScoredChunk]:
+        start = time.monotonic()
         query_vector = self._embedder.embed_query(query)
-        return self._vector_store.query(query_vector, top_k=self.top_k)
+        emit(on_event, start, "embed", f"Embedded query into a {len(query_vector)}-dim vector")
 
-    def _hybrid_candidates(self, query: str) -> list[ScoredChunk]:
+        start = time.monotonic()
+        results = self._vector_store.query(query_vector, top_k=self.top_k)
+        emit(on_event, start, "vector_search", f"Vector search returned {len(results)} candidate(s)")
+        return results
+
+    def _hybrid_candidates(self, query: str, on_event: EventSink | None) -> list[ScoredChunk]:
         """Dense + BM25, fused with RRF into a single ``top_k`` candidate list."""
 
         assert self._sparse_index is not None  # enforced in __init__ for hybrid
 
-        dense = self._dense_candidates(query)
+        dense = self._dense_candidates(query, on_event)
+
+        start = time.monotonic()
         sparse = self._sparse_index.query(query, top_k=self.top_k)
+        emit(on_event, start, "sparse_search", f"BM25 search returned {len(sparse)} candidate(s)")
+
         logger.info(
             "Hybrid stage-1: dense=%d sparse=%d (rrf_k=%d)",
             len(dense),
@@ -123,4 +147,7 @@ class Retriever:
             logger.warning("Dense search returned no results; falling back to BM25 candidates only")
             return sparse
 
-        return reciprocal_rank_fusion([dense, sparse], top_k=self.top_k, k=self.rrf_k)
+        start = time.monotonic()
+        fused = reciprocal_rank_fusion([dense, sparse], top_k=self.top_k, k=self.rrf_k)
+        emit(on_event, start, "fusion", f"Fused dense + BM25 into {len(fused)} candidate(s) via RRF")
+        return fused

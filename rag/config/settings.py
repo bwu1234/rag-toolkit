@@ -52,14 +52,18 @@ class EmbeddingConfig(BaseModel):
 class LLMConfig(BaseModel):
     """Which chat/generation model to use and how to reach it.
 
-    Default: Ollama-served `qwen3.5:4b`.
+    Default: Ollama-served `qwen3.5:9b-mlx`.
     """
 
     provider: Literal["ollama", "anthropic", "openai"] = "ollama"
-    model: str = "qwen3.5:4b"
+    model: str = "qwen3.5:9b-mlx"
     base_url: str = "http://localhost:11434"
     temperature: float = 0.2
     max_tokens: int = 1024
+    # qwen3.5 reasoning models spend `max_tokens` on a hidden "thinking" trace
+    # before the real answer; on a long RAG prompt that can exhaust the
+    # budget and leave `content` empty. Off by default for reliable answers.
+    think: bool = False
 
 
 class ChunkingConfig(BaseModel):
@@ -92,6 +96,12 @@ class RerankerConfig(BaseModel):
 
     provider: Literal["none", "cross_encoder"] = "none"
     model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Below this normalized [0, 1] score, a candidate is dropped rather than
+    # padded in just to fill out `rerank_top_k` -- a low score means the
+    # cross-encoder itself judged the pair irrelevant, not that a good match
+    # was ranked low. 0.0 (the default) disables filtering, keeping the
+    # original "always return exactly top_k" behavior for anyone relying on it.
+    min_score: float = 0.0
 
 
 class RetrievalConfig(BaseModel):

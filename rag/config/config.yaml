@@ -14,10 +14,11 @@ embedding:
 
 llm:
   provider: ollama
-  model: qwen3.5:4b
+  model: qwen3.5:9b-mlx
   base_url: http://localhost:11434
   temperature: 0.2
   max_tokens: 1024
+  think: false
 
 chunking:
   strategy: fixed
@@ -29,8 +30,9 @@ vector_store:
   collection_name: rag_corpus
 
 reranker:
-  provider: none
+  provider: cross_encoder
   model: cross-encoder/ms-marco-MiniLM-L-6-v2
+  min_score: 0.1
 
 retrieval:
   # hybrid = dense vector search + BM25 keyword search, fused with RRF

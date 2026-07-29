@@ -7,6 +7,7 @@ a running Streamlit server or session state.
 from __future__ import annotations
 
 from rag.config.settings import RagConfig
+from rag.events import PipelineEvent
 from rag.generation.chat_service import Citation
 
 
@@ -22,6 +23,12 @@ def format_citation_preview(citation: Citation, max_chars: int = 300) -> str:
     if len(text) > max_chars:
         return text[:max_chars] + "…"
     return text
+
+
+def format_event_line(event: PipelineEvent) -> str:
+    """Return a one-line markdown string for a single pipeline event."""
+    timing = f" `({event.elapsed_ms:.0f} ms)`" if event.elapsed_ms is not None else ""
+    return f"**{event.stage}** — {event.message}{timing}"
 
 
 def sidebar_config_summary(config: RagConfig) -> str:

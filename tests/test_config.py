@@ -10,7 +10,7 @@ from rag.config.settings import RagConfig, load_config
 def test_default_config_has_expected_models(default_config: RagConfig) -> None:
     assert default_config.embedding.model == "qwen3-embedding:0.6b"
     assert default_config.embedding.provider == "ollama"
-    assert default_config.llm.model == "qwen3.5:4b"
+    assert default_config.llm.model == "qwen3.5:9b-mlx"
     assert default_config.llm.provider == "ollama"
 
 
