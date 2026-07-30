@@ -76,7 +76,7 @@ def test_rescored_returns_a_copy_with_new_score() -> None:
 def test_noop_reranker_preserves_order_and_scores() -> None:
     candidates = [_scored("a", score=0.9), _scored("b", score=0.5), _scored("c", score=0.1)]
 
-    results = NoOpReranker().rerank("query", candidates, top_k=10)
+    results = NoOpReranker().rerank(["query"], candidates, top_k=10)
 
     assert results == candidates
 
@@ -84,7 +84,7 @@ def test_noop_reranker_preserves_order_and_scores() -> None:
 def test_noop_reranker_truncates_to_top_k() -> None:
     candidates = [_scored("a"), _scored("b"), _scored("c")]
 
-    results = NoOpReranker().rerank("query", candidates, top_k=2)
+    results = NoOpReranker().rerank(["query"], candidates, top_k=2)
 
     assert [r.chunk_id for r in results] == ["a", "b"]
 
@@ -105,7 +105,7 @@ def test_cross_encoder_reranker_reorders_by_normalized_score() -> None:
     candidates = [_scored("low", "low-relevance text"), _scored("high", "high-relevance text")]
     reranker, fake = _cross_encoder_with({"low-relevance text": -5.0, "high-relevance text": 5.0})
 
-    results = reranker.rerank("query", candidates, top_k=10)
+    results = reranker.rerank(["query"], candidates, top_k=10)
 
     assert [r.chunk_id for r in results] == ["high", "low"]
     assert results[0].score > results[1].score
@@ -117,7 +117,7 @@ def test_cross_encoder_reranker_scores_match_sigmoid_of_raw_logits() -> None:
     candidates = [_scored("a", "text-a")]
     reranker, _fake = _cross_encoder_with({"text-a": 2.0})
 
-    [result] = reranker.rerank("query", candidates, top_k=10)
+    [result] = reranker.rerank(["query"], candidates, top_k=10)
 
     assert result.score == pytest.approx(1.0 / (1.0 + math.exp(-2.0)))
 
@@ -126,7 +126,7 @@ def test_cross_encoder_reranker_truncates_to_top_k() -> None:
     candidates = [_scored("a", "ta"), _scored("b", "tb"), _scored("c", "tc")]
     reranker, _fake = _cross_encoder_with({"ta": 1.0, "tb": 3.0, "tc": 2.0})
 
-    results = reranker.rerank("query", candidates, top_k=2)
+    results = reranker.rerank(["query"], candidates, top_k=2)
 
     assert [r.chunk_id for r in results] == ["b", "c"]
 
@@ -134,7 +134,7 @@ def test_cross_encoder_reranker_truncates_to_top_k() -> None:
 def test_cross_encoder_reranker_on_empty_candidates_skips_model() -> None:
     reranker = CrossEncoderReranker(model="fake/cross-encoder")
 
-    assert reranker.rerank("query", [], top_k=5) == []
+    assert reranker.rerank(["query"], [], top_k=5) == []
     assert reranker._model is None, "the model should never be loaded for an empty candidate list"
 
 
@@ -158,11 +158,11 @@ def test_cross_encoder_reranker_loads_model_lazily(monkeypatch: pytest.MonkeyPat
     reranker = CrossEncoderReranker(model="org/my-cross-encoder")
     assert constructed == [], "constructing the reranker must not load the model"
 
-    reranker.rerank("q", [_scored("a", "ta")], top_k=1)
+    reranker.rerank(["q"], [_scored("a", "ta")], top_k=1)
 
     assert constructed == ["org/my-cross-encoder"]
     # A second call must reuse the cached instance, not reconstruct it.
-    reranker.rerank("q", [_scored("a", "ta")], top_k=1)
+    reranker.rerank(["q"], [_scored("a", "ta")], top_k=1)
     assert constructed == ["org/my-cross-encoder"]
 
 
@@ -192,3 +192,100 @@ def test_get_reranker_factory_rejects_unknown_provider() -> None:
 
     with pytest.raises(ValueError, match="Unknown reranker provider"):
         get_reranker(config)
+
+
+# ---------------------------------------------------------------------------
+# Reranking against expanded queries
+# ---------------------------------------------------------------------------
+
+
+class _PairKeyedCrossEncoder:
+    """Returns a raw logit per (query, text) pair -- needed to test aggregation."""
+
+    def __init__(self, scores: dict[tuple[str, str], float]) -> None:
+        self.scores = scores
+        self.seen_pairs: list[tuple[str, str]] = []
+
+    def predict(self, pairs: list[tuple[str, str]]) -> list[float]:
+        self.seen_pairs.extend(pairs)
+        return [self.scores[pair] for pair in pairs]
+
+
+def _pair_keyed(scores: dict[tuple[str, str], float], *, aggregate: str = "max") -> CrossEncoderReranker:
+    reranker = CrossEncoderReranker(model="fake/cross-encoder", aggregate=aggregate)  # type: ignore[arg-type]
+    reranker._model = _PairKeyedCrossEncoder(scores)
+    return reranker
+
+
+def test_rerank_scores_every_candidate_against_every_query() -> None:
+    reranker = _pair_keyed({
+        ("q1", "ta"): 1.0, ("q1", "tb"): 2.0,
+        ("q2", "ta"): 3.0, ("q2", "tb"): 4.0,
+    })
+
+    reranker.rerank(["q1", "q2"], [_scored("a", "ta"), _scored("b", "tb")], top_k=5)
+
+    assert reranker._model.seen_pairs == [  # type: ignore[attr-defined]
+        ("q1", "ta"), ("q1", "tb"), ("q2", "ta"), ("q2", "tb")
+    ]
+
+
+def test_max_aggregation_rescues_a_chunk_only_a_rephrasing_liked() -> None:
+    # The whole point of reranking against expanded queries: the user's original
+    # wording scores "b" near zero, a rephrasing using the corpus's vocabulary
+    # scores it highly, and max lets that rescue it.
+    reranker = _pair_keyed({
+        ("original", "ta"): 1.0, ("original", "tb"): -5.0,
+        ("rephrasing", "ta"): 0.5, ("rephrasing", "tb"): 6.0,
+    })
+
+    results = reranker.rerank(["original", "rephrasing"], [_scored("a", "ta"), _scored("b", "tb")], top_k=5)
+
+    assert [r.chunk_id for r in results] == ["b", "a"]
+
+
+def test_max_aggregation_uses_the_highest_logit_per_candidate() -> None:
+    reranker = _pair_keyed({("q1", "ta"): -2.0, ("q2", "ta"): 3.0})
+
+    [result] = reranker.rerank(["q1", "q2"], [_scored("a", "ta")], top_k=5)
+
+    assert result.score == pytest.approx(1.0 / (1.0 + math.exp(-3.0)))
+
+
+def test_mean_aggregation_averages_logits_before_the_sigmoid() -> None:
+    reranker = _pair_keyed({("q1", "ta"): -2.0, ("q2", "ta"): 4.0}, aggregate="mean")
+
+    [result] = reranker.rerank(["q1", "q2"], [_scored("a", "ta")], top_k=5)
+
+    assert result.score == pytest.approx(1.0 / (1.0 + math.exp(-1.0)))
+
+
+def test_mean_aggregation_suppresses_a_chunk_only_one_query_liked() -> None:
+    # Same scores as the max test; mean reaches the opposite conclusion, which
+    # is the tradeoff the knob exists to express.
+    reranker = _pair_keyed({
+        ("original", "ta"): 1.0, ("original", "tb"): -5.0,
+        ("rephrasing", "ta"): 0.5, ("rephrasing", "tb"): 6.0,
+    }, aggregate="mean")
+
+    results = reranker.rerank(["original", "rephrasing"], [_scored("a", "ta"), _scored("b", "tb")], top_k=5)
+
+    assert [r.chunk_id for r in results] == ["a", "b"]
+
+
+def test_single_query_rerank_is_unaffected_by_aggregation() -> None:
+    # Guards the unexpanded path: one query means max and mean are the same op.
+    scores = {("q", "ta"): 2.0, ("q", "tb"): -1.0}
+    by_max = _pair_keyed(scores).rerank(["q"], [_scored("a", "ta"), _scored("b", "tb")], top_k=5)
+    by_mean = _pair_keyed(scores, aggregate="mean").rerank(
+        ["q"], [_scored("a", "ta"), _scored("b", "tb")], top_k=5
+    )
+
+    assert [(r.chunk_id, r.score) for r in by_max] == [(r.chunk_id, r.score) for r in by_mean]
+
+
+def test_rerank_on_empty_queries_returns_nothing_without_loading_the_model() -> None:
+    reranker = CrossEncoderReranker(model="fake/cross-encoder")
+
+    assert reranker.rerank([], [_scored("a", "ta")], top_k=5) == []
+    assert reranker._model is None

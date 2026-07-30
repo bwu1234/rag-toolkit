@@ -217,12 +217,18 @@ def _cmd_retrieve(args: argparse.Namespace) -> None:
     print(
         f"Retrieval: mode={config.retrieval.mode}  top_k={config.retrieval.top_k}  "
         f"rerank_top_k={config.retrieval.rerank_top_k}  "
-        f"reranker={config.reranker.provider}  min_score={config.retrieval.min_score}"
+        f"reranker={config.reranker.provider}  min_score={config.retrieval.min_score}  "
+        f"expansion={config.retrieval.expansion.provider}"
         + (f"  rrf_k={config.retrieval.rrf_k}" if config.retrieval.mode == "hybrid" else "")
     )
 
     outcome = retriever.retrieve(args.query)
     results = outcome.chunks
+
+    if outcome.search_queries:
+        print(f"\nSearched {len(outcome.search_queries)} query/queries:")
+        for rank, search_query in enumerate(outcome.search_queries, start=1):
+            print(f"  {rank}. {search_query}")
     if not results:
         if outcome.candidate_count == 0:
             print("\nNo candidates at all -- is the index empty? Build it with `python -m rag.cli index`.")
@@ -271,6 +277,10 @@ def _cmd_chat(args: argparse.Namespace) -> None:
     # pipeline does silently are visible from every entrypoint, not just the UI.
     if result.rewritten_query:
         print(f"Retrieved for: {result.rewritten_query!r}")
+    if result.search_queries:
+        print(f"Expanded into {len(result.search_queries)} search query/queries:")
+        for rank, search_query in enumerate(result.search_queries, start=1):
+            print(f"  {rank}. {search_query}")
 
     print(f"\nAnswer:\n{result.answer}")
     if result.dropped_below_min_score:

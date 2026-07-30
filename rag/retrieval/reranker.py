@@ -25,8 +25,15 @@ class Reranker(ABC):
     """
 
     @abstractmethod
-    def rerank(self, query: str, candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
-        """Return up to `top_k` of `candidates`, re-ordered by relevance to `query`.
+    def rerank(self, queries: list[str], candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
+        """Return up to `top_k` of `candidates`, re-ordered by relevance to `queries`.
+
+        `queries` is a list because `retrieval.expansion` can turn one question
+        into several (see `rag.retrieval.expansion`). `queries[0]` is always the
+        user's actual question; anything after it is an alternate phrasing of
+        the same information need, and only question-shaped text ever appears
+        here. An implementation that has no use for the extras may simply score
+        against `queries[0]` -- it just forfeits the recall the expansion bought.
 
         Implementations should return `ScoredChunk`s whose `.score` reflects
         *this* reranker's judgment (in `[0, 1]`, higher is more relevant) --
@@ -47,7 +54,7 @@ class NoOpReranker(Reranker):
     latency, nothing to download.
     """
 
-    def rerank(self, query: str, candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
+    def rerank(self, queries: list[str], candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
         return candidates[:top_k]
 
 

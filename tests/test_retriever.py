@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from rag.retrieval.expansion import ExpandedQuery
 from rag.retrieval.reranker import NoOpReranker, Reranker
 from rag.retrieval.retriever import Retriever
 from rag.retrieval.sparse import SparseIndex
@@ -95,10 +96,10 @@ class _FakeReranker(Reranker):
     """Reverses candidate order and records what it was asked to rerank."""
 
     def __init__(self) -> None:
-        self.calls: list[tuple[str, list[ScoredChunk], int]] = []
+        self.calls: list[tuple[list[str], list[ScoredChunk], int]] = []
 
-    def rerank(self, query: str, candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
-        self.calls.append((query, candidates, top_k))
+    def rerank(self, queries: list[str], candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
+        self.calls.append((queries, candidates, top_k))
         return list(reversed(candidates))[:top_k]
 
 
@@ -112,6 +113,7 @@ def _retriever(
     mode: str = "dense",
     rrf_k: int = 60,
     min_score: float = 0.0,
+    query_expander=None,
 ) -> tuple[Retriever, _FakeEmbedder, _FakeVectorStore, Reranker, _FakeSparseIndex | None]:
     embedder = _FakeEmbedder()
     candidates = candidates if candidates is not None else [_scored("a"), _scored("b"), _scored("c")]
@@ -132,6 +134,7 @@ def _retriever(
         mode=mode,  # type: ignore[arg-type]
         rrf_k=rrf_k,
         min_score=min_score,
+        query_expander=query_expander,
     )
     return retriever, embedder, vector_store, reranker, sparse
 
@@ -155,8 +158,8 @@ def test_retrieve_passes_vector_store_results_to_reranker_with_rerank_top_k() ->
 
     retriever.retrieve("query")
 
-    [(query, passed_candidates, top_k)] = reranker.calls
-    assert query == "query"
+    [(queries, passed_candidates, top_k)] = reranker.calls
+    assert queries == ["query"]
     assert passed_candidates == candidates
     assert top_k == 2
 
@@ -337,7 +340,7 @@ def test_min_score_applies_to_reranker_scores_not_vector_scores() -> None:
         def __init__(self, score: float) -> None:
             self.score = score
 
-        def rerank(self, query, candidates, top_k):  # type: ignore[no-untyped-def]
+        def rerank(self, queries, candidates, top_k):  # type: ignore[no-untyped-def]
             from dataclasses import replace
 
             return [replace(c, score=self.score) for c in candidates][:top_k]
@@ -406,3 +409,162 @@ def test_retrieve_on_blank_query_reports_an_empty_result() -> None:
     assert outcome.chunks == []
     assert outcome.candidate_count == 0
     assert outcome.dropped_below_min_score == 0
+
+
+# ---------------------------------------------------------------------------
+# Query expansion (HyDE / multi-query) — N ranked lists through one RRF
+# ---------------------------------------------------------------------------
+
+
+class _FakeExpander:
+    """Returns a canned expansion and records what it was asked to expand."""
+
+    def __init__(
+        self, dense: list[str], sparse: list[str], rerank: list[str] | None = None
+    ) -> None:
+        # Default rerank to the sparse (question-shaped) list, which is what
+        # both real expanders do -- HyDE keeps its passage out of reranking.
+        self.expansion = ExpandedQuery(
+            dense=dense, sparse=sparse, rerank=rerank if rerank is not None else list(sparse)
+        )
+        self.calls: list[str] = []
+
+    def expand(self, query: str) -> ExpandedQuery:
+        self.calls.append(query)
+        return self.expansion
+
+
+def test_expansion_embeds_and_searches_every_dense_query() -> None:
+    expander = _FakeExpander(dense=["hypothetical passage", "original"], sparse=["original"])
+    retriever, embedder, vector_store, _r, _s = _retriever(
+        reranker=NoOpReranker(), query_expander=expander
+    )
+
+    retriever.retrieve("original")
+
+    assert expander.calls == ["original"]
+    assert embedder.queries == ["hypothetical passage", "original"]
+    assert len(vector_store.queries) == 2
+
+
+def test_expansion_sends_only_the_sparse_queries_to_bm25() -> None:
+    # HyDE's whole asymmetry: BM25 must not see the invented passage.
+    expander = _FakeExpander(dense=["hypothetical passage", "original"], sparse=["original"])
+    retriever, _e, _v, _r, sparse = _retriever(
+        mode="hybrid", reranker=NoOpReranker(), query_expander=expander
+    )
+
+    retriever.retrieve("original")
+
+    assert sparse is not None
+    assert [q for q, _k in sparse.queries] == ["original"]
+
+
+def test_expansion_fuses_every_ranked_list_through_rrf() -> None:
+    expander = _FakeExpander(dense=["q1", "q2"], sparse=["q1", "q2"])
+    retriever, *_rest = _retriever(
+        mode="hybrid", reranker=NoOpReranker(), rerank_top_k=5, query_expander=expander
+    )
+
+    events = []
+    results = retriever.retrieve("original", on_event=events.append)
+
+    # 2 dense + 2 sparse lists collapse into one fused candidate list.
+    fusion_events = [e for e in events if e.stage == "fusion"]
+    assert len(fusion_events) == 1
+    assert "4 ranked list(s)" in fusion_events[0].message
+    assert results.chunks
+
+
+def test_expansion_reports_the_queries_it_searched() -> None:
+    expander = _FakeExpander(dense=["hypothetical", "original"], sparse=["original"])
+    retriever, *_rest = _retriever(reranker=NoOpReranker(), query_expander=expander)
+
+    outcome = retriever.retrieve("original")
+
+    assert outcome.search_queries == ["hypothetical", "original"]
+
+
+def test_no_expansion_leaves_search_queries_empty() -> None:
+    # Nothing to report when the query was searched as typed.
+    retriever, *_rest = _retriever(reranker=NoOpReranker())
+
+    assert retriever.retrieve("query").search_queries == []
+
+
+def test_single_dense_query_still_skips_fusion_entirely() -> None:
+    # The pre-expansion path must stay byte-for-byte identical, scores included.
+    candidates = [_scored("a", 0.9), _scored("b", 0.5)]
+    retriever, *_rest = _retriever(
+        candidates=candidates, reranker=NoOpReranker(), rerank_top_k=5, mode="dense"
+    )
+
+    events = []
+    results = retriever.retrieve("query", on_event=events.append)
+
+    assert [e.stage for e in events] == ["embed", "vector_search", "rerank"]
+    assert [(c.chunk_id, c.score) for c in results.chunks] == [("a", 0.9), ("b", 0.5)]
+
+
+def test_expansion_emits_an_expand_event_only_when_it_changed_something() -> None:
+    expanded, *_rest = _retriever(
+        reranker=NoOpReranker(), query_expander=_FakeExpander(dense=["a", "b"], sparse=["a"])
+    )
+    unchanged, *_rest2 = _retriever(reranker=NoOpReranker())
+
+    expanded_events = []
+    expanded.retrieve("q", on_event=expanded_events.append)
+    unchanged_events = []
+    unchanged.retrieve("q", on_event=unchanged_events.append)
+
+    assert "expand" in [e.stage for e in expanded_events]
+    assert "expand" not in [e.stage for e in unchanged_events]
+
+
+def test_expansion_degrades_to_the_one_list_that_returned_results() -> None:
+    # One bad generated query shouldn't sink the search.
+    expander = _FakeExpander(dense=["q1", "q2"], sparse=[])
+    retriever, *_rest = _retriever(
+        candidates=[_scored("a", 0.9)], reranker=NoOpReranker(), rerank_top_k=5,
+        mode="dense", query_expander=expander,
+    )
+
+    results = retriever.retrieve("original")
+
+    assert [c.chunk_id for c in results.chunks] == ["a"]
+
+
+def test_blank_query_skips_expansion_entirely() -> None:
+    expander = _FakeExpander(dense=["should not run"], sparse=[])
+    retriever, *_rest = _retriever(reranker=NoOpReranker(), query_expander=expander)
+
+    assert retriever.retrieve("   ").chunks == []
+    assert expander.calls == []
+
+
+def test_reranker_receives_the_expanded_question_shaped_queries() -> None:
+    # Expansion that only widens stage 1 gets undone at rerank time, so the
+    # rephrasings have to reach the reranker too.
+    expander = _FakeExpander(
+        dense=["q1", "q2"], sparse=["q1", "q2"], rerank=["q1", "q2"]
+    )
+    retriever, _e, _v, reranker, _s = _retriever(query_expander=expander)
+
+    retriever.retrieve("q1")
+
+    [(queries, _candidates, _top_k)] = reranker.calls  # type: ignore[attr-defined]
+    assert queries == ["q1", "q2"]
+
+
+def test_hyde_shaped_expansion_keeps_the_generated_passage_out_of_reranking() -> None:
+    # A cross-encoder is trained on (question, passage) pairs -- a passage in
+    # the question slot is off-distribution, so HyDE excludes it here.
+    expander = _FakeExpander(
+        dense=["a long invented passage", "original"], sparse=["original"], rerank=["original"]
+    )
+    retriever, _e, _v, reranker, _s = _retriever(query_expander=expander)
+
+    retriever.retrieve("original")
+
+    [(queries, _candidates, _top_k)] = reranker.calls  # type: ignore[attr-defined]
+    assert queries == ["original"]

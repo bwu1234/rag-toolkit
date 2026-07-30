@@ -32,6 +32,10 @@ vector_store:
 reranker:
   provider: cross_encoder
   model: cross-encoder/ms-marco-MiniLM-L-6-v2
+  # How to fold per-query scores together when retrieval.expansion is on:
+  #   max  — keep a chunk any phrasing found relevant (lets expansion affect ranking)
+  #   mean — require agreement across phrasings (suppresses one-off rewrites)
+  aggregate: max
 
 retrieval:
   # hybrid = dense vector search + BM25 keyword search, fused with RRF
@@ -42,6 +46,16 @@ retrieval:
   # Relevance floor on the final results. Scale depends on the active
   # reranker -- retune when changing reranker.provider. 0.0 disables it.
   min_score: 0.1
+  # Pre-retrieval query transformation. Each adds an LLM call to every search:
+  #   none        — search the query as typed (no LLM in the retrieval path)
+  #   hyde        — embed a generated hypothetical answer passage instead
+  #   multi_query — retrieve for several rephrasings and fuse with RRF
+  # Measure with `python -m rag.eval.retrieval_eval` before leaving one on.
+  expansion:
+    provider: none
+    num_queries: 3
+    num_documents: 1
+    include_original: true
 
 chat:
   # Rewrite follow-up questions into standalone ones (using recent turns)

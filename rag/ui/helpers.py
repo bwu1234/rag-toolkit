@@ -60,6 +60,8 @@ def format_answer_notices(answer: ChatAnswer) -> list[str]:
     notices = []
     if answer.rewritten_query:
         notices.append(f"🔄 Searched for: *{answer.rewritten_query}*")
+    if answer.search_queries:
+        notices.append(f"🔎 Expanded into {len(answer.search_queries)} search queries")
     if answer.dropped_below_min_score:
         notices.append(
             f"🔻 {answer.dropped_below_min_score} passage(s) withheld — scored below the relevance threshold"
@@ -82,6 +84,7 @@ def sidebar_config_summary(config: RagConfig) -> str:
         f"**Retrieval mode:** `{config.retrieval.mode}`",
         f"**Retrieve top-k:** {config.retrieval.top_k} → rerank to {config.retrieval.rerank_top_k}",
         f"**Min score:** {config.retrieval.min_score}",
+        f"**Query expansion:** `{config.retrieval.expansion.provider}`",
         f"**Condense history:** `{config.chat.condense_history}`",
         f"**Vector store:** `{config.vector_store.provider}` "
         f"(`{config.vector_store.collection_name}`)",

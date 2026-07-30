@@ -183,3 +183,20 @@ def test_chat_response_defaults_the_new_fields_for_a_plain_answer(client: TestCl
 
     assert body["rewritten_query"] is None
     assert body["dropped_below_min_score"] == 0
+
+
+def test_chat_response_reports_the_expanded_search_queries() -> None:
+    fake = _FakeChatService(
+        ChatAnswer(answer="a", citations=[], search_queries=["hypothetical passage", "original"])
+    )
+    app.dependency_overrides[get_chat_service] = lambda: fake
+    try:
+        response = TestClient(app).post("/chat", json={"query": "original"})
+    finally:
+        app.dependency_overrides.pop(get_chat_service, None)
+
+    assert response.json()["search_queries"] == ["hypothetical passage", "original"]
+
+
+def test_chat_response_search_queries_defaults_to_empty(client: TestClient) -> None:
+    assert client.post("/chat", json={"query": "q"}).json()["search_queries"] == []
