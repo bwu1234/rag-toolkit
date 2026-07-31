@@ -13,7 +13,10 @@ from pathlib import Path
 import pytest
 
 from rag.retrieval.expansion import ExpandedQuery
-from rag.retrieval.reranker import NoOpReranker, Reranker
+from rag.retrieval.reranker import (
+    NoOpReranker,
+    Reranker,
+)
 from rag.retrieval.retriever import Retriever
 from rag.retrieval.sparse import SparseIndex
 from rag.vectorstore.base import ScoredChunk, VectorStore
