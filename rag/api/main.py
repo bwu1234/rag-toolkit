@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 
 from rag.api.routes.chat import router as chat_router
 from rag.config.settings import load_config
@@ -40,6 +41,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(chat_router)
+
+
+@app.get("/", summary="Redirect to docs")
+def root() -> RedirectResponse:
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health", summary="Liveness check")
