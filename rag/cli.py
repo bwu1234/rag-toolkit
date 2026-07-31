@@ -20,6 +20,7 @@ from rag.logging_config import configure_logging
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.sparse import BM25Index, bm25_index_path
 from rag.vectorstore.factory import get_vector_store
+from rag.chunking.models import Chunk
 
 logger = logging.getLogger(__name__)
 
