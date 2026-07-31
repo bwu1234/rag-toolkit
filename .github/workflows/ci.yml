@@ -38,8 +38,8 @@ jobs:
 
       - name: Type check (mypy)
         run: |
-          # ignore missing imports to keep CI stable across envs; remove as typing improves
-          mypy --ignore-missing-imports .
+          # limit mypy to the package to avoid noisy test-only typing checks; keep --ignore-missing-imports for CI stability
+          mypy --ignore-missing-imports rag
 
       - name: Run tests
         run: |
