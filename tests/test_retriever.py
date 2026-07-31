@@ -242,7 +242,7 @@ def test_hybrid_queries_both_dense_and_sparse_then_fuses() -> None:
     # ahead of b (present in only one list / lower combined rank).
     dense = [_scored("a", 0.9), _scored("b", 0.5), _scored("c", 0.1)]
     sparse = [_scored("c", 0.95), _scored("a", 0.4)]
-    retriever, embedder, vector_store, reranker, sparse_index = _retriever(
+    retriever, embedder, vector_store, _reranker, sparse_index = _retriever(
         candidates=dense,
         sparse_candidates=sparse,
         mode="hybrid",
