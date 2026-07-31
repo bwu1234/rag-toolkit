@@ -9,14 +9,13 @@ exercising real routing, validation, and request/response (de)serialization.
 
 from __future__ import annotations
 
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from rag.api.main import app
 from rag.api.routes.chat import get_chat_service
-from rag.generation.chat_service import ChatAnswer, ChatService, Citation
+from rag.generation.chat_service import ChatAnswer, Citation
 from rag.generation.query_rewriter import ChatTurn
 
 
