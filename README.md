@@ -1,32 +1,68 @@
-# RAG_Project
+# RAG Toolkit
 
-Retrieval-Augmented Generation (RAG) system built from scratch.
+A local-first Retrieval-Augmented Generation (RAG) system built from scratch in Python.
 
-This repository implements a local-first RAG pipeline (ingest → chunk → embed → index → retrieve → generate) with pluggable components and a small FastAPI chat API and Streamlit UI.
+This project implements the full RAG loop from document ingestion to answer generation: ingest → clean → chunk → embed → index → retrieve → rerank → generate. It is designed to be modular, testable, and easy to swap out piece by piece without rewriting the whole pipeline.
 
-Status
-- Milestones 1–8 implemented (scaffolding, ingestion, chunking, embedding, indexing, retrieval, chat API, evaluation, Streamlit UI).
+The project is intentionally built as both a practical system and a portfolio piece: it shows end-to-end engineering across data loading, vector search, prompt construction, API design, UI wiring, and evaluation.
 
-Why this repo
-- Clean interfaces and strong typing (pydantic v2) make it easy to swap components.
-- Local-first defaults: Ollama for embeddings/LLM and Chroma for vector storage.
-- Extensive unit tests that mirror the package layout for confident refactors.
+## Why this project is worth showing
 
-Quick links
-- Config: [rag/config/config.yaml](/Users/bwu19/RAG_Project/rag/config/config.yaml)
-- Typed settings: [rag/config/settings.py](/Users/bwu19/RAG_Project/rag/config/settings.py)
-- CLI entrypoint: [rag/cli.py](/Users/bwu19/RAG_Project/rag/cli.py)
-- FastAPI app: [rag/api/main.py](/Users/bwu19/RAG_Project/rag/api/main.py)
-- Packaging: [pyproject.toml](/Users/bwu19/RAG_Project/pyproject.toml)
-- Tests: [tests/](/Users/bwu19/RAG_Project/tests)
-- Contribution/license: (none yet) — see "Before publishing" checklist below.
+- End-to-end architecture: the repo covers the complete RAG stack, not just one isolated component.
+- Production-minded structure: pluggable interfaces, typed config, and a clear separation of concerns.
+- Local-first defaults: Ollama handles embeddings and generation; Chroma provides local vector storage.
+- Strong engineering hygiene: a real test suite, CI workflow, and typed Python code.
+- Portfolio-friendly story: it is easy to explain as “I built a working retrieval system from first principles and containerized the experience around it.”
 
-Prerequisites
+## What it does
+
+The system takes a corpus of documents, turns them into searchable chunks, stores them in a vector index, and answers questions grounded in those passages. The stack includes:
+
+- document ingestion for PDFs and text/Markdown files
+- text cleaning and chunking
+- embedding and vector indexing
+- retrieval with optional reranking
+- a chat pipeline with citations
+- a FastAPI web API
+- a Streamlit UI
+- evaluation scripts for retrieval and answer quality
+
+## Architecture at a glance
+
+The code is organized around small interfaces so components can be swapped without rewriting the pipeline:
+
+- [rag/config](rag/config) holds configuration and validated settings
+- [rag/ingestion](rag/ingestion) handles document loading and cleaning
+- [rag/chunking](rag/chunking) creates searchable chunks
+- [rag/embedding](rag/embedding) and [rag/vectorstore](rag/vectorstore) manage embeddings and indexing
+- [rag/retrieval](rag/retrieval) covers retrieval and reranking
+- [rag/generation](rag/generation) handles prompt construction and LLM calls
+- [rag/api](rag/api) exposes the chat service over FastAPI
+- [rag/ui](rag/ui) provides a simple interactive interface
+- [tests](tests) mirrors the package layout and exercises the core behavior
+
+## Tech stack
+
 - Python 3.10+
-- Recommended: create a virtual environment (venv/conda)
-- Local services for full end-to-end: Ollama daemon (default: http://localhost:11434) and Chroma (local persistent mode). The system is designed to run in fully-local mode, but tests mock external services where possible.
+- Pydantic + Pydantic Settings for config validation
+- FastAPI + Uvicorn for the API layer
+- Streamlit for the demo UI
+- Chroma for local vector storage
+- Ollama for local embeddings and LLM generation
+- Pytest + Ruff + Mypy for quality checks
 
-Install
+## Prerequisites
+
+To run the full pipeline locally, you will need:
+
+- Python 3.10+
+- A virtual environment (recommended)
+- Ollama running locally at http://localhost:11434
+- A corpus placed under [data/corpus](data/corpus)
+
+The project is designed to work locally by default, and the tests are structured to avoid depending on a running Ollama or Chroma server whenever possible.
+
+## Quick start
 
 1. Create and activate a virtual environment:
 
@@ -35,76 +71,107 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-2. Install the package (editable) and dev extras (recommended):
+2. Install the package and development extras:
 
 ```bash
 pip install -e .[dev]
 ```
 
-Run tests
+3. Run the test suite:
 
 ```bash
 pytest -q
 ```
 
-Note: the test suite is designed to be hermetic. Integration tests that require a running Ollama or Chroma are either mocked or explicitly documented.
-
-Common commands (CLI)
-
-- Ingest a small preview of the corpus:
+4. Add your own documents under [data/corpus](data/corpus) and run the pipeline:
 
 ```bash
 python -m rag.cli ingest --show 3
-```
-
-- Chunk only (preview):
-
-```bash
 python -m rag.cli chunk --show 3
-```
-
-- Build the index (embeds all chunks and upserts into Chroma):
-
-```bash
 python -m rag.cli index
-# use --reset to rebuild from scratch
+python -m rag.cli retrieve "What does this project do?"
+python -m rag.cli chat "What does this project do?"
 ```
 
-- Retrieve + rerank (quick query):
+## Demo script
+
+A ready-to-run demo flow is available in [scripts/demo.sh](scripts/demo.sh). It walks through the core experience from ingestion to chat.
 
 ```bash
-python -m rag.cli retrieve "your question"
+bash scripts/demo.sh
 ```
 
-- End-to-end chat (retrieve → generate):
+If you prefer to run the steps manually, use the following flow:
 
 ```bash
-python -m rag.cli chat "your question"
+python -m rag.cli ingest --show 3
+python -m rag.cli chunk --show 3
+python -m rag.cli index
+python -m rag.cli retrieve "Summarize the key ideas in this repository"
+python -m rag.cli chat "Summarize the key ideas in this repository"
 ```
 
-Run the API
+## Run the API
 
 ```bash
 uvicorn rag.api.main:app --reload
-# health: GET /health
-# POST /chat with JSON {"query": "..."}
 ```
 
-Run the UI (Streamlit)
+Then open:
+
+- http://localhost:8000/health for a health check
+- http://localhost:8000/docs for the interactive API docs
+
+## Run the UI
 
 ```bash
 streamlit run rag/ui/app.py
 ```
 
-Configuration
+## Configuration
 
-All runtime configuration lives in [rag/config/config.yaml](/Users/bwu19/RAG_Project/rag/config/config.yaml) and is validated by [rag/config/settings.py](/Users/bwu19/RAG_Project/rag/config/settings.py).
-Important knobs:
-- embedding.model and llm.model — default to Ollama-served models
-- chunking.chunk_size / chunk_overlap
-- vector_store.collection_name
-- retrieval.top_k / rerank_top_k
+Most runtime behavior is controlled by [rag/config/config.yaml](rag/config/config.yaml) and validated by [rag/config/settings.py](rag/config/settings.py). Key settings include:
 
-Where to put your corpus
+- embedding model selection
+- LLM model selection
+- chunk size and overlap
+- vector store settings
+- retrieval depth and reranking behavior
 
-Place documents under `data/corpus/` (gitignored by default). PDF loader emits one Document per page; markdown/text loaders emit one Document per file.
+## Project structure
+
+```text
+rag/
+  api/          FastAPI app and routes
+  chunking/     chunking strategies
+  config/       configuration and settings
+  embedding/    embedding adapters
+  eval/         retrieval and answer evaluation
+  generation/   generation and prompt logic
+  ingestion/    document loaders and cleaners
+  retrieval/    retrievers and rerankers
+  ui/           Streamlit UI
+  vectorstore/  vector store adapters
+tests/          unit/integration tests
+scripts/        demo helpers
+```
+
+## Validation and quality
+
+This repository includes:
+
+- a CI workflow in [.github/workflows/ci.yml](.github/workflows/ci.yml)
+- linting with Ruff
+- type checking with Mypy
+- unit and integration-style tests under [tests](tests)
+
+## Roadmap ideas
+
+If you want to push this project further as a portfolio piece, good next steps are:
+
+- add Docker support for one-command startup
+- add a richer sample corpus and demo data
+- improve observability and tracing around retrieval quality
+- add deployment notes for cloud hosting or container deployment
+
+This repository is a strong example of building a real AI system end to end: the core ideas are grounded, the structure is deliberate, and the implementation is more than a single notebook or toy script.

@@ -1,0 +1,36 @@
+Acme Cloud Storage — Frequently Asked Questions
+
+Q: How do I get an API key for ACS?
+A: Request a key through the platform self-service portal under
+   "Storage > API Keys". Keys are scoped to a single project and region.
+   Approval is automatic for internal projects and typically takes under
+   five minutes.
+
+Q: What is the maximum object size?
+A: A single object can be up to 5 TB. Objects larger than 100 MB should be
+   uploaded using the multipart upload API so that a network interruption
+   does not require restarting the whole transfer.
+
+Q: How long are deleted objects retained?
+A: Deleted objects move to a soft-delete state for 30 days before being
+   permanently purged. During that window they can be restored by filing a
+   request with the storage on-call rotation.
+
+Q: Which regions is ACS available in?
+A: ACS currently runs in us-east, us-west, and eu-central. Cross-region
+   replication is available on request for compliance-sensitive workloads.
+
+Q: What happens if I exceed my rate limit?
+A: The Gateway returns an HTTP 429 response with a Retry-After header. Sustained
+   rate-limit violations are reported to the project owner. You can request a
+   higher limit through the platform on-call channel.
+
+Q: How is data encrypted?
+A: All objects are encrypted at rest using AES-256 with keys managed by the
+   platform's key management service, and all traffic between clients and the
+   Gateway is encrypted in transit using TLS 1.3.
+
+Q: Who do I contact if I find a bug?
+A: File a ticket in the PLATFORM-STORAGE project, or reach the on-call engineer
+   directly through the #acs-oncall channel for urgent issues affecting
+   production traffic.
