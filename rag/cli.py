@@ -11,6 +11,7 @@ import logging
 from collections import Counter
 
 from rag.chunking.chunkers import get_chunker
+from rag.chunking.models import Chunk
 from rag.config.settings import load_config
 from rag.embedding.factory import get_embedder
 from rag.generation.builder import build_chat_service

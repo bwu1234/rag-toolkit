@@ -27,6 +27,12 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["."]
 
+[tool.ruff.lint]
+# Pin the rule set explicitly rather than relying on ruff's default selection,
+# which has grown across releases and previously broke CI on a ruff bump with
+# no code changes on our side. E4/E7/E9/F matches ruff's historical default.
+select = ["E4", "E7", "E9", "F"]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"

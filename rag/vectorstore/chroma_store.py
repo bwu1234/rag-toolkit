@@ -8,6 +8,7 @@ to one library that bundles vector search with metadata storage.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -59,7 +60,10 @@ class ChromaVectorStore(VectorStore):
         # for computing and attaching content hashes to `chunk.metadata`.
         self._collection.upsert(
             ids=[chunk.id for chunk in chunks],
-            embeddings=embeddings,
+            # Chroma's stub types an invariant `List[Sequence[float] | ...]`
+            # param, which structurally accepts our `list[list[float]]` at
+            # runtime but mypy rejects due to list invariance.
+            embeddings=embeddings,  # type: ignore[arg-type]
             documents=[chunk.text for chunk in chunks],
             metadatas=[self._to_chroma_metadata(chunk) for chunk in chunks],
         )
@@ -78,8 +82,13 @@ class ChromaVectorStore(VectorStore):
 
         result = self._collection.get(ids=ids, include=["metadatas", "documents"])
         out: dict[str, dict[str, Any]] = {}
-        # `result` contains parallel arrays under keys 'ids', 'metadatas', 'documents'
-        for cid, meta, doc in zip(result.get("ids", []), result.get("metadatas", []), result.get("documents", [])):
+        # `result` contains parallel arrays under keys 'ids', 'metadatas', 'documents'.
+        # Chroma types each as optional even though we always requested them;
+        # `or []` narrows away the `None` case for mypy.
+        result_ids = result.get("ids") or []
+        result_metadatas = result.get("metadatas") or []
+        result_documents = result.get("documents") or []
+        for cid, meta, doc in zip(result_ids, result_metadatas, result_documents):
             # Chroma stores only primitive metadata values; return as-is.
             out[cid] = dict(meta or {})
             # also expose stored document text under a well-known key for callers
@@ -92,15 +101,18 @@ class ChromaVectorStore(VectorStore):
             return []
 
         result = self._collection.query(
-            query_embeddings=[embedding],
+            # See the `upsert` comment above -- same invariant-List mismatch.
+            query_embeddings=[embedding],  # type: ignore[arg-type]
             n_results=top_k,
             include=["documents", "metadatas", "distances"],
         )
 
-        ids = result["ids"][0]
-        documents = result["documents"][0]
-        metadatas = result["metadatas"][0]
-        distances = result["distances"][0]
+        # Each field is typed as optional even though we always requested it
+        # via `include`; `or [[]]` narrows away the `None` case for mypy.
+        ids = (result["ids"] or [[]])[0]
+        documents = (result["documents"] or [[]])[0]
+        metadatas = (result["metadatas"] or [[]])[0]
+        distances = (result["distances"] or [[]])[0]
 
         return [
             self._to_scored_chunk(chunk_id, text, metadata, distance)
@@ -139,7 +151,7 @@ class ChromaVectorStore(VectorStore):
         return flat
 
     @staticmethod
-    def _to_scored_chunk(chunk_id: str, text: str, metadata: dict[str, Any], distance: float) -> ScoredChunk:
+    def _to_scored_chunk(chunk_id: str, text: str, metadata: Mapping[str, Any], distance: float) -> ScoredChunk:
         """Reconstruct a typed `ScoredChunk`, splitting provenance out of the flat metadata dict."""
 
         metadata = dict(metadata)

@@ -9,8 +9,6 @@ Covers:
 
 from __future__ import annotations
 
-import json
-import math
 from pathlib import Path
 
 import pytest
@@ -25,9 +23,6 @@ from rag.eval.metrics import (
 )
 from rag.eval.retrieval_eval import EvalReport, SampleResult, print_report, run_retrieval_eval
 from rag.eval.answer_eval import (
-    AnswerEvalReport,
-    AnswerSampleResult,
-    _judge_prompt,
     _parse_verdict,
     run_answer_eval,
 )
