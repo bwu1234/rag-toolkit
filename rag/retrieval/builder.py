@@ -19,6 +19,7 @@ from rag.generation.llm import LLMClient
 from rag.retrieval.factory import get_query_expander, get_reranker
 from rag.retrieval.retriever import Retriever
 from rag.retrieval.sparse import BM25Index, bm25_index_path
+from rag.retrieval.websearch import SearxNGWebSearch
 from rag.vectorstore.factory import get_vector_store
 
 
@@ -37,6 +38,7 @@ def build_retriever(config: RagConfig, llm_client: LLMClient | None = None) -> R
     vector_store = get_vector_store(config.vector_store, paths.index_dir)
     reranker = get_reranker(config.reranker)
     sparse_index = BM25Index(bm25_index_path(paths.index_dir))
+    web_search = SearxNGWebSearch(embedder, config.retrieval.web_search) if config.retrieval.web_search.enabled else None
 
     expander_client = llm_client if llm_client is not None else get_llm_client(config.llm)
     query_expander = get_query_expander(config.retrieval.expansion, expander_client)
@@ -52,4 +54,5 @@ def build_retriever(config: RagConfig, llm_client: LLMClient | None = None) -> R
         rrf_k=config.retrieval.rrf_k,
         min_score=config.retrieval.min_score,
         query_expander=query_expander,
+        web_search=web_search,
     )

@@ -92,6 +92,18 @@ class _FakeSparseIndex(SparseIndex):
         raise AssertionError("Retriever should never call sparse reset")
 
 
+class _FakeWebSearch:
+    """Returns a canned web-search candidate list and records the query it received."""
+
+    def __init__(self, candidates: list[ScoredChunk]) -> None:
+        self.candidates = candidates
+        self.queries: list[str] = []
+
+    def search(self, query: str) -> list[ScoredChunk]:
+        self.queries.append(query)
+        return self.candidates
+
+
 class _FakeReranker(Reranker):
     """Reverses candidate order and records what it was asked to rerank."""
 
@@ -107,6 +119,7 @@ def _retriever(
     *,
     candidates: list[ScoredChunk] | None = None,
     sparse_candidates: list[ScoredChunk] | None = None,
+    web_search_candidates: list[ScoredChunk] | None = None,
     reranker: Reranker | None = None,
     top_k: int = 10,
     rerank_top_k: int = 3,
@@ -114,7 +127,7 @@ def _retriever(
     rrf_k: int = 60,
     min_score: float = 0.0,
     query_expander=None,
-) -> tuple[Retriever, _FakeEmbedder, _FakeVectorStore, Reranker, _FakeSparseIndex | None]:
+) -> tuple[Retriever, _FakeEmbedder, _FakeVectorStore, Reranker, _FakeSparseIndex | None, _FakeWebSearch | None]:
     embedder = _FakeEmbedder()
     candidates = candidates if candidates is not None else [_scored("a"), _scored("b"), _scored("c")]
     vector_store = _FakeVectorStore(candidates)
@@ -124,6 +137,7 @@ def _retriever(
         sparse = _FakeSparseIndex(
             sparse_candidates if sparse_candidates is not None else list(candidates)
         )
+    web_search = _FakeWebSearch(web_search_candidates) if web_search_candidates is not None else None
     retriever = Retriever(
         embedder=embedder,
         vector_store=vector_store,
@@ -135,12 +149,13 @@ def _retriever(
         rrf_k=rrf_k,
         min_score=min_score,
         query_expander=query_expander,
+        web_search=web_search,
     )
-    return retriever, embedder, vector_store, reranker, sparse
+    return retriever, embedder, vector_store, reranker, sparse, web_search
 
 
 def test_retrieve_embeds_query_and_passes_vector_to_store() -> None:
-    retriever, embedder, vector_store, _reranker, _sparse = _retriever(top_k=7)
+    retriever, embedder, vector_store, _reranker, _sparse, _web = _retriever(top_k=7)
 
     retriever.retrieve("what is the refund policy")
 
@@ -152,7 +167,7 @@ def test_retrieve_embeds_query_and_passes_vector_to_store() -> None:
 
 def test_retrieve_passes_vector_store_results_to_reranker_with_rerank_top_k() -> None:
     candidates = [_scored("a"), _scored("b"), _scored("c")]
-    retriever, _embedder, _store, reranker, _sparse = _retriever(
+    retriever, _embedder, _store, reranker, _sparse, _web = _retriever(
         candidates=candidates, rerank_top_k=2
     )
 
@@ -200,7 +215,7 @@ def test_retrieve_reports_fusion_event_in_hybrid_mode() -> None:
 
 
 def test_retrieve_on_blank_query_returns_empty_without_calling_anything() -> None:
-    retriever, embedder, vector_store, reranker, sparse = _retriever(mode="hybrid")
+    retriever, embedder, vector_store, reranker, sparse, _web = _retriever(mode="hybrid")
 
     assert retriever.retrieve("   ").chunks == []
     assert embedder.queries == []
@@ -242,7 +257,7 @@ def test_hybrid_queries_both_dense_and_sparse_then_fuses() -> None:
     # ahead of b (present in only one list / lower combined rank).
     dense = [_scored("a", 0.9), _scored("b", 0.5), _scored("c", 0.1)]
     sparse = [_scored("c", 0.95), _scored("a", 0.4)]
-    retriever, embedder, vector_store, reranker, sparse_index = _retriever(
+    retriever, embedder, vector_store, reranker, sparse_index, _web = _retriever(
         candidates=dense,
         sparse_candidates=sparse,
         mode="hybrid",
@@ -282,7 +297,7 @@ def test_hybrid_falls_back_to_dense_when_sparse_empty() -> None:
 
 def test_dense_mode_does_not_query_sparse_index() -> None:
     sparse_candidates = [_scored("only-sparse")]
-    retriever, _e, _v, _r, sparse = _retriever(
+    retriever, _e, _v, _r, sparse, _web = _retriever(
         candidates=[_scored("dense-only")],
         sparse_candidates=sparse_candidates,
         mode="dense",
@@ -294,6 +309,73 @@ def test_dense_mode_does_not_query_sparse_index() -> None:
 
     assert [r.chunk_id for r in results] == ["dense-only"]
     assert sparse is not None and sparse.queries == []
+
+
+# ---------------------------------------------------------------------------
+# web_search — a third ranked-list source, fused in like BM25
+# ---------------------------------------------------------------------------
+
+
+def test_web_search_disabled_by_default_and_never_called() -> None:
+    retriever, *_rest = _retriever(mode="dense")
+
+    retriever.retrieve("query")
+
+    # No web_search fake was configured (web_search_candidates=None), so the
+    # only way this would fail is if Retriever tried to call it anyway.
+
+
+def test_dense_mode_still_fuses_in_web_search_when_configured() -> None:
+    # Web search runs independently of retrieval.mode -- it's gated on
+    # whether a SearxNGWebSearch was wired in, not on "dense" vs "hybrid".
+    dense = [_scored("a", 0.9)]
+    web = [_scored("w", 0.8)]
+    retriever, embedder, _v, _r, _s, web_search = _retriever(
+        candidates=dense,
+        web_search_candidates=web,
+        mode="dense",
+        reranker=NoOpReranker(),
+        rerank_top_k=5,
+    )
+
+    results = retriever.retrieve("query").chunks
+
+    assert web_search is not None
+    assert web_search.queries == ["query"]
+    assert set(r.chunk_id for r in results) == {"a", "w"}
+    assert embedder.queries == ["query"]
+
+
+def test_hybrid_mode_fuses_dense_sparse_and_web_search() -> None:
+    dense = [_scored("a", 0.9)]
+    sparse = [_scored("b", 0.9)]
+    web = [_scored("c", 0.9)]
+    retriever, *_rest = _retriever(
+        candidates=dense,
+        sparse_candidates=sparse,
+        web_search_candidates=web,
+        mode="hybrid",
+        reranker=NoOpReranker(),
+        rerank_top_k=5,
+    )
+
+    results = retriever.retrieve("query").chunks
+
+    assert set(r.chunk_id for r in results) == {"a", "b", "c"}
+
+
+def test_web_search_event_reported_when_configured() -> None:
+    retriever, *_rest = _retriever(
+        candidates=[_scored("a")],
+        web_search_candidates=[_scored("w")],
+        mode="dense",
+        reranker=NoOpReranker(),
+    )
+
+    events = []
+    retriever.retrieve("query", on_event=events.append)
+
+    assert "web_search" in [event.stage for event in events]
 
 
 # ---------------------------------------------------------------------------
@@ -436,7 +518,7 @@ class _FakeExpander:
 
 def test_expansion_embeds_and_searches_every_dense_query() -> None:
     expander = _FakeExpander(dense=["hypothetical passage", "original"], sparse=["original"])
-    retriever, embedder, vector_store, _r, _s = _retriever(
+    retriever, embedder, vector_store, _r, _s, _web = _retriever(
         reranker=NoOpReranker(), query_expander=expander
     )
 
@@ -450,7 +532,7 @@ def test_expansion_embeds_and_searches_every_dense_query() -> None:
 def test_expansion_sends_only_the_sparse_queries_to_bm25() -> None:
     # HyDE's whole asymmetry: BM25 must not see the invented passage.
     expander = _FakeExpander(dense=["hypothetical passage", "original"], sparse=["original"])
-    retriever, _e, _v, _r, sparse = _retriever(
+    retriever, _e, _v, _r, sparse, _web = _retriever(
         mode="hybrid", reranker=NoOpReranker(), query_expander=expander
     )
 
@@ -548,7 +630,7 @@ def test_reranker_receives_the_expanded_question_shaped_queries() -> None:
     expander = _FakeExpander(
         dense=["q1", "q2"], sparse=["q1", "q2"], rerank=["q1", "q2"]
     )
-    retriever, _e, _v, reranker, _s = _retriever(query_expander=expander)
+    retriever, _e, _v, reranker, _s, _web = _retriever(query_expander=expander)
 
     retriever.retrieve("q1")
 
@@ -562,7 +644,7 @@ def test_hyde_shaped_expansion_keeps_the_generated_passage_out_of_reranking() ->
     expander = _FakeExpander(
         dense=["a long invented passage", "original"], sparse=["original"], rerank=["original"]
     )
-    retriever, _e, _v, reranker, _s = _retriever(query_expander=expander)
+    retriever, _e, _v, reranker, _s, _web = _retriever(query_expander=expander)
 
     retriever.retrieve("original")
 

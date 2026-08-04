@@ -56,6 +56,16 @@ retrieval:
     num_queries: 3
     num_documents: 1
     include_original: true
+  # Live web search, fused in as a third ranked list alongside dense/BM25.
+  # Disabled by default -- needs a reachable SearxNG instance, and every
+  # enabled query leaves the local machine.
+  web_search:
+    enabled: false
+    searxng_url: http://localhost:8080
+    top_k: 10
+    min_similarity: 0.5
+    dedup_threshold: 0.75
+    timeout_s: 10.0
 
 chat:
   # Rewrite follow-up questions into standalone ones (using recent turns)

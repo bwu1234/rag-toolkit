@@ -134,6 +134,29 @@ class QueryExpansionConfig(BaseModel):
     )
 
 
+class WebSearchConfig(BaseModel):
+    """Optional live web search source, fused into retrieval alongside dense/BM25.
+
+    Disabled by default -- enabling it means every query leaves the local
+    machine (a SearxNG instance, self-hosted or not) and costs one extra
+    embedding round trip per result. `min_similarity`/`dedup_threshold`
+    mirror the fixed thresholds Perplexica/Vane use for the same job (scoring
+    raw search snippets by embedding cosine similarity against the query, then
+    dropping near-duplicate snippets) -- see `rag.retrieval.websearch`.
+    """
+
+    enabled: bool = False
+    searxng_url: str = "http://localhost:8080"
+    top_k: int = Field(default=10, gt=0, description="Search results fetched from SearxNG per query")
+    min_similarity: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Drop results below this query-similarity score"
+    )
+    dedup_threshold: float = Field(
+        default=0.75, ge=0.0, le=1.0, description="Drop a result if another kept result exceeds this similarity to it"
+    )
+    timeout_s: float = Field(default=10.0, gt=0, description="HTTP timeout for the SearxNG request")
+
+
 class RetrievalConfig(BaseModel):
     """Controls candidate retrieval, fusion, and post-rerank width.
 
@@ -163,6 +186,7 @@ class RetrievalConfig(BaseModel):
     # 0.0 (the default) disables filtering.
     min_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Drop final results scoring below this")
     expansion: QueryExpansionConfig = QueryExpansionConfig()
+    web_search: WebSearchConfig = WebSearchConfig()
 
 
 class ChatConfig(BaseModel):

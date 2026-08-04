@@ -19,6 +19,12 @@ query into several before any of that runs -- HyDE's hypothetical passages,
 multi-query's rephrasings. Every (query, retriever) pair yields one ranked
 list and RRF fuses them all, so expansion needs no new code path here: hybrid
 mode was already fusing two lists, and expansion just makes it more.
+
+A third, independent source -- live web search (``retrieval.web_search``,
+`rag.retrieval.websearch.SearxNGWebSearch`) -- can be fused in alongside
+dense/BM25 the same way, whatever `mode` is set to. It has its own internal
+similarity scoring (cosine, not a `Reranker`), so its ranked list joins the
+others as just one more list for RRF to fuse.
 """
 
 from __future__ import annotations
@@ -34,6 +40,7 @@ from rag.retrieval.expansion import ExpandedQuery, NoOpQueryExpander, QueryExpan
 from rag.retrieval.reranker import Reranker
 from rag.retrieval.rrf import DEFAULT_RRF_K, reciprocal_rank_fusion
 from rag.retrieval.sparse import SparseIndex
+from rag.retrieval.websearch import SearxNGWebSearch
 from rag.vectorstore.base import ScoredChunk, VectorStore
 
 logger = logging.getLogger(__name__)
@@ -90,6 +97,7 @@ class Retriever:
         rrf_k: int = DEFAULT_RRF_K,
         min_score: float = 0.0,
         query_expander: QueryExpander | None = None,
+        web_search: SearxNGWebSearch | None = None,
     ) -> None:
         if mode == "hybrid" and sparse_index is None:
             raise ValueError(
@@ -100,6 +108,7 @@ class Retriever:
         self._vector_store = vector_store
         self._reranker = reranker
         self._sparse_index = sparse_index
+        self._web_search = web_search
         self.top_k = top_k
         self.rerank_top_k = rerank_top_k
         self.mode: RetrievalMode = mode
@@ -193,6 +202,12 @@ class Retriever:
             assert self._sparse_index is not None  # enforced in __init__ for hybrid
             ranked_lists.extend(self._sparse_search(query, on_event) for query in expanded.sparse)
 
+        if self._web_search is not None:
+            # Web search gets the same sparse (question-shaped) queries as
+            # BM25 -- a HyDE passage is the wrong text to send to a search
+            # engine, but a multi-query rephrasing is a fine search query.
+            ranked_lists.extend(self._web_search_query(query, on_event) for query in expanded.sparse)
+
         populated = [ranked for ranked in ranked_lists if ranked]
         logger.info(
             "Stage-1: %d/%d ranked list(s) non-empty via mode=%s (rrf_k=%d)",
@@ -240,4 +255,11 @@ class Retriever:
         start = time.monotonic()
         results = self._sparse_index.query(query, top_k=self.top_k)
         emit(on_event, start, "sparse_search", f"BM25 search returned {len(results)} candidate(s)")
+        return results
+
+    def _web_search_query(self, query: str, on_event: EventSink | None) -> list[ScoredChunk]:
+        assert self._web_search is not None
+        start = time.monotonic()
+        results = self._web_search.search(query)
+        emit(on_event, start, "web_search", f"Web search returned {len(results)} candidate(s)")
         return results
