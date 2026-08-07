@@ -24,6 +24,20 @@ chunking:
   strategy: fixed
   chunk_size: 1000
   chunk_overlap: 150
+  # Contextual retrieval: at index time, ask the LLM to write a sentence
+  # situating each chunk in its parent document, and index that sentence
+  # prepended to the chunk. Fixes chunks that never name their own subject
+  # ("the limit is 1,000/min" with no mention of which API), which no amount
+  # of query-time tuning can reach.
+  #
+  # Costs one LLM call PER CHUNK during `python -m rag.cli index` -- by far the
+  # most expensive thing here, but paid per index rather than per query.
+  # `chunk.text` is never modified, so citations still quote the source
+  # verbatim. Re-index with `--reset` after changing any of these.
+  contextual:
+    enabled: false
+    max_document_chars: 8000
+    max_context_chars: 400
 
 vector_store:
   provider: chroma
@@ -72,3 +86,23 @@ chat:
   # before retrieval. Costs one extra LLM call per turn that has history.
   condense_history: true
   max_history_turns: 6
+
+# Corrective RAG -- let the pipeline reject its own intermediate results.
+# `retrieval.min_score` filters on a similarity score; these filter on
+# judgments about whether a passage answers the question and whether the
+# answer is supported by its passages.
+#
+# Off by default because the cost is steep on the query path: `grade_documents`
+# alone is one LLM call per retrieved passage (retrieval.rerank_top_k of them),
+# on top of generation. Every check fails open, so a broken one degrades to
+# plain RAG rather than failing the turn. Measure with
+# `python -m rag.eval.answer_eval` before leaving it on.
+crag:
+  enabled: false
+  # Drop retrieved passages the LLM judges irrelevant to the question.
+  grade_documents: true
+  # Extra retrieve attempts with a reworded query when grading leaves nothing.
+  max_retries: 1
+  # Read the generated answer back against its passages; regenerate if unsupported.
+  check_groundedness: true
+  max_regenerations: 1

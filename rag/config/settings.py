@@ -66,6 +66,34 @@ class LLMConfig(BaseModel):
     think: bool = False
 
 
+class ContextualChunkingConfig(BaseModel):
+    """Index-time enrichment: prepend a generated document-context blurb to each chunk.
+
+    Off by default because it's the most expensive operation in the pipeline:
+    one LLM call *per chunk* during `python -m rag.cli index`, each carrying a
+    slice of the parent document. The payoff is that the cost is paid per
+    index rather than per query, and it addresses a failure that query-time
+    tuning can't -- a chunk that never names its own subject (see
+    `rag.chunking.contextualizer`).
+
+    Changing any of these values changes what gets embedded, so re-index with
+    `--reset` afterwards rather than relying on the incremental skip, which
+    keys off chunk text alone.
+    """
+
+    enabled: bool = False
+    max_document_chars: int = Field(
+        default=8000,
+        gt=0,
+        description="Characters of the parent document included in each context prompt",
+    )
+    max_context_chars: int = Field(
+        default=400,
+        gt=0,
+        description="Cap on a generated blurb, so context can't outweigh the chunk it describes",
+    )
+
+
 class ChunkingConfig(BaseModel):
     """Parameters for splitting documents into retrievable chunks.
 
@@ -77,6 +105,7 @@ class ChunkingConfig(BaseModel):
     strategy: Literal["fixed"] = "fixed"
     chunk_size: int = Field(default=1000, gt=0, description="Target characters per chunk")
     chunk_overlap: int = Field(default=150, ge=0, description="Characters of overlap between consecutive chunks")
+    contextual: ContextualChunkingConfig = ContextualChunkingConfig()
 
 
 class VectorStoreConfig(BaseModel):
@@ -212,6 +241,46 @@ class ChatConfig(BaseModel):
     )
 
 
+class CragConfig(BaseModel):
+    """Corrective RAG: grade what was retrieved, retry if it's bad, verify the answer.
+
+    Plain RAG has exactly one shot at retrieval and no opinion about what came
+    back. The relevance floor (`retrieval.min_score`) filters on the reranker's
+    score, but a score is not a judgment about whether a passage *answers the
+    question* -- so a confidently-scored, topically-adjacent passage still
+    reaches the model as though it were an answer. CRAG adds three checks
+    around the existing pipeline, each independently switchable:
+
+    - `grade_documents` — ask the LLM, per retrieved passage, whether it
+      actually helps answer the question, and drop the ones that don't.
+    - `max_retries` — when grading leaves nothing, rewrite the query and search
+      again rather than immediately giving up.
+    - `check_groundedness` — after generating, ask whether the answer is
+      actually supported by the passages, and regenerate if not.
+
+    Every one of these costs LLM round trips on a path that previously had at
+    most one, which is why the whole thing is off by default: `grade_documents`
+    alone is one call per retrieved passage (`retrieval.rerank_top_k` of them).
+    Measure with `python -m rag.eval.answer_eval` before leaving it on.
+    """
+
+    enabled: bool = False
+    grade_documents: bool = True
+    max_retries: int = Field(
+        default=1,
+        ge=0,
+        le=3,
+        description="Extra retrieve attempts with a rewritten query when grading leaves nothing",
+    )
+    check_groundedness: bool = True
+    max_regenerations: int = Field(
+        default=1,
+        ge=0,
+        le=3,
+        description="Regeneration attempts when the groundedness check rejects an answer",
+    )
+
+
 class RagConfig(BaseModel):
     """Top-level config object — the single source of truth for component selection."""
 
@@ -223,6 +292,7 @@ class RagConfig(BaseModel):
     reranker: RerankerConfig = RerankerConfig()
     retrieval: RetrievalConfig = RetrievalConfig()
     chat: ChatConfig = ChatConfig()
+    crag: CragConfig = CragConfig()
 
 
 def load_config(path: str | Path | None = None) -> RagConfig:

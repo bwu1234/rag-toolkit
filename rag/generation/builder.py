@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from rag.config.settings import RagConfig
 from rag.generation.chat_service import ChatService
+from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryRewriter
 from rag.generation.factory import get_llm_client
 from rag.generation.query_rewriter import QueryCondenser
 from rag.retrieval.builder import build_retriever
@@ -34,4 +35,22 @@ def build_chat_service(config: RagConfig) -> ChatService:
         else None
     )
 
-    return ChatService(retriever=retriever, llm_client=llm_client, condenser=condenser)
+    # Same sharing rule again: the CRAG checks are LLM calls like any other, and
+    # each is built only if its own flag is on -- so `grade_documents: false`
+    # with `check_groundedness: true` really does skip grading entirely rather
+    # than constructing a grader nothing calls.
+    crag = config.crag
+    grader = DocumentGrader(llm_client) if crag.enabled and crag.grade_documents else None
+    retry_rewriter = RetryQueryRewriter(llm_client) if crag.enabled and crag.max_retries else None
+    groundedness_checker = GroundednessChecker(llm_client) if crag.enabled and crag.check_groundedness else None
+
+    return ChatService(
+        retriever=retriever,
+        llm_client=llm_client,
+        condenser=condenser,
+        grader=grader,
+        retry_rewriter=retry_rewriter,
+        groundedness_checker=groundedness_checker,
+        max_retries=crag.max_retries if crag.enabled else 0,
+        max_regenerations=crag.max_regenerations if crag.enabled else 0,
+    )

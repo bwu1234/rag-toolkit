@@ -242,3 +242,41 @@ def test_format_answer_notices_reports_all_three_interventions() -> None:
 def test_sidebar_config_summary_includes_query_expansion() -> None:
     summary = sidebar_config_summary(RagConfig())
     assert "Query expansion" in summary
+
+
+def test_format_answer_notices_reports_graded_out_passages() -> None:
+    answer = ChatAnswer(answer="a", graded_out=2)
+
+    [notice] = format_answer_notices(answer)
+
+    assert "2" in notice
+
+
+def test_format_answer_notices_reports_a_crag_retry() -> None:
+    answer = ChatAnswer(answer="a", retry_queries=["a reworded query"], retrieval_attempts=2)
+
+    [notice] = format_answer_notices(answer)
+
+    assert "a reworded query" in notice
+
+
+def test_format_answer_notices_warns_about_an_ungrounded_answer() -> None:
+    answer = ChatAnswer(answer="a", grounded=False)
+
+    [notice] = format_answer_notices(answer)
+
+    assert "unverified" in notice.lower()
+
+
+def test_format_answer_notices_stays_silent_for_a_grounded_answer() -> None:
+    # Captioning the expected outcome would train users to skim past the one
+    # state that needs attention.
+    assert format_answer_notices(ChatAnswer(answer="a", grounded=True)) == []
+    assert format_answer_notices(ChatAnswer(answer="a", grounded=None)) == []
+
+
+def test_sidebar_summary_reports_contextual_chunking_and_crag() -> None:
+    summary = sidebar_config_summary(RagConfig())
+
+    assert "Contextual chunks" in summary
+    assert "CRAG" in summary

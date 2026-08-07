@@ -156,3 +156,37 @@ def test_get_vector_store_factory_rejects_unknown_provider(tmp_path: Path) -> No
 
     with pytest.raises(ValueError, match="Unknown vector store provider"):
         get_vector_store(config, index_dir=tmp_path / "index")
+
+
+# ---------------------------------------------------------------------------
+# Contextual chunking: context round-trips, stored text stays verbatim
+# ---------------------------------------------------------------------------
+
+
+def test_chunk_context_survives_the_round_trip(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    chunk = Chunk(
+        id="a",
+        text="The limit is 1,000 requests per minute.",
+        document_id="api.md",
+        source=Path("api.md"),
+        doc_type="markdown",
+        context="ACS API rate limiting.",
+    )
+    store.upsert([chunk], [_AXIS_X])
+
+    [result] = store.query(_AXIS_X, top_k=1)
+
+    assert result.context == "ACS API rate limiting."
+    assert result.text == "The limit is 1,000 requests per minute.", "stored text must stay the verbatim span"
+    assert result.contextual_text == "ACS API rate limiting.\n\nThe limit is 1,000 requests per minute."
+
+
+def test_chunk_without_context_round_trips_as_none(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    store.upsert([_chunk("a")], [_AXIS_X])
+
+    [result] = store.query(_AXIS_X, top_k=1)
+
+    assert result.context is None
+    assert "context" not in result.metadata, "an absent context must not leak into the metadata grab-bag"

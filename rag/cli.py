@@ -11,10 +11,12 @@ import logging
 from collections import Counter
 
 from rag.chunking.chunkers import get_chunker
+from rag.chunking.contextualizer import ChunkContextualizer
 from rag.chunking.models import Chunk
 from rag.config.settings import load_config
 from rag.embedding.factory import get_embedder
 from rag.generation.builder import build_chat_service
+from rag.generation.factory import get_llm_client
 from rag.ingestion.cleaners import clean_documents, clean_text
 from rag.ingestion.loaders import load_corpus
 from rag.logging_config import configure_logging
@@ -133,6 +135,16 @@ def _cmd_index(args: argparse.Namespace) -> None:
         logger.warning("No chunks produced -- are the documents empty?")
         return
 
+    contextualizer = (
+        ChunkContextualizer(
+            get_llm_client(config.llm),
+            max_document_chars=config.chunking.contextual.max_document_chars,
+            max_context_chars=config.chunking.contextual.max_context_chars,
+        )
+        if config.chunking.contextual.enabled
+        else None
+    )
+
     embedder = get_embedder(config.embedding)
     store = get_vector_store(config.vector_store, paths.index_dir)
     # Always maintain the BM25 text index alongside the vector store so
@@ -148,6 +160,11 @@ def _cmd_index(args: argparse.Namespace) -> None:
     print(f"Embedder: {config.embedding.provider}:{config.embedding.model} ({config.embedding.base_url})")
     print(f"Vector store: {config.vector_store.provider} (collection={config.vector_store.collection_name!r}, dir={paths.index_dir})")
     print(f"Sparse index: BM25 ({bm25_index_path(paths.index_dir).name})")
+    if contextualizer is not None:
+        print(
+            f"Contextual chunking: on ({config.llm.provider}:{config.llm.model}) "
+            "-- one LLM call per changed chunk"
+        )
 
     import hashlib
 
@@ -188,7 +205,19 @@ def _cmd_index(args: argparse.Namespace) -> None:
             # still mark progress for the CLI user
             continue
 
-        vectors = embedder.embed_documents([chunk.text for chunk in to_update])
+        # Contextualize *after* the change check, not before: this is one LLM
+        # call per chunk, and there's no sense paying it for chunks we already
+        # know we're skipping. Note the content hash covers `chunk.text` only,
+        # so flipping `chunking.contextual.enabled` doesn't invalidate an
+        # existing index by itself -- re-index with `--reset` after changing it.
+        if contextualizer is not None:
+            print(f"  generating context for {len(to_update)} chunk(s)...")
+            to_update = contextualizer.contextualize(to_update, documents)
+
+        # Embed the contextualized text (context + chunk) while the store keeps
+        # `chunk.text` verbatim, so retrieval matches on the enriched string and
+        # citations still quote the real source span.
+        vectors = embedder.embed_documents([chunk.contextual_text for chunk in to_update])
         store.upsert(to_update, vectors)
         sparse.upsert(to_update)
         done = min(start + _INDEX_BATCH_SIZE, len(chunks))
@@ -283,7 +312,19 @@ def _cmd_chat(args: argparse.Namespace) -> None:
         for rank, search_query in enumerate(result.search_queries, start=1):
             print(f"  {rank}. {search_query}")
 
+    if result.retry_queries:
+        print(f"Retried {len(result.retry_queries)} time(s) with rewritten queries:")
+        for rank, retry_query in enumerate(result.retry_queries, start=1):
+            print(f"  {rank}. {retry_query}")
+
     print(f"\nAnswer:\n{result.answer}")
+    if result.grounded is False:
+        print(
+            "\n!! This answer FAILED its groundedness check -- the checker judged it "
+            "to state things the retrieved passages don't support. Treat it as unverified."
+        )
+    if result.graded_out:
+        print(f"\n({result.graded_out} passage(s) dropped by the relevance grader)")
     if result.dropped_below_min_score:
         print(
             f"\n({result.dropped_below_min_score} passage(s) withheld below "

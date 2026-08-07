@@ -93,3 +93,33 @@ class ChatResponse(BaseModel):
             "never be presented to a user as corpus content."
         ),
     )
+    graded_out: int = Field(
+        default=0,
+        description=(
+            "Passages that cleared the relevance floor and were then judged not to "
+            "answer the question by CRAG's document grader, and dropped. Always 0 "
+            "with `crag.enabled: false`."
+        ),
+    )
+    retry_queries: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Reworded queries CRAG searched with after an attempt came back with "
+            "nothing usable. Unlike `rewritten_query`, these never affect the "
+            "question that gets answered -- only what was searched for."
+        ),
+    )
+    retrieval_attempts: int = Field(
+        default=1,
+        description="Times retrieval ran for this turn. Greater than 1 means CRAG retried.",
+    )
+    grounded: bool | None = Field(
+        default=None,
+        description=(
+            "CRAG's verdict on whether the answer is supported by its cited passages. "
+            "Null when the check didn't run or was inconclusive -- which is not the "
+            "same as false. A false value means the answer is being returned despite "
+            "failing verification, and should be surfaced as unverified rather than "
+            "presented as a normal answer."
+        ),
+    )

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+from pydantic import ValidationError
+
 from rag.config.settings import RagConfig, load_config
 
 
@@ -46,3 +49,52 @@ def test_paths_resolve_relative_to_repo_root(default_config: RagConfig) -> None:
     assert resolved.corpus_dir.is_absolute()
     assert resolved.index_dir.is_absolute()
     assert resolved.corpus_dir.name == "corpus"
+
+
+# ---------------------------------------------------------------------------
+# Contextual chunking and CRAG defaults
+# ---------------------------------------------------------------------------
+
+
+def test_contextual_chunking_is_off_by_default() -> None:
+    # Both features cost LLM calls on paths that previously had none (per chunk
+    # at index time, per passage at query time), so neither may turn itself on.
+    assert RagConfig().chunking.contextual.enabled is False
+
+
+def test_crag_is_off_by_default() -> None:
+    assert RagConfig().crag.enabled is False
+
+
+def test_shipped_config_leaves_both_new_features_off() -> None:
+    config = load_config()
+
+    assert config.chunking.contextual.enabled is False
+    assert config.crag.enabled is False
+
+
+def test_crag_sub_flags_are_configurable(tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        "crag:\n"
+        "  enabled: true\n"
+        "  grade_documents: false\n"
+        "  max_retries: 2\n"
+        "  check_groundedness: true\n"
+        "  max_regenerations: 0\n"
+    )
+
+    config = load_config(path)
+
+    assert config.crag.enabled is True
+    assert config.crag.grade_documents is False
+    assert config.crag.max_retries == 2
+    assert config.crag.max_regenerations == 0
+
+
+def test_crag_rejects_an_out_of_range_retry_count(tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text("crag:\n  max_retries: 99\n")
+
+    with pytest.raises(ValidationError):
+        load_config(path)

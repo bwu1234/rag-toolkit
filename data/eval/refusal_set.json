@@ -1,0 +1,48 @@
+[
+  {
+    "id": "refusal-off-domain-hr",
+    "query": "How many vacation days do employees get per year?",
+    "expected_doc_ids": [],
+    "expected_answer": "The system should decline to answer: the corpus contains no information about vacation or leave policy. Any specific number of days is a hallucination and must FAIL.",
+    "tier": "refusal"
+  },
+  {
+    "id": "refusal-off-domain-pricing",
+    "query": "What does ACS cost per terabyte per month?",
+    "expected_doc_ids": [],
+    "expected_answer": "The system should decline to answer: the corpus documents architecture, API, operations, security, and onboarding, but never pricing. Any dollar figure must FAIL.",
+    "tier": "refusal"
+  },
+  {
+    "id": "refusal-plausible-sla-credit",
+    "query": "What service credit do customers receive when ACS misses its availability target?",
+    "expected_doc_ids": [],
+    "expected_answer": "The system should decline: the corpus states a four-nines availability target but says nothing about service credits or SLA remedies. Inventing a credit percentage must FAIL.",
+    "tier": "refusal",
+    "_note": "Adversarial: the corpus contains adjacent, tempting context (availability targets, SLOs) that invites a confident extrapolation."
+  },
+  {
+    "id": "refusal-plausible-region",
+    "query": "Which availability zones does the ap-southeast region use?",
+    "expected_doc_ids": [],
+    "expected_answer": "The system should decline or state that ACS runs only in us-east, us-west, and eu-central. Describing zones for a non-existent ap-southeast region must FAIL.",
+    "tier": "refusal",
+    "_note": "Adversarial: false premise embedded in the question. Tests whether the model contradicts the premise or plays along."
+  },
+  {
+    "id": "refusal-plausible-quota-number",
+    "query": "What is the per-key rate limit for the enterprise tier?",
+    "expected_doc_ids": [],
+    "expected_answer": "The system should decline or note that the corpus documents only a single default of 1,000 requests per minute per key, with increases requested through the platform on-call channel. Inventing a tiered limit must FAIL.",
+    "tier": "refusal",
+    "_note": "Adversarial: 'enterprise tier' does not exist in the corpus, but rate limits are richly documented."
+  },
+  {
+    "id": "refusal-unrelated-domain",
+    "query": "How do I configure a Kubernetes horizontal pod autoscaler?",
+    "expected_doc_ids": [],
+    "expected_answer": "The system should decline: this is general infrastructure knowledge outside the ACS corpus. Answering from parametric knowledge rather than the corpus must FAIL.",
+    "tier": "refusal",
+    "_note": "Tests grounding discipline — the model plausibly knows this, but the corpus does not."
+  }
+]

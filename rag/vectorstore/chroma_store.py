@@ -144,6 +144,11 @@ class ChromaVectorStore(VectorStore):
             "source": str(chunk.source),
             "doc_type": chunk.doc_type,
         }
+        # Stored alongside provenance rather than inside `documents`: the
+        # document text must stay the verbatim chunk so citations quote the
+        # source, but the context has to survive the round trip for the prompt.
+        if chunk.context:
+            flat["context"] = chunk.context
         for key, value in chunk.metadata.items():
             if value is None:
                 continue
@@ -158,6 +163,7 @@ class ChromaVectorStore(VectorStore):
         document_id = metadata.pop("document_id", "")
         source = Path(metadata.pop("source", ""))
         doc_type = metadata.pop("doc_type", "")
+        context = metadata.pop("context", None)
 
         return ScoredChunk(
             chunk_id=chunk_id,
@@ -165,6 +171,7 @@ class ChromaVectorStore(VectorStore):
             document_id=document_id,
             source=source,
             doc_type=doc_type,
+            context=context,
             # Chroma reports cosine *distance* (1 - cosine similarity) when
             # the collection is configured with `hnsw:space: cosine`;
             # convert back to the `[0, 1]`-similarity convention `ScoredChunk`

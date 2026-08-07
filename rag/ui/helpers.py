@@ -66,6 +66,17 @@ def format_answer_notices(answer: ChatAnswer) -> list[str]:
         notices.append(
             f"🔻 {answer.dropped_below_min_score} passage(s) withheld — scored below the relevance threshold"
         )
+    if answer.graded_out:
+        notices.append(f"🧹 {answer.graded_out} passage(s) dropped — judged not to answer the question")
+    if answer.retry_queries:
+        notices.append(
+            f"🔁 Retried retrieval {len(answer.retry_queries)} time(s): *{answer.retry_queries[-1]}*"
+        )
+    # Only the failing verdict is worth a caption. "Grounded" is the expected
+    # outcome, and captioning it would train users to skim past the one state
+    # that actually needs their attention.
+    if answer.grounded is False:
+        notices.append("⚠️ This answer failed its groundedness check — treat it as unverified")
     return notices
 
 
@@ -85,6 +96,14 @@ def sidebar_config_summary(config: RagConfig) -> str:
         f"**Retrieve top-k:** {config.retrieval.top_k} → rerank to {config.retrieval.rerank_top_k}",
         f"**Min score:** {config.retrieval.min_score}",
         f"**Query expansion:** `{config.retrieval.expansion.provider}`",
+        f"**Contextual chunks:** `{config.chunking.contextual.enabled}`",
+        f"**CRAG:** `{config.crag.enabled}`"
+        + (
+            f" (grade=`{config.crag.grade_documents}`, retries={config.crag.max_retries}, "
+            f"groundedness=`{config.crag.check_groundedness}`)"
+            if config.crag.enabled
+            else ""
+        ),
         f"**Condense history:** `{config.chat.condense_history}`",
         f"**Vector store:** `{config.vector_store.provider}` "
         f"(`{config.vector_store.collection_name}`)",

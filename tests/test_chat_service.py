@@ -13,6 +13,7 @@ from pathlib import Path
 
 from rag.events import EventSink
 from rag.generation.chat_service import ChatService, Citation
+from rag.generation.crag import GradedChunks
 from rag.generation.query_rewriter import ChatTurn, QueryCondenser
 from rag.retrieval.retriever import RetrievalResult
 from rag.vectorstore.base import ScoredChunk
@@ -399,3 +400,300 @@ def test_no_context_answer_still_reports_the_expanded_queries() -> None:
     service, *_ = _service(results=[], candidate_count=4, dropped=4, search_queries=["q1", "q2"])
 
     assert service.ask("a question").search_queries == ["q1", "q2"]
+
+
+# ---------------------------------------------------------------------------
+# Corrective RAG: grading, retrying, and groundedness
+#
+# `ChatService` owns the loop; the checks themselves are tested in
+# `test_crag.py`. These tests use stubs for all three so the control flow --
+# when a retry happens, which query gets answered, when generation is skipped --
+# is verified without also re-testing reply parsing.
+# ---------------------------------------------------------------------------
+
+
+class _SequenceRetriever:
+    """Returns a different `RetrievalResult` per call, so retries can be observed."""
+
+    def __init__(self, *results: list[ScoredChunk]) -> None:
+        self.results = list(results) or [[]]
+        self.queries: list[str] = []
+
+    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> RetrievalResult:
+        self.queries.append(query)
+        chunks = self.results[min(len(self.queries) - 1, len(self.results) - 1)]
+        return RetrievalResult(chunks=chunks, candidate_count=max(len(chunks), 1))
+
+
+class _FakeGrader:
+    """Keeps chunks whose id is in `keep`; records the query it graded against."""
+
+    def __init__(self, keep: set[str]) -> None:
+        self.keep = keep
+        self.queries: list[str] = []
+
+    def grade(self, query: str, chunks: list[ScoredChunk]) -> GradedChunks:
+        self.queries.append(query)
+        kept = [chunk for chunk in chunks if chunk.chunk_id in self.keep]
+        return GradedChunks(kept=kept, graded_out=len(chunks) - len(kept))
+
+
+class _FakeRewriter:
+    def __init__(self, *rewrites: str) -> None:
+        self.rewrites = list(rewrites)
+        self.calls: list[str] = []
+
+    def rewrite(self, query: str, *, attempt: int = 1) -> str:
+        self.calls.append(query)
+        return self.rewrites[min(len(self.calls) - 1, len(self.rewrites) - 1)]
+
+
+class _FakeChecker:
+    """Returns canned verdicts in order (repeating the last)."""
+
+    def __init__(self, *verdicts: bool | None) -> None:
+        self.verdicts = list(verdicts)
+        self.calls: list[tuple[str, str]] = []
+
+    def check(self, query: str, chunks: list[ScoredChunk], answer: str) -> bool | None:
+        self.calls.append((query, answer))
+        return self.verdicts[min(len(self.calls) - 1, len(self.verdicts) - 1)]
+
+
+def test_crag_off_leaves_every_corrective_field_at_its_neutral_value() -> None:
+    service, *_ = _service()
+
+    answer = service.ask("a question")
+
+    assert answer.graded_out == 0
+    assert answer.retry_queries == []
+    assert answer.retrieval_attempts == 1
+    assert answer.grounded is None
+
+
+def test_grader_drops_irrelevant_passages_before_they_become_citations() -> None:
+    chunks = [_scored("keep", "relevant"), _scored("drop", "irrelevant")]
+    retriever = _FakeRetriever(chunks)
+    llm_client = _FakeLLMClient()
+    service = ChatService(
+        retriever=retriever,  # type: ignore[arg-type]
+        llm_client=llm_client,  # type: ignore[arg-type]
+        grader=_FakeGrader({"keep"}),  # type: ignore[arg-type]
+    )
+
+    answer = service.ask("a question")
+
+    assert [c.chunk_id for c in answer.citations] == ["keep"]
+    assert answer.graded_out == 1
+    [(prompt, _system)] = llm_client.calls
+    assert "irrelevant" not in prompt, "a graded-out passage must not reach the prompt"
+
+
+def test_grader_grades_against_the_users_question() -> None:
+    grader = _FakeGrader({"a"})
+    service = ChatService(
+        retriever=_FakeRetriever([_scored("a")]),  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient(),  # type: ignore[arg-type]
+        grader=grader,  # type: ignore[arg-type]
+    )
+
+    service.ask("the user's question")
+
+    assert grader.queries == ["the user's question"]
+
+
+def test_grading_out_everything_skips_generation_and_explains_why() -> None:
+    llm_client = _FakeLLMClient()
+    service = ChatService(
+        retriever=_FakeRetriever([_scored("a"), _scored("b")]),  # type: ignore[arg-type]
+        llm_client=llm_client,  # type: ignore[arg-type]
+        grader=_FakeGrader(set()),  # type: ignore[arg-type]
+    )
+
+    answer = service.ask("a question")
+
+    assert answer.citations == []
+    assert answer.graded_out == 2
+    assert llm_client.calls == [], "nothing survived grading, so there is nothing to ground an answer in"
+    assert "answer your question" in answer.answer
+
+
+def test_graded_out_answer_is_distinct_from_the_min_score_answer() -> None:
+    graded_out_service = ChatService(
+        retriever=_FakeRetriever([_scored("a")]),  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient(),  # type: ignore[arg-type]
+        grader=_FakeGrader(set()),  # type: ignore[arg-type]
+    )
+    floor_service, *_ = _service(results=[], candidate_count=5, dropped=5)
+
+    assert graded_out_service.ask("q").answer != floor_service.ask("q").answer
+
+
+def test_retry_searches_again_with_a_rewritten_query() -> None:
+    # First attempt retrieves only a chunk the grader rejects; the second
+    # retrieves one it keeps.
+    retriever = _SequenceRetriever([_scored("drop")], [_scored("keep")])
+    rewriter = _FakeRewriter("a reworded query")
+    service = ChatService(
+        retriever=retriever,  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient(),  # type: ignore[arg-type]
+        grader=_FakeGrader({"keep"}),  # type: ignore[arg-type]
+        retry_rewriter=rewriter,  # type: ignore[arg-type]
+        max_retries=1,
+    )
+
+    answer = service.ask("the original question")
+
+    assert retriever.queries == ["the original question", "a reworded query"]
+    assert answer.retry_queries == ["a reworded query"]
+    assert answer.retrieval_attempts == 2
+    assert [c.chunk_id for c in answer.citations] == ["keep"]
+    assert answer.graded_out == 1, "the first attempt's rejection still counts"
+
+
+def test_generation_answers_the_users_question_not_the_retry_rewrite() -> None:
+    llm_client = _FakeLLMClient()
+    service = ChatService(
+        retriever=_SequenceRetriever([_scored("drop")], [_scored("keep")]),  # type: ignore[arg-type]
+        llm_client=llm_client,  # type: ignore[arg-type]
+        grader=_FakeGrader({"keep"}),  # type: ignore[arg-type]
+        retry_rewriter=_FakeRewriter("a reworded query"),  # type: ignore[arg-type]
+        max_retries=1,
+    )
+
+    service.ask("the original question")
+
+    [(prompt, _system)] = llm_client.calls
+    assert "the original question" in prompt
+    assert "a reworded query" not in prompt
+
+
+def test_retry_stops_when_the_rewrite_reproduces_an_already_searched_query() -> None:
+    retriever = _SequenceRetriever([])
+    service = ChatService(
+        retriever=retriever,  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient(),  # type: ignore[arg-type]
+        retry_rewriter=_FakeRewriter("the original question"),  # type: ignore[arg-type]
+        max_retries=2,
+    )
+
+    answer = service.ask("the original question")
+
+    assert retriever.queries == ["the original question"], "re-running an identical query is pure cost"
+    assert answer.retry_queries == []
+
+
+def test_retries_are_bounded_by_max_retries() -> None:
+    retriever = _SequenceRetriever([])
+    service = ChatService(
+        retriever=retriever,  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient(),  # type: ignore[arg-type]
+        retry_rewriter=_FakeRewriter("first rewrite", "second rewrite", "third rewrite"),  # type: ignore[arg-type]
+        max_retries=2,
+    )
+
+    answer = service.ask("the original question")
+
+    assert retriever.queries == ["the original question", "first rewrite", "second rewrite"]
+    assert answer.retrieval_attempts == 3
+
+
+def test_no_rewriter_means_no_retry_even_with_max_retries_set() -> None:
+    retriever = _SequenceRetriever([])
+    service = ChatService(
+        retriever=retriever,  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient(),  # type: ignore[arg-type]
+        max_retries=2,
+    )
+
+    service.ask("a question")
+
+    assert retriever.queries == ["a question"]
+
+
+def test_ungrounded_answer_is_regenerated_under_a_stricter_prompt() -> None:
+    llm_client = _FakeLLMClient()
+    service = ChatService(
+        retriever=_FakeRetriever([_scored("a")]),  # type: ignore[arg-type]
+        llm_client=llm_client,  # type: ignore[arg-type]
+        groundedness_checker=_FakeChecker(False, True),  # type: ignore[arg-type]
+        max_regenerations=1,
+    )
+
+    answer = service.ask("a question")
+
+    assert len(llm_client.calls) == 2, "one generation plus one regeneration"
+    first_system, second_system = llm_client.calls[0][1], llm_client.calls[1][1]
+    assert second_system != first_system
+    assert second_system is not None and "previous attempt" in second_system
+    assert answer.grounded is True
+
+
+def test_a_persistently_ungrounded_answer_is_returned_and_flagged() -> None:
+    llm_client = _FakeLLMClient()
+    service = ChatService(
+        retriever=_FakeRetriever([_scored("a")]),  # type: ignore[arg-type]
+        llm_client=llm_client,  # type: ignore[arg-type]
+        groundedness_checker=_FakeChecker(False),  # type: ignore[arg-type]
+        max_regenerations=1,
+    )
+
+    answer = service.ask("a question")
+
+    assert answer.grounded is False
+    assert answer.answer, "withholding the answer entirely would rest a refusal on one weak signal"
+    assert len(llm_client.calls) == 2, "regeneration is bounded by max_regenerations"
+
+
+def test_an_inconclusive_groundedness_verdict_does_not_trigger_regeneration() -> None:
+    llm_client = _FakeLLMClient()
+    service = ChatService(
+        retriever=_FakeRetriever([_scored("a")]),  # type: ignore[arg-type]
+        llm_client=llm_client,  # type: ignore[arg-type]
+        groundedness_checker=_FakeChecker(None),  # type: ignore[arg-type]
+        max_regenerations=1,
+    )
+
+    answer = service.ask("a question")
+
+    assert answer.grounded is None
+    assert len(llm_client.calls) == 1
+
+
+def test_groundedness_is_checked_against_the_users_question() -> None:
+    checker = _FakeChecker(True)
+    service = ChatService(
+        retriever=_FakeRetriever([_scored("a")]),  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient("the generated answer"),  # type: ignore[arg-type]
+        groundedness_checker=checker,  # type: ignore[arg-type]
+    )
+
+    service.ask("the user's question")
+
+    assert checker.calls == [("the user's question", "the generated answer")]
+
+
+def test_crag_stages_are_reported_as_pipeline_events() -> None:
+    service = ChatService(
+        retriever=_SequenceRetriever([_scored("drop")], [_scored("keep")]),  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient(),  # type: ignore[arg-type]
+        grader=_FakeGrader({"keep"}),  # type: ignore[arg-type]
+        retry_rewriter=_FakeRewriter("a reworded query"),  # type: ignore[arg-type]
+        groundedness_checker=_FakeChecker(False, True),  # type: ignore[arg-type]
+        max_retries=1,
+        max_regenerations=1,
+    )
+
+    events = []
+    service.ask("a question", on_event=events.append)
+
+    assert [event.stage for event in events] == [
+        "crag_grade",
+        "crag_retry",
+        "crag_grade",
+        "prompt",
+        "generate",
+        "crag_groundedness",
+        "regenerate",
+        "crag_groundedness",
+    ]

@@ -32,6 +32,10 @@ class ScoredChunk:
             L2, inner product); adapters are responsible for converting to
             this common similarity convention so downstream code never has to
             know which metric the underlying store used.
+        context: The chunk's generated document context, when contextual
+            chunking produced one (see `rag.chunking.contextualizer`). Carried
+            through retrieval so the answering model can be shown where a
+            passage sits in its document -- `text` remains the verbatim span.
     """
 
     chunk_id: str
@@ -41,6 +45,13 @@ class ScoredChunk:
     doc_type: str
     score: float
     metadata: dict[str, Any] = field(default_factory=dict)
+    context: str | None = None
+
+    @property
+    def contextual_text(self) -> str:
+        """Context and chunk text as one string -- mirrors `Chunk.contextual_text`."""
+
+        return f"{self.context}\n\n{self.text}" if self.context else self.text
 
 
 class VectorStore(ABC):

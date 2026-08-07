@@ -104,6 +104,7 @@ class BM25Index(SparseIndex):
                 "source": str(chunk.source),
                 "doc_type": chunk.doc_type,
                 "metadata": dict(chunk.metadata),
+                "context": chunk.context,
             }
         self._dirty = True
         logger.info("Upserted %d chunk(s) into BM25 index (%d total)", len(chunks), len(self._records))
@@ -156,6 +157,7 @@ class BM25Index(SparseIndex):
                     # RRF only uses rank; norm is for display / NoOp rerank paths.
                     score=norm,
                     metadata=dict(record["metadata"]),
+                    context=record.get("context"),
                 )
             )
         return results
@@ -178,6 +180,19 @@ class BM25Index(SparseIndex):
         self._ensure_index()
         self._persist()
 
+    @staticmethod
+    def _index_text(record: dict[str, Any]) -> list[str]:
+        """Tokens for one record: its context (if any) plus its text.
+
+        Mirrors `Chunk.contextual_text`, but reads the persisted record rather
+        than a `Chunk` -- the on-disk index is the only place BM25 sees chunks
+        after indexing, and older index files predate the `context` key.
+        """
+
+        context = record.get("context")
+        text = record["text"]
+        return tokenize(f"{context}\n\n{text}" if context else text)
+
     def _ensure_index(self) -> None:
         if not self._dirty and self._bm25 is not None:
             return
@@ -188,7 +203,11 @@ class BM25Index(SparseIndex):
             return
 
         self._ordered_ids = list(self._records.keys())
-        corpus = [tokenize(self._records[cid]["text"]) for cid in self._ordered_ids]
+        # Tokenize the *contextualized* text so keyword search benefits from
+        # contextual chunking too -- a chunk whose own words never say "ACS"
+        # is unreachable by BM25 until its context supplies the term. Records
+        # written before contextual chunking existed simply have no context.
+        corpus = [self._index_text(self._records[cid]) for cid in self._ordered_ids]
         # BM25Okapi requires a non-empty corpus; empty token docs are fine.
         self._bm25 = BM25Okapi(corpus)
         # Prevent rank_bm25 IDF <= 0 bug on small corpora or high-doc-frequency terms

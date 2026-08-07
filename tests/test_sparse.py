@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from rag.chunking.models import Chunk
@@ -117,3 +118,76 @@ def test_bm25_scores_prefer_rarer_exact_terms(tmp_path: Path) -> None:
     )
     results = index.query("ZX9Q-INTERNAL", top_k=2)
     assert results[0].chunk_id == "rare"
+
+
+# ---------------------------------------------------------------------------
+# Contextual chunking: BM25 matches on context, returns verbatim text
+# ---------------------------------------------------------------------------
+
+
+def _contextual_chunk(chunk_id: str, text: str, context: str) -> Chunk:
+    return Chunk(
+        id=chunk_id,
+        text=text,
+        document_id="doc.md",
+        source=Path("/tmp/doc.md"),
+        doc_type="markdown",
+        metadata={"title": "Doc"},
+        context=context,
+    )
+
+
+def test_bm25_matches_terms_that_only_appear_in_a_chunks_context(tmp_path: Path) -> None:
+    # The exact case contextual retrieval exists for: the chunk never says
+    # "ACS", so without its context this query cannot reach it at all.
+    index = BM25Index(tmp_path / "bm25_index.json")
+    index.upsert(
+        [
+            _contextual_chunk("a", "The limit is 1,000 requests per minute.", "ACS API rate limiting."),
+            _chunk("b", "Shipping takes three to five business days."),
+        ]
+    )
+
+    results = index.query("ACS rate limiting", top_k=3)
+
+    assert [r.chunk_id for r in results] == ["a"]
+
+
+def test_bm25_returns_verbatim_chunk_text_not_the_contextualized_string(tmp_path: Path) -> None:
+    index = BM25Index(tmp_path / "bm25_index.json")
+    index.upsert([_contextual_chunk("a", "The limit is 1,000 requests per minute.", "ACS API rate limiting.")])
+
+    [result] = index.query("ACS", top_k=3)
+
+    assert result.text == "The limit is 1,000 requests per minute.", "citations must quote the source span"
+    assert result.context == "ACS API rate limiting."
+
+
+def test_bm25_context_survives_persistence(tmp_path: Path) -> None:
+    path = tmp_path / "bm25_index.json"
+    index = BM25Index(path)
+    index.upsert([_contextual_chunk("a", "The limit is 1,000 requests per minute.", "ACS API rate limiting.")])
+    index.flush()
+
+    reloaded = BM25Index(path)
+    [result] = reloaded.query("ACS", top_k=3)
+
+    assert result.context == "ACS API rate limiting."
+
+
+def test_bm25_handles_records_written_before_contextual_chunking_existed(tmp_path: Path) -> None:
+    # An index file from an older build has no "context" key at all; loading it
+    # must keep working rather than raising a KeyError on every query.
+    path = tmp_path / "bm25_index.json"
+    index = BM25Index(path)
+    index.upsert([_chunk("a", "The refund policy allows returns within thirty days.")])
+    index.flush()
+    raw = json.loads(path.read_text())
+    for record in (raw["records"] if isinstance(raw, dict) and "records" in raw else raw).values():
+        record.pop("context", None)
+    path.write_text(json.dumps(raw))
+
+    [result] = BM25Index(path).query("refund policy", top_k=3)
+
+    assert result.context is None
+    assert result.text.startswith("The refund policy")

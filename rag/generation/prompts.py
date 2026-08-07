@@ -19,6 +19,21 @@ SYSTEM_PROMPT = (
     "plainly instead of guessing or using outside knowledge."
 )
 
+# Used only to regenerate an answer the groundedness check rejected (see
+# `rag.generation.crag.GroundednessChecker`). Same instruction, stated as a
+# correction: the model has already produced an unsupported answer once, so
+# repeating the original prompt verbatim mostly reproduces it.
+REGROUND_SYSTEM_PROMPT = (
+    SYSTEM_PROMPT + " "
+    "Your previous attempt at this question stated things the passages do not "
+    "support. Write a new answer that stays strictly inside them. Every "
+    "specific -- every number, name, condition, and procedure -- must appear in "
+    "a passage you cite for it. Where the passages are silent or partial, say "
+    "so explicitly rather than filling the gap; a short answer that stops at "
+    "the evidence is correct, and a complete-sounding one that goes past it is "
+    "not."
+)
+
 
 def _citation_label(chunk: ScoredChunk) -> str:
     """Build a human-readable source label, including a page number if known."""
@@ -35,10 +50,18 @@ def build_rag_prompt(query: str, chunks: list[ScoredChunk]) -> str:
     specific passages. Numbering here is the single source of truth for the
     `[n]` markers the system prompt asks the model to use, and for mapping a
     cited number back to a `Citation` in `ChatService`.
+
+    A chunk carrying generated context (see `rag.chunking.contextualizer`) gets
+    it on its own labeled line rather than run together with the passage text.
+    The context is a model's description of where the excerpt sits, not corpus
+    content, and the answering model shouldn't be able to quote or cite it as
+    though it were -- so the boundary is made explicit rather than implied.
     """
 
     passages = "\n\n".join(
-        f"Passage [{index}] (source: {_citation_label(chunk)}):\n{chunk.text}"
+        f"Passage [{index}] (source: {_citation_label(chunk)}):\n"
+        + (f"Context: {chunk.context}\n" if chunk.context else "")
+        + chunk.text
         for index, chunk in enumerate(chunks, start=1)
     )
 

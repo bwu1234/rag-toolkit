@@ -54,6 +54,10 @@ def _to_response(answer: ChatAnswer) -> ChatResponse:
         rewritten_query=answer.rewritten_query,
         dropped_below_min_score=answer.dropped_below_min_score,
         search_queries=answer.search_queries,
+        graded_out=answer.graded_out,
+        retry_queries=answer.retry_queries,
+        retrieval_attempts=answer.retrieval_attempts,
+        grounded=answer.grounded,
     )
 
 

@@ -1,23 +1,305 @@
 [
   {
-    "id": "sample-001",
-    "query": "What is the return policy?",
-    "expected_doc_ids": ["policies.pdf"],
-    "expected_answer": "The return policy allows returns within 30 days of purchase with a receipt.",
-    "_note": "Replace expected_doc_ids with actual document ids from your corpus, and expected_answer with a reference answer."
+    "id": "auth-header",
+    "query": "What HTTP header do I use to authenticate an ACS API request?",
+    "expected_doc_ids": ["api_reference.md"],
+    "expected_answer": "An Authorization header of the form 'Authorization: Bearer <api-key>'. API keys are scoped to a single project and region.",
+    "tier": "lookup"
   },
   {
-    "id": "sample-002",
-    "query": "How do I reset my password?",
-    "expected_doc_ids": ["user-guide.pdf", "faq.md"],
-    "expected_answer": "To reset your password, go to the login page and click 'Forgot password', then follow the instructions sent to your email.",
-    "_note": "expected_doc_ids accepts multiple documents — any retrieved chunk whose document_id appears in this list counts as a hit."
+    "id": "api-key-request",
+    "query": "How do I get an API key for ACS?",
+    "expected_doc_ids": ["faq.txt"],
+    "expected_answer": "Request one through the platform self-service portal under 'Storage > API Keys'. Keys are scoped to a single project and region, and approval for internal projects is automatic, usually under five minutes.",
+    "tier": "lookup"
   },
   {
-    "id": "sample-003",
-    "query": "What are the system requirements?",
-    "expected_doc_ids": ["installation-guide.pdf"],
-    "expected_answer": "The system requires at least 8 GB of RAM and a 64-bit operating system.",
-    "_note": "This sample has no expected_doc_ids match in a default empty corpus — it will count as a miss, which is the expected behavior."
+    "id": "rate-limit-default",
+    "query": "What is the default rate limit per API key?",
+    "expected_doc_ids": ["api_reference.md", "architecture_overview.md"],
+    "expected_answer": "1,000 requests per minute per API key, enforced at the Gateway with a token-bucket algorithm.",
+    "tier": "lookup"
+  },
+  {
+    "id": "rate-limit-exceeded",
+    "query": "What happens if I exceed my rate limit?",
+    "expected_doc_ids": ["faq.txt", "api_reference.md"],
+    "expected_answer": "The Gateway returns HTTP 429 with a Retry-After header. Clients should honor Retry-After and back off exponentially; sustained violations are reported to the project owner.",
+    "tier": "lookup"
+  },
+  {
+    "id": "rate-limit-raise-paraphrase",
+    "query": "How do I raise my throttling ceiling?",
+    "expected_doc_ids": ["architecture_overview.md", "faq.txt"],
+    "expected_answer": "Teams can request a higher rate limit through the platform on-call channel.",
+    "tier": "paraphrase",
+    "_note": "Deliberate vocabulary gap: 'throttling ceiling' appears nowhere in the corpus, which says 'rate limit'. Tests dense retrieval and query expansion; BM25 alone should struggle."
+  },
+  {
+    "id": "multipart-threshold",
+    "query": "When should I use multipart upload instead of a normal upload?",
+    "expected_doc_ids": ["api_reference.md", "faq.txt"],
+    "expected_answer": "Multipart is required for objects larger than 100 MB and recommended for reliability on high-latency networks, so a network interruption does not require restarting the whole transfer.",
+    "tier": "lookup"
+  },
+  {
+    "id": "max-object-size",
+    "query": "What is the maximum object size?",
+    "expected_doc_ids": ["faq.txt"],
+    "expected_answer": "A single object can be up to 5 TB.",
+    "tier": "lookup"
+  },
+  {
+    "id": "regions",
+    "query": "Which regions is ACS available in?",
+    "expected_doc_ids": ["faq.txt"],
+    "expected_answer": "us-east, us-west, and eu-central. Cross-region replication is available on request for compliance-sensitive workloads.",
+    "tier": "lookup"
+  },
+  {
+    "id": "soft-delete-window",
+    "query": "How long are deleted objects retained before they are permanently removed?",
+    "expected_doc_ids": ["faq.txt", "object_lifecycle.md"],
+    "expected_answer": "30 days in a soft-delete state, after which they are permanently purged from the metadata store and every shard replica. Purge is irreversible.",
+    "tier": "lookup"
+  },
+  {
+    "id": "restore-endpoint",
+    "query": "Which endpoint restores a soft-deleted object?",
+    "expected_doc_ids": ["object_lifecycle.md"],
+    "expected_answer": "POST /v1/objects/{object_id}/restore, valid within the 30-day retention window. Restore clears the deleted_at state and returns the object to normal visibility.",
+    "tier": "lookup"
+  },
+  {
+    "id": "restore-paraphrase",
+    "query": "Can I get my erased files back?",
+    "expected_doc_ids": ["object_lifecycle.md", "faq.txt"],
+    "expected_answer": "Yes, within the 30-day soft-delete window. Objects can be restored via the restore endpoint or by filing a request with the storage on-call rotation. After 30 days the purge is irreversible.",
+    "tier": "paraphrase",
+    "_note": "Casual phrasing ('erased files') vs. corpus wording ('soft delete', 'deleted objects', 'restore'). Known weak spot — surfaced the right document but the wrong chunk on earlier runs."
+  },
+  {
+    "id": "restore-410",
+    "query": "What happens if a restore is attempted after the shard has already reclaimed the storage?",
+    "expected_doc_ids": ["object_lifecycle.md"],
+    "expected_answer": "The restore fails with 410 Gone and an incident ticket should be opened.",
+    "tier": "lookup"
+  },
+  {
+    "id": "replication-status-values",
+    "query": "What are the possible replication status values for an object?",
+    "expected_doc_ids": ["object_lifecycle.md"],
+    "expected_answer": "pending (written to the primary shard, still replicating), replicated (at least three replicas committed), degraded (one or more replicas unavailable or lagging), and failed (replication did not complete; manual recovery required).",
+    "tier": "lookup"
+  },
+  {
+    "id": "replica-count",
+    "query": "How many copies of each object does ACS keep?",
+    "expected_doc_ids": ["architecture_overview.md", "object_lifecycle.md"],
+    "expected_answer": "Three replicas, spread across at least two availability zones, all written before a write is acknowledged to the client.",
+    "tier": "paraphrase"
+  },
+  {
+    "id": "durability-target",
+    "query": "What durability and availability does ACS target?",
+    "expected_doc_ids": ["architecture_overview.md"],
+    "expected_answer": "Eleven nines of durability and four nines of availability per region.",
+    "tier": "lookup"
+  },
+  {
+    "id": "shard-manager-role",
+    "query": "What does the Shard Manager do?",
+    "expected_doc_ids": ["architecture_overview.md"],
+    "expected_answer": "It tracks which storage shard owns which object key, maintains a consistent-hashing ring, and coordinates rebalancing when shards are added or removed. Clients never talk to it directly — the Gateway consults it per request and caches the result briefly.",
+    "tier": "lookup"
+  },
+  {
+    "id": "upload-request-flow",
+    "query": "Walk me through what happens when a client uploads an object.",
+    "expected_doc_ids": ["architecture_overview.md", "object_lifecycle.md"],
+    "expected_answer": "The Gateway authenticates the API key and checks rate limits, asks the Shard Manager which shard owns the key, forwards the request to that shard, and writes a metadata record to the Metadata Store once the shard confirms the write. The response includes object_id, location, checksum, and an initial version token.",
+    "tier": "multi_doc"
+  },
+  {
+    "id": "metadata-separation-rationale",
+    "query": "Why is object metadata stored separately from the object bytes?",
+    "expected_doc_ids": ["architecture_overview.md", "performance_and_scaling.md"],
+    "expected_answer": "So each layer scales independently and metadata queries stay fast without touching shard storage. The metadata store is the source of truth for routing and permissions; shard bytes are authoritative for reads.",
+    "tier": "multi_doc"
+  },
+  {
+    "id": "encryption-at-rest",
+    "query": "How is data encrypted?",
+    "expected_doc_ids": ["security_and_compliance.md", "faq.txt"],
+    "expected_answer": "Objects are encrypted at rest with AES-256 using keys managed by the platform Key Management Service and rotated per security policy; traffic between clients and the Gateway is encrypted in transit with TLS 1.3.",
+    "tier": "lookup"
+  },
+  {
+    "id": "tls-version",
+    "query": "What TLS version does the Gateway require?",
+    "expected_doc_ids": ["security_and_compliance.md", "faq.txt"],
+    "expected_answer": "TLS 1.3. The Gateway enforces strong cipher suites and rejects weak or expired certificates.",
+    "tier": "lookup"
+  },
+  {
+    "id": "audit-logged-actions",
+    "query": "Which actions produce audit log entries?",
+    "expected_doc_ids": ["security_and_compliance.md"],
+    "expected_answer": "Object create/read/update/delete, metadata changes, access-control changes, restore and purge operations, and failed authentication or authorization attempts. Logs go to the central security log service.",
+    "tier": "lookup"
+  },
+  {
+    "id": "prevent-overwrite-paraphrase",
+    "query": "How do I stop anyone from overwriting or deleting objects in a regulated bucket?",
+    "expected_doc_ids": ["security_and_compliance.md", "object_lifecycle.md"],
+    "expected_answer": "Enable immutable storage mode. It prevents overwrite and delete operations unless a higher-privilege system user runs an exception workflow, and it is recommended for compliance-sensitive workloads.",
+    "tier": "paraphrase"
+  },
+  {
+    "id": "customer-managed-keys",
+    "query": "Can we bring our own encryption keys?",
+    "expected_doc_ids": ["security_and_compliance.md"],
+    "expected_answer": "Yes — customer-managed encryption keys are supported as a compliance control for high-security workloads.",
+    "tier": "paraphrase"
+  },
+  {
+    "id": "error-403",
+    "query": "What does a 403 response from the ACS API mean?",
+    "expected_doc_ids": ["api_reference.md"],
+    "expected_answer": "403 Forbidden means the API key lacks permission for the requested operation (as distinct from 401, which means the key is invalid or missing).",
+    "tier": "lookup"
+  },
+  {
+    "id": "error-409",
+    "query": "When would I get a 409 Conflict?",
+    "expected_doc_ids": ["api_reference.md"],
+    "expected_answer": "On a multipart upload conflict or a duplicate object key.",
+    "tier": "lookup"
+  },
+  {
+    "id": "health-check",
+    "query": "How do I check whether the service is healthy?",
+    "expected_doc_ids": ["api_reference.md", "operational_runbook.md"],
+    "expected_answer": "Call GET /v1/health. A healthy response covers Gateway connectivity, metadata store reachability, Shard Manager health, and replica count within tolerance — useful for isolating which subsystem is failing during an incident.",
+    "tier": "multi_doc"
+  },
+  {
+    "id": "alert-thresholds",
+    "query": "What shard read latency should trigger an alert?",
+    "expected_doc_ids": ["operational_runbook.md"],
+    "expected_answer": "Shard read latency p95 above 500 ms.",
+    "tier": "lookup"
+  },
+  {
+    "id": "incident-triage-steps",
+    "query": "What are the first steps when a storage alert fires?",
+    "expected_doc_ids": ["operational_runbook.md"],
+    "expected_answer": "Triage the alert to identify the failing subsystem, then check the health endpoint, recent logs, and deployment status before drilling into the Gateway, shards, or metadata store depending on what is failing.",
+    "tier": "lookup"
+  },
+  {
+    "id": "urgent-issue-channel",
+    "query": "Where do I report an urgent production issue?",
+    "expected_doc_ids": ["operational_runbook.md", "faq.txt", "onboarding_handbook.pdf#page=3"],
+    "expected_answer": "The #acs-oncall channel is for urgent, production-affecting issues; non-urgent bugs go to a ticket in the PLATFORM-STORAGE project.",
+    "tier": "multi_doc"
+  },
+  {
+    "id": "metadata-store-recovery",
+    "query": "What should I do if the metadata store is returning slow queries?",
+    "expected_doc_ids": ["operational_runbook.md"],
+    "expected_answer": "Check query execution plans for slow listing or metadata update operations, clear query caches if stale indexes are causing failures, and only fail open if metadata reads are non-critical and it is safe under platform policy.",
+    "tier": "lookup"
+  },
+  {
+    "id": "slow-uploads-paraphrase",
+    "query": "Uploads are taking way too long. Where do I start looking?",
+    "expected_doc_ids": ["performance_and_scaling.md", "operational_runbook.md"],
+    "expected_answer": "Investigate Gateway CPU or network saturation, metadata store slow queries or lock contention, shard disk pressure or I/O queue depth, slow or failed replication, and rate-limit throttling causing client retries. Use coordinated tracing across Gateway, Shard Manager, and metadata store to find the bottleneck.",
+    "tier": "paraphrase"
+  },
+  {
+    "id": "latency-targets",
+    "query": "What are the target GET and PUT latencies?",
+    "expected_doc_ids": ["performance_and_scaling.md"],
+    "expected_answer": "GET under 200 ms for cached shard reads and PUT under 300 ms for small objects, with p95 list latency under 400 ms for metadata queries.",
+    "tier": "lookup"
+  },
+  {
+    "id": "capacity-headroom",
+    "query": "How much free capacity should a shard cluster keep?",
+    "expected_doc_ids": ["performance_and_scaling.md"],
+    "expected_answer": "At least 20% free capacity, to absorb sudden growth and failed node rebuilds.",
+    "tier": "lookup"
+  },
+  {
+    "id": "rebalancing-triggers",
+    "query": "What triggers shard rebalancing?",
+    "expected_doc_ids": ["performance_and_scaling.md"],
+    "expected_answer": "Adding a new shard, removing a shard for maintenance, disk occupancy exceeding the configured threshold, or an uneven object key distribution. Rebalancing runs incrementally in the background to avoid load spikes.",
+    "tier": "lookup"
+  },
+  {
+    "id": "gateway-caching",
+    "query": "What does the Gateway cache to reduce load?",
+    "expected_doc_ids": ["performance_and_scaling.md", "architecture_overview.md"],
+    "expected_answer": "Sharded caches for hot object location lookups and metadata query results, kept short-lived to preserve consistency while reducing load on the Shard Manager and metadata store.",
+    "tier": "multi_doc"
+  },
+  {
+    "id": "onboarding-dev-cluster",
+    "query": "How do I bring up the local dev cluster?",
+    "expected_doc_ids": ["onboarding_handbook.pdf#page=2"],
+    "expected_answer": "Use the dev-cluster docker-compose setup in infra/dev-cluster: 'make dev-up' to start it and 'make dev-down' to tear it down. Run 'make bootstrap' first to install toolchain dependencies and pre-commit hooks.",
+    "tier": "lookup"
+  },
+  {
+    "id": "onboarding-review-signoff",
+    "query": "Who has to approve a change to replication code?",
+    "expected_doc_ids": ["onboarding_handbook.pdf#page=2"],
+    "expected_answer": "Storage-shard and replication changes need sign-off from a senior engineer, on top of the usual requirement of at least one approval from a team member other than the author, because bugs there can affect data durability.",
+    "tier": "lookup"
+  },
+  {
+    "id": "onboarding-oncall-start",
+    "query": "When do new engineers start taking on-call shifts?",
+    "expected_doc_ids": ["onboarding_handbook.pdf#page=3"],
+    "expected_answer": "After their first month, and only after shadowing an experienced on-call engineer for one full rotation. Rotations are weekly with handoffs Tuesdays at 10:00 local time.",
+    "tier": "lookup"
+  },
+  {
+    "id": "onboarding-page-ack",
+    "query": "How quickly do I need to acknowledge a page?",
+    "expected_doc_ids": ["onboarding_handbook.pdf#page=3"],
+    "expected_answer": "Within five minutes. Start from the runbook linked on the alert, and escalate early to the secondary on-call rather than investigating alone for too long.",
+    "tier": "lookup"
+  },
+  {
+    "id": "onboarding-access-delay",
+    "query": "Why does staging cluster access take longer to be granted than other accounts?",
+    "expected_doc_ids": ["onboarding_handbook.pdf#page=1"],
+    "expected_answer": "Cluster access requires a security review, so it can take up to one business day, while most other access grants complete within a few hours.",
+    "tier": "lookup"
+  },
+  {
+    "id": "onboarding-key-repos",
+    "query": "Which services should a new engineer learn first?",
+    "expected_doc_ids": ["onboarding_handbook.pdf#page=4"],
+    "expected_answer": "gateway-service (ingress, auth, rate limiting, routing), shard-manager (shard ownership, consistent hashing, rebalancing), storage-shard (object storage, replication, local disk durability), and metadata-store (metadata, listings, access control, policy enforcement) — following the flow Gateway -> Shard Manager -> Storage Shard -> Metadata Store.",
+    "tier": "lookup"
+  },
+  {
+    "id": "onboarding-week-two",
+    "query": "What should I try to contribute during my second week?",
+    "expected_doc_ids": ["onboarding_handbook.pdf#page=5"],
+    "expected_answer": "A small documentation fix or a low-risk reliability improvement, to learn the codebase and the release process with an early feedback cycle.",
+    "tier": "lookup"
+  },
+  {
+    "id": "staging-key-handling",
+    "query": "What should I do if I think my staging API key has leaked?",
+    "expected_doc_ids": ["onboarding_handbook.pdf#page=1"],
+    "expected_answer": "Rotate it immediately. Staging keys should be treated like passwords and never committed to source control; production keys are issued separately and require manager approval.",
+    "tier": "lookup"
   }
 ]

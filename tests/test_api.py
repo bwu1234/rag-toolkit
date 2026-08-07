@@ -198,3 +198,36 @@ def test_chat_response_reports_the_expanded_search_queries() -> None:
 
 def test_chat_response_search_queries_defaults_to_empty(client: TestClient) -> None:
     assert client.post("/chat", json={"query": "q"}).json()["search_queries"] == []
+
+
+def test_chat_response_reports_the_crag_fields() -> None:
+    fake = _FakeChatService(
+        ChatAnswer(
+            answer="a",
+            citations=[],
+            graded_out=2,
+            retry_queries=["a reworded query"],
+            retrieval_attempts=2,
+            grounded=False,
+        )
+    )
+    app.dependency_overrides[get_chat_service] = lambda: fake
+    try:
+        body = TestClient(app).post("/chat", json={"query": "q"}).json()
+    finally:
+        app.dependency_overrides.pop(get_chat_service, None)
+
+    assert body["graded_out"] == 2
+    assert body["retry_queries"] == ["a reworded query"]
+    assert body["retrieval_attempts"] == 2
+    assert body["grounded"] is False
+
+
+def test_chat_response_crag_fields_default_to_neutral_values(client: TestClient) -> None:
+    body = client.post("/chat", json={"query": "q"}).json()
+
+    assert body["graded_out"] == 0
+    assert body["retry_queries"] == []
+    assert body["retrieval_attempts"] == 1
+    # Null, not false: "not checked" and "failed the check" are different states.
+    assert body["grounded"] is None

@@ -34,6 +34,11 @@ class Chunk:
         metadata: Chunk-specific extras (`chunk_index`, `char_start`, `char_end`)
             merged with relevant document metadata (`title`, `page`, ...), so a
             chunk is self-describing without needing its parent `Document`.
+        context: A generated sentence or two situating this chunk in its parent
+            document, or `None` when contextual chunking is off (the default).
+            See `rag.chunking.contextualizer` for what it's for; `text` is never
+            modified, so a chunk with context still cites exactly the span the
+            chunker produced.
     """
 
     id: str
@@ -42,6 +47,20 @@ class Chunk:
     source: Path
     doc_type: str
     metadata: dict[str, Any] = field(default_factory=dict)
+    context: str | None = None
+
+    @property
+    def contextual_text(self) -> str:
+        """The text that should be *indexed* for this chunk: context, then the chunk.
+
+        Kept as a derived property rather than folded into `text` so the two
+        stay separable at every layer: retrieval matches against the enriched
+        string, while citations, previews, and character offsets keep pointing
+        at the real span of the real document. Falls back to `text` verbatim
+        when there's no context, so nothing downstream needs to branch.
+        """
+
+        return f"{self.context}\n\n{self.text}" if self.context else self.text
 
 
 def make_chunk_id(document_id: str, index: int) -> str:
