@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest)",
+      "Bash(pytest *)",
+      "Bash(ruff check *)",
+      "Bash(ruff format --check *)",
+      "Bash(mypy *)",
+
+      "Bash(python -m rag.cli ingest *)",
+      "Bash(python -m rag.cli chunk *)",
+      "Bash(python -m rag.cli retrieve *)",
+      "Bash(python -m rag.cli chat *)",
+
+      "Bash(python -m rag.eval.retrieval_eval *)",
+      "Bash(python -m rag.eval.answer_eval *)",
+      "Bash(python scripts/run_matrix.py --list*)",
+      "Bash(python scripts/run_answer_matrix.py --list*)",
+
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch)",
+      "Bash(git branch --list*)",
+      "Bash(git ls-files*)",
+      "Bash(git stash list*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/lint-python.sh\"",
+            "timeout": 60,
+            "statusMessage": "Linting edited Python"
+          }
+        ]
+      }
+    ]
+  }
+}
