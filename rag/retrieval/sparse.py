@@ -34,10 +34,18 @@ def tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text.lower())
 
 
-def bm25_index_path(index_dir: Path) -> Path:
-    """Return the on-disk path for the BM25 index under ``index_dir``."""
+def bm25_index_path(index_dir: Path, slug: str | None = None) -> Path:
+    """Return the on-disk path for the BM25 index under ``index_dir``.
 
-    return index_dir / BM25_INDEX_FILENAME
+    ``slug`` names the corpus selection this index was built from (see
+    :class:`~rag.config.settings.CorpusSelection`), so an isolated and a pooled
+    index sit side by side instead of overwriting each other. Omitting it gives
+    the unqualified filename, which is what direct callers and tests use.
+    """
+
+    if slug is None:
+        return index_dir / BM25_INDEX_FILENAME
+    return index_dir / f"bm25_index__{slug}.json"
 
 
 class SparseIndex(ABC):
@@ -64,6 +72,20 @@ class SparseIndex(ABC):
     @abstractmethod
     def count(self) -> int:
         """Number of chunks currently indexed."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def has_chunk(self, chunk_id: str) -> bool:
+        """Whether ``chunk_id`` is present.
+
+        Exists so the indexer can require a chunk to be current in *both* the
+        vector store and here before skipping it. The two persist differently --
+        Chroma writes immediately, this index is flushed once at the end of a run
+        -- so a run killed mid-way leaves chunks in the vector store that never
+        reached the sparse index. Change detection keyed on the vector store
+        alone then treats them as up to date forever, and hybrid retrieval
+        silently searches a smaller keyword index than it thinks it has.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -164,6 +186,9 @@ class BM25Index(SparseIndex):
 
     def count(self) -> int:
         return len(self._records)
+
+    def has_chunk(self, chunk_id: str) -> bool:
+        return chunk_id in self._records
 
     def reset(self) -> None:
         self._records.clear()

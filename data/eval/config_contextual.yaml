@@ -1,0 +1,77 @@
+paths:
+  corpus_dir: data/corpora/baseline/documents
+  index_dir: data/index_ctx
+corpora:
+  active:
+  - edgar
+  registry:
+    baseline:
+      documents_dir: data/corpora/baseline/documents
+      description: 'Small hand-written sample corpus (8 docs, ~26k chars). Too small
+        to evaluate against on its own -- top_k 20 retrieves ~65% of it, so retrieval
+        metrics saturate. Keep it as a control, not a measurement.
+
+        '
+    edgar:
+      documents_dir: data/corpora/edgar/documents
+      description: 'SEC 10-K/10-Q MD&A sections (61 filings, ~3.6M chars, ~4,200 chunks).
+        Built by scripts/fetch_edgar.py; documents are gitignored and reproduced from
+        data/corpora/edgar/manifest.json.
+
+        '
+embedding:
+  provider: ollama
+  model: qwen3-embedding:0.6b
+  base_url: http://localhost:11434
+  dimensions: null
+llm:
+  provider: ollama
+  model: qwen3.5:9b-mlx
+  base_url: http://localhost:11434
+  temperature: 0.2
+  max_tokens: 1024
+  think: false
+chunking:
+  strategy: fixed
+  chunk_size: 1000
+  chunk_overlap: 150
+  contextual:
+    enabled: true
+    max_document_chars: 8000
+    max_context_chars: 400
+    concurrency: 4
+    cache: true
+vector_store:
+  provider: chroma
+  collection_name: rag_corpus
+reranker:
+  provider: cross_encoder
+  model: BAAI/bge-reranker-v2-m3
+  aggregate: max
+retrieval:
+  mode: hybrid
+  top_k: 20
+  rerank_top_k: 5
+  rrf_k: 60
+  min_score: 0.0
+  expansion:
+    provider: none
+    num_queries: 3
+    num_documents: 1
+    include_original: true
+  web_search:
+    enabled: false
+    searxng_url: http://localhost:8080
+    top_k: 10
+    min_similarity: 0.5
+    dedup_threshold: 0.75
+    timeout_s: 10.0
+chat:
+  condense_history: true
+  max_history_turns: 6
+crag:
+  enabled: false
+  grade_documents: true
+  max_retries: 1
+  check_groundedness: true
+  max_regenerations: 1

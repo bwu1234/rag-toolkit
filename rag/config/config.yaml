@@ -3,8 +3,40 @@
 # swap implementations without touching pipeline code.
 
 paths:
-  corpus_dir: data/corpus
+  # corpus_dir is the fallback used only when `corpora.registry` below is empty
+  # (a config predating the registry) -- it resolves to the same on-disk
+  # location as the `baseline` entry below.
+  corpus_dir: data/corpora/baseline/documents
   index_dir: data/index
+
+# Named corpora. `active` selects which the CLI and eval runners operate on;
+# override per-invocation with `--corpus NAME` (repeatable).
+#
+# Listing SEVERAL names pools them into one index, which is the point of the
+# registry: the same corpora indexed alone vs. pooled measure different things.
+# Isolated tells you retrieval quality within a corpus; pooled tells you how
+# much a corpus of plausible-but-wrong neighbours costs you. The gap between
+# them is the interference cost, and it cannot be seen with one corpus.
+#
+# Collection and BM25 index names are derived from the selection
+# (`rag_corpus__edgar`, `rag_corpus__baseline+edgar`), so isolated and pooled
+# indexes coexist instead of silently overwriting each other -- comparing them
+# is the whole exercise.
+corpora:
+  active: [baseline]
+  registry:
+    baseline:
+      documents_dir: data/corpora/baseline/documents
+      description: >
+        Small hand-written sample corpus (8 docs, ~26k chars). Too small to
+        evaluate against on its own -- top_k 20 retrieves ~65% of it, so
+        retrieval metrics saturate. Keep it as a control, not a measurement.
+    edgar:
+      documents_dir: data/corpora/edgar/documents
+      description: >
+        SEC 10-K/10-Q MD&A sections (61 filings, ~3.6M chars, ~4,200 chunks).
+        Built by scripts/fetch_edgar.py; documents are gitignored and
+        reproduced from data/corpora/edgar/manifest.json.
 
 embedding:
   provider: ollama
@@ -38,6 +70,16 @@ chunking:
     enabled: false
     max_document_chars: 8000
     max_context_chars: 400
+    # Per-chunk calls are independent, so these run concurrently. Raising this
+    # past the serving backend's parallelism (Ollama's OLLAMA_NUM_PARALLEL)
+    # queues requests rather than speeding them up.
+    concurrency: 4
+    # Checkpoint generated contexts to data/index/contextual_cache.jsonl so an
+    # interrupted run resumes instead of restarting. The key covers every input
+    # to the call, so changing a prompt or limit misses the cache rather than
+    # reusing a stale blurb -- which is why it survives `index --reset`. Use
+    # `index --clear-context-cache` to force regeneration.
+    cache: true
 
 vector_store:
   provider: chroma
@@ -45,7 +87,16 @@ vector_store:
 
 reranker:
   provider: cross_encoder
-  model: cross-encoder/ms-marco-MiniLM-L-6-v2
+  # Changed from cross-encoder/ms-marco-MiniLM-L-6-v2 on measured evidence:
+  # +10.4pp hit rate (0.770 -> 0.874) and +0.138 NDCG on the EDGAR set, at a cost
+  # of ~1.1s/query instead of ~0.25s. See "Measured results" in CLAUDE.md.
+  #
+  # MiniLM was the binding constraint on the whole pipeline: stage-1 retrieval
+  # surfaces the right chunk 97.7% of the time, and MiniLM converted that into
+  # 77%. It also got *worse* when given more candidates, while this model gets
+  # better -- so `retrieval.top_k` is worth revisiting now that reranking can
+  # actually use a larger pool.
+  model: BAAI/bge-reranker-v2-m3
   # How to fold per-query scores together when retrieval.expansion is on:
   #   max  — keep a chunk any phrasing found relevant (lets expansion affect ranking)
   #   mean — require agreement across phrasings (suppresses one-off rewrites)
@@ -57,9 +108,17 @@ retrieval:
   top_k: 20
   rerank_top_k: 5
   rrf_k: 60
-  # Relevance floor on the final results. Scale depends on the active
-  # reranker -- retune when changing reranker.provider. 0.0 disables it.
-  min_score: 0.1
+  # Relevance floor on the final results. Scale depends on the active reranker
+  # AND its model -- retune when changing either. 0.0 disables it.
+  #
+  # Set to 0.0 deliberately, not lazily. Measured on the EDGAR set, 0.0 / 0.1 /
+  # 0.3 gave byte-identical results under the old MiniLM reranker: the floor was
+  # inert, tuned by hand against the retired 31-chunk corpus. Carrying 0.1 over
+  # to a different model would have been worse than inert -- score distributions
+  # differ enough between rerankers that an inherited threshold can silently
+  # reject everything. Re-derive it from this model's actual score distribution
+  # before turning it back on.
+  min_score: 0.0
   # Pre-retrieval query transformation. Each adds an LLM call to every search:
   #   none        — search the query as typed (no LLM in the retrieval path)
   #   hyde        — embed a generated hypothetical answer passage instead

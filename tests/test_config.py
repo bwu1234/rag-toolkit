@@ -48,7 +48,7 @@ def test_paths_resolve_relative_to_repo_root(default_config: RagConfig) -> None:
     resolved = default_config.paths.resolved()
     assert resolved.corpus_dir.is_absolute()
     assert resolved.index_dir.is_absolute()
-    assert resolved.corpus_dir.name == "corpus"
+    assert resolved.corpus_dir.name == "documents"
 
 
 # ---------------------------------------------------------------------------

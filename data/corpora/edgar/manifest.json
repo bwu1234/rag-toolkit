@@ -1,0 +1,34 @@
+{
+  "name": "edgar",
+  "description": "SEC EDGAR 10-K/10-Q Management's Discussion & Analysis sections. Long-form financial prose across same-sector company clusters, chosen so documents are structurally near-identical and differ mainly in entity, period, and figures.",
+  "source": "https://www.sec.gov/edgar",
+  "license": "US SEC public filing system. Fetched at build time, not committed.",
+  "fetcher": "scripts/fetch_edgar.py",
+
+  "_rationale": {
+    "sector_clusters": "Tickers are grouped into same-sector clusters (tech, retail, airlines, pharma, energy) on purpose. Cross-sector distractors are easy; the interesting failure is Delta's capacity discussion competing with United's. Same-sector MD&A is close to a worst case for a retriever, which is what makes it worth measuring against.",
+
+    "no_banks": "Banks (JPM, BAC, GS) were tried and dropped. They fold financial-statement tables, risk tables, and an acronym glossary directly into MD&A, so extraction either returns 200k+ characters of collapsed tables or lands on the glossary. That is a parsing problem (Milestone 14), and indexing it would confound a retrieval measurement with a parsing failure. Revisit once there is a structure-aware parser.",
+    "form_mix": "10-K MD&A (Item 7) runs 40-70k chars and covers a full year; 10-Q MD&A (Item 2) runs 20-35k and covers a quarter. Mixing them means the same company appears at multiple periods, so period disambiguation -- not just entity disambiguation -- is required to answer correctly.",
+    "expected_size": "15 tickers x up to 5 filings, minus filings whose MD&A cannot be extracted cleanly. Targets ~2000-3000 chunks at chunk_size 1000 / overlap 150 -- enough to de-saturate retrieval metrics (top_k 20 then samples <1% of the corpus) without making a contextual index build unaffordable. Sized to produce signal, not to be impressive.",
+
+    "extraction_is_heuristic": "MD&A boundaries are found by content heuristics (see scripts/fetch_edgar.py), not by a real filing parser. Filings that do not extract cleanly are SKIPPED and logged rather than partially indexed -- a silently wrong corpus would invalidate every metric computed against it. Always read the fetch log and audit the per-document stats.",
+
+    "measured_result": "61 of 75 requested filings extracted cleanly: 3,587,845 chars over 14 tickers, 4,236 chunks at chunk_size 1000 / overlap 150. top_k 20 now samples 0.47% of the corpus, against 65% for data/corpus -- which is the entire point of the exercise.",
+
+    "known_skips": "LLY (all 5) and PFE 10-Ks open MD&A with an acronym glossary or fold statement tables into it, same failure class as the banks. CVX 10-Qs incorporate MD&A by reference to the 10-K rather than restating it, so there is no section to extract. These are logged as skips on every run, not silently dropped."
+  },
+
+  "tickers": [
+    "AAPL", "MSFT", "NVDA",
+    "WMT", "COST", "TGT",
+    "DAL", "UAL", "LUV",
+    "PFE", "MRK", "LLY", "JNJ",
+    "XOM", "CVX"
+  ],
+
+  "forms": {
+    "10-K": 2,
+    "10-Q": 3
+  }
+}

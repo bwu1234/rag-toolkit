@@ -12,6 +12,8 @@ dense mode simply ignores it.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from rag.config.settings import RagConfig
 from rag.embedding.factory import get_embedder
 from rag.generation.factory import get_llm_client
@@ -23,7 +25,11 @@ from rag.retrieval.websearch import SearxNGWebSearch
 from rag.vectorstore.factory import get_vector_store
 
 
-def build_retriever(config: RagConfig, llm_client: LLMClient | None = None) -> Retriever:
+def build_retriever(
+    config: RagConfig,
+    llm_client: LLMClient | None = None,
+    corpora: Sequence[str] | None = None,
+) -> Retriever:
     """Construct a `Retriever` with all components selected per `config`.
 
     `llm_client` is only consulted when `retrieval.expansion.provider` needs
@@ -31,13 +37,20 @@ def build_retriever(config: RagConfig, llm_client: LLMClient | None = None) -> R
     already built rather than opening a second one to the same daemon. Left
     unset, a client is constructed on demand -- which costs nothing, since
     `get_llm_client` does no I/O.
+
+    `corpora` overrides `config.corpora.active`, selecting which index this
+    retriever reads. Both the vector collection and the BM25 file are named
+    after the selection, so a retriever built for one corpus can never
+    accidentally read an index built from another.
     """
 
-    paths = config.paths.resolved()
+    selection = config.corpus_selection(corpora)
     embedder = get_embedder(config.embedding)
-    vector_store = get_vector_store(config.vector_store, paths.index_dir)
+    vector_store = get_vector_store(
+        config.vector_store, selection.index_dir, collection_name=selection.collection_name
+    )
     reranker = get_reranker(config.reranker)
-    sparse_index = BM25Index(bm25_index_path(paths.index_dir))
+    sparse_index = BM25Index(bm25_index_path(selection.index_dir, selection.slug))
     web_search = SearxNGWebSearch(embedder, config.retrieval.web_search) if config.retrieval.web_search.enabled else None
 
     expander_client = llm_client if llm_client is not None else get_llm_client(config.llm)

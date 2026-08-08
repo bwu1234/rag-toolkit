@@ -25,11 +25,12 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 from rag.config.settings import load_config
-from rag.eval.dataset import EvalDataset
+from rag.eval.dataset import EvalDataset, EvalSample
 from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatService
 from rag.generation.llm import LLMClient
@@ -49,6 +50,25 @@ _JUDGE_SYSTEM_PROMPT = (
 )
 
 
+# Samples carrying this tier are questions the corpus CANNOT answer, where
+# declining is the correct behaviour.
+REFUSAL_TIER = "refusal"
+
+_REFUSAL_JUDGE_SYSTEM_PROMPT = (
+    "You check whether a retrieval system correctly DECLINED to answer. "
+    "The question is one its document corpus cannot answer, so refusing is the "
+    "correct behaviour and the only thing you are judging. "
+    "Output exactly one word on the first line: PASS if the system declined, "
+    "said it could not find the information, or otherwise avoided asserting a "
+    "specific factual answer. FAIL if it asserted a specific answer -- a figure, "
+    "date, name, or factual claim -- as though the corpus supported it. "
+    "The wording, length, and level of detail of the refusal are irrelevant: a "
+    "terse 'I don't have that information' is just as correct as a detailed "
+    "explanation. Judge only whether it refused. "
+    "You may add a brief reason after the verdict on the same line, separated by a space."
+)
+
+
 def _judge_prompt(query: str, expected: str, actual: str) -> str:
     return (
         f"Question: {query}\n\n"
@@ -56,6 +76,31 @@ def _judge_prompt(query: str, expected: str, actual: str) -> str:
         f"System answer: {actual}\n\n"
         "Verdict (PASS or FAIL, optionally followed by a brief reason):"
     )
+
+
+def _refusal_judge_prompt(query: str, criteria: str, actual: str) -> str:
+    return (
+        f"Question the corpus cannot answer: {query}\n\n"
+        f"Why it is unanswerable: {criteria}\n\n"
+        f"System answer: {actual}\n\n"
+        "Did the system decline? Verdict (PASS or FAIL, optionally followed by a brief reason):"
+    )
+
+
+def judge_for(sample: EvalSample) -> tuple[str, Callable[[str, str, str], str]]:
+    """Pick the judging rubric for a sample.
+
+    Refusal samples need a different question asked of the judge, not a different
+    threshold. The default rubric explicitly fails an answer that "refuses to
+    answer", which is correct for answerable questions and exactly backwards for
+    unanswerable ones -- it scored a correct refusal as FAIL and turned the
+    refusal set into a measurement of how closely refusal *prose* resembled the
+    reference text. Two correct refusals differing only in verbosity were graded
+    FAIL and PASS respectively, which is what surfaced this.
+    """
+    if sample.extra.get("tier") == REFUSAL_TIER:
+        return _REFUSAL_JUDGE_SYSTEM_PROMPT, _refusal_judge_prompt
+    return _JUDGE_SYSTEM_PROMPT, _judge_prompt
 
 
 def _parse_verdict(judge_output: str) -> bool | None:
@@ -109,9 +154,10 @@ def run_answer_eval(
             continue
 
         chat_answer = chat_service.ask(sample.query)
+        judge_system, judge_prompt = judge_for(sample)
         judge_out = llm_client.generate(
-            _judge_prompt(sample.query, sample.expected_answer, chat_answer.answer),
-            system=_JUDGE_SYSTEM_PROMPT,
+            judge_prompt(sample.query, sample.expected_answer, chat_answer.answer),
+            system=judge_system,
         )
         verdict = _parse_verdict(judge_out)
 
@@ -174,9 +220,32 @@ def _build_parser() -> argparse.ArgumentParser:
                         help=f"Path to eval set JSON (default: {_DEFAULT_EVAL_SET})")
     parser.add_argument("--config", default=None, metavar="PATH",
                         help="Path to config YAML (default: rag/config/config.yaml)")
+    parser.add_argument("--corpus", action="append", default=None, metavar="NAME",
+                        help="Corpus to evaluate against, overriding corpora.active. "
+                             "Repeat to target a pooled index.")
+    parser.add_argument("--limit", type=int, default=0, metavar="N",
+                        help="Evaluate an evenly-spaced subset of N samples. Answer eval is "
+                             "the expensive one (generation + judge per sample, plus one call "
+                             "per passage when crag.grade_documents is on), so a subset is "
+                             "often the only affordable way to compare configurations.")
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Print per-sample results in addition to aggregate metrics")
     return parser
+
+
+def subsample(dataset: EvalDataset, limit: int) -> EvalDataset:
+    """Take `limit` samples spread evenly across the set.
+
+    A prefix would be biased: the generated eval set is sorted by document id, so
+    the first N samples are all the alphabetically-first companies. Striding
+    keeps coverage across entities and periods, and is deterministic so two
+    configurations are compared on identical questions.
+    """
+    if limit <= 0 or limit >= len(dataset):
+        return dataset
+    step = len(dataset) / limit
+    picked = [dataset.samples[int(i * step)] for i in range(limit)]
+    return EvalDataset(samples=picked, source_path=dataset.source_path)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -194,6 +263,11 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("Eval set is empty: %s", eval_path)
         return 1
 
+    if args.limit:
+        before = len(dataset)
+        dataset = subsample(dataset, args.limit)
+        logger.info("Subsampled %d of %d sample(s) (evenly spaced)", len(dataset), before)
+
     config = load_config(args.config)
     logger.info(
         "Building chat service (embedding=%s, llm=%s:%s)",
@@ -201,7 +275,7 @@ def main(argv: list[str] | None = None) -> int:
         config.llm.provider,
         config.llm.model,
     )
-    chat_service = build_chat_service(config)
+    chat_service = build_chat_service(config, corpora=args.corpus)
 
     # Reuse the same LLM client for judging — same model judges as generates.
     from rag.generation.factory import get_llm_client

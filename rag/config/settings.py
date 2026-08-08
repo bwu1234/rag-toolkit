@@ -9,8 +9,10 @@ code.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import ClassVar, Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -23,7 +25,7 @@ DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
 class PathsConfig(BaseModel):
     """Filesystem locations used by the pipeline. Relative paths resolve against REPO_ROOT."""
 
-    corpus_dir: Path = Path("data/corpus")
+    corpus_dir: Path = Path("data/corpora/baseline/documents")
     index_dir: Path = Path("data/index")
 
     def resolved(self) -> "PathsConfig":
@@ -31,6 +33,68 @@ class PathsConfig(BaseModel):
             corpus_dir=(REPO_ROOT / self.corpus_dir).resolve(),
             index_dir=(REPO_ROOT / self.index_dir).resolve(),
         )
+
+
+class CorpusConfig(BaseModel):
+    """One named body of documents."""
+
+    documents_dir: Path
+    description: str = ""
+
+
+class CorporaConfig(BaseModel):
+    """Named corpora and which of them commands operate on.
+
+    `active` is a **list** because that is what expresses the distinction the
+    registry exists for:
+
+    * one name -> that corpus indexed on its own (**isolated**), measuring
+      retrieval quality within it;
+    * several names -> those corpora indexed into one collection (**pooled**),
+      measuring robustness to cross-corpus distractors.
+
+    The gap between the two is the interference cost, and it is not observable
+    with a single corpus. See `CorpusSelection` for how a selection maps onto
+    on-disk index names.
+    """
+
+    active: list[str] = Field(default_factory=list)
+    registry: dict[str, CorpusConfig] = Field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class CorpusSelection:
+    """The resolved corpora a command operates on, and where their index lives.
+
+    Index names are derived from the selection rather than fixed, so an isolated
+    and a pooled index of the same corpora coexist instead of silently
+    overwriting each other -- which matters because comparing them is the point.
+    A run therefore cannot accidentally evaluate against an index built from a
+    different set of documents.
+    """
+
+    names: tuple[str, ...]
+    document_dirs: tuple[Path, ...]
+    #: Base collection name from `vector_store.collection_name`.
+    base_collection: str
+    index_dir: Path
+
+    @property
+    def slug(self) -> str:
+        """Stable identifier for this combination of corpora."""
+        return "+".join(self.names)
+
+    @property
+    def collection_name(self) -> str:
+        return f"{self.base_collection}__{self.slug}"
+
+    @property
+    def is_pooled(self) -> bool:
+        return len(self.names) > 1
+
+    def describe(self) -> str:
+        kind = "pooled" if self.is_pooled else "isolated"
+        return f"{', '.join(self.names)} ({kind})"
 
 
 class EmbeddingConfig(BaseModel):
@@ -92,6 +156,24 @@ class ContextualChunkingConfig(BaseModel):
         gt=0,
         description="Cap on a generated blurb, so context can't outweigh the chunk it describes",
     )
+    concurrency: int = Field(
+        default=4,
+        ge=1,
+        description=(
+            "Context generations in flight at once. Per-chunk calls are independent, "
+            "so this scales close to linearly -- up to the serving backend's own "
+            "parallelism (Ollama's OLLAMA_NUM_PARALLEL), past which requests just queue."
+        ),
+    )
+    cache: bool = Field(
+        default=True,
+        description=(
+            "Checkpoint generated contexts to disk so an interrupted index run resumes. "
+            "The cache key covers every input to the LLM call (prompts, truncation "
+            "limits, model), so a config change misses rather than serving a stale blurb -- "
+            "which is why the cache is kept across `index --reset`."
+        ),
+    )
 
 
 class ChunkingConfig(BaseModel):
@@ -132,6 +214,21 @@ class RerankerConfig(BaseModel):
     # `mean` requires broader agreement and suppresses chunks only one rewrite
     # liked. No effect with `retrieval.expansion.provider: none`.
     aggregate: Literal["max", "mean"] = "max"
+    # Text wrapped around each side of a (query, passage) pair before scoring.
+    #
+    # Most cross-encoders (ms-marco, BGE) are trained on bare pairs and want
+    # these empty. Instruction-tuned rerankers are not: Qwen3-Reranker was
+    # trained behind an `<Instruct>/<Query>/<Document>` template, and scoring it
+    # on bare pairs is off-distribution. It still ranks an easy pair correctly
+    # but its margin collapses -- measured on one pair, a 6.8-logit separation
+    # with the template versus 1.9 without -- and across 20 near-identical
+    # passages that difference is the whole job. Unprefixed, it scored 0.276 hit
+    # rate on this corpus, worse than using no reranker at all.
+    #
+    # `{query}` / `{document}` are substituted if present; otherwise the value is
+    # treated as a plain prefix.
+    query_prefix: str = ""
+    document_prefix: str = ""
 
 
 class QueryExpansionConfig(BaseModel):
@@ -285,6 +382,7 @@ class RagConfig(BaseModel):
     """Top-level config object — the single source of truth for component selection."""
 
     paths: PathsConfig = PathsConfig()
+    corpora: CorporaConfig = CorporaConfig()
     embedding: EmbeddingConfig = EmbeddingConfig()
     llm: LLMConfig = LLMConfig()
     chunking: ChunkingConfig = ChunkingConfig()
@@ -293,6 +391,53 @@ class RagConfig(BaseModel):
     retrieval: RetrievalConfig = RetrievalConfig()
     chat: ChatConfig = ChatConfig()
     crag: CragConfig = CragConfig()
+
+    #: Name used when no registry is configured -- see `corpus_selection`.
+    IMPLICIT_CORPUS_NAME: ClassVar[str] = "default"
+
+    def corpus_selection(self, names: Sequence[str] | None = None) -> CorpusSelection:
+        """Resolve which corpora to operate on, and where their index lives.
+
+        `names` overrides `corpora.active` (this is what the CLI's `--corpus`
+        flag passes). Falling back further, an empty `corpora.registry` yields a
+        single implicit corpus at `paths.corpus_dir`, so a config with no
+        `corpora:` section keeps working exactly as before the registry existed.
+
+        Raises `ValueError` on an unknown name rather than silently indexing
+        nothing -- a typo'd corpus name would otherwise produce an empty index
+        and a plausible-looking eval run of all zeros.
+        """
+
+        paths = self.paths.resolved()
+        registry = self.corpora.registry
+        if not registry:
+            registry = {self.IMPLICIT_CORPUS_NAME: CorpusConfig(documents_dir=paths.corpus_dir)}
+            default_active = [self.IMPLICIT_CORPUS_NAME]
+        else:
+            default_active = self.corpora.active or sorted(registry)
+
+        requested = list(names) if names else default_active
+        unknown = [name for name in requested if name not in registry]
+        if unknown:
+            raise ValueError(
+                f"Unknown corpus name(s): {', '.join(sorted(unknown))}. "
+                f"Available: {', '.join(sorted(registry))}"
+            )
+        if not requested:
+            raise ValueError("No corpora selected: set corpora.active or pass --corpus")
+
+        # Sorted and deduped so `--corpus edgar --corpus baseline` and
+        # `--corpus baseline --corpus edgar` resolve to the same index rather
+        # than building two identical ones under different names.
+        selected = tuple(sorted(set(requested)))
+        return CorpusSelection(
+            names=selected,
+            document_dirs=tuple(
+                (REPO_ROOT / registry[name].documents_dir).resolve() for name in selected
+            ),
+            base_collection=self.vector_store.collection_name,
+            index_dir=paths.index_dir,
+        )
 
 
 def load_config(path: str | Path | None = None) -> RagConfig:

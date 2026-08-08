@@ -14,11 +14,19 @@ for every query, so it can be used in CI to catch a broken retriever.
 
 Metrics reported
 ----------------
-* **Hit rate** — fraction of queries where at least one expected document
-  was retrieved (equivalent to Recall@k for single-expected-doc queries).
-* **Recall@k** — mean fraction of expected documents covered per query.
+* **Hit rate** — fraction of queries that retrieved anything relevant.
+* **Recall@k** — mean fraction of expected items covered, reported as a curve
+  over several k so the candidate-set ceiling is visible.  If recall is flat
+  from k=5 to k=20, a bigger ``rerank_top_k`` buys nothing and the loss is
+  upstream in retrieval; if it climbs, the reranker is discarding good results.
 * **Precision@k** — mean fraction of retrieved results that were relevant.
 * **MRR** — mean reciprocal rank of the first relevant result.
+* **NDCG@k** — rank- and grade-weighted quality; the only reported metric that
+  distinguishes "found it at rank 1" from "found it at rank 5", and the only
+  one that reads span grades.
+
+Results are grouped by matching mode (span vs document) when a set mixes them,
+because the two are not comparable — see :mod:`rag.eval.relevance`.
 
 All metrics are computed over whatever ``retrieval.rerank_top_k`` results the
 Retriever returns (i.e. after any configured reranking pass).
@@ -29,12 +37,20 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from rag.config.settings import RagConfig, load_config
-from rag.eval.dataset import EvalDataset
-from rag.eval.metrics import hit_rate, mean, precision_at_k, recall_at_k, reciprocal_rank
+from rag.eval.dataset import MODE_SPAN, EvalDataset
+from rag.eval.metrics import (
+    hit_rate,
+    mean,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+    reciprocal_rank,
+)
+from rag.eval.relevance import judge_ranking
 from rag.logging_config import configure_logging
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.retriever import Retriever
@@ -44,6 +60,11 @@ logger = logging.getLogger(__name__)
 # Default eval set path relative to repo root
 _DEFAULT_EVAL_SET = Path(__file__).resolve().parents[2] / "data" / "eval" / "eval_set.json"
 
+#: Cutoffs for the recall curve. Values above the number of results the
+#: retriever actually returns are dropped rather than reported as a flat line,
+#: which would read as a finding rather than an artifact of ``rerank_top_k``.
+RECALL_K_VALUES = (1, 3, 5, 10, 20)
+
 
 @dataclass
 class SampleResult:
@@ -51,24 +72,66 @@ class SampleResult:
 
     sample_id: str
     query: str
+    mode: str
     expected_doc_ids: list[str]
     retrieved_doc_ids: list[str]
     hit: float
     recall: float
     precision: float
     rr: float  # reciprocal rank
+    ndcg: float
+    recall_by_k: dict[int, float] = field(default_factory=dict)
+    #: Spans the ranking never surfaced — the actionable detail on a miss.
+    unmatched_spans: list[str] = field(default_factory=list)
+
+
+@dataclass
+class MetricSummary:
+    """Aggregate metrics over a set of samples."""
+
+    label: str
+    num_samples: int
+    mean_hit_rate: float
+    mean_recall: float
+    mean_precision: float
+    mrr: float
+    mean_ndcg: float
+    recall_by_k: dict[int, float] = field(default_factory=dict)
 
 
 @dataclass
 class EvalReport:
     """Aggregate retrieval eval results."""
 
-    num_samples: int
-    mean_hit_rate: float
-    mean_recall: float
-    mean_precision: float
-    mrr: float
+    overall: MetricSummary
     sample_results: list[SampleResult]
+    #: Per-matching-mode breakdown, populated only when a set mixes modes.
+    by_mode: list[MetricSummary] = field(default_factory=list)
+
+    @property
+    def num_samples(self) -> int:
+        return self.overall.num_samples
+
+    @property
+    def mean_hit_rate(self) -> float:
+        return self.overall.mean_hit_rate
+
+
+def _summarize(label: str, results: list[SampleResult]) -> MetricSummary:
+    k_values = sorted({k for r in results for k in r.recall_by_k})
+    return MetricSummary(
+        label=label,
+        num_samples=len(results),
+        mean_hit_rate=mean([r.hit for r in results]),
+        mean_recall=mean([r.recall for r in results]),
+        mean_precision=mean([r.precision for r in results]),
+        mrr=mean([r.rr for r in results]),
+        mean_ndcg=mean([r.ndcg for r in results]),
+        recall_by_k={
+            k: mean([r.recall_by_k[k] for r in results if k in r.recall_by_k])
+            for k in k_values
+        },
+    )
 
 
 def run_retrieval_eval(dataset: EvalDataset, retriever: Retriever) -> EvalReport:
@@ -77,53 +140,122 @@ def run_retrieval_eval(dataset: EvalDataset, retriever: Retriever) -> EvalReport
 
     for sample in dataset:
         chunks = retriever.retrieve(sample.query).chunks
-        retrieved_doc_ids = [c.document_id for c in chunks]
+        judgment = judge_ranking(sample, chunks)
+
+        # Recall at each cutoff is computed by re-judging a prefix of the
+        # ranking rather than by slicing gains: one expected item can be matched
+        # by several chunks, so coverage is not recoverable from the gain list.
+        recall_by_k = {
+            k: recall_at_k(*_coverage(sample, chunks[:k]))
+            for k in RECALL_K_VALUES
+            if k <= len(chunks)
+        }
 
         results.append(
             SampleResult(
                 sample_id=sample.id,
                 query=sample.query,
+                mode=judgment.mode,
                 expected_doc_ids=sample.expected_doc_ids,
-                retrieved_doc_ids=retrieved_doc_ids,
-                hit=hit_rate(retrieved_doc_ids, sample.expected_doc_ids),
-                recall=recall_at_k(retrieved_doc_ids, sample.expected_doc_ids),
-                precision=precision_at_k(retrieved_doc_ids, sample.expected_doc_ids),
-                rr=reciprocal_rank(retrieved_doc_ids, sample.expected_doc_ids),
+                retrieved_doc_ids=[c.document_id for c in chunks],
+                hit=hit_rate(judgment.gains),
+                recall=recall_at_k(judgment.covered, judgment.total_expected),
+                precision=precision_at_k(judgment.gains),
+                rr=reciprocal_rank(judgment.gains),
+                ndcg=ndcg_at_k(judgment.gains, judgment.ideal_gains),
+                recall_by_k=recall_by_k,
+                unmatched_spans=judgment.unmatched_spans,
             )
         )
 
-    return EvalReport(
-        num_samples=len(results),
-        mean_hit_rate=mean([r.hit for r in results]),
-        mean_recall=mean([r.recall for r in results]),
-        mean_precision=mean([r.precision for r in results]),
-        mrr=mean([r.rr for r in results]),
-        sample_results=results,
+    modes = sorted({r.mode for r in results})
+    by_mode = (
+        [_summarize(m, [r for r in results if r.mode == m]) for m in modes]
+        if len(modes) > 1
+        else []
     )
+    label = modes[0] if len(modes) == 1 else "all samples"
+    return EvalReport(
+        overall=_summarize(label, results),
+        sample_results=results,
+        by_mode=by_mode,
+    )
+
+
+def _coverage(sample, chunks) -> tuple[int, int]:
+    judgment = judge_ranking(sample, chunks)
+    return judgment.covered, judgment.total_expected
+
+
+def _print_summary(summary: MetricSummary, *, indent: str = "  ") -> None:
+    print(f"{indent}Hit rate    {summary.mean_hit_rate:.3f}")
+    print(f"{indent}Recall@k    {summary.mean_recall:.3f}")
+    print(f"{indent}Precision@k {summary.mean_precision:.3f}")
+    print(f"{indent}MRR         {summary.mrr:.3f}")
+    print(f"{indent}NDCG@k      {summary.mean_ndcg:.3f}")
+    if summary.recall_by_k:
+        curve = "  ".join(f"@{k}={v:.3f}" for k, v in sorted(summary.recall_by_k.items()))
+        print(f"{indent}Recall curve {curve}")
 
 
 def print_report(report: EvalReport, *, verbose: bool = False) -> None:
     """Print a formatted eval report to stdout."""
-    print(f"\n{'=' * 60}")
-    print(f"  Retrieval Eval  ({report.num_samples} sample(s))")
-    print(f"{'=' * 60}")
-    print(f"  Hit rate    {report.mean_hit_rate:.3f}")
-    print(f"  Recall@k    {report.mean_recall:.3f}")
-    print(f"  Precision@k {report.mean_precision:.3f}")
-    print(f"  MRR         {report.mrr:.3f}")
-    print(f"{'=' * 60}")
+    print(f"\n{'=' * 62}")
+    print(f"  Retrieval Eval  ({report.num_samples} sample(s), {report.overall.label})")
+    print(f"{'=' * 62}")
+    _print_summary(report.overall)
+
+    if report.by_mode:
+        print(f"{'-' * 62}")
+        print("  Span- and document-matched samples are graded differently and")
+        print("  are NOT comparable; the combined figures above are only a")
+        print("  rough indicator. Read the per-mode breakdown instead:")
+        for summary in report.by_mode:
+            print(f"\n  [{summary.label}]  ({summary.num_samples} sample(s))")
+            _print_summary(summary, indent="    ")
+    print(f"{'=' * 62}")
 
     if verbose:
         print()
         for r in report.sample_results:
             status = "HIT " if r.hit else "MISS"
-            print(f"[{status}] {r.sample_id!r}  rr={r.rr:.3f}")
+            print(f"[{status}] {r.sample_id!r}  rr={r.rr:.3f} ndcg={r.ndcg:.3f} ({r.mode})")
             print(f"  query:    {r.query!r}")
             print(f"  expected: {r.expected_doc_ids}")
             retrieved_preview = r.retrieved_doc_ids[:5]
-            suffix = f" ... (+{len(r.retrieved_doc_ids) - 5} more)" if len(r.retrieved_doc_ids) > 5 else ""
+            suffix = (
+                f" ... (+{len(r.retrieved_doc_ids) - 5} more)"
+                if len(r.retrieved_doc_ids) > 5
+                else ""
+            )
             print(f"  retrieved: {retrieved_preview}{suffix}")
+            for span in r.unmatched_spans:
+                preview = span if len(span) <= 80 else f"{span[:77]}..."
+                print(f"  NOT FOUND: {preview!r}")
             print()
+
+
+def warn_on_unmatchable_spans(dataset: EvalDataset, config: RagConfig) -> None:
+    """Warn about spans too long to be guaranteed to fit inside a chunk.
+
+    Consecutive chunk windows overlap by ``chunking.chunk_overlap`` characters,
+    so any span at most that long sits entirely within some window.  A longer
+    span can straddle every boundary and match nothing -- scoring 0.0 for a
+    reason that has nothing to do with retrieval quality.  Cheap to check, and
+    silent otherwise, so it costs nothing on a well-authored set.
+    """
+    overlap = config.chunking.chunk_overlap
+    for sample in dataset:
+        for span in sample.expected_spans:
+            if len(span.text) > overlap:
+                logger.warning(
+                    "Sample %r has a %d-char expected span but chunk_overlap is "
+                    "%d -- it may straddle every chunk boundary and never match. "
+                    "Shorten it to a single clause.",
+                    sample.id,
+                    len(span.text),
+                    overlap,
+                )
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -142,6 +274,14 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="PATH",
         help="Path to config YAML (default: rag/config/config.yaml)",
+    )
+    parser.add_argument(
+        "--corpus", action="append", default=None, metavar="NAME",
+        help=(
+            "Corpus to evaluate against, overriding corpora.active. Repeat to target "
+            "a pooled index (--corpus baseline --corpus edgar); the isolated-vs-pooled "
+            "difference is the cross-corpus interference cost."
+        ),
     )
     parser.add_argument(
         "--verbose", "-v",
@@ -167,15 +307,23 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     config: RagConfig = load_config(args.config)
+    warn_on_unmatchable_spans(dataset, config)
+
+    span_samples = sum(1 for s in dataset if s.matching_mode == MODE_SPAN)
     logger.info(
         "Building retriever (embedding=%s, vector_store=%s, reranker=%s)",
         config.embedding.model,
         config.vector_store.provider,
         config.reranker.provider,
     )
-    retriever = build_retriever(config)
+    retriever = build_retriever(config, corpora=args.corpus)
 
-    logger.info("Running retrieval eval on %d sample(s)", len(dataset))
+    logger.info(
+        "Running retrieval eval on %d sample(s) (%d span-matched, %d document-matched)",
+        len(dataset),
+        span_samples,
+        len(dataset) - span_samples,
+    )
     report = run_retrieval_eval(dataset, retriever)
     print_report(report, verbose=args.verbose)
 

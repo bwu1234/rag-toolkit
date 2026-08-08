@@ -11,14 +11,16 @@ import logging
 from collections import Counter
 
 from rag.chunking.chunkers import get_chunker
+from rag.chunking.context_cache import ContextCache, context_cache_path
 from rag.chunking.contextualizer import ChunkContextualizer
 from rag.chunking.models import Chunk
-from rag.config.settings import load_config
+from rag.config.settings import CorpusSelection, RagConfig, load_config
 from rag.embedding.factory import get_embedder
 from rag.generation.builder import build_chat_service
 from rag.generation.factory import get_llm_client
 from rag.ingestion.cleaners import clean_documents, clean_text
 from rag.ingestion.loaders import load_corpus
+from rag.ingestion.models import Document
 from rag.logging_config import configure_logging
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.sparse import BM25Index, bm25_index_path
@@ -32,6 +34,42 @@ logger = logging.getLogger(__name__)
 _INDEX_BATCH_SIZE = 64
 
 
+def _load_selected_corpora(
+    config: RagConfig, corpora: list[str] | None
+) -> tuple[CorpusSelection, list[Document]]:
+    """Load every document in the selected corpora, refusing id collisions.
+
+    `Document.id` is a corpus-relative path, so pooling two corpora that each
+    contain `faq.txt` produces two documents with the same id -- and therefore
+    chunks with the same id, which the vector store would silently upsert over
+    one another. The index would come out short by however many documents
+    collided, with nothing reporting it.
+
+    Raising is the right response rather than namespacing ids by corpus:
+    namespacing would change every `document_id` in the corpus, invalidating the
+    `expected_doc_ids` already recorded in the eval sets, to fix a problem the
+    current corpora do not have.
+    """
+
+    selection = config.corpus_selection(corpora)
+    documents: list[Document] = []
+    origin: dict[str, str] = {}
+
+    for name, directory in zip(selection.names, selection.document_dirs):
+        logger.info("Loading corpus %r from %s", name, directory)
+        for document in load_corpus(directory):
+            if document.id in origin:
+                raise ValueError(
+                    f"Document id {document.id!r} appears in both corpus "
+                    f"{origin[document.id]!r} and {name!r}. Pooled corpora must have "
+                    "distinct document ids -- rename the file in one of them."
+                )
+            origin[document.id] = name
+            documents.append(document)
+
+    return selection, documents
+
+
 def _cmd_ingest(args: argparse.Namespace) -> None:
     """Load every supported file in the corpus directory and print summary stats.
 
@@ -42,10 +80,7 @@ def _cmd_ingest(args: argparse.Namespace) -> None:
     """
 
     config = load_config(args.config)
-    corpus_dir = config.paths.resolved().corpus_dir
-
-    logger.info("Loading corpus from %s", corpus_dir)
-    documents = load_corpus(corpus_dir)
+    selection, documents = _load_selected_corpora(config, args.corpus)
 
     if not documents:
         logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
@@ -55,7 +90,7 @@ def _cmd_ingest(args: argparse.Namespace) -> None:
     raw_chars = sum(len(doc.text) for doc in documents)
     cleaned_chars = sum(len(clean_text(doc.text)) for doc in documents)
 
-    print(f"\nLoaded {len(documents)} document(s) from {corpus_dir}")
+    print(f"\nLoaded {len(documents)} document(s) from corpus {selection.describe()}")
     print("By type:")
     for doc_type, count in sorted(by_type.items()):
         print(f"  {doc_type:10s} {count}")
@@ -78,10 +113,8 @@ def _cmd_chunk(args: argparse.Namespace) -> None:
     """
 
     config = load_config(args.config)
-    corpus_dir = config.paths.resolved().corpus_dir
-
-    logger.info("Loading corpus from %s", corpus_dir)
-    documents = clean_documents(load_corpus(corpus_dir))
+    _selection, documents = _load_selected_corpora(config, args.corpus)
+    documents = clean_documents(documents)
     if not documents:
         logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
         return
@@ -123,8 +156,8 @@ def _cmd_index(args: argparse.Namespace) -> None:
     config = load_config(args.config)
     paths = config.paths.resolved()
 
-    logger.info("Loading corpus from %s", paths.corpus_dir)
-    documents = clean_documents(load_corpus(paths.corpus_dir))
+    selection, documents = _load_selected_corpora(config, args.corpus)
+    documents = clean_documents(documents)
     if not documents:
         logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
         return
@@ -135,36 +168,51 @@ def _cmd_index(args: argparse.Namespace) -> None:
         logger.warning("No chunks produced -- are the documents empty?")
         return
 
-    contextualizer = (
-        ChunkContextualizer(
+    context_cache: ContextCache | None = None
+    contextualizer = None
+    if config.chunking.contextual.enabled:
+        if config.chunking.contextual.cache:
+            context_cache = ContextCache(context_cache_path(paths.index_dir))
+            if args.clear_context_cache:
+                context_cache.clear()
+        contextualizer = ChunkContextualizer(
             get_llm_client(config.llm),
             max_document_chars=config.chunking.contextual.max_document_chars,
             max_context_chars=config.chunking.contextual.max_context_chars,
+            concurrency=config.chunking.contextual.concurrency,
+            cache=context_cache,
+            model_name=config.llm.model,
         )
-        if config.chunking.contextual.enabled
-        else None
-    )
+    elif args.clear_context_cache:
+        # Honour the flag even when contextual chunking is off, so a stale cache
+        # can be cleared without first turning the feature back on.
+        ContextCache(context_cache_path(paths.index_dir)).clear()
 
     embedder = get_embedder(config.embedding)
-    store = get_vector_store(config.vector_store, paths.index_dir)
+    store = get_vector_store(
+        config.vector_store, selection.index_dir, collection_name=selection.collection_name
+    )
     # Always maintain the BM25 text index alongside the vector store so
     # switching retrieval.mode to hybrid later does not require re-embedding.
-    sparse = BM25Index(bm25_index_path(paths.index_dir))
+    sparse = BM25Index(bm25_index_path(selection.index_dir, selection.slug))
 
     if args.reset:
-        logger.info("Resetting collection %r before indexing", config.vector_store.collection_name)
+        logger.info("Resetting collection %r before indexing", selection.collection_name)
         store.reset()
         sparse.reset()
 
-    print(f"\n{len(documents)} document(s) -> {len(chunks)} chunk(s) to index")
+    print(f"\nCorpus: {selection.describe()}")
+    print(f"{len(documents)} document(s) -> {len(chunks)} chunk(s) to index")
     print(f"Embedder: {config.embedding.provider}:{config.embedding.model} ({config.embedding.base_url})")
-    print(f"Vector store: {config.vector_store.provider} (collection={config.vector_store.collection_name!r}, dir={paths.index_dir})")
-    print(f"Sparse index: BM25 ({bm25_index_path(paths.index_dir).name})")
+    print(f"Vector store: {config.vector_store.provider} (collection={selection.collection_name!r}, dir={selection.index_dir})")
+    print(f"Sparse index: BM25 ({bm25_index_path(selection.index_dir, selection.slug).name})")
     if contextualizer is not None:
         print(
             f"Contextual chunking: on ({config.llm.provider}:{config.llm.model}) "
-            "-- one LLM call per changed chunk"
+            f"-- one LLM call per changed chunk, {contextualizer.concurrency} at a time"
         )
+        if context_cache is not None:
+            print(f"Context cache: {len(context_cache)} entry(s) at {context_cache.path.name}")
 
     import hashlib
 
@@ -185,7 +233,14 @@ def _cmd_index(args: argparse.Namespace) -> None:
         for c in batch:
             stored = existing.get(c.id, {})
             stored_hash = stored.get("content_hash")
-            if stored_hash != new_hashes[c.id]:
+            # Require the chunk to be current in BOTH stores. Chroma persists on
+            # write while the BM25 index is flushed once at the end of a run, so
+            # an interrupted run leaves chunks in the vector store that never
+            # reached the sparse one -- and keying the skip on the vector store
+            # alone would strand them there permanently. Observed for real: a
+            # killed contextual build left 4,236 vectors against 4,172 BM25
+            # chunks, and a re-run "successfully" skipped every one of them.
+            if stored_hash != new_hashes[c.id] or not sparse.has_chunk(c.id):
                 # Build a fresh Chunk with an index-time content_hash set in
                 # metadata — Chunk is frozen, so create a new instance.
                 updated_meta = dict(c.metadata)
@@ -224,6 +279,8 @@ def _cmd_index(args: argparse.Namespace) -> None:
         print(f"  embedded + upserted {len(to_update)} (changed) / {done}/{len(chunks)} chunk(s)")
 
     sparse.flush()
+    if context_cache is not None:
+        context_cache.close()
     print(
         f"\nIndex now holds {store.count()} vector chunk(s) "
         f"+ {sparse.count()} BM25 chunk(s) (dimensions={embedder.dimensions})"
@@ -241,7 +298,7 @@ def _cmd_retrieve(args: argparse.Namespace) -> None:
     """
 
     config = load_config(args.config)
-    retriever = build_retriever(config)
+    retriever = build_retriever(config, corpora=args.corpus)
 
     print(f"\nQuery: {args.query!r}")
     print(
@@ -295,7 +352,7 @@ def _cmd_chat(args: argparse.Namespace) -> None:
     """
 
     config = load_config(args.config)
-    chat_service = build_chat_service(config)
+    chat_service = build_chat_service(config, corpora=args.corpus)
 
     print(f"\nQuestion: {args.query!r}")
     print(f"LLM: {config.llm.provider}:{config.llm.model} ({config.llm.base_url})")
@@ -342,34 +399,58 @@ def _cmd_chat(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="rag", description="RAG system CLI")
     parser.add_argument("--config", default=None, help="Path to a config YAML (defaults to rag/config/config.yaml)")
+
+    # `--corpus` lives on a parent parser rather than on the top-level one so it
+    # can be written *after* the subcommand (`rag index --corpus edgar`), which
+    # is where people reach for it. A top-level flag would have to precede the
+    # subcommand, and declaring it in both places would let the subparser's
+    # default clobber the value parsed at the top level.
+    corpus_args = argparse.ArgumentParser(add_help=False)
+    corpus_args.add_argument(
+        "--corpus", action="append", default=None, metavar="NAME",
+        help=(
+            "Corpus to operate on, overriding corpora.active. Repeat to pool several "
+            "into one index (e.g. --corpus baseline --corpus edgar), which is how "
+            "cross-corpus distractor robustness is measured."
+        ),
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    ingest = subparsers.add_parser("ingest", help="Load the corpus and print summary statistics")
+    ingest = subparsers.add_parser("ingest", help="Load the corpus and print summary statistics", parents=[corpus_args])
     ingest.add_argument(
         "--show", type=int, default=0, metavar="N",
         help="Also print a cleaned-text preview of the first N documents",
     )
     ingest.set_defaults(func=_cmd_ingest)
 
-    chunk = subparsers.add_parser("chunk", help="Load, clean, and chunk the corpus and print size statistics")
+    chunk = subparsers.add_parser("chunk", help="Load, clean, and chunk the corpus and print size statistics", parents=[corpus_args])
     chunk.add_argument(
         "--show", type=int, default=0, metavar="N",
         help="Also print a preview of the first N chunks",
     )
     chunk.set_defaults(func=_cmd_chunk)
 
-    index = subparsers.add_parser("index", help="Load, clean, chunk, embed, and upsert the corpus into the vector index")
+    index = subparsers.add_parser("index", help="Load, clean, chunk, embed, and upsert the corpus into the vector index", parents=[corpus_args])
     index.add_argument(
         "--reset", action="store_true",
         help="Delete the existing collection before indexing (use after a chunking/embedding config change)",
     )
+    index.add_argument(
+        "--clear-context-cache", action="store_true",
+        help=(
+            "Discard checkpointed chunk contexts and regenerate them. Not needed after a "
+            "config change (the cache key covers every input to the call, so those miss "
+            "on their own) -- use it to force a rerun on identical inputs, e.g. when "
+            "comparing two models."
+        ),
+    )
     index.set_defaults(func=_cmd_index)
 
-    retrieve = subparsers.add_parser("retrieve", help="Retrieve and rerank chunks for a query against the existing index")
+    retrieve = subparsers.add_parser("retrieve", help="Retrieve and rerank chunks for a query against the existing index", parents=[corpus_args])
     retrieve.add_argument("query", help="The question or search query to retrieve chunks for")
     retrieve.set_defaults(func=_cmd_retrieve)
 
-    chat = subparsers.add_parser("chat", help="Ask a question and get a generated, cited answer (retrieve -> rerank -> generate)")
+    chat = subparsers.add_parser("chat", help="Ask a question and get a generated, cited answer (retrieve -> rerank -> generate)", parents=[corpus_args])
     chat.add_argument("query", help="The question to ask")
     chat.set_defaults(func=_cmd_chat)
 

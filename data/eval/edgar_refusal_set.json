@@ -1,0 +1,124 @@
+[
+  {
+    "id": "neg-entity-tesla-margin",
+    "query": "What was Tesla's automotive gross margin for the quarter ended June 2026?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: Tesla is not in the corpus. Any margin figure is a hallucination, most likely borrowed from another company's filing, and must FAIL.",
+    "tier": "refusal",
+    "negative_type": "off_corpus_entity",
+    "_note": "Hard negatives for the EDGAR corpus -- see the eval notes in CLAUDE.md. Off-corpus entities were verified absent from all 61 filings; Amazon, Google, Boeing and JPMorgan were rejected as negatives despite not being in the manifest, because MD&A mentions them as competitors."
+  },
+  {
+    "id": "neg-entity-lilly-pipeline",
+    "query": "What did Eli Lilly say about its incretin manufacturing capacity expansion?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: Eli Lilly is not in the corpus. Merck and Pfizer filings discuss pharmaceutical capacity, so a plausible-sounding answer sourced from those must FAIL.",
+    "tier": "refusal",
+    "negative_type": "off_corpus_entity"
+  },
+  {
+    "id": "neg-entity-goldman-trading",
+    "query": "What drove the change in Goldman Sachs' trading revenue this quarter?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: no bank filings are in the corpus at all. FAIL any answer that produces trading revenue figures.",
+    "tier": "refusal",
+    "negative_type": "off_corpus_entity"
+  },
+  {
+    "id": "neg-entity-coke-pricing",
+    "query": "How did Coca-Cola describe its pricing and mix impact on net revenues?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: Coca-Cola is not in the corpus. Retail filings (Walmart, Costco, Target) discuss price and mix, so an answer drawn from those must FAIL.",
+    "tier": "refusal",
+    "negative_type": "off_corpus_entity"
+  },
+  {
+    "id": "neg-entity-ford-ev",
+    "query": "What did Ford Motor report for electric vehicle unit sales?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: Ford is not in the corpus.",
+    "tier": "refusal",
+    "negative_type": "off_corpus_entity"
+  },
+  {
+    "id": "neg-entity-netflix-subs",
+    "query": "How many paid net subscriber additions did Netflix report?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: Netflix is not in the corpus.",
+    "tier": "refusal",
+    "negative_type": "off_corpus_entity"
+  },
+  {
+    "id": "neg-period-aapl-2015",
+    "query": "What was Apple's total net sales for fiscal year 2015?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: the corpus covers periods from September 2024 to June 2026 only. Apple IS in the corpus, so this is the hard case -- retrieval will surface genuinely Apple-authored passages about net sales that do not cover 2015. FAIL any figure presented as fiscal 2015.",
+    "tier": "refusal",
+    "negative_type": "out_of_range_period"
+  },
+  {
+    "id": "neg-period-msft-2018",
+    "query": "How much did Microsoft spend on research and development in fiscal 2018?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: no filing in the corpus covers fiscal 2018. Microsoft R&D discussion exists for recent periods and will be retrieved; FAIL any answer that presents a recent figure as the 2018 one.",
+    "tier": "refusal",
+    "negative_type": "out_of_range_period"
+  },
+  {
+    "id": "neg-period-wmt-2030",
+    "query": "What were Walmart's comparable sales for fiscal year 2030?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: fiscal 2030 has not been reported. FAIL any specific figure; forward-looking statements in MD&A are not results.",
+    "tier": "refusal",
+    "negative_type": "out_of_range_period"
+  },
+  {
+    "id": "neg-scope-wmt-board",
+    "query": "Who serves on Walmart's board of directors?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: the corpus contains MD&A sections only, which do not cover governance. Walmart filings ARE present, so this tests whether the system distinguishes 'this company is in the corpus' from 'this question is answerable'. FAIL any list of names.",
+    "tier": "refusal",
+    "negative_type": "out_of_scope_section"
+  },
+  {
+    "id": "neg-scope-nvda-ceo-pay",
+    "query": "What was NVIDIA's CEO total compensation?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: executive compensation is in the proxy statement, not MD&A. FAIL any dollar figure.",
+    "tier": "refusal",
+    "negative_type": "out_of_scope_section"
+  },
+  {
+    "id": "neg-scope-dal-risk-factors",
+    "query": "What are the full risk factors Delta Air Lines lists in Item 1A?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline: only MD&A (Item 2 / Item 7) was extracted; Item 1A is not in the corpus. MD&A cross-references risk factors, so partial mentions will be retrieved -- FAIL any answer presenting them as the full list.",
+    "tier": "refusal",
+    "negative_type": "out_of_scope_section"
+  },
+  {
+    "id": "neg-unanswerable-comparison",
+    "query": "Which of the companies in this corpus had the highest operating margin last quarter?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline or heavily qualify: answering requires aggregating across 14 companies' filings, which single-pass retrieval cannot do -- it returns at most rerank_top_k passages. A confident ranking is a hallucination and must FAIL. This is the multi-hop limitation Milestone 19 targets.",
+    "tier": "refusal",
+    "negative_type": "requires_aggregation"
+  },
+  {
+    "id": "neg-cross-corpus-acs-auth",
+    "query": "What HTTP header do I use to authenticate an ACS API request?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline when only the EDGAR corpus is indexed: this is answerable from data/corpus (api_reference.md) but nothing in the SEC filings covers it. Used to measure cross-corpus behaviour -- the same question should SUCCEED when the small corpus is indexed and FAIL to be answered here.",
+    "tier": "refusal",
+    "negative_type": "cross_corpus"
+  },
+  {
+    "id": "neg-cross-corpus-retention",
+    "query": "How long are deleted objects retained before permanent removal?",
+    "expected_doc_ids": [],
+    "expected_answer": "Must decline when only the EDGAR corpus is indexed: answerable from data/corpus (object_lifecycle.md) only. Note the vocabulary overlap trap -- SEC filings discuss 'retention' in wholly unrelated senses.",
+    "tier": "refusal",
+    "negative_type": "cross_corpus",
+    "_removed_negatives": "Two Costco 'out_of_scope_section' negatives were written and both REMOVED as invalid, because the corpus answers them: 'how many warehouses in each country' (Costco states warehouse counts in MD&A, answered US 629 / Canada 110 with a citation) and 'who is the independent registered public accounting firm' (Costco's extraction runs past MD&A into Item 9A, where the KPMG attestation sits). Both times the system answered correctly and was scored a failure for it. Lesson: off_corpus_entity negatives were verified programmatically against the corpus text, out_of_scope_section negatives were not -- they assumed section boundaries the extractor does not actually guarantee. Verify a negative's answer is absent from the extracted text before trusting it."
+  }
+]

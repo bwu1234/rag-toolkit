@@ -1,0 +1,334 @@
+{
+  "label": "reranker comparison incl. Qwen3 (prompted)",
+  "corpus": "edgar (isolated)",
+  "collection": "rag_corpus__edgar",
+  "eval_set": "data/eval/edgar_eval_set.json",
+  "num_samples": 174,
+  "results": [
+    {
+      "variant": "rr=minilm-L6",
+      "axis": "reranker_model",
+      "overrides": {
+        "reranker.model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        "retrieval.min_score": 0.0
+      },
+      "fingerprint": "e03569fe69cf",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 43.8,
+      "metrics": {
+        "hit_rate": 0.7701,
+        "recall": 0.7701,
+        "precision": 0.1678,
+        "mrr": 0.5764,
+        "ndcg": 0.658
+      },
+      "recall_by_k": {
+        "1": 0.4483,
+        "3": 0.7126,
+        "5": 0.7701
+      }
+    },
+    {
+      "variant": "rr=bge-base",
+      "axis": "reranker_model",
+      "overrides": {
+        "reranker.model": "BAAI/bge-reranker-base",
+        "retrieval.min_score": 0.0
+      },
+      "fingerprint": "3bdad825098e",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-base",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 83.1,
+      "metrics": {
+        "hit_rate": 0.8276,
+        "recall": 0.8276,
+        "precision": 0.1805,
+        "mrr": 0.6587,
+        "ndcg": 0.7419
+      },
+      "recall_by_k": {
+        "1": 0.546,
+        "3": 0.7529,
+        "5": 0.8276
+      }
+    },
+    {
+      "variant": "rr=bge-v2-m3",
+      "axis": "reranker_model",
+      "overrides": {
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "retrieval.min_score": 0.0
+      },
+      "fingerprint": "cf23499274cb",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 185.7,
+      "metrics": {
+        "hit_rate": 0.8736,
+        "recall": 0.8736,
+        "precision": 0.1943,
+        "mrr": 0.6979,
+        "ndcg": 0.7957
+      },
+      "recall_by_k": {
+        "1": 0.5747,
+        "3": 0.8333,
+        "5": 0.8736
+      }
+    },
+    {
+      "variant": "rr=qwen3-0.6b",
+      "axis": "reranker_model",
+      "overrides": {
+        "reranker.model": "tomaarsen/Qwen3-Reranker-0.6B-seq-cls",
+        "retrieval.min_score": 0.0
+      },
+      "fingerprint": "02550bda97a1",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "tomaarsen/Qwen3-Reranker-0.6B-seq-cls",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 419.3,
+      "metrics": {
+        "hit_rate": 0.2759,
+        "recall": 0.2759,
+        "precision": 0.0552,
+        "mrr": 0.1163,
+        "ndcg": 0.1552
+      },
+      "recall_by_k": {
+        "1": 0.046,
+        "3": 0.1322,
+        "5": 0.2759
+      }
+    },
+    {
+      "variant": "rr=qwen3-0.6b +prompt",
+      "axis": "reranker_model",
+      "overrides": {
+        "reranker.model": "tomaarsen/Qwen3-Reranker-0.6B-seq-cls",
+        "reranker.query_prefix": "<Instruct>: Given a web search query, retrieve relevant passages that answer the query\n<Query>: {query}",
+        "reranker.document_prefix": "<Document>: {document}",
+        "retrieval.min_score": 0.0
+      },
+      "fingerprint": "02550bda97a1",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "tomaarsen/Qwen3-Reranker-0.6B-seq-cls",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 449.1,
+      "metrics": {
+        "hit_rate": 0.3218,
+        "recall": 0.3218,
+        "precision": 0.0667,
+        "mrr": 0.1634,
+        "ndcg": 0.2073
+      },
+      "recall_by_k": {
+        "1": 0.0977,
+        "3": 0.1839,
+        "5": 0.3218
+      }
+    },
+    {
+      "variant": "rr=minilm-L6 pool=100",
+      "axis": "reranker_pool",
+      "overrides": {
+        "reranker.model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        "retrieval.top_k": 100,
+        "retrieval.min_score": 0.0
+      },
+      "fingerprint": "3da1c60cc075",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "100",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 76.7,
+      "metrics": {
+        "hit_rate": 0.7586,
+        "recall": 0.7586,
+        "precision": 0.1655,
+        "mrr": 0.5655,
+        "ndcg": 0.6468
+      },
+      "recall_by_k": {
+        "1": 0.4425,
+        "3": 0.6724,
+        "5": 0.7586
+      }
+    },
+    {
+      "variant": "rr=bge-base pool=100",
+      "axis": "reranker_pool",
+      "overrides": {
+        "reranker.model": "BAAI/bge-reranker-base",
+        "retrieval.top_k": 100,
+        "retrieval.min_score": 0.0
+      },
+      "fingerprint": "969b8cf3ff16",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "100",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-base",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 280.2,
+      "metrics": {
+        "hit_rate": 0.8448,
+        "recall": 0.8448,
+        "precision": 0.1805,
+        "mrr": 0.6581,
+        "ndcg": 0.7386
+      },
+      "recall_by_k": {
+        "1": 0.5345,
+        "3": 0.7701,
+        "5": 0.8448
+      }
+    },
+    {
+      "variant": "rr=bge-v2-m3 pool=100",
+      "axis": "reranker_pool",
+      "overrides": {
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "retrieval.top_k": 100,
+        "retrieval.min_score": 0.0
+      },
+      "fingerprint": "378e60f92b2e",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "100",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 848.2,
+      "metrics": {
+        "hit_rate": 0.908,
+        "recall": 0.908,
+        "precision": 0.2023,
+        "mrr": 0.7193,
+        "ndcg": 0.823
+      },
+      "recall_by_k": {
+        "1": 0.5862,
+        "3": 0.8678,
+        "5": 0.908
+      }
+    }
+  ]
+}

@@ -8,6 +8,8 @@ an identically configured service from one call.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from rag.config.settings import RagConfig
 from rag.generation.chat_service import ChatService
 from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryRewriter
@@ -16,14 +18,18 @@ from rag.generation.query_rewriter import QueryCondenser
 from rag.retrieval.builder import build_retriever
 
 
-def build_chat_service(config: RagConfig) -> ChatService:
-    """Construct a `ChatService` with all components selected per `config`."""
+def build_chat_service(config: RagConfig, corpora: Sequence[str] | None = None) -> ChatService:
+    """Construct a `ChatService` with all components selected per `config`.
+
+    `corpora` overrides `config.corpora.active`, selecting which index the
+    retriever reads -- see `build_retriever`.
+    """
 
     llm_client = get_llm_client(config.llm)
     # Share the one client: query expansion (HyDE / multi-query) generates
     # text too, and it should talk to the same daemon over the same connection
     # rather than opening a parallel one.
-    retriever = build_retriever(config, llm_client)
+    retriever = build_retriever(config, llm_client, corpora)
 
     # The condenser shares the chat client rather than getting its own: same
     # provider, same model, one connection. Building it is free (no I/O), and

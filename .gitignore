@@ -5,10 +5,22 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Local data & generated index — corpus is user-provided, index is rebuildable
-data/corpus/*
-!data/corpus/.gitkeep
+# Fetched corpora — the manifest and the fetch script are committed, the
+# documents they reproduce are not (keeps the repo small, and avoids
+# redistributing third-party content).
+data/corpora/*/documents/
+# ...except `baseline`, the small hand-written sample corpus: it's committed
+# content, not fetched, so it's exempt from the rule above.
+!data/corpora/baseline/documents/
+
+# Local generated index — rebuildable, not source.
 data/index/*
 !data/index/.gitkeep
+# The alternate index built for the contextual-chunking comparison
+# (data/eval/config_contextual.yaml points its index_dir here). Same category:
+# 79MB of Chroma sqlite and binary blobs, rebuildable from the corpus.
+data/index_ctx/
 
 .env
+draft/
+pytest-cache-files-gvcbngex/

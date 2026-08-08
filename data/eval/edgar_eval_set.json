@@ -1,0 +1,2264 @@
+[
+  {
+    "id": "AAPL_10-K_2024-09-28.md::chunk12",
+    "query": "What were Apple Inc.'s fixed lease payment obligations as of September 28, 2024?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2024-09-28.md"
+    ],
+    "expected_spans": [
+      "As of September 28, 2024, the Company had fixed lease payment obligations of $15.6 billion, with $2.0 billion payable within 12 months."
+    ],
+    "expected_answer": "As of September 28, 2024, the Company had fixed lease payment obligations of $15.6 billion, with $2.0 billion payable within 12 months.",
+    "tier": "generated",
+    "source_chunk": "AAPL_10-K_2024-09-28.md::chunk12"
+  },
+  {
+    "id": "AAPL_10-K_2025-09-27.md::chunk14",
+    "query": "What were Apple Inc.'s total fixed lease payment obligations as of September 27, 2025?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2025-09-27.md"
+    ],
+    "expected_spans": [
+      "As of September 27, 2025, the Company had fixed lease payment obligations of $16.8 billion"
+    ],
+    "expected_answer": "As of September 27, 2025, the Company had fixed lease payment obligations of $16.8 billion",
+    "tier": "generated",
+    "source_chunk": "AAPL_10-K_2025-09-27.md::chunk14"
+  },
+  {
+    "id": "AAPL_10-K_2025-09-27.md::chunk16",
+    "query": "What was Apple Inc.'s quarterly cash dividend per share for the period ended September 27, 2025?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2025-09-27.md"
+    ],
+    "expected_spans": [
+      "As of September 27, 2025, the Company's quarterly cash dividend was $0.26 per share."
+    ],
+    "expected_answer": "$0.26 per share",
+    "tier": "generated",
+    "source_chunk": "AAPL_10-K_2025-09-27.md::chunk16"
+  },
+  {
+    "id": "AAPL_10-K_2025-09-27.md::chunk2",
+    "query": "How many weeks did Apple Inc.'s fiscal year 2023 span compared to 2024 and 2025?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2025-09-27.md"
+    ],
+    "expected_spans": [
+      "The Company's fiscal years 2025 and 2024 spanned 52 weeks each, whereas fiscal year 2023 spanned 53 weeks."
+    ],
+    "expected_answer": "The Company's fiscal years 2025 and 2024 spanned 52 weeks each, whereas fiscal year 2023 spanned 53 weeks.",
+    "tier": "generated",
+    "source_chunk": "AAPL_10-K_2025-09-27.md::chunk2"
+  },
+  {
+    "id": "AAPL_10-Q_2026-03-28.md::chunk23",
+    "query": "How much did Apple Inc. repurchase of its common stock during the second quarter of 2026?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-03-28.md"
+    ],
+    "expected_spans": [
+      "During the second quarter of 2026, the Company repurchased $11.0 billion of its common stock"
+    ],
+    "expected_answer": "$11.0 billion",
+    "tier": "generated",
+    "source_chunk": "AAPL_10-Q_2026-03-28.md::chunk23"
+  },
+  {
+    "id": "AAPL_10-Q_2026-06-27.md::chunk22",
+    "query": "How much did Apple Inc. repurchase of its common stock during the third quarter of 2026?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-06-27.md"
+    ],
+    "expected_spans": [
+      "During the third quarter of 2026, the Company repurchased $25.8 billion of its common stock"
+    ],
+    "expected_answer": "$25.8 billion",
+    "tier": "generated",
+    "source_chunk": "AAPL_10-Q_2026-06-27.md::chunk22"
+  },
+  {
+    "id": "AAPL_10-Q_2026-06-27.md::chunk4",
+    "query": "What specific operating system versions did Apple Inc. announce during the third quarter of 2026?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-06-27.md"
+    ],
+    "expected_spans": [
+      "During the third quarter of 2026, the Company announced iOS 27, macOS® 27 Golden Gate, iPadOS® 27, watchOS® 27, visionOS® 27 and tvOS® 27"
+    ],
+    "expected_answer": "During the third quarter of 2026, the Company announced iOS 27, macOS® 27 Golden Gate, iPadOS® 27, watchOS® 27, visionOS® 27 and tvOS® 27",
+    "tier": "generated",
+    "source_chunk": "AAPL_10-Q_2026-06-27.md::chunk4"
+  },
+  {
+    "id": "COST_10-K_2024-09-01.md::chunk109",
+    "query": "What was Costco Wholesale Corp's borrowing capacity for short-term bank credit facilities in fiscal year 2024?",
+    "expected_doc_ids": [
+      "COST_10-K_2024-09-01.md"
+    ],
+    "expected_spans": [
+      "with a borrowing capacity of $1,198 and $1,234, in 2024 and 2023."
+    ],
+    "expected_answer": "$1,198",
+    "tier": "generated",
+    "source_chunk": "COST_10-K_2024-09-01.md::chunk109"
+  },
+  {
+    "id": "COST_10-K_2024-09-01.md::chunk140",
+    "query": "How many class action suits were filed against Costco Wholesale Corp between September 25, 2023 and October 31, 2023?",
+    "expected_doc_ids": [
+      "COST_10-K_2024-09-01.md"
+    ],
+    "expected_spans": [
+      "Between September 25, 2023, and October 31, 2023, five class action suits were filed against the Company"
+    ],
+    "expected_answer": "five class action suits were filed against the Company",
+    "tier": "generated",
+    "source_chunk": "COST_10-K_2024-09-01.md::chunk140"
+  },
+  {
+    "id": "COST_10-K_2024-09-01.md::chunk29",
+    "query": "What was Costco Wholesale Corp's borrowing capacity under bank credit facilities at September 1, 2024?",
+    "expected_doc_ids": [
+      "COST_10-K_2024-09-01.md"
+    ],
+    "expected_spans": [
+      "At September 1, 2024, we had borrowing capacity under these facilities of $1,198."
+    ],
+    "expected_answer": "$1,198",
+    "tier": "generated",
+    "source_chunk": "COST_10-K_2024-09-01.md::chunk29"
+  },
+  {
+    "id": "COST_10-K_2024-09-01.md::chunk98",
+    "query": "What were the amounts expensed under all retirement plans for Costco Wholesale Corp in 2024?",
+    "expected_doc_ids": [
+      "COST_10-K_2024-09-01.md"
+    ],
+    "expected_spans": [
+      "Amounts expensed under all plans were $963, $914, and $824 for 2024, 2023, and 2022"
+    ],
+    "expected_answer": "$963",
+    "tier": "generated",
+    "source_chunk": "COST_10-K_2024-09-01.md::chunk98"
+  },
+  {
+    "id": "COST_10-K_2025-08-31.md::chunk46",
+    "query": "What was the date of Costco Wholesale Corp's report on the consolidated financial statements for the period ended August 31, 2025?",
+    "expected_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "expected_spans": [
+      "our report dated October 7, 2025 expressed an unqualified opinion on those consolidated financial statements."
+    ],
+    "expected_answer": "October 7, 2025",
+    "tier": "generated",
+    "source_chunk": "COST_10-K_2025-08-31.md::chunk46"
+  },
+  {
+    "id": "COST_10-K_2025-08-31.md::chunk77",
+    "query": "What were the impairment charges recognized by Costco Wholesale Corp in fiscal year 2025?",
+    "expected_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "expected_spans": [
+      "Impairment charges recognized in 2025, 2024 and 2023 were immaterial."
+    ],
+    "expected_answer": "were immaterial.",
+    "tier": "generated",
+    "source_chunk": "COST_10-K_2025-08-31.md::chunk77"
+  },
+  {
+    "id": "COST_10-Q_2025-11-23.md::chunk24",
+    "query": "What was Net cash provided by operating activities for Costco Wholesale Corp in the first quarter of 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2025-11-23.md"
+    ],
+    "expected_spans": [
+      "Net cash provided by operating activities totaled $4,688 in the first quarter of 2026"
+    ],
+    "expected_answer": "Net cash provided by operating activities totaled $4,688 in the first quarter of 2026",
+    "tier": "generated",
+    "source_chunk": "COST_10-Q_2025-11-23.md::chunk24"
+  },
+  {
+    "id": "COST_10-Q_2026-02-15.md::chunk16",
+    "query": "What was the percentage increase in Costco Wholesale Corp's core merchandise category sales for the first half of fiscal year 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-02-15.md"
+    ],
+    "expected_spans": [
+      "Sales increased $4,715 or 9% and $8,663 or 9% in core merchandise categories during the second quarter and first half of 2026"
+    ],
+    "expected_answer": "$8,663 or 9%",
+    "tier": "generated",
+    "source_chunk": "COST_10-Q_2026-02-15.md::chunk16"
+  },
+  {
+    "id": "COST_10-Q_2026-02-15.md::chunk18",
+    "query": "What percentage of membership income growth did the fee income increase account for during the first half of 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-02-15.md"
+    ],
+    "expected_spans": [
+      "The fee income increase accounted for approximately 35% and 40% of membership income growth during the second quarter and first half of 2026."
+    ],
+    "expected_answer": "approximately 35% and 40%",
+    "tier": "generated",
+    "source_chunk": "COST_10-Q_2026-02-15.md::chunk18"
+  },
+  {
+    "id": "COST_10-Q_2026-02-15.md::chunk30",
+    "query": "What was Net cash provided by operating activities for Costco Wholesale Corp in the first half of 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-02-15.md"
+    ],
+    "expected_spans": [
+      "Net cash provided by operating activities totaled $7,684 in the first half of 2026"
+    ],
+    "expected_answer": "$7,684",
+    "tier": "generated",
+    "source_chunk": "COST_10-Q_2026-02-15.md::chunk30"
+  },
+  {
+    "id": "COST_10-Q_2026-02-15.md::chunk34",
+    "query": "What was Costco Wholesale Corp's total borrowing capacity under bank credit facilities as of February 15, 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-02-15.md"
+    ],
+    "expected_spans": [
+      "At February 15, 2026, we had borrowing capacity under these facilities of $1,447."
+    ],
+    "expected_answer": "$1,447",
+    "tier": "generated",
+    "source_chunk": "COST_10-Q_2026-02-15.md::chunk34"
+  },
+  {
+    "id": "COST_10-Q_2026-05-10.md::chunk15",
+    "query": "What was the percentage increase in net sales for Costco Wholesale Corp during the first thirty-six weeks of 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-05-10.md"
+    ],
+    "expected_spans": [
+      "$17,894 or 10% during the third quarter and first thirty-six weeks of 2026"
+    ],
+    "expected_answer": "10%",
+    "tier": "generated",
+    "source_chunk": "COST_10-Q_2026-05-10.md::chunk15"
+  },
+  {
+    "id": "COST_10-Q_2026-05-10.md::chunk30",
+    "query": "What were the unsettled credit and debit card receivables for Costco Wholesale Corp as of May 10, 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-05-10.md"
+    ],
+    "expected_spans": [
+      "approximately $3,078 and $2,670 at May 10, 2026, and August 31, 2025."
+    ],
+    "expected_answer": "approximately $3,078 and $2,670 at May 10, 2026, and August 31, 2025.",
+    "tier": "generated",
+    "source_chunk": "COST_10-Q_2026-05-10.md::chunk30"
+  },
+  {
+    "id": "COST_10-Q_2026-05-10.md::chunk32",
+    "query": "What was the net cash used in investing activities for Costco Wholesale Corp in the first thirty-six weeks of 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-05-10.md"
+    ],
+    "expected_spans": [
+      "Net cash used in investing activities totaled $4,160 in the first thirty-six weeks of 2026"
+    ],
+    "expected_answer": "$4,160",
+    "tier": "generated",
+    "source_chunk": "COST_10-Q_2026-05-10.md::chunk32"
+  },
+  {
+    "id": "CVX_10-K_2024-12-31.md::chunk23",
+    "query": "What was Chevron's average net daily oil-equivalent production in California during 2024?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "In 2024, Chevron's California average net daily oil-equivalent production was 71,000 barrels."
+    ],
+    "expected_answer": "71,000 barrels",
+    "tier": "generated",
+    "source_chunk": "CVX_10-K_2024-12-31.md::chunk23"
+  },
+  {
+    "id": "CVX_10-K_2024-12-31.md::chunk25",
+    "query": "What is the estimated remaining production life of the Ballymore Field?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "The field has an estimated remaining production life of 30 years."
+    ],
+    "expected_answer": "The field has an estimated remaining production life of 30 years.",
+    "tier": "generated",
+    "source_chunk": "CVX_10-K_2024-12-31.md::chunk25"
+  },
+  {
+    "id": "CVX_10-K_2024-12-31.md::chunk26",
+    "query": "What is the estimated remaining production life for the Jack and St. Malo fields for Chevron Corp in the period ended 2024-12-31?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "The Jack and St. Malo fields have an estimated remaining production life of 20"
+    ],
+    "expected_answer": "20",
+    "tier": "generated",
+    "source_chunk": "CVX_10-K_2024-12-31.md::chunk26"
+  },
+  {
+    "id": "CVX_10-K_2024-12-31.md::chunk42",
+    "query": "What was Chevron's proved reserve status for the Owowo Stage 1 project at the end of 2024?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "At the end of 2024, no proved reserves were recognized for this project."
+    ],
+    "expected_answer": "At the end of 2024, no proved reserves were recognized for this project.",
+    "tier": "generated",
+    "source_chunk": "CVX_10-K_2024-12-31.md::chunk42"
+  },
+  {
+    "id": "CVX_10-K_2025-12-31.md::chunk26",
+    "query": "What was Chevron's average net daily crude oil production in the Gulf of America during 2025?",
+    "expected_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "During 2025, Chevron's net daily production in the Gulf of America averaged 235,000 barrels of crude oil"
+    ],
+    "expected_answer": "235,000 barrels of crude oil",
+    "tier": "generated",
+    "source_chunk": "CVX_10-K_2025-12-31.md::chunk26"
+  },
+  {
+    "id": "CVX_10-K_2025-12-31.md::chunk47",
+    "query": "What percentage working interest did Chevron Corp secure in Guinea-Bissau Blocks 5B and 6B during 2025?",
+    "expected_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "In 2025, Chevron was awarded a 90 percent working interest in frontier exploration Blocks 5B (Carapau) and 6B (Becuda), offshore Guinea-Bissau."
+    ],
+    "expected_answer": "90 percent",
+    "tier": "generated",
+    "source_chunk": "CVX_10-K_2025-12-31.md::chunk47"
+  },
+  {
+    "id": "CVX_10-K_2025-12-31.md::chunk78",
+    "query": "How many LNG vessels did Chevron upgrade in 2025 to reduce emissions?",
+    "expected_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "In 2025, Chevron completed upgrades to four LNG vessels aimed at reducing emissions."
+    ],
+    "expected_answer": "four",
+    "tier": "generated",
+    "source_chunk": "CVX_10-K_2025-12-31.md::chunk78"
+  },
+  {
+    "id": "CVX_10-Q_2025-09-30.md::chunk63",
+    "query": "What was the dollar amount of shares repurchased by Chevron Corp under its 2023 program in the third quarter of 2025?",
+    "expected_doc_ids": [
+      "CVX_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "16.6 million shares repurchased for $2.6 billion in third quarter 2025"
+    ],
+    "expected_answer": "16.6 million shares repurchased for $2.6 billion in third quarter 2025",
+    "tier": "generated",
+    "source_chunk": "CVX_10-Q_2025-09-30.md::chunk63"
+  },
+  {
+    "id": "DAL_10-K_2024-12-31.md::chunk16",
+    "query": "What was the primary reason for the $503 million decrease in Delta Air Lines' fuel expense for the year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "Fuel expense decreased $503 million compared to 2023 primarily due to a 12% decrease in the market price of jet fuel"
+    ],
+    "expected_answer": "Fuel expense decreased $503 million compared to 2023 primarily due to a 12% decrease in the market price of jet fuel",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2024-12-31.md::chunk16"
+  },
+  {
+    "id": "DAL_10-K_2024-12-31.md::chunk18",
+    "query": "What was the one-time payment made to Delta pilots upon ratification of their new agreement in the March 2023 quarter?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "The agreement also includes a provision for a one-time payment made upon ratification in the March 2023 quarter of $735 million."
+    ],
+    "expected_answer": "$735 million.",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2024-12-31.md::chunk18"
+  },
+  {
+    "id": "DAL_10-K_2024-12-31.md::chunk35",
+    "query": "What was Delta Air Lines' total minimum operating lease obligations as of December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "As of December 31, 2024 we had a total of $8.4 billion of minimum operating lease obligations."
+    ],
+    "expected_answer": "As of December 31, 2024 we had a total of $8.4 billion of minimum operating lease obligations.",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2024-12-31.md::chunk35"
+  },
+  {
+    "id": "DAL_10-K_2024-12-31.md::chunk36",
+    "query": "What were Delta Air Lines' capital expenditures in 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "were $5.1 billion and $5.3 billion in 2024 and 2023, respectively"
+    ],
+    "expected_answer": "$5.1 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2024-12-31.md::chunk36"
+  },
+  {
+    "id": "DAL_10-K_2024-12-31.md::chunk42",
+    "query": "What was Delta Air Lines' total debt and finance lease principal amount as of December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "The principal amount of our debt and finance leases was $16.2 billion at December 31, 2024."
+    ],
+    "expected_answer": "$16.2 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2024-12-31.md::chunk42"
+  },
+  {
+    "id": "DAL_10-K_2024-12-31.md::chunk55",
+    "query": "What was Delta Air Lines' aggregate air traffic liability balance as of December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "At December 31, 2024, the aggregate air traffic liability balance was $7.1 billion."
+    ],
+    "expected_answer": "$7.1 billion.",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2024-12-31.md::chunk55"
+  },
+  {
+    "id": "DAL_10-K_2025-12-31.md::chunk12",
+    "query": "What were Delta Air Lines' MRO business revenues for the year ended December 31, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "During the years ended December 31, 2025 and 2024, the MRO business generated revenues of $822 million and $658 million, respectively."
+    ],
+    "expected_answer": "$822 million",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2025-12-31.md::chunk12"
+  },
+  {
+    "id": "DAL_10-K_2025-12-31.md::chunk33",
+    "query": "What were Delta Air Lines' minimum operating lease obligations as of December 31, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "as of December 31, 2025 we had a total of $7.8 billion of minimum operating lease obligations."
+    ],
+    "expected_answer": "as of December 31, 2025 we had a total of $7.8 billion of minimum operating lease obligations.",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2025-12-31.md::chunk33"
+  },
+  {
+    "id": "DAL_10-K_2025-12-31.md::chunk40",
+    "query": "What was Delta Air Lines' total principal debt amount as of December 31, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "The principal amount of our debt and finance leases was $14.1 billion at December 31, 2025."
+    ],
+    "expected_answer": "$14.1 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-K_2025-12-31.md::chunk40"
+  },
+  {
+    "id": "DAL_10-Q_2025-09-30.md::chunk34",
+    "query": "What were Delta Air Lines' cash flows from operations for the nine months ended September 30, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "We generated cash flows from operations of $6.1 billion in both the nine months ended September 30, 2025 and 2024."
+    ],
+    "expected_answer": "$6.1 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2025-09-30.md::chunk34"
+  },
+  {
+    "id": "DAL_10-Q_2025-09-30.md::chunk35",
+    "query": "What percentage of Delta Air Lines, Inc.'s total operating expense did fuel represent for the nine months ended September 30, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "Fuel expense represented approximately 17% and 20% of our total operating expense for the nine months ended September 30, 2025 and 2024, respectively."
+    ],
+    "expected_answer": "approximately 17%",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2025-09-30.md::chunk35"
+  },
+  {
+    "id": "DAL_10-Q_2025-09-30.md::chunk36",
+    "query": "What was Delta Air Lines' accrued profit sharing expense for the nine months ended September 30, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "During the nine months ended September 30, 2025, we accrued $986 million in profit sharing expense based on the"
+    ],
+    "expected_answer": "$986 million",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2025-09-30.md::chunk36"
+  },
+  {
+    "id": "DAL_10-Q_2025-09-30.md::chunk37",
+    "query": "What were Delta Air Lines' total cash sales to American Express for the nine months ended September 30, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "Total cash sales to American Express were $5.9 billion in the nine months ended September 30, 2025"
+    ],
+    "expected_answer": "$5.9 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2025-09-30.md::chunk37"
+  },
+  {
+    "id": "DAL_10-Q_2025-09-30.md::chunk39",
+    "query": "What was the total cash outflow for debt repayments by Delta Air Lines, Inc. in the nine months ended September 30, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "In the nine months ended September 30, 2025, we had cash outflows of $3.9 billion related to repayments of our debt and finance lease obligations."
+    ],
+    "expected_answer": "In the nine months ended September 30, 2025, we had cash outflows of $3.9 billion related to repayments of our debt and finance lease obligations.",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2025-09-30.md::chunk39"
+  },
+  {
+    "id": "DAL_10-Q_2026-03-31.md::chunk16",
+    "query": "What was Delta Air Lines' refinery operating loss for the period ended March 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "The refinery generated an operating loss of $39 million in the March 2026 quarter"
+    ],
+    "expected_answer": "The refinery generated an operating loss of $39 million in the March 2026 quarter",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2026-03-31.md::chunk16"
+  },
+  {
+    "id": "DAL_10-Q_2026-03-31.md::chunk23",
+    "query": "What were Delta Air Lines, Inc.'s cash flows from operations for the three months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "We generated cash flows from operations of $2.4 billion in both the three months ended March 31, 2026 and 2025."
+    ],
+    "expected_answer": "$2.4 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2026-03-31.md::chunk23"
+  },
+  {
+    "id": "DAL_10-Q_2026-03-31.md::chunk28",
+    "query": "What were Delta Air Lines' cash outflows for debt repayments in Q1 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "In the three months ended March 31, 2026, we had cash outflows of $1.6 billion related to repayments of our debt and finance lease obligations."
+    ],
+    "expected_answer": "$1.6 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2026-03-31.md::chunk28"
+  },
+  {
+    "id": "DAL_10-Q_2026-03-31.md::chunk30",
+    "query": "Did Delta Air Lines, Inc. repurchase any shares under its June 2025 program by March 31, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "No shares have been repurchased under this program through March 31, 2026."
+    ],
+    "expected_answer": "No shares have been repurchased under this program through March 31, 2026.",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2026-03-31.md::chunk30"
+  },
+  {
+    "id": "DAL_10-Q_2026-06-30.md::chunk32",
+    "query": "What was Delta Air Lines' revenue from American Express for the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Remuneration from American Express was $4.5 billion in the six months ended June 30, 2026"
+    ],
+    "expected_answer": "$4.5 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2026-06-30.md::chunk32"
+  },
+  {
+    "id": "DAL_10-Q_2026-06-30.md::chunk35",
+    "query": "What were Delta Air Lines' capital expenditures for the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Our capital expenditures were $2.7 billion and $2.4 billion for the six months ended June 30, 2026 and 2025, respectively."
+    ],
+    "expected_answer": "$2.7 billion",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2026-06-30.md::chunk35"
+  },
+  {
+    "id": "DAL_10-Q_2026-06-30.md::chunk41",
+    "query": "How many shares did Delta Air Lines, Inc. repurchase under its share repurchase program through June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "No shares have been repurchased under this program through June 30, 2026."
+    ],
+    "expected_answer": "No shares have been repurchased under this program through June 30, 2026.",
+    "tier": "generated",
+    "source_chunk": "DAL_10-Q_2026-06-30.md::chunk41"
+  },
+  {
+    "id": "JNJ_10-K_2024-12-29.md::chunk1",
+    "query": "What was the percentage impact of acquisitions and divestitures on Johnson & Johnson's international operational sales growth in fiscal 2024?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2024-12-29.md"
+    ],
+    "expected_spans": [
+      "In fiscal 2024, acquisitions and divestitures had a net positive impact of 0.2% on the international operational sales growth."
+    ],
+    "expected_answer": "0.2%",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-K_2024-12-29.md::chunk1"
+  },
+  {
+    "id": "JNJ_10-K_2024-12-29.md::chunk28",
+    "query": "What were Johnson & Johnson's interest income and expense for fiscal year 2024?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2024-12-29.md"
+    ],
+    "expected_spans": [
+      "Interest income in the fiscal years 2024 and 2023 was $1.3 billion. Interest expense in the fiscal years 2024 and 2023 was $0.8 billion."
+    ],
+    "expected_answer": "$1.3 billion and $0.8 billion",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-K_2024-12-29.md::chunk28"
+  },
+  {
+    "id": "JNJ_10-K_2024-12-29.md::chunk45",
+    "query": "What loss did Johnson & Johnson record in Other (income) expense for the fiscal third quarter of 2023 due to the Debt-for-Equity Exchange?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2024-12-29.md"
+    ],
+    "expected_spans": [
+      "This exchange resulted in a loss of approximately $0.4 billion recorded in Other (income) expense."
+    ],
+    "expected_answer": "approximately $0.4 billion",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-K_2024-12-29.md::chunk45"
+  },
+  {
+    "id": "JNJ_10-K_2024-12-29.md::chunk78",
+    "query": "How many record holders of Johnson & Johnson's Common Stock were there as of February 6, 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2024-12-29.md"
+    ],
+    "expected_spans": [
+      "As of February 6, 2025, there were 114,147 record holders of Common Stock of the Company."
+    ],
+    "expected_answer": "As of February 6, 2025, there were 114,147 record holders of Common Stock of the Company.",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-K_2024-12-29.md::chunk78"
+  },
+  {
+    "id": "JNJ_10-K_2025-12-28.md::chunk30",
+    "query": "What was Johnson & Johnson's total debt balance at the end of fiscal year 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2025-12-28.md"
+    ],
+    "expected_spans": [
+      "The total debt balance at the end of 2025 was $47.9 billion"
+    ],
+    "expected_answer": "The total debt balance at the end of 2025 was $47.9 billion",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-K_2025-12-28.md::chunk30"
+  },
+  {
+    "id": "JNJ_10-K_2025-12-28.md::chunk43",
+    "query": "What was Johnson & Johnson's net debt position as of December 28, 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2025-12-28.md"
+    ],
+    "expected_spans": [
+      "As of December 28, 2025, the net debt position was $27.8 billion as compared to the prior year of $12.1 billion."
+    ],
+    "expected_answer": "As of December 28, 2025, the net debt position was $27.8 billion as compared to the prior year of $12.1 billion.",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-K_2025-12-28.md::chunk43"
+  },
+  {
+    "id": "JNJ_10-K_2025-12-28.md::chunk50",
+    "query": "What was Johnson & Johnson's net debt at the end of 2025 compared to 2024?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2025-12-28.md"
+    ],
+    "expected_spans": [
+      "In 2025, net debt (cash and current marketable securities, net of debt) was $27.8 billion compared to net debt of $12.1 billion in 2024."
+    ],
+    "expected_answer": "In 2025, net debt (cash and current marketable securities, net of debt) was $27.8 billion compared to net debt of $12.1 billion in 2024.",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-K_2025-12-28.md::chunk50"
+  },
+  {
+    "id": "JNJ_10-Q_2026-03-29.md::chunk28",
+    "query": "What was Johnson & Johnson's cash and cash equivalents balance at the end of fiscal first quarter 2026?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2026-03-29.md"
+    ],
+    "expected_spans": [
+      "Cash and cash equivalents were $21.7 billion at the end of the fiscal first quarter of 2026"
+    ],
+    "expected_answer": "Cash and cash equivalents were $21.7 billion at the end of the fiscal first quarter of 2026",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-Q_2026-03-29.md::chunk28"
+  },
+  {
+    "id": "JNJ_10-Q_2026-06-28.md::chunk13",
+    "query": "What was the operational sales growth percentage for Johnson & Johnson's Oncology products in the period ended June 28, 2026 compared to the same period a year ago?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "Oncology products achieved operational sales growth of 16.1% as compared to the same period a year ago."
+    ],
+    "expected_answer": "16.1%",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-Q_2026-06-28.md::chunk13"
+  },
+  {
+    "id": "JNJ_10-Q_2026-06-28.md::chunk17",
+    "query": "What was the percentage change in sales for Johnson & Johnson's Cardiovascular / Metabolism / Other products compared to the same period a year ago?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "Cardiovascular / Metabolism / Other products experienced an operational sales decline of 4.7% as compared to the same period a year ago."
+    ],
+    "expected_answer": "4.7%",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-Q_2026-06-28.md::chunk17"
+  },
+  {
+    "id": "JNJ_10-Q_2026-06-28.md::chunk5",
+    "query": "What were Johnson & Johnson's Innovative Medicine segment sales for the fiscal six months ended June 28, 2026?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "Innovative Medicine segment sales in the fiscal six months of 2026 were $31.8 billion"
+    ],
+    "expected_answer": "$31.8 billion",
+    "tier": "generated",
+    "source_chunk": "JNJ_10-Q_2026-06-28.md::chunk5"
+  },
+  {
+    "id": "LUV_10-K_2024-12-31.md::chunk119",
+    "query": "Southwest Airlines Co., for the period ended December 31, 2024, which commodities no longer qualified for hedge accounting?",
+    "expected_doc_ids": [
+      "LUV_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "West Texas Intermediate (\"WTI\") crude oil-based derivatives no longer qualified for hedge accounting."
+    ],
+    "expected_answer": "West Texas Intermediate (\"WTI\") crude oil-based derivatives no longer qualified for hedge accounting.",
+    "tier": "generated",
+    "source_chunk": "LUV_10-K_2024-12-31.md::chunk119"
+  },
+  {
+    "id": "LUV_10-K_2025-12-31.md::chunk20",
+    "query": "What was the total increase in operating expenses for Southwest Airlines Co for the period ended December 31, 2025 compared to 2024?",
+    "expected_doc_ids": [
+      "LUV_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "Operating expenses for 2025 increased by $473 million, or 1.7 percent, compared with 2024"
+    ],
+    "expected_answer": "Operating expenses for 2025 increased by $473 million, or 1.7 percent, compared with 2024",
+    "tier": "generated",
+    "source_chunk": "LUV_10-K_2025-12-31.md::chunk20"
+  },
+  {
+    "id": "LUV_10-K_2025-12-31.md::chunk22",
+    "query": "What was the year-over-year percentage increase in Salaries, wages, and benefits expense for Southwest Airlines Co for the period ended December 31, 2025?",
+    "expected_doc_ids": [
+      "LUV_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "Salaries, wages, and benefits expense for 2025 increased by $723 million, or 5.9 percent, compared with 2024."
+    ],
+    "expected_answer": "5.9 percent",
+    "tier": "generated",
+    "source_chunk": "LUV_10-K_2025-12-31.md::chunk22"
+  },
+  {
+    "id": "LUV_10-K_2025-12-31.md::chunk30",
+    "query": "What was the percentage change in interest expense for Southwest Airlines Co for the period ended 2025-12-31 compared to 2024?",
+    "expected_doc_ids": [
+      "LUV_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "Interest expense for 2025 decreased by $82 million, or 32.9 percent, compared with 2024"
+    ],
+    "expected_answer": "decreased by $82 million, or 32.9 percent",
+    "tier": "generated",
+    "source_chunk": "LUV_10-K_2025-12-31.md::chunk30"
+  },
+  {
+    "id": "LUV_10-K_2025-12-31.md::chunk81",
+    "query": "What is Southwest Airlines Co's expectation regarding future material adjustments for LUV flight credits as of December 31, 2025?",
+    "expected_doc_ids": [
+      "LUV_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "does not expect future material adjustments associated with these flight credits."
+    ],
+    "expected_answer": "does not expect future material adjustments associated with these flight credits.",
+    "tier": "generated",
+    "source_chunk": "LUV_10-K_2025-12-31.md::chunk81"
+  },
+  {
+    "id": "LUV_10-Q_2025-09-30.md::chunk30",
+    "query": "What was the year-over-year percentage change in operating expenses per available seat mile for Southwest Airlines Co. for the third quarter ended September 30, 2025?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "Operating expenses per ASM for third quarter 2025 increased by 0.4 percent compared with third quarter 2024"
+    ],
+    "expected_answer": "increased by 0.4 percent",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2025-09-30.md::chunk30"
+  },
+  {
+    "id": "LUV_10-Q_2025-09-30.md::chunk50",
+    "query": "What was the percentage decrease in Southwest Airlines Co's Depreciation and amortization expense per ASM basis for the first nine months of 2025 compared to the same period in 2024?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "On a per ASM basis, Depreciation and amortization expense decreased 4.3 percent, compared with the first nine months of 2024."
+    ],
+    "expected_answer": "decreased 4.3 percent",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2025-09-30.md::chunk50"
+  },
+  {
+    "id": "LUV_10-Q_2025-09-30.md::chunk53",
+    "query": "What was Southwest Airlines Co's effective tax rate for the period ended September 30, 2025?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "The Company's effective tax rate was approximately 24.6 percent for the first nine months of 2025"
+    ],
+    "expected_answer": "approximately 24.6 percent",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2025-09-30.md::chunk53"
+  },
+  {
+    "id": "LUV_10-Q_2025-09-30.md::chunk68",
+    "query": "What was Southwest Airlines Co.'s GAAP twelve month rolling tax rate for the period ended September 30, 2024?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "The GAAP twelve month rolling tax rate as of September 30, 2024, was (186.0) percent"
+    ],
+    "expected_answer": "(186.0)",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2025-09-30.md::chunk68"
+  },
+  {
+    "id": "LUV_10-Q_2025-09-30.md::chunk93",
+    "query": "What is Southwest Airlines Co.'s financial guidance for the full year 2025?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "the Company's financial guidance for fourth quarter and full year 2025"
+    ],
+    "expected_answer": "the Company's financial guidance for fourth quarter and full year 2025",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2025-09-30.md::chunk93"
+  },
+  {
+    "id": "LUV_10-Q_2026-03-31.md::chunk11",
+    "query": "Who resigned from Southwest Airlines Co's Board of Directors effective February 23, 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "C. David Cush and Gregg A. Saretsky each submitted his resignation from the Company's Board of Directors (the \"Board\"), effective February 23, 2026."
+    ],
+    "expected_answer": "C. David Cush and Gregg A. Saretsky each submitted his resignation from the Company's Board of Directors (the \"Board\"), effective February 23, 2026.",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2026-03-31.md::chunk11"
+  },
+  {
+    "id": "LUV_10-Q_2026-03-31.md::chunk17",
+    "query": "What was the year-over-year percentage increase in Salaries, wages, and benefits expense for Southwest Airlines Co in the first quarter of 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Salaries, wages, and benefits expense for first quarter 2026 increased by $195 million, or 6.3 percent, compared with first quarter 2025."
+    ],
+    "expected_answer": "6.3 percent",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2026-03-31.md::chunk17"
+  },
+  {
+    "id": "LUV_10-Q_2026-03-31.md::chunk33",
+    "query": "What was the net cash provided by operating activities for Southwest Airlines Co during the three months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Net cash provided by operating activities was $1.4 billion for the three months ended March 31, 2026"
+    ],
+    "expected_answer": "$1.4 billion",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2026-03-31.md::chunk33"
+  },
+  {
+    "id": "LUV_10-Q_2026-03-31.md::chunk42",
+    "query": "What was Southwest Airlines Co's unrestricted cash balance as of March 31, 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "unrestricted cash of $3.3 billion as of March 31, 2026"
+    ],
+    "expected_answer": "$3.3 billion",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2026-03-31.md::chunk42"
+  },
+  {
+    "id": "LUV_10-Q_2026-03-31.md::chunk8",
+    "query": "How many Southwest Airlines Co aircraft were retrofitted with RECARO seats as of April 22, 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "As of April 22, 2026, 84 aircraft retrofitted with RECARO"
+    ],
+    "expected_answer": "As of April 22, 2026, 84 aircraft retrofitted with RECARO",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2026-03-31.md::chunk8"
+  },
+  {
+    "id": "LUV_10-Q_2026-06-30.md::chunk21",
+    "query": "What was the year-over-year percentage increase in Salaries, wages, and benefits expense for Southwest Airlines Co in the second quarter of 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Salaries, wages, and benefits expense for second quarter 2026 increased by $237 million, or 7.3 percent, compared with second quarter 2025."
+    ],
+    "expected_answer": "7.3 percent",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2026-06-30.md::chunk21"
+  },
+  {
+    "id": "LUV_10-Q_2026-06-30.md::chunk33",
+    "query": "What was the percentage increase in operating expenses per available seat mile for Southwest Airlines Co during the first six months of 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Operating expenses per ASM for the first six months of 2026 increased 9.3 percent, compared with the first six months of 2025"
+    ],
+    "expected_answer": "Operating expenses per ASM for the first six months of 2026 increased 9.3 percent, compared with the first six months of 2025",
+    "tier": "generated",
+    "source_chunk": "LUV_10-Q_2026-06-30.md::chunk33"
+  },
+  {
+    "id": "MRK_10-K_2024-12-31.md::chunk57",
+    "query": "What were Merck & Co., Inc.'s Bravecto line sales in 2024?",
+    "expected_doc_ids": [
+      "MRK_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "Sales of the Bravecto line of products were $1.1 billion in 2024"
+    ],
+    "expected_answer": "$1.1 billion",
+    "tier": "generated",
+    "source_chunk": "MRK_10-K_2024-12-31.md::chunk57"
+  },
+  {
+    "id": "MRK_10-K_2024-12-31.md::chunk72",
+    "query": "What is Merck & Co., Inc.'s expected increase in effective income tax rate for 2025 due to the global minimum tax?",
+    "expected_doc_ids": [
+      "MRK_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "The Company expects the impact of the global minimum tax will increase its effective income tax rate by approximately 2% in 2025."
+    ],
+    "expected_answer": "approximately 2%",
+    "tier": "generated",
+    "source_chunk": "MRK_10-K_2024-12-31.md::chunk72"
+  },
+  {
+    "id": "MRK_10-K_2024-12-31.md::chunk79",
+    "query": "How much did acquisition- and divestiture-related charges negatively affect Merck & Co., Inc.'s GAAP EPS in fiscal year 2024?",
+    "expected_doc_ids": [
+      "MRK_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "negatively affected in 2024, 2023 and 2022 by $1.28, $6.21, and $0.22, respectively"
+    ],
+    "expected_answer": "$1.28",
+    "tier": "generated",
+    "source_chunk": "MRK_10-K_2024-12-31.md::chunk79"
+  },
+  {
+    "id": "MRK_10-K_2024-12-31.md::chunk9",
+    "query": "What was the reason for the FDA's complete response letter for MK-1022 in June 2024?",
+    "expected_doc_ids": [
+      "MRK_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "due to findings pertaining to an inspection of a third-party manufacturing facility."
+    ],
+    "expected_answer": "due to findings pertaining to an inspection of a third-party manufacturing facility.",
+    "tier": "generated",
+    "source_chunk": "MRK_10-K_2024-12-31.md::chunk9"
+  },
+  {
+    "id": "MRK_10-K_2025-12-31.md::chunk114",
+    "query": "What was Merck & Co., Inc.'s remaining share repurchase authorization as of December 31, 2025?",
+    "expected_doc_ids": [
+      "MRK_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "As of December 31, 2025, the Company's remaining share repurchase authorization was $7.3 billion."
+    ],
+    "expected_answer": "As of December 31, 2025, the Company's remaining share repurchase authorization was $7.3 billion.",
+    "tier": "generated",
+    "source_chunk": "MRK_10-K_2025-12-31.md::chunk114"
+  },
+  {
+    "id": "MRK_10-Q_2025-09-30.md::chunk10",
+    "query": "What is Merck & Co., Inc.'s anticipated financial impact from tariffs implemented to date for the period ending September 30, 2025?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "At this time, the Company anticipates that tariffs implemented to date will result in less than $100 million"
+    ],
+    "expected_answer": "less than $100 million",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2025-09-30.md::chunk10"
+  },
+  {
+    "id": "MRK_10-Q_2025-09-30.md::chunk39",
+    "query": "What were Merck & Co., Inc.'s sales of Capvaxive for the first nine months of 2025?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "Sales of Capvaxive were $244 million and $480 million in the third quarter and first nine months of 2025, respectively"
+    ],
+    "expected_answer": "$480 million",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2025-09-30.md::chunk39"
+  },
+  {
+    "id": "MRK_10-Q_2026-03-31.md::chunk34",
+    "query": "What were Merck & Co., Inc.'s Enflonsia sales in the first quarter of 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Sales of Enflonsia were $1 million in the first quarter of 2026"
+    ],
+    "expected_answer": "Sales of Enflonsia were $1 million in the first quarter of 2026",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2026-03-31.md::chunk34"
+  },
+  {
+    "id": "MRK_10-Q_2026-03-31.md::chunk40",
+    "query": "What was the percentage change in worldwide sales for Dificid in the first quarter of 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "declined 59% in the first quarter of 2026"
+    ],
+    "expected_answer": "declined 59% in the first quarter of 2026",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2026-03-31.md::chunk40"
+  },
+  {
+    "id": "MRK_10-Q_2026-03-31.md::chunk68",
+    "query": "What were Merck & Co., Inc.'s certain other items for the first quarter of 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "There were no such items in either the first quarter of 2026 or 2025."
+    ],
+    "expected_answer": "no such items",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2026-03-31.md::chunk68"
+  },
+  {
+    "id": "MRK_10-Q_2026-03-31.md::chunk84",
+    "query": "What was Merck & Co., Inc.'s cash provided by operating activities for the period ended March 31, 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Cash provided by operating activities was $3.9 billion in the first three months of 2026"
+    ],
+    "expected_answer": "$3.9 billion",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2026-03-31.md::chunk84"
+  },
+  {
+    "id": "MRK_10-Q_2026-06-30.md::chunk40",
+    "query": "What percentage did worldwide sales of Vaxneuvance decline in the first six months of 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "declined 35% and 24% in the second quarter and first six months of 2026, respectively"
+    ],
+    "expected_answer": "24%",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2026-06-30.md::chunk40"
+  },
+  {
+    "id": "MRK_10-Q_2026-06-30.md::chunk52",
+    "query": "What was the percentage decrease in Merck & Co., Inc.'s Lagevrio sales for the second quarter of 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Sales of Lagevrio decreased 95% and 82% in the second quarter and first six months of 2026, respectively"
+    ],
+    "expected_answer": "Sales of Lagevrio decreased 95% and 82% in the second quarter and first six months of 2026, respectively",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2026-06-30.md::chunk52"
+  },
+  {
+    "id": "MRK_10-Q_2026-06-30.md::chunk70",
+    "query": "What was Merck & Co., Inc.'s net other income or expense for the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "$237 million of expense in the first six months of 2026"
+    ],
+    "expected_answer": "$237 million of expense in the first six months of 2026",
+    "tier": "generated",
+    "source_chunk": "MRK_10-Q_2026-06-30.md::chunk70"
+  },
+  {
+    "id": "MSFT_10-K_2025-06-30.md::chunk41",
+    "query": "What was the total amount of dividends declared by Microsoft Corp during fiscal year 2025?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md"
+    ],
+    "expected_spans": [
+      "During fiscal years 2025 and 2024, our Board of Directors declared dividends totaling $24.7 billion and $22.3 billion, respectively."
+    ],
+    "expected_answer": "$24.7 billion",
+    "tier": "generated",
+    "source_chunk": "MSFT_10-K_2025-06-30.md::chunk41"
+  },
+  {
+    "id": "MSFT_10-Q_2025-09-30.md::chunk38",
+    "query": "What was Microsoft's cash from operations for the three months ended September 30, 2025?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "$45.1 billion for the three months ended September 30, 2025"
+    ],
+    "expected_answer": "$45.1 billion for the three months ended September 30, 2025",
+    "tier": "generated",
+    "source_chunk": "MSFT_10-Q_2025-09-30.md::chunk38"
+  },
+  {
+    "id": "MSFT_10-Q_2025-12-31.md::chunk40",
+    "query": "What was Microsoft Corp's effective tax rate for the three months ended December 31, 2025?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "Our effective tax rate was 20% for both the three and six months ended December 31, 2025"
+    ],
+    "expected_answer": "20%",
+    "tier": "generated",
+    "source_chunk": "MSFT_10-Q_2025-12-31.md::chunk40"
+  },
+  {
+    "id": "MSFT_10-Q_2025-12-31.md::chunk5",
+    "query": "When did Microsoft sign a new definitive agreement with OpenAI to extend their partnership?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "In October 2025, we signed a new definitive agreement with OpenAI that extends this partnership"
+    ],
+    "expected_answer": "In October 2025, we signed a new definitive agreement with OpenAI that extends this partnership",
+    "tier": "generated",
+    "source_chunk": "MSFT_10-Q_2025-12-31.md::chunk5"
+  },
+  {
+    "id": "MSFT_10-Q_2026-03-31.md::chunk43",
+    "query": "What is Microsoft's effective tax rate for the period ended March 31, 2026?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Our effective tax rate was lower than the U.S. federal statutory rate for the three and nine months ended March 31, 2026"
+    ],
+    "expected_answer": "lower than the U.S. federal statutory rate",
+    "tier": "generated",
+    "source_chunk": "MSFT_10-Q_2026-03-31.md::chunk43"
+  },
+  {
+    "id": "MSFT_10-Q_2026-03-31.md::chunk51",
+    "query": "What was Microsoft's cash from operations for the nine months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "$127.5 billion for the nine months ended March 31, 2026"
+    ],
+    "expected_answer": "$127.5 billion for the nine months ended March 31, 2026",
+    "tier": "generated",
+    "source_chunk": "MSFT_10-Q_2026-03-31.md::chunk51"
+  },
+  {
+    "id": "MSFT_10-Q_2026-03-31.md::chunk55",
+    "query": "What was the total amount of dividends declared by Microsoft Corp for the nine months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "For the nine months ended March 31, 2026 and 2025, our Board of Directors declared dividends totaling $20.3 billion and $18.5 billion, respectively."
+    ],
+    "expected_answer": "$20.3 billion",
+    "tier": "generated",
+    "source_chunk": "MSFT_10-Q_2026-03-31.md::chunk55"
+  },
+  {
+    "id": "NVDA_10-K_2025-01-26.md::chunk1",
+    "query": "What drove NVIDIA's revenue growth in fiscal year 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "Revenue growth in fiscal year 2025 was driven by data center compute and networking platforms for accelerated computing and AI solutions."
+    ],
+    "expected_answer": "Revenue growth in fiscal year 2025 was driven by data center compute and networking platforms for accelerated computing and AI solutions.",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2025-01-26.md::chunk1"
+  },
+  {
+    "id": "NVDA_10-K_2025-01-26.md::chunk15",
+    "query": "What was NVIDIA CORP's total revenue for fiscal year ended 2025-01-26?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "Revenue for fiscal year 2025 was $130.5 billion, up 114% from a year ago."
+    ],
+    "expected_answer": "$130.5 billion",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2025-01-26.md::chunk15"
+  },
+  {
+    "id": "NVDA_10-K_2025-01-26.md::chunk2",
+    "query": "When did NVIDIA Corp begin shipping production systems of the Blackwell architecture for fiscal year 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "We began shipping production systems of the Blackwell architecture in the fourth quarter of fiscal year 2025."
+    ],
+    "expected_answer": "in the fourth quarter of fiscal year 2025",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2025-01-26.md::chunk2"
+  },
+  {
+    "id": "NVDA_10-K_2025-01-26.md::chunk36",
+    "query": "What was NVIDIA Corp's income tax expense for fiscal year 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "Income tax expense was $11.1 billion and $4.1 billion for fiscal years 2025 and 2024, respectively."
+    ],
+    "expected_answer": "$11.1 billion",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2025-01-26.md::chunk36"
+  },
+  {
+    "id": "NVDA_10-K_2025-01-26.md::chunk39",
+    "query": "What was NVIDIA CORP's total cash, cash equivalents, and marketable securities as of January 26, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "As of January 26, 2025, we had $43.2 billion in cash, cash equivalents, and marketable securities."
+    ],
+    "expected_answer": "As of January 26, 2025, we had $43.2 billion in cash, cash equivalents, and marketable securities.",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2025-01-26.md::chunk39"
+  },
+  {
+    "id": "NVDA_10-K_2026-01-25.md::chunk27",
+    "query": "What was NVIDIA's gross margin percentage for fiscal year 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "expected_spans": [
+      "Gross margins decreased to 71.1% in fiscal year 2026 from 75.0% in fiscal year 2025"
+    ],
+    "expected_answer": "71.1%",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2026-01-25.md::chunk27"
+  },
+  {
+    "id": "NVDA_10-K_2026-01-25.md::chunk36",
+    "query": "How much did NVIDIA Corp spend on share repurchases during fiscal year 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "expected_spans": [
+      "In fiscal year 2026, we repurchased 282 million shares of our common stock for $40.4 billion."
+    ],
+    "expected_answer": "$40.4 billion",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2026-01-25.md::chunk36"
+  },
+  {
+    "id": "NVDA_10-K_2026-01-25.md::chunk37",
+    "query": "What were NVIDIA CORP's cash dividends paid to shareholders in fiscal year 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "expected_spans": [
+      "In fiscal year 2026, we paid cash dividends to our shareholders of $974 million."
+    ],
+    "expected_answer": "In fiscal year 2026, we paid cash dividends to our shareholders of $974 million.",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2026-01-25.md::chunk37"
+  },
+  {
+    "id": "NVDA_10-K_2026-01-25.md::chunk38",
+    "query": "What was the amount of outstanding commercial paper for NVIDIA Corp as of January 25, 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "expected_spans": [
+      "As of January 25, 2026, no commercial paper was outstanding."
+    ],
+    "expected_answer": "no commercial paper was outstanding",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2026-01-25.md::chunk38"
+  },
+  {
+    "id": "NVDA_10-K_2026-01-25.md::chunk40",
+    "query": "What were NVIDIA's capital expenditures for fiscal year 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "expected_spans": [
+      "During fiscal year 2026 and fiscal year 2025, we spent $6.1 billion and $3.4 billion on capital expenditures, respectively."
+    ],
+    "expected_answer": "$6.1 billion",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-K_2026-01-25.md::chunk40"
+  },
+  {
+    "id": "NVDA_10-Q_2025-07-27.md::chunk18",
+    "query": "What was the percentage growth in NVIDIA CORP's Data Center networking revenue for the first half of fiscal year 2026 compared to the same period in fiscal year 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-07-27.md"
+    ],
+    "expected_spans": [
+      "Revenue from Data Center networking grew 79% year-on-year compared to the first half of fiscal year 2025"
+    ],
+    "expected_answer": "grew 79% year-on-year compared to the first half of fiscal year 2025",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-Q_2025-07-27.md::chunk18"
+  },
+  {
+    "id": "NVDA_10-Q_2025-07-27.md::chunk23",
+    "query": "What percentage of NVIDIA Corp's total revenue came from sales to customers outside the United States in the second quarter of fiscal year 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-07-27.md"
+    ],
+    "expected_spans": [
+      "50% and 51% of total revenue for the second quarter and first half of fiscal year 2026, respectively"
+    ],
+    "expected_answer": "50%",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-Q_2025-07-27.md::chunk23"
+  },
+  {
+    "id": "NVDA_10-Q_2025-07-27.md::chunk9",
+    "query": "What is NVIDIA Corp's plan to address supply chain challenges in the period ended 2025-07-27?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-07-27.md"
+    ],
+    "expected_spans": [
+      "We plan to increase our U.S.-based manufacturing and invest in specialized equipment and processes to support domestic production."
+    ],
+    "expected_answer": "We plan to increase our U.S.-based manufacturing and invest in specialized equipment and processes to support domestic production.",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-Q_2025-07-27.md::chunk9"
+  },
+  {
+    "id": "NVDA_10-Q_2025-10-26.md::chunk14",
+    "query": "What was the percentage increase in NVIDIA Corp's operating expenses for the period ended October 26, 2025 compared to a year ago?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-10-26.md"
+    ],
+    "expected_spans": [
+      "Operating expenses were up 36% from a year ago and up 8% sequentially."
+    ],
+    "expected_answer": "up 36% from a year ago and up 8% sequentially.",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-Q_2025-10-26.md::chunk14"
+  },
+  {
+    "id": "NVDA_10-Q_2025-10-26.md::chunk23",
+    "query": "What was NVIDIA Corp's gross margin percentage for the third quarter of fiscal year 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-10-26.md"
+    ],
+    "expected_spans": [
+      "Gross margins decreased to 73.4% for the third quarter of fiscal year 2026 compared to 74.6% for the third quarter of fiscal year 2025"
+    ],
+    "expected_answer": "73.4%",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-Q_2025-10-26.md::chunk23"
+  },
+  {
+    "id": "NVDA_10-Q_2025-10-26.md::chunk33",
+    "query": "What was NVIDIA's cash, cash equivalents, and marketable securities as of October 26, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-10-26.md"
+    ],
+    "expected_spans": [
+      "As of October 26, 2025, we had $60.6 billion in cash, cash equivalents, and marketable securities."
+    ],
+    "expected_answer": "As of October 26, 2025, we had $60.6 billion in cash, cash equivalents, and marketable securities.",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-Q_2025-10-26.md::chunk33"
+  },
+  {
+    "id": "NVDA_10-Q_2026-04-26.md::chunk6",
+    "query": "When does NVIDIA Corp expect its Rubin platform to start shipping in fiscal year 2027?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2026-04-26.md"
+    ],
+    "expected_spans": [
+      "We expect our Rubin platform to start shipping in the second half of fiscal year 2027."
+    ],
+    "expected_answer": "second half of fiscal year 2027",
+    "tier": "generated",
+    "source_chunk": "NVDA_10-Q_2026-04-26.md::chunk6"
+  },
+  {
+    "id": "PFE_10-Q_2025-09-28.md::chunk72",
+    "query": "What agreement did Pfizer and Arvinas Inc reach in September 2025 regarding vepdegestrant?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "In September 2025, Arvinas and Pfizer jointly agreed to out-license the commercialization rights to vepdegestrant to a third party."
+    ],
+    "expected_answer": "In September 2025, Arvinas and Pfizer jointly agreed to out-license the commercialization rights to vepdegestrant to a third party.",
+    "tier": "generated",
+    "source_chunk": "PFE_10-Q_2025-09-28.md::chunk72"
+  },
+  {
+    "id": "PFE_10-Q_2026-06-28.md::chunk14",
+    "query": "Did Pfizer Inc experience significant supply chain disruptions during the first six months of 2026?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "We have not seen a significant disruption of our supply chain in the first six months of 2026 and through the date of filing of this Form 10-Q"
+    ],
+    "expected_answer": "We have not seen a significant disruption of our supply chain in the first six months of 2026 and through the date of filing of this Form 10-Q",
+    "tier": "generated",
+    "source_chunk": "PFE_10-Q_2026-06-28.md::chunk14"
+  },
+  {
+    "id": "PFE_10-Q_2026-06-28.md::chunk81",
+    "query": "What was the dividend declared by Pfizer Inc in June 2026 for the period ended June 28, 2026?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "In June 2026, our BOD declared a dividend of $0.43 per share"
+    ],
+    "expected_answer": "In June 2026, our BOD declared a dividend of $0.43 per share",
+    "tier": "generated",
+    "source_chunk": "PFE_10-Q_2026-06-28.md::chunk81"
+  },
+  {
+    "id": "TGT_10-K_2025-02-01.md::chunk0",
+    "query": "How many new wellness products did Target Corp introduce in January of 2025?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "2,000 new wellness products introduced in January of 2025"
+    ],
+    "expected_answer": "2,000 new wellness products introduced in January of 2025",
+    "tier": "generated",
+    "source_chunk": "TGT_10-K_2025-02-01.md::chunk0"
+  },
+  {
+    "id": "TGT_10-K_2025-02-01.md::chunk30",
+    "query": "What were TARGET CORP's long-term debt credit ratings as of February 1, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A"
+    ],
+    "expected_answer": "A2 | A | A",
+    "tier": "generated",
+    "source_chunk": "TGT_10-K_2025-02-01.md::chunk30"
+  },
+  {
+    "id": "TGT_10-K_2025-02-01.md::chunk37",
+    "query": "What were TARGET CORP's vendor income receivables as of February 1, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "Vendor income receivable was $543 million and $513 million as of February 1, 2025, and February 3, 2024, respectively."
+    ],
+    "expected_answer": "$543 million",
+    "tier": "generated",
+    "source_chunk": "TGT_10-K_2025-02-01.md::chunk37"
+  },
+  {
+    "id": "TGT_10-K_2025-02-01.md::chunk38",
+    "query": "What were Target Corp's impairment losses for each year in the fiscal years ended 2024, 2023, and 2022?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "We recorded impairments of $68 million, $102 million, and $66 million in 2024, 2023, and 2022, respectively"
+    ],
+    "expected_answer": "We recorded impairments of $68 million, $102 million, and $66 million in 2024, 2023, and 2022, respectively",
+    "tier": "generated",
+    "source_chunk": "TGT_10-K_2025-02-01.md::chunk38"
+  },
+  {
+    "id": "TGT_10-K_2025-02-01.md::chunk39",
+    "query": "What were Target Corp's workers' compensation and general liability accruals as of February 1, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "Our workers' compensation and general liability accrual was $772 million and $650 million as of February 1, 2025"
+    ],
+    "expected_answer": "$772 million and $650 million",
+    "tier": "generated",
+    "source_chunk": "TGT_10-K_2025-02-01.md::chunk39"
+  },
+  {
+    "id": "TGT_10-K_2025-02-01.md::chunk40",
+    "query": "What would be the impact on TARGET CORP's self-insurance expense in 2024 if average claim costs increased by 10 percent?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "a 10 percent increase or decrease in average claim costs would have impacted our self-insurance expense by $77 million in 2024"
+    ],
+    "expected_answer": "a 10 percent increase or decrease in average claim costs would have impacted our self-insurance expense by $77 million in 2024",
+    "tier": "generated",
+    "source_chunk": "TGT_10-K_2025-02-01.md::chunk40"
+  },
+  {
+    "id": "TGT_10-K_2026-01-31.md::chunk36",
+    "query": "What was TARGET CORP's inventory balance as of January 31, 2026?",
+    "expected_doc_ids": [
+      "TGT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "Inventory was $12.3 billion and $12.7 billion as of January 31, 2026, and February 1, 2025, respectively"
+    ],
+    "expected_answer": "$12.3 billion",
+    "tier": "generated",
+    "source_chunk": "TGT_10-K_2026-01-31.md::chunk36"
+  },
+  {
+    "id": "TGT_10-Q_2025-08-02.md::chunk12",
+    "query": "What was Target Corp's gross margin rate for the three months ended August 2, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-08-02.md"
+    ],
+    "expected_spans": [
+      "For the three months ended August 2, 2025, our gross margin rate was 29.0 percent compared with 30.0 percent in the comparable prior-year period."
+    ],
+    "expected_answer": "29.0 percent",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2025-08-02.md::chunk12"
+  },
+  {
+    "id": "TGT_10-Q_2025-08-02.md::chunk13",
+    "query": "What was TARGET CORP's gross margin rate for the six months ended August 2, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-08-02.md"
+    ],
+    "expected_spans": [
+      "For the six months ended August 2, 2025, our gross margin rate was 28.6 percent compared with 29.4 percent in the comparable prior-year period."
+    ],
+    "expected_answer": "28.6 percent",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2025-08-02.md::chunk13"
+  },
+  {
+    "id": "TGT_10-Q_2025-08-02.md::chunk29",
+    "query": "How much did Target Corp spend on share repurchases during the six months ended August 2, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-08-02.md"
+    ],
+    "expected_spans": [
+      "We deployed $251 million to repurchase shares during the six months ended August 2, 2025."
+    ],
+    "expected_answer": "We deployed $251 million to repurchase shares during the six months ended August 2, 2025.",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2025-08-02.md::chunk29"
+  },
+  {
+    "id": "TGT_10-Q_2025-11-01.md::chunk26",
+    "query": "What were the effective tax rates for Target Corp during the trailing twelve months ended November 1, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-11-01.md"
+    ],
+    "expected_spans": [
+      "which were 22.6 percent and 22.5 percent for the trailing twelve months ended November 1, 2025"
+    ],
+    "expected_answer": "22.6 percent and 22.5 percent for the trailing twelve months ended November 1, 2025",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2025-11-01.md::chunk26"
+  },
+  {
+    "id": "TGT_10-Q_2026-05-02.md::chunk14",
+    "query": "What was TARGET CORPORATION's gross margin rate for the quarter ended May 2, 2026?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "For the three months ended May 2, 2026, our gross margin rate was 29.0 percent compared with 28.2 percent in the comparable prior-year period."
+    ],
+    "expected_answer": "29.0 percent",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2026-05-02.md::chunk14"
+  },
+  {
+    "id": "TGT_10-Q_2026-05-02.md::chunk25",
+    "query": "What were Target Corp's cash flows provided by operating activities for the three months ended May 2, 2026?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "Cash flows provided by operating activities were $0.7 billion and $0.3 billion for the three months ended May 2, 2026, and May 3, 2025, respectively."
+    ],
+    "expected_answer": "$0.7 billion",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2026-05-02.md::chunk25"
+  },
+  {
+    "id": "TGT_10-Q_2026-05-02.md::chunk27",
+    "query": "What was the total amount of dividends paid by Target Corp during the first quarter of 2026?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "$526 million ($1.14 per share) during the first quarter of 2026"
+    ],
+    "expected_answer": "$526 million ($1.14 per share) during the first quarter of 2026",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2026-05-02.md::chunk27"
+  },
+  {
+    "id": "TGT_10-Q_2026-05-02.md::chunk28",
+    "query": "What were Target Corp's Moody's long-term debt credit ratings as of May 2, 2026?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A"
+    ],
+    "expected_answer": "A2",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2026-05-02.md::chunk28"
+  },
+  {
+    "id": "TGT_10-Q_2026-05-02.md::chunk3",
+    "query": "What was the status of IEEPA tariff refunds for Target Corp as of May 2, 2026?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "As of May 2, 2026, no refunds had been received and no receivable was recorded."
+    ],
+    "expected_answer": "no refunds had been received and no receivable was recorded.",
+    "tier": "generated",
+    "source_chunk": "TGT_10-Q_2026-05-02.md::chunk3"
+  },
+  {
+    "id": "UAL_10-K_2024-12-31.md::chunk24",
+    "query": "What was United Airlines Holdings, Inc.'s unrealized losses on investments, net for the period ended 2024-12-31?",
+    "expected_doc_ids": [
+      "UAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023"
+    ],
+    "expected_answer": "$199 million",
+    "tier": "generated",
+    "source_chunk": "UAL_10-K_2024-12-31.md::chunk24"
+  },
+  {
+    "id": "UAL_10-K_2024-12-31.md::chunk4",
+    "query": "How many new employees did United Airlines Holdings, Inc. add since 2020 as part of its United Next growth plan?",
+    "expected_doc_ids": [
+      "UAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "increasing our employee headcount by more than 30,000 employees since 2020"
+    ],
+    "expected_answer": "more than 30,000",
+    "tier": "generated",
+    "source_chunk": "UAL_10-K_2024-12-31.md::chunk4"
+  },
+  {
+    "id": "UAL_10-K_2025-12-31.md::chunk26",
+    "query": "Was United Airlines Holdings, Inc. in compliance with its debt covenants as of December 31, 2025?",
+    "expected_doc_ids": [
+      "UAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "As of December 31, 2025, UAL and United were in compliance with their respective debt covenants under these agreements."
+    ],
+    "expected_answer": "As of December 31, 2025, UAL and United were in compliance with their respective debt covenants under these agreements.",
+    "tier": "generated",
+    "source_chunk": "UAL_10-K_2025-12-31.md::chunk26"
+  },
+  {
+    "id": "UAL_10-K_2025-12-31.md::chunk29",
+    "query": "What are United Airlines Holdings, Inc.'s expected adjusted capital expenditures for the period ended December 31, 2026?",
+    "expected_doc_ids": [
+      "UAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "For 2026, the Company expects less than $8.0 billion of adjusted capital expenditures, in light of certain aircraft delivery delays."
+    ],
+    "expected_answer": "less than $8.0 billion",
+    "tier": "generated",
+    "source_chunk": "UAL_10-K_2025-12-31.md::chunk29"
+  },
+  {
+    "id": "UAL_10-Q_2025-09-30.md::chunk28",
+    "query": "What was the percentage change in United Airlines Holdings, Inc.'s distribution expenses for the first nine months of 2025 compared to the year-ago period?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "Distribution expenses decreased $142 million, or 8.4%, in the first nine months of 2025 as compared to the year-ago period"
+    ],
+    "expected_answer": "decreased $142 million, or 8.4%",
+    "tier": "generated",
+    "source_chunk": "UAL_10-Q_2025-09-30.md::chunk28"
+  },
+  {
+    "id": "UAL_10-Q_2025-09-30.md::chunk30",
+    "query": "What were United Airlines Holdings, Inc.'s unrealized losses on investments, net for the period ended September 30, 2025?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "Unrealized losses on investments, net, were $8 million in the first nine months of 2025 as compared to $160 million in the year-ago period"
+    ],
+    "expected_answer": "$8 million",
+    "tier": "generated",
+    "source_chunk": "UAL_10-Q_2025-09-30.md::chunk30"
+  },
+  {
+    "id": "UAL_10-Q_2025-09-30.md::chunk31",
+    "query": "What was United Airlines Holdings, Inc.'s unrestricted cash as of September 30, 2025?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash"
+    ],
+    "expected_answer": "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash",
+    "tier": "generated",
+    "source_chunk": "UAL_10-Q_2025-09-30.md::chunk31"
+  },
+  {
+    "id": "UAL_10-Q_2026-03-31.md::chunk11",
+    "query": "What was the dollar increase in United Airlines Holdings, Inc.'s aircraft fuel expense for the first quarter of 2026 compared to the year-ago period?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Aircraft fuel expense increased $339 million, or 12.6%, in the first quarter of 2026 as compared to the year-ago period"
+    ],
+    "expected_answer": "$339 million",
+    "tier": "generated",
+    "source_chunk": "UAL_10-Q_2026-03-31.md::chunk11"
+  },
+  {
+    "id": "UAL_10-Q_2026-06-30.md::chunk11",
+    "query": "What was the year-over-year percentage increase in aircraft fuel expense for United Airlines Holdings, Inc. in the second quarter of 2026?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Aircraft fuel expense increased $2.3 billion, or 84.1%, in the second quarter of 2026 as compared to the year-ago period"
+    ],
+    "expected_answer": "84.1%",
+    "tier": "generated",
+    "source_chunk": "UAL_10-Q_2026-06-30.md::chunk11"
+  },
+  {
+    "id": "UAL_10-Q_2026-06-30.md::chunk18",
+    "query": "What was the percentage increase in passenger revenue for United Airlines Holdings, Inc. in the first six months of 2026?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Passenger revenue increased $3.6 billion, or 13.9%, in the first six months of 2026 as compared to the year-ago period"
+    ],
+    "expected_answer": "13.9%",
+    "tier": "generated",
+    "source_chunk": "UAL_10-Q_2026-06-30.md::chunk18"
+  },
+  {
+    "id": "UAL_10-Q_2026-06-30.md::chunk21",
+    "query": "What was the year-over-year percentage increase in United Airlines Holdings, Inc.'s aircraft fuel expense for the first six months of 2026?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Aircraft fuel expense increased $2.7 billion, or 48.8%, in the first six months of 2026 as compared to the year-ago period"
+    ],
+    "expected_answer": "48.8%",
+    "tier": "generated",
+    "source_chunk": "UAL_10-Q_2026-06-30.md::chunk21"
+  },
+  {
+    "id": "UAL_10-Q_2026-06-30.md::chunk9",
+    "query": "What was the percentage increase in United Airlines Holdings' passenger revenue for the second quarter of 2026?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "increased $2.3 billion, or 16.4%, in the second quarter of 2026 as compared to the year-ago period"
+    ],
+    "expected_answer": "increased $2.3 billion, or 16.4%, in the second quarter of 2026 as compared to the year-ago period",
+    "tier": "generated",
+    "source_chunk": "UAL_10-Q_2026-06-30.md::chunk9"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk20",
+    "query": "What was Walmart Inc.'s return on investment for the fiscal year ended January 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "ROI was 15.5% and 15.0% for fiscal 2025 and 2024, respectively."
+    ],
+    "expected_answer": "15.5%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk20"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk31",
+    "query": "By how many basis points did Walmart Inc.'s gross profit rate increase in fiscal 2025 compared to the previous fiscal year?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "Our gross profit rate increased 40 and 27 basis points for fiscal 2025 and 2024, respectively, when compared to the previous fiscal year."
+    ],
+    "expected_answer": "40",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk31"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk33",
+    "query": "What was Walmart Inc.'s effective income tax rate for the fiscal year ended January 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "Our effective income tax rate was 23.4%, 25.5%, and 33.6% for fiscal 2025, 2024 and 2023, respectively."
+    ],
+    "expected_answer": "23.4%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk33"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk35",
+    "query": "What was Walmart Inc.'s net sales percentage change from the comparable period for the fiscal year ended January 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "Net sales percentage change from comparable period | | 4.7 | %"
+    ],
+    "expected_answer": "4.7 | %",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk35"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk36",
+    "query": "What was the percentage increase in Walmart U.S. segment net sales for fiscal 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "increased $20.6 billion or 4.7% and $21.3 billion or 5.1% for fiscal 2025 and 2024, respectively"
+    ],
+    "expected_answer": "4.7%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk36"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk37",
+    "query": "By how many basis points did Walmart Inc.'s gross profit rate increase for fiscal 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "Gross profit rate increased 47 and 20 basis points for fiscal 2025 and 2024, respectively, when compared to the previous fiscal year."
+    ],
+    "expected_answer": "47",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk37"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk47",
+    "query": "By how much did Walmart Inc.'s segment operating income increase for fiscal 2025 compared to the previous fiscal year?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "segment operating income increased $0.2 billion for both fiscal 2025 and 2024, respectively, when compared to the previous fiscal year."
+    ],
+    "expected_answer": "segment operating income increased $0.2 billion for both fiscal 2025 and 2024, respectively, when compared to the previous fiscal year.",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk47"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk48",
+    "query": "What was Walmart Inc.'s net cash provided by operating activities for the fiscal year ended January 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "Net cash provided by operating activities was $36.4 billion, $35.7 billion and $28.8 billion for fiscal 2025, 2024 and 2023, respectively."
+    ],
+    "expected_answer": "$36.4 billion",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk48"
+  },
+  {
+    "id": "WMT_10-K_2025-01-31.md::chunk58",
+    "query": "What were Walmart Inc.'s total dividend payments for fiscal year 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "Our total dividend payments were $6.7 billion, $6.1 billion and $6.1 billion for fiscal 2025, 2024 and 2023, respectively."
+    ],
+    "expected_answer": "$6.7 billion",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk58"
+  },
+  {
+    "id": "WMT_10-K_2026-01-31.md::chunk48",
+    "query": "What were Walmart Inc.'s working capital deficits as of January 31, 2026 and 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "$22.6 billion and $17.1 billion as of January 31, 2026 and 2025, respectively."
+    ],
+    "expected_answer": "$22.6 billion and $17.1 billion as of January 31, 2026 and 2025, respectively.",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2026-01-31.md::chunk48"
+  },
+  {
+    "id": "WMT_10-K_2026-01-31.md::chunk9",
+    "query": "What was the percentage increase in Walmart U.S. comparable sales for fiscal 2026?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "Walmart U.S. comparable sales increased 4.3% and 4.8% in fiscal 2026 and 2025, respectively."
+    ],
+    "expected_answer": "4.3%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-K_2026-01-31.md::chunk9"
+  },
+  {
+    "id": "WMT_10-Q_2025-07-31.md::chunk47",
+    "query": "What was Walmart Inc.'s remaining authorization for share repurchases as of July 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "expected_spans": [
+      "As of July 31, 2025, authorization for $5.9 billion of share repurchases remained under the share repurchase program."
+    ],
+    "expected_answer": "As of July 31, 2025, authorization for $5.9 billion of share repurchases remained under the share repurchase program.",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2025-07-31.md::chunk47"
+  },
+  {
+    "id": "WMT_10-Q_2025-07-31.md::chunk6",
+    "query": "What was the comparable sales growth percentage for Walmart U.S. segment for the three months ended July 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "expected_spans": [
+      "Walmart U.S. segment had comparable sales growth of 4.7% and for 3.9% the three and six months ended July 31, 2025, respectively"
+    ],
+    "expected_answer": "4.7%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2025-07-31.md::chunk6"
+  },
+  {
+    "id": "WMT_10-Q_2025-07-31.md::chunk7",
+    "query": "What percentage did Sam's Club U.S. eCommerce net sales contribute to comparable sales for the three months ended July 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "expected_spans": [
+      "positively contributed approximately 3.4% to comparable sales for both the three and six months ended July 31, 2025"
+    ],
+    "expected_answer": "approximately 3.4%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2025-07-31.md::chunk7"
+  },
+  {
+    "id": "WMT_10-Q_2025-10-31.md::chunk38",
+    "query": "What was the year-over-year growth in comparable sales for Walmart Inc.'s Sam's Club U.S. segment for the nine months ended October 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-10-31.md"
+    ],
+    "expected_spans": [
+      "3.0% for the three and nine months ended October 31, 2025, respectively"
+    ],
+    "expected_answer": "3.0%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2025-10-31.md::chunk38"
+  },
+  {
+    "id": "WMT_10-Q_2025-10-31.md::chunk49",
+    "query": "What was the total amount Walmart Inc. paid for share repurchases during the nine months ended October 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-10-31.md"
+    ],
+    "expected_spans": [
+      "During the nine months ended October 31, 2025, the Company repurchased $7.0 billion in shares of its common stock"
+    ],
+    "expected_answer": "$7.0 billion",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2025-10-31.md::chunk49"
+  },
+  {
+    "id": "WMT_10-Q_2026-04-30.md::chunk14",
+    "query": "What was Walmart Inc.'s return on assets for the trailing twelve months ended April 30, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "ROA was 8.4% and 7.5% for the trailing 12 months ended April 30, 2026 and 2025, respectively."
+    ],
+    "expected_answer": "8.4%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2026-04-30.md::chunk14"
+  },
+  {
+    "id": "WMT_10-Q_2026-04-30.md::chunk2",
+    "query": "What amount of tariff refund claims did Walmart Inc. recognize in the three months ended April 30, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "Accordingly, the Company did not recognize any amounts related to these claims in the three months ended April 30, 2026."
+    ],
+    "expected_answer": "did not recognize any amounts related to these claims in the three months ended April 30, 2026.",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2026-04-30.md::chunk2"
+  },
+  {
+    "id": "WMT_10-Q_2026-04-30.md::chunk25",
+    "query": "What was Walmart Inc.'s effective income tax rate for the three months ended April 30, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "Our effective income tax rate was 23.2% for the three months ended April 30, 2026"
+    ],
+    "expected_answer": "23.2%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2026-04-30.md::chunk25"
+  },
+  {
+    "id": "WMT_10-Q_2026-04-30.md::chunk27",
+    "query": "What was the comparable sales growth percentage for Walmart Inc. during the three months ended April 30, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "comparable sales of 4.3% for the three months ended April 30, 2026"
+    ],
+    "expected_answer": "comparable sales of 4.3% for the three months ended April 30, 2026",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2026-04-30.md::chunk27"
+  },
+  {
+    "id": "WMT_10-Q_2026-04-30.md::chunk6",
+    "query": "What was the percentage increase in Sam's Club U.S. comparable sales for Walmart Inc. for the three months ended April 30, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "Sam's Club U.S. comparable sales increased 5.9% for the three months ended April 30, 2026"
+    ],
+    "expected_answer": "5.9%",
+    "tier": "generated",
+    "source_chunk": "WMT_10-Q_2026-04-30.md::chunk6"
+  },
+  {
+    "id": "XOM_10-Q_2026-06-30.md::chunk17",
+    "query": "What was the additional amount included in estimated cumulative Structural Cost Savings for ExxonMobil Holdings Corp during the first six months of the period ended June 30, 2026?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "which included an additional $1.2 billion in the first six months of 2026."
+    ],
+    "expected_answer": "which included an additional $1.2 billion in the first six months of 2026.",
+    "tier": "generated",
+    "source_chunk": "XOM_10-Q_2026-06-30.md::chunk17"
+  },
+  {
+    "id": "XOM_10-Q_2026-06-30.md::chunk23",
+    "query": "How much did ExxonMobil Holdings Corp earnings increase due to advantaged volume growth in the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Increased earnings by $1,940 million, mainly driven by Guyana and Permian growth."
+    ],
+    "expected_answer": "Increased earnings by $1,940 million, mainly driven by Guyana and Permian growth.",
+    "tier": "generated",
+    "source_chunk": "XOM_10-Q_2026-06-30.md::chunk23"
+  },
+  {
+    "id": "XOM_10-Q_2026-06-30.md::chunk26",
+    "query": "What was ExxonMobil's YTD 2026 oil-equivalent barrels per day production volume compared to 2025?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "4.6 million oil-equivalent barrels per day in 2026 decreased 37 thousand oil-equivalent barrels per day from 2025"
+    ],
+    "expected_answer": "4.6 million oil-equivalent barrels per day in 2026 decreased 37 thousand oil-equivalent barrels per day from 2025",
+    "tier": "generated",
+    "source_chunk": "XOM_10-Q_2026-06-30.md::chunk26"
+  },
+  {
+    "id": "XOM_10-Q_2026-06-30.md::chunk37",
+    "query": "What were ExxonMobil's Corporate and Financing expenses for the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Corporate and Financing expenses were $2,007 million for the first six months of 2026"
+    ],
+    "expected_answer": "Corporate and Financing expenses were $2,007 million for the first six months of 2026",
+    "tier": "generated",
+    "source_chunk": "XOM_10-Q_2026-06-30.md::chunk37"
+  },
+  {
+    "id": "XOM_10-Q_2026-06-30.md::chunk39",
+    "query": "What was the cash flow from operations for ExxonMobil Holdings Corp in the first six months of 2026?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Cash provided by operating activities totaled $32.3 billion for the first six months of 2026"
+    ],
+    "expected_answer": "$32.3 billion",
+    "tier": "generated",
+    "source_chunk": "XOM_10-Q_2026-06-30.md::chunk39"
+  },
+  {
+    "id": "XOM_10-Q_2026-06-30.md::chunk40",
+    "query": "What was the net cash used in financing activities for ExxonMobil Holdings Corp during the first six months of 2026?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Net cash used in financing activities was $19.9 billion in the first six months of 2026"
+    ],
+    "expected_answer": "$19.9 billion",
+    "tier": "generated",
+    "source_chunk": "XOM_10-Q_2026-06-30.md::chunk40"
+  }
+]

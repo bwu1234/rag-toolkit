@@ -16,7 +16,11 @@ milestone. Local-first by default: Ollama serves both embeddings
 - [x] Milestone 8 — Streamlit UI
 - [x] Milestone 9 — Contextual chunking (index-time enrichment)
 - [x] Milestone 10 — Corrective RAG (grade / retry / groundedness)
-- [ ] Milestone 11 — Measure Milestones 9 & 10 (before/after eval numbers)
+- [x] Milestone 11 — Measure Milestones 9 & 10 (before/after eval numbers)
+      — see [Measured results](docs/measured-results.md). Headline: the reranker
+      was the bottleneck (swapped, +10.4pp hit rate); contextual chunking, CRAG,
+      query expansion and `min_score` all measured as no better than noise on
+      this corpus and stay off.
 - [ ] Milestone 12 — Observability (query logs, latency/cost, feedback)
 - [ ] Milestone 13 — Query result caching
 - [ ] Milestone 14 — Richer document parsing (tables, layout, OCR fallback)
@@ -25,9 +29,12 @@ milestone. Local-first by default: Ollama serves both embeddings
 - [ ] Milestone 17 — PII detection & redaction
 - [ ] Milestone 18 — Deployment (container, hosted providers)
 - [ ] Milestone 19 — Agentic retrieval (search as a tool the model calls)
+- [ ] Milestone 20 — Search-quality layer (query filters, ranking signals, dedup/MMR, BM25F)
+- [ ] Milestone 21 — Streaming & citation fidelity
+- [ ] Milestone 22 — Reference-free eval metrics (RAG triad, MAP)
 
-See [Backlog](#backlog) for what each of these means and why it's ordered
-where it is.
+See [Backlog](docs/backlog.md) for what each of these means and why it's
+ordered where it is.
 
 ## Architecture
 
@@ -53,6 +60,52 @@ validated by pydantic models in `rag/config/settings.py`. Load it via
 `load_config()`. Don't hardcode model names, chunk sizes, or paths in pipeline
 code — read them from `RagConfig`.
 
+### Corpora
+
+`corpora.registry` names bodies of documents; `corpora.active` picks which ones
+a command operates on, overridden per-invocation by `--corpus NAME` (repeatable,
+supported by the CLI and both eval runners).
+
+Listing **several** names pools them into one index, and that is the point of
+the registry rather than an afterthought:
+
+- **isolated** (one name) — retrieval quality *within* a corpus;
+- **pooled** (several) — robustness to plausible-but-wrong neighbours.
+
+The gap between the two is the **cross-corpus interference cost**, and it can't
+be observed with a single corpus. It's also what finally makes
+`retrieval.min_score` and CRAG's document grader measurable: on a small,
+topically-distinct corpus nothing irrelevant is ever nearby, so the grader has
+no job to do.
+
+`config.corpus_selection(names)` resolves this into a `CorpusSelection`, which
+**derives its own storage names** — `rag_corpus__edgar` vs.
+`rag_corpus__baseline+edgar`, and `bm25_index__<slug>.json` alongside. Isolated
+and pooled indexes therefore coexist instead of silently overwriting each other,
+which matters because comparing them is the exercise. Selections are sorted and
+deduped, so `--corpus a --corpus b` and `--corpus b --corpus a` are one index.
+
+- An unknown corpus name **raises** rather than indexing nothing — a typo would
+  otherwise produce an empty index and a plausible-looking all-zero eval run.
+- Pooling refuses **duplicate `Document.id`s**. Ids are corpus-relative paths,
+  so two corpora each containing `faq.txt` would produce colliding chunk ids and
+  the store would silently upsert one over the other. Namespacing ids by corpus
+  was rejected as the fix: it would change every `document_id`, invalidating the
+  `expected_doc_ids` already recorded in the eval sets, to solve a problem the
+  current corpora don't have.
+- An empty registry falls back to a single implicit corpus at
+  `paths.corpus_dir`, so a config predating the registry keeps working.
+- **Existing indexes need one rebuild.** Collection and BM25 names now carry the
+  selection slug, so a pre-registry `data/index` won't be found. Re-run
+  `python -m rag.cli index --corpus <name>`; the contextual cache is keyed by
+  prompt content, not by index name, so contexts are not re-paid for.
+- On-disk convention: each registry entry's `documents_dir` lives at
+  `data/corpora/<name>/documents/`. `baseline` (the small hand-written sample
+  corpus) is committed to the repo; other corpora (e.g. `edgar`) are fetched
+  and gitignored, reproduced from a `manifest.json` alongside their
+  `documents/` — see `.gitignore` for the exemption that keeps `baseline`
+  committed despite the general `data/corpora/*/documents/` ignore rule.
+
 ## Folder layout
 
 ```
@@ -68,8 +121,13 @@ rag/
   eval/         retrieval & answer evaluation scripts + eval set
   ui/           Streamlit app
 tests/          pytest suite, mirrors rag/ layout
-data/corpus/    input documents (gitignored — user-provided)
+data/corpora/   named corpora (see Corpora below); each is <name>/documents/
+                plus an optional manifest.json. `baseline` is committed sample
+                content; other corpora (e.g. `edgar`) are gitignored and
+                reproduced by a fetch script.
 data/index/     persisted Chroma index (gitignored — rebuildable)
+docs/           design rationale, measured results, backlog, known limitations
+                (see Documentation below) — not always-loaded, read on demand
 ```
 
 ## Running things
@@ -77,15 +135,24 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
 (Filled in as each milestone lands.)
 
 - Run tests: `pytest`
+- See the whole pipeline run: `scripts/demo.sh` (ingest → chunk → index →
+  retrieve → chat, on the active corpus). Takes `--corpus NAME` (repeatable) and
+  `--question "..."`; resolves document directories from `corpora` in config, so
+  it checks the corpus is actually present before starting.
 - Ingest & inspect the corpus: `python -m rag.cli ingest --show 3`
+  (add `--corpus edgar`, or repeat it to pool: `--corpus baseline --corpus edgar`;
+  works on every command below and on both eval runners)
 - Chunk & inspect chunk sizes: `python -m rag.cli chunk --show 3`
 - Build the index: `python -m rag.cli index` (add `--reset` to rebuild from scratch;
-  required after changing anything under `chunking.contextual`)
+  required after changing anything under `chunking.contextual`). Generated chunk
+  contexts are checkpointed and survive `--reset` on purpose, so a rebuild does
+  not re-pay for them; add `--clear-context-cache` to force regeneration.
 - Retrieve & rerank for a query: `python -m rag.cli retrieve "your question"`
 - Ask a question end to end (retrieve → rerank → generate, with citations): `python -m rag.cli chat "your question"`
 - Start the API: `uvicorn rag.api.main:app --reload` (then `POST /chat` with `{"query": "..."}`, or check `/health`)
 - Start the UI: `streamlit run rag/ui/app.py`
-- Run retrieval eval: `python -m rag.eval.retrieval_eval` (add `-v` for per-sample detail)
+- Run retrieval eval: `python -m rag.eval.retrieval_eval` (add `-v` for per-sample detail;
+  `--eval-set data/eval/edgar_eval_set.json --corpus edgar` for the EDGAR set)
 - Run answer eval (LLM-as-judge): `python -m rag.eval.answer_eval`
 
 ## Conventions
@@ -100,751 +167,19 @@ data/index/     persisted Chroma index (gitignored — rebuildable)
   already available (e.g. don't add a second HTTP client, a second YAML
   parser, etc.).
 
-## Ingestion notes (Milestone 2)
+## Documentation
 
-- `Document` granularity is loader-defined: PDF loaders emit one `Document`
-  per page (so citations can reference a page number); Markdown/text loaders
-  emit one `Document` per file. Chunking treats both uniformly.
-- `Document.id` is a human-readable, corpus-relative path
-  (`"sub/dir/file.pdf#page=3"`), not a hash — easier to trace a chunk or
-  citation back to its exact source file and page while debugging or
-  authoring an eval set.
-- Cleaning is a separate, explicit pass (`rag.ingestion.cleaners.clean_documents`)
-  rather than baked into loaders, so extraction and normalization can evolve
-  — or be skipped for debugging — independently.
+This file is the operational core, kept lean on purpose since it loads into
+every conversation. Design rationale, history, and forward-looking planning
+live in `docs/`, read on demand rather than always-loaded:
 
-## Chunking notes (Milestone 3)
-
-- Default strategy is `FixedSizeChunker`: character-based windows
-  (`chunking.chunk_size` / `chunk_overlap` in config) with both the start and
-  end of each window snapped to the nearest whitespace, so words are never
-  split mid-token at either edge — including across overlapping regions.
-- `Chunk.id` mirrors the `Document.id` scheme:
-  `"<document-id>::chunk<index>"`, e.g. `"handbook.pdf#page=2::chunk0"`.
-- Chunks carry forward a small allowlist of document metadata (`title`,
-  `page`, `page_count`) plus their own (`chunk_index`, `char_start`,
-  `char_end`), so a chunk is self-describing for citations without needing
-  its parent `Document`.
-- Chunking assumes already-cleaned text — run `clean_documents()` first (the
-  CLI's `chunk` command does this for you).
-- Character-based (not token-based) chunking is a deliberate simplicity
-  tradeoff: no tokenizer dependency, but chunk sizes don't map precisely onto
-  an embedding/LLM's token budget. A token-aware chunker is a natural future
-  upgrade behind the same `Chunker` interface.
-
-## Embedding & indexing notes (Milestone 4)
-
-- `EmbeddingModel` exposes `embed_documents` / `embed_query` separately (not
-  one method) so asymmetric models — ones that need different instruction
-  prefixes for indexing vs. querying — can be supported later without
-  changing the interface; `OllamaEmbedder` currently treats them identically.
-- `OllamaEmbedder` talks to a local Ollama daemon's `/api/embed` endpoint over
-  `httpx`, batching client-side (`_DEFAULT_BATCH_SIZE = 32`) so request size
-  stays predictable regardless of corpus size. It builds its HTTP client with
-  `trust_env=False` — a loopback connection to Ollama should never go through
-  a system proxy.
-- Embedding dimensionality (`EmbeddingConfig.dimensions`) is optional in
-  config: if unset, `OllamaEmbedder` discovers it lazily from the first
-  response and caches it, so constructing the embedder never requires a
-  running daemon (useful for tests and for just loading config).
-- `VectorStore` is keyed by `Chunk.id` and `upsert` is idempotent — re-running
-  `index` after small corpus edits replaces existing vectors in place rather
-  than duplicating them. Use `index --reset` to wipe the collection after a
-  chunking/embedding config change that invalidates old ids or vector
-  dimensions.
-- `ChromaVectorStore` uses Chroma's persistent local mode (a single on-disk
-  directory under `paths.index_dir`, no server process) configured for cosine
-  similarity (`hnsw:space: cosine`). Chroma metadata values must be flat
-  primitives (`str | int | float | bool`, no `None`/`Path`/nested data), so
-  the adapter flattens `Chunk` provenance + metadata on the way in and
-  reconstructs a typed `ScoredChunk` (with `score` normalized to
-  `[0, 1]`-similarity, converted from Chroma's reported cosine distance) on
-  the way out — pipeline code never deals with Chroma's wire format directly.
-- The `index` CLI command runs the full load → clean → chunk → embed → upsert
-  pipeline and is the first command in the project with real side effects and
-  cost (one HTTP round trip per embedding batch) — unlike the read-only
-  `ingest`/`chunk` preview commands.
-- Embedding/vector-store tests are hermetic: `OllamaEmbedder` is tested
-  against a mocked HTTP transport (`httpx.MockTransport`, no daemon required),
-  and `ChromaVectorStore` against a real temp-directory-backed Chroma instance
-  with deterministic orthogonal-vector fixtures (predictable cosine
-  similarity) rather than mocks — the adapter's job is format translation, best
-  verified end to end.
-
-## Retrieval & reranking notes (Milestone 5)
-
-- Retrieval is a two-stage retrieve→rerank pipeline: `Retriever.retrieve`
-  embeds the query, pulls `retrieval.top_k` candidates from the `VectorStore`
-  by vector similarity, then narrows them to `retrieval.rerank_top_k` via a
-  `Reranker`. Both stages return `ScoredChunk`, so the API and eval pipeline
-  downstream never need to know whether reranking ran.
-- `Reranker` is a small ABC (`rerank(query, candidates, top_k) -> list[ScoredChunk]`)
-  with two adapters: `NoOpReranker` (pure pass-through/truncation — preserves
-  incoming vector-similarity scores, the one documented exception to the rule
-  below) and `CrossEncoderReranker` (wraps a `sentence-transformers`
-  cross-encoder, selected via `reranker.provider: cross_encoder` and
-  `reranker.model` in config, defaulting to `cross-encoder/ms-marco-MiniLM-L-6-v2`).
-- Convention: a reranker's output `score` reflects *that reranker's own
-  judgment* in `[0, 1]`, not the incoming vector-similarity score — so a
-  `ScoredChunk.score` always means "how relevant did the most recent stage
-  consider this," whichever stage ran last. `CrossEncoderReranker` squashes
-  the model's raw logits through a sigmoid (`normalize_rerank_score`) to land
-  in that same `[0, 1]` convention as cosine-similarity scores.
-- `CrossEncoderReranker` loads the underlying `sentence_transformers.CrossEncoder`
-  model lazily on first `rerank()` call (not at construction), and caches it —
-  mirroring `OllamaEmbedder.dimensions`'s lazy-discovery pattern. This means
-  building/wiring a `CrossEncoderReranker` (e.g. via the factory, or at CLI
-  startup) never requires the model weights to be downloaded; only an actual
-  `retrieve` call with `reranker.provider: cross_encoder` does.
-- Adding `sentence-transformers` (and its `torch` dependency, ~2GB) was a
-  deliberate tradeoff for accurate local cross-encoder reranking over a
-  lighter-weight option (e.g. an LLM-based reranker via the existing Ollama
-  client) — the user chose accuracy and a proven, purpose-built model over
-  minimizing dependencies for this component.
-- `retrieval.min_score` is a relevance floor applied to the *final* results,
-  after reranking, inside `Retriever` — not inside any one reranker. A vector
-  store always returns its nearest `top_k` neighbours however distant they are,
-  so without a floor an off-corpus question still reaches the LLM with a full
-  set of irrelevant passages to "ground" itself in. Living in `Retriever` means
-  it applies to `NoOpReranker` (pure vector retrieval) too, and it's what lets
-  `ChatService`'s empty-retrieval branch mean "nothing relevant" rather than
-  just "empty index".
-- Because the floor reads whatever the last stage's score means (per the score
-  convention above), the right *value* differs by reranker: a cross-encoder's
-  sigmoid-squashed logit and a raw cosine similarity are not the same scale.
-  Retune `retrieval.min_score` when changing `reranker.provider`.
-- **Query expansion** (`retrieval.expansion`, `rag/retrieval/expansion.py`) runs
-  *before* retrieval and turns one query into several. `QueryExpander` returns an
-  `ExpandedQuery` with separate `dense`/`sparse` lists, because a transformation
-  that helps embedding search can hurt keyword search:
-  - `hyde` — generate a hypothetical answer passage and embed *that*, closing the
-    shape mismatch between a short question and the long declarative passage that
-    answers it. The invented passage goes to the embedder only; **BM25 keeps the
-    real question**, since matching literal invented terms ("1,000 requests per
-    minute") retrieves on words that may appear nowhere in the corpus.
-  - `multi_query` — generate rephrasings, retrieve for each, fuse. Both retrievers
-    get all of them: a rephrasing is still a real question, so BM25 gains
-    vocabulary rather than noise.
-- Expansion needed no new retrieval code path. Every (query, retriever) pair
-  yields one ranked list and `reciprocal_rank_fusion` folds them all together —
-  hybrid mode was already fusing two lists, expansion just makes more of them.
-  Rank-based fusion is what makes this safe: the lists come from different
-  queries *and* different scoring functions, and RRF compares only positions.
-  A single ranked list still skips fusion entirely, so unexpanded dense
-  retrieval is byte-for-byte what it was, similarity scores included.
-- `top_k` is per *ranked list*, not per query — N queries pull N×`top_k`
-  candidates before fusion narrows the union back to `top_k`. Expansion buys
-  recall to fuse over, not a larger final candidate set.
-- Expanders fail open like `QueryCondenser`: a raising client or unparseable
-  reply falls back to the original query rather than failing the search. HyDE
-  with `num_documents > 1` keeps whichever passages it did get.
-- Expansion reaches **stage 2 as well**: `Reranker.rerank` takes a *list* of
-  queries (`ExpandedQuery.rerank`), and `CrossEncoderReranker` scores every
-  candidate against every query, folding the per-query logits together via
-  `reranker.aggregate`. Without this, expansion was self-defeating — a
-  vocabulary gap the rewrites closed at retrieval time was reintroduced the
-  moment scoring fell back to the user's original wording, so the right chunk
-  got retrieved and then scored ~0 and cut by `min_score`.
-- `reranker.aggregate` is the knob that decides what expansion *means*:
-  - `max` (default) — relevant if *any* phrasing says so. This is what lets a
-    rephrasing rescue a chunk the original wording scored near zero.
-  - `mean` — averages log-odds, requiring broader agreement; suppresses chunks
-    only one (possibly drifting) rewrite liked.
-  Combining happens in logit space, before the sigmoid, so there's one
-  normalization point. `max` is monotonic through a sigmoid so its placement is
-  immaterial; `mean` is log-odds pooling. With one query the two are identical,
-  so the unexpanded path is unaffected either way.
-- `ExpandedQuery` carries **three** lists, one per consumer, because each accepts
-  different text: `dense` (embedded — free-form, a hypothetical passage is fine),
-  `sparse` (BM25 — literal terms only), and `rerank` (cross-encoder — must be
-  **question-shaped**, since these models are trained on (query, passage) pairs
-  and a passage in the query slot is off-distribution). HyDE therefore keeps its
-  invention in `dense` alone; multi-query's rephrasings, being real questions,
-  populate all three. `queries[0]` is always the user's actual question.
-- Cost: reranking N queries means N× the cross-encoder pairs. They go through one
-  `predict()` call so the per-call overhead isn't multiplied, but the compute is.
-- Retrieval/reranker tests are hermetic and don't require model weights or a
-  running daemon: `Retriever` is tested against fakes for `EmbeddingModel`,
-  `VectorStore`, and `Reranker` that record what they're called with;
-  `CrossEncoderReranker` is tested by swapping its lazily-loaded `_model` for
-  a fake that returns deterministic logits (verifying rescoring, sigmoid
-  normalization, and re-sorting), plus a separate test that stubs the
-  `sentence_transformers` module via `sys.modules` to verify the lazy-loading
-  and caching behavior itself without the real package installed.
-
-## Chat API notes (Milestone 6)
-
-- `ChatService` (`rag/generation/chat_service.py`) is the seam between
-  retrieval and generation: it embeds/retrieves/reranks via the existing
-  `Retriever`, renders a numbered, citeable context block with
-  `build_rag_prompt`, asks the configured `LLMClient` to answer grounded in
-  it, and projects the result into a flat `ChatAnswer`/`Citation` pair. It's
-  deliberately framework-free — reusable by the FastAPI route, the `chat` CLI
-  command, and (Milestone 7) the eval pipeline without standing up a server.
-- `LLMClient` is a one-method ABC (`generate(prompt, *, system=None) -> str`)
-  — the smallest surface the chat service needs. `OllamaLLMClient` talks to
-  Ollama's `/api/chat` endpoint (messages array, not raw-prompt `/api/generate`)
-  so the system prompt and user prompt stay cleanly separated, and translates
-  `LLMConfig.temperature`/`max_tokens` into Ollama's `options.temperature`/
-  `options.num_predict` — the chat service never needs to know provider-specific
-  option names. Same `trust_env=False` loopback rule as `OllamaEmbedder`.
-- `LLMConfig.provider` already accepts `"anthropic"`/`"openai"` as valid config
-  *values* (so a user can name an intended future provider without failing
-  validation), but `get_llm_client` raises a clear "recognized but not
-  implemented" error for them — distinct from "unknown provider" — until
-  adapters exist.
-- `build_rag_prompt` numbers retrieved passages (`Passage [1]`, `Passage [2]`,
-  ...) labeled with their source document id and page (when known); the system
-  prompt instructs the model to answer only from those passages and cite them
-  inline by number. That numbering is the single source of truth mapping a
-  model's `[n]` citation back to a `Citation` in the response — both are
-  derived from the same `chunks` list in the same order.
-- `ChatService.ask` short-circuits (skipping both retrieval and generation, or
-  just generation) for a blank query or empty retrieval results — both are
-  cases where a generated answer could only be a hallucination. This keeps the
-  no-context path fast, free, and honest about what the corpus does/doesn't
-  contain. There are **three** distinct short-circuit messages, not one: blank
-  query, nothing in the index (`candidate_count == 0`), and candidates found
-  but all below `retrieval.min_score`. The last two are different problems with
-  different fixes ("run the indexer" vs. "your corpus doesn't cover this"), so
-  collapsing them into one string would waste the distinction the floor exists
-  to create.
-- `Retriever.retrieve` returns a `RetrievalResult` (chunks + `candidate_count`
-  + `dropped_below_min_score`), not a bare list, precisely so `ChatService` can
-  tell those two cases apart. Only the retriever knows which happened, and
-  threading it through mutable retriever state would break under FastAPI's
-  concurrent requests — so it's returned explicitly. Callers that only want the
-  chunks (`rag/eval/retrieval_eval.py`, the `retrieve` CLI command) take
-  `.chunks`.
-- `ChatAnswer` carries `rewritten_query` and `dropped_below_min_score` so the
-  pipeline's two silent interventions — searching for a different question than
-  the user typed, and withholding passages it retrieved — are visible to
-  *every* caller, not just the one that passes an `on_event` sink. `PipelineEvent`
-  remains the debug trace; these two fields are the user-facing contract.
-  `rewritten_query` is `None` when condensing didn't run or didn't change
-  anything, so callers never render "rewritten to: \<the same question\>".
-- **Retrieval is unconditional** — every non-blank query goes through the full
-  pipeline; there's no classifier or router deciding whether the corpus is
-  needed. That's the right default for a corpus Q&A tool (every question is
-  supposed to be corpus-shaped) and the common shape in production RAG. The
-  alternative — exposing search as a tool and letting the LLM decide when to
-  call it — is what a general-purpose assistant needs, and would replace both
-  the always-retrieve decision and the condense step below.
-- Multi-turn queries are handled by condensing, not by passing history to the
-  answering model: `QueryCondenser` (`rag/generation/query_rewriter.py`)
-  rewrites a follow-up plus recent turns into one standalone question, and that
-  rewrite drives *both* retrieval and the generation prompt. Retrieval is
-  stateless, so embedding a raw "what about part-time staff?" searches for
-  those literal words; and `build_rag_prompt` renders passages plus a single
-  question with no conversation of its own, so the answering model needs the
-  resolved question too. Enabled via `chat.condense_history` (on by default),
-  bounded by `chat.max_history_turns`.
-- The condenser reuses the pipeline's existing `LLMClient` rather than
-  building its own, and only runs on a turn that actually *has* history — so
-  the CLI, the eval pipeline, and every first turn pay nothing for it. It
-  fails open: an LLM error or empty rewrite logs and falls back to the original
-  query, which is exactly what the pipeline used before condensing existed.
-- All three entrypoints surface both facts, in the shape that fits them: the
-  UI renders them as captions under the answer bubble (`format_answer_notices`)
-  rather than only inside the collapsed pipeline trace, so a user re-reading an
-  old turn doesn't have to open a debug panel; the API returns them as
-  `ChatResponse.rewritten_query` / `.dropped_below_min_score`; the CLI prints
-  them around the answer, and its `retrieve` command distinguishes "no
-  candidates" from "all below the floor" with a hint to lower `min_score`.
-- `history` is supplied by the caller, never stored server-side — the API takes
-  it in `ChatRequest.history` and holds no session state, so it stays
-  restartable and horizontally scalable. The Streamlit UI derives it from
-  `st.session_state["messages"]` via `history_from_messages`, which skips
-  failed turns (whose `content` is an error banner, not a reply).
-- The FastAPI app (`rag/api/main.py`) builds one `ChatService` at startup via
-  a `lifespan` handler and stores it on `app.state` — routes never re-read
-  config or reconnect to Ollama/Chroma per request. `routes/chat.py` exposes
-  it through a `Depends`-based dependency (`get_chat_service`) specifically so
-  tests can override it (`app.dependency_overrides[get_chat_service] = ...`)
-  with a fake, exercising real routing/validation/(de)serialization without a
-  running daemon, index, or lifespan.
-- `ChatRequest`/`ChatResponse`/`CitationModel` (`rag/api/schemas.py`) are kept
-  separate from `ChatAnswer`/`Citation` (the internal pipeline types) — the
-  wire contract can evolve (versioning, extra fields) independently of
-  pipeline internals, and routes are the only place that translates between
-  them.
-- `QueryCondenser` is tested (`tests/test_query_rewriter.py`) against a fake
-  `LLMClient` — prompt assembly, history truncation, quote stripping, and both
-  fail-open paths (empty rewrite, raising client) — with no daemon involved.
-- API tests are hermetic: `test_llm.py` mocks Ollama's HTTP transport
-  (mirroring `test_embedding.py`), `test_chat_service.py` and `test_prompts.py`
-  use fakes/plain assertions with no I/O, and `test_api.py` drives the real
-  FastAPI app through `TestClient` with `get_chat_service` overridden — so the
-  full request/response cycle (routing, pydantic validation, JSON
-  (de)serialization, dependency injection) is verified without ever touching
-  Ollama, Chroma, or the lifespan handler.
-
-## Evaluation pipeline notes (Milestone 7)
-
-- The eval set lives in `data/eval/eval_set.json` — a JSON array of
-  :class:`~rag.eval.dataset.EvalSample` objects, each with a `query`,
-  `expected_doc_ids` (for retrieval eval), and an optional `expected_answer`
-  (for answer eval).  Extra fields (e.g. `_note`) are round-tripped
-  transparently.  Edit the sample file to add your own question/answer pairs
-  before running evals.
-- Retrieval eval (`rag/eval/retrieval_eval.py`) runs the configured
-  `Retriever` (embed → vector-search → rerank) for each query and reports
-  four aggregate metrics: **hit rate** (fraction of queries where any expected
-  document was retrieved), **recall@k** (fraction of expected documents
-  covered), **precision@k** (fraction of retrieved results that were
-  relevant), and **MRR** (mean reciprocal rank of the first relevant result).
-  Matching is document-level (`chunk.document_id`), not chunk-level — any
-  retrieved chunk from the right document counts as a hit.
-- Answer eval (`rag/eval/answer_eval.py`) runs the full
-  `ChatService.ask` pipeline then asks the configured `LLMClient` to judge
-  each answer as `PASS`/`FAIL` against the sample's `expected_answer`
-  (LLM-as-judge).  The same Ollama model is used for both generation and
-  judging — no extra dependency.  Samples without an `expected_answer` are
-  skipped and counted separately so you can have retrieval-only entries in the
-  same eval set.
-- Metric functions (`rag/eval/metrics.py`) are pure — no I/O, no
-  dependencies beyond the stdlib — so they are trivial to test and easy to
-  extend with additional metrics (e.g. NDCG, F1) behind the same interface.
-- Eval tests (`tests/test_eval.py`) are hermetic: metric functions are tested
-  with plain lists, the dataset round-trip uses `tmp_path`, and the runner
-  tests use `_FakeRetriever`/`_FakeChatService`/`_FakeLLMClient` — no real
-  index, no Ollama daemon, no model weights.
-
-## Streamlit UI notes (Milestone 8)
-
-- The UI lives in two files: `rag/ui/app.py` (the Streamlit script) and
-  `rag/ui/helpers.py` (pure formatting functions).  The split keeps all
-  testable logic in `helpers.py` — importable without a running Streamlit
-  server — while `app.py` stays thin Streamlit wiring.
-- `@st.cache_resource` builds the `ChatService` exactly once per Streamlit
-  server process (not per page load / browser tab), mirroring the FastAPI
-  `lifespan` pattern: one set of connections to Ollama and Chroma, shared
-  across all sessions.
-- Chat history is stored in `st.session_state["messages"]` as a list of
-  `{"role", "content", "answer"}` dicts — `answer` carries the full
-  `ChatAnswer` (including citations) so each assistant bubble can render
-  collapsible citation cards on re-render without re-querying.
-- The pipeline trace defaults to **expanded** and stays that way, controlled by
-  a sidebar checkbox (`st.session_state["expand_trace"]`, seeded in
-  `_init_session` before the widget is created so the widget owns the key
-  afterwards). Both render paths read it — the live `st.status` block when a
-  turn completes, and `_render_events` when history re-renders — so the trace
-  doesn't snap shut on the next turn. Untick it to get the old collapsed
-  behavior.
-- Error handling covers two failure modes: startup failure (Ollama/Chroma
-  unreachable when `build_chat_service` is called — shown as a full-page
-  error with instructions) and per-query failure (exception inside
-  `chat_service.ask` — shown inline in the assistant bubble without
-  crashing the session).
-- UI tests (`tests/test_ui.py`) cover `helpers.py` only — citation label
-  formatting (with/without page), preview truncation and newline collapsing,
-  and the sidebar config summary.  The Streamlit wiring in `app.py` is not
-  unit-tested (it requires a live Streamlit runtime); correctness there is
-  verified by running `streamlit run rag/ui/app.py` manually.
-
-## Contextual chunking notes (Milestone 9)
-
-- `chunking.contextual.enabled` turns on **contextual retrieval**: at index
-  time, one LLM call per chunk writes a sentence saying where that chunk sits
-  in its parent document, and the chunk is indexed as *context + text*. It
-  addresses a failure query-time tuning cannot reach — fixed-size splitting
-  strips the terms that made a chunk findable, so a chunk reading "The limit is
-  1,000 requests per minute" never names the API it belongs to and is
-  unreachable by a query that does.
-- **`Chunk.text` is never modified.** The blurb lives in its own `context`
-  field, and `Chunk.contextual_text` / `ScoredChunk.contextual_text` join the
-  two only where indexing happens. Citations, previews, and
-  `char_start`/`char_end` keep pointing at the verbatim span, so nothing a user
-  sees is model-generated. That split is the whole design; it's why the feature
-  needed a field rather than a rewrite of `text`.
-- The enrichment reaches **both** retrievers: the embedder embeds
-  `contextual_text`, and `BM25Index` tokenizes it too (while still returning
-  `record["text"]`). Contextual BM25 is half the reported gain in Anthropic's
-  writeup, and skipping it would have left keyword search matching against the
-  words the split threw away.
-- Persistence rides on the existing adapters: Chroma stores `context` alongside
-  provenance in its flat metadata (never in `documents`, which must stay the
-  verbatim chunk) and pops it back into `ScoredChunk`; BM25's JSON record gains
-  a `context` key read with `.get`, so index files written before this existed
-  still load.
-- **The reranker deliberately still scores `text`, not `contextual_text`.**
-  `retrieval.min_score` is hand-tuned against the cross-encoder's output scale,
-  and silently changing what that model sees would invalidate the tuning
-  without anything reporting it. CRAG's grader *does* read `contextual_text` —
-  it's a fresh judgment with no calibrated threshold behind it.
-- Contextualization runs **after** the incremental change check in `index`, not
-  before, so chunks already in the index cost nothing. The content hash covers
-  `chunk.text` alone, which means toggling `contextual.enabled` does *not*
-  invalidate an existing index by itself — re-index with `--reset` after
-  changing anything under `chunking.contextual`.
-- Measured cost on this corpus: 31 chunks took ~107s and 31 `/api/chat` calls
-  on `qwen3.5:9b-mlx`. A no-change re-index afterwards took 1.7s and zero LLM
-  calls, confirming the skip path holds.
-- Tests (`tests/test_contextualizer.py`) drive a fake `LLMClient`, covering
-  prompt assembly, both truncations, and every fail-open path; the round trips
-  are covered where they live (`test_vectorstore.py`, `test_sparse.py`),
-  including a BM25 test that a query matching *only* a chunk's context finds it.
-
-## Corrective RAG notes (Milestone 10)
-
-- `crag.enabled` adds three LLM-backed judgments around the existing pipeline,
-  each independently switchable (`rag/generation/crag.py`):
-  - `DocumentGrader` — per retrieved passage, does this help answer the
-    question? Rejected passages never reach the prompt.
-  - `RetryQueryRewriter` — when an attempt leaves nothing, reword the query and
-    search again (bounded by `crag.max_retries`).
-  - `GroundednessChecker` — read the generated answer back against its
-    passages; regenerate under `REGROUND_SYSTEM_PROMPT` if unsupported.
-- What CRAG adds over `retrieval.min_score` is a **judgment rather than a
-  score**. The floor thresholds similarity, and similarity is a statement about
-  how alike two texts are, not about whether one answers a question asked of
-  the other — so a topically-adjacent passage clears the floor and arrives as
-  though it were evidence. On the live check above, 5 passages cleared the
-  floor and the grader kept 1; the answer cited that one and was correct.
-- Groundedness is what makes the citation contract mean something. The system
-  prompt asks the model to cite `[n]`, but an inline `[2]` is a token the model
-  chose to emit, not evidence that passage 2 says what sits next to it.
-- **`ChatService` owns the loop**, not `Retriever` and not a graph framework.
-  Two of the three checks span the retrieve/generate boundary this class exists
-  to own — retrying means returning to retrieval *after* judging its output,
-  and groundedness compares a generated answer to the passages that produced
-  it. Neither half can see both sides. LangGraph was considered and rejected:
-  the graph is four nodes and a bounded loop, and an orchestration dependency
-  would buy nothing the `for` loop in `_retrieve_with_correction` doesn't.
-- **All three fail open**, like `QueryCondenser` and the expanders: an LLM error
-  or unparseable reply means "proceed as though this check hadn't run". The
-  asymmetry is deliberate and asserted in tests — an unreachable grader *keeps*
-  passages. A broken checker must degrade the pipeline to plain RAG, never turn
-  a working turn into a refusal.
-- `GroundednessChecker.check` returns `bool | None`, and the `None` is load
-  bearing: "unsupported" and "couldn't tell" are different, and only the first
-  justifies regenerating. An answer that stays ungrounded after
-  `max_regenerations` is **returned anyway**, flagged via `ChatAnswer.grounded`
-  — withholding it would rest a third kind of refusal on one small model's
-  one-word opinion. All three entrypoints surface the failing verdict (CLI
-  banner, `ChatResponse.grounded`, UI caption); the *passing* verdict is shown
-  nowhere, since captioning the expected outcome trains users to skim past the
-  one state that needs attention.
-- Grading always runs against the **user's** question, even on a retry that
-  searched for something else — otherwise a rewrite that drifted would validate
-  the drifted results it found. For the same reason generation always answers
-  `search_query`, never a retry rewrite: a rewrite is a search device, like a
-  HyDE passage.
-- A rewrite that reproduces an already-searched query ends the loop instead of
-  spending a retrieval round trip re-deriving the same empty result.
-- Grading out everything is the **fourth** distinct no-context message
-  (alongside blank query / empty index / all-below-floor), and it's checked
-  first because it's the most specific true statement about such a turn: the
-  index wasn't empty and the floor wasn't the obstacle.
-- `ChatAnswer` gains `graded_out`, `retry_queries`, `retrieval_attempts`, and
-  `grounded`, extending the existing contract that every silent intervention is
-  visible to every caller — not just the one that passes an `on_event` sink.
-  New trace stages: `crag_grade`, `crag_retry`, `crag_groundedness`, `regenerate`.
-- Cost is the reason it's off by default: `grade_documents` alone is one LLM
-  call per retrieved passage (`retrieval.rerank_top_k`, so 5 by default) on a
-  path that previously had one call total. The live query above spent ~5s in
-  grading.
-- Tests split by concern: `tests/test_crag.py` drives each component with fake
-  clients (reply parsing, every fail-open path), while `tests/test_chat_service.py`
-  uses stubs for all three to test the loop itself — when a retry fires, which
-  query gets graded and answered, when generation is skipped, and the exact
-  event sequence.
-
-## Backlog
-
-Planned work, roughly in dependency order. Nothing here is started. The
-existing pipeline is feature-rich on the *retrieval/generation* axis and thin
-on everything that surrounds it — measurement, operations, and input quality —
-which is what this list is.
-
-Every item keeps the project's existing rules: config-selected behind an
-interface, off by default until measured, hermetic tests, no second HTTP
-client / YAML parser / etc.
-
-**Deliberately not on this list: a query router.** Retrieval is unconditional
-by design (see the Milestone 6 notes) — every question asked of a corpus Q&A
-tool is supposed to be corpus-shaped, so a classifier deciding whether to
-retrieve would add an LLM call and a failure mode to buy back a case that
-shouldn't arise. The version of that idea worth building is a different thing
-entirely — the model calling search itself — which is Milestone 19, and it
-subsumes routing rather than adding it as a stage.
-
-### Milestone 11 — Measure Milestones 9 & 10
-
-First, because it gates the value of everything else. Contextual chunking and
-CRAG both shipped functionally verified and numerically unmeasured, and the eval
-harness to fix that already exists.
-
-- `retrieval_eval` with `chunking.contextual.enabled` off vs. on (`--reset`
-  between runs; the content hash doesn't cover `context`).
-- `answer_eval` with `crag.enabled` off vs. on, and with each of
-  `grade_documents` / `check_groundedness` isolated.
-- Same for `retrieval.expansion` (`none` / `hyde` / `multi_query`) and
-  `reranker.aggregate`, which are equally unmeasured. Expansion is
-  non-deterministic — repeat runs or accept the noise, don't read one run as a
-  result.
-- Record the numbers somewhere durable (a table in this file, or
-  `data/eval/results/`), including corpus size and config, since a metric with
-  no config attached is unreproducible.
-
-Expect a defaults change to fall out of this, and possibly a retune of
-`retrieval.min_score`.
-
-### Milestone 12 — Observability
-
-Today a turn's reasoning is visible only live, via `PipelineEvent` in the UI
-trace; nothing is persisted, and no turn reports what it cost or how long it
-took. That makes regressions invisible and makes the eval set the only source
-of signal about quality.
-
-- Persist per-turn records — query, rewritten/expanded queries, retrieved and
-  final chunk ids, scores, citations, the CRAG verdicts, answer.
-- Per-stage latency and LLM call/token counts on `ChatAnswer`, surfaced on
-  `ChatResponse` like the other pipeline-transparency fields.
-- Thumbs up/down in the UI, written to the same store — logged queries with
-  feedback are the cheapest source of new eval samples, and the eval set is
-  hand-authored today.
-- Keep the sink behind an interface (`local JSONL` default) rather than
-  reaching for a tracing SaaS; OpenTelemetry export is a later adapter.
-
-### Milestone 13 — Query result caching
-
-Nothing is cached anywhere. Repeat and near-repeat queries re-pay embedding,
-retrieval, reranking, and generation in full — most visible in demos and evals,
-where the same questions run over and over.
-
-- Exact-match first (normalized query + a config fingerprint → answer). Simple,
-  correct, and enough for the eval/demo case.
-- Semantic cache (query embedding → nearest cached query above a threshold) as
-  a second tier, behind its own config flag. Note that this can serve a wrong
-  answer where the exact cache can't, so it needs a conservative default
-  threshold and a way to see when it hit.
-- **The cache key must include the config that produced the entry** — chunking,
-  retrieval, reranker, CRAG settings. Serving a pre-CRAG answer after enabling
-  CRAG would silently poison Milestone 11's numbers.
-- Cache the *answer*, not just reranked docs: generation is the expensive stage
-  here (one local 9b call, more with CRAG).
-
-### Milestone 14 — Richer document parsing
-
-`pypdf` gives page text and nothing else. Tables arrive as collapsed
-whitespace, headings are indistinguishable from body text, and a scanned PDF
-yields an empty `Document` with no error. This is the highest-leverage quality
-work in the list: no amount of retrieval sophistication recovers information
-the parser threw away.
-
-- A structure-aware parser behind the existing loader interface (Docling or
-  `unstructured`) emitting tables and headings as such. Both are heavy
-  dependencies — justify against the "keep dependencies minimal" rule, and keep
-  `pypdf` as the default until the upgrade is measured.
-- Section headings into `Chunk.metadata`, which improves citations and gives
-  Milestone 15 something structural to split on.
-- Detect an empty/near-empty extraction and warn rather than indexing nothing.
-  OCR fallback is optional and probably an adapter, not a default.
-
-### Milestone 15 — Semantic chunking
-
-Fixed-size character windows split mid-argument; contextual chunking patches
-the symptom at index time. A `SemanticChunker` slots behind the existing
-`Chunker` interface: embed sentences, cut where adjacent-sentence similarity
-drops below a threshold.
-
-- Costs embedding calls at index time, on top of contextualization if that's on.
-- Depends on Milestone 14 for the structure-aware variant (split on real
-  headings first, semantically within a section).
-- Token-aware chunking is the other long-standing option behind this interface
-  and can share the milestone.
-- Compare against `fixed` with Milestone 11's harness before changing the
-  default.
-
-### Milestone 16 — Async ingestion
-
-`python -m rag.cli index` is synchronous, single-process, and has no
-checkpoint/resume — a contextual re-index of a large corpus is a long job that
-loses everything if interrupted. That's already called out as a limitation.
-
-- Checkpoint/resume first: persist per-chunk progress so an interrupted run
-  restarts where it stopped. This is the part that matters at any scale and
-  doesn't require a queue.
-- Then a job/worker split behind an interface, so ingestion can be triggered
-  by an API call rather than a terminal. Local default: an in-process or
-  file-backed queue — not a hosted queue, which belongs with Milestone 18.
-- Concurrency for the per-chunk LLM/embedding calls (contextualizer, and the
-  CRAG grader on the query side) — currently sequential for parse reliability.
-
-### Milestone 17 — PII detection & redaction
-
-Nothing inspects document content today. A corpus with personal data gets
-embedded, persisted to disk, and quoted back verbatim in citations.
-
-- A detection pass in the ingestion pipeline, alongside `clean_documents` and
-  explicitly separate from it, so it can be inspected or skipped.
-- Regex/heuristic detectors as the local default (emails, phones, national ids,
-  card numbers); a cloud DLP adapter behind the same interface if ever needed.
-- Decide and document the policy per finding — redact in place, drop the
-  document, or warn and index anyway — and keep it configurable. Redaction
-  changes `Chunk.text`, which is otherwise sacred (see Milestone 9), so the
-  interaction with citations and `char_start`/`char_end` needs thought.
-- Off by default; it costs an ingestion pass and can mangle legitimate text.
-
-### Milestone 18 — Deployment
-
-The project is local-first by design and should stay runnable with nothing but
-Ollama. Deployment is about proving the interfaces are real, not about moving
-off local.
-
-- Containerize the API; a scale-to-zero container host is the natural target
-  since traffic is bursty and the app holds no session state (`history` is
-  caller-supplied precisely so this works).
-- Hosted `LLMClient` / `EmbeddingModel` adapters. `LLMConfig.provider` already
-  validates `anthropic`/`openai` and raises "recognized but not implemented" —
-  this is where that gets closed.
-- A hosted `VectorStore` adapter (Chroma's own server mode is the smallest
-  step; Qdrant or similar if a managed tier is wanted).
-- The claim to earn: swapping any of these is a config change, no pipeline
-  code touched. If it isn't, that's an interface bug worth finding.
-
-### Milestone 19 — Agentic retrieval
-
-Expose search as a **tool the answering model calls**, rather than a stage that
-always runs before it. Unlike the rest of this list, this one *replaces* shipped
-behavior — it's the largest item here and the only one that can make the system
-worse, so it lands last and behind a flag, with the current path staying the
-default until measured.
-
-What it subsumes, and why that's the argument for it:
-
-- **Routing**, without a classifier. "Does this need the corpus?" stops being a
-  separate LLM call whose verdict can be wrong in a way nothing detects, and
-  becomes the model declining to call the tool.
-- **Query condensing.** A model holding the conversation resolves "what about
-  part-time staff?" by writing a better tool call. The dedicated condense round
-  trip (`chat.condense_history`) exists because retrieval is stateless and the
-  answering model never sees history — both premises go away here.
-- **Multi-hop questions**, which the current pipeline cannot serve at all: one
-  retrieval, one generation, no way to search again on what the first search
-  turned up. CRAG's retry loop is the closest thing and it only fires on
-  *failure*, re-asking the same question differently rather than asking a new
-  one.
-- **Conversational turns** ("summarize what you just told me") — a documented
-  limitation today, since history reaches only the condenser.
-
-What it costs, stated plainly because this is a real tradeoff:
-
-- **`LLMClient` has to grow.** `generate(prompt, *, system=None) -> str` has no
-  tool-calling and no multi-turn message list; a one-method ABC becomes a
-  conversation loop with tool definitions, tool results, and a stop condition.
-  Every adapter follows. That is the single biggest interface change the
-  project has made.
-- **Non-determinism and unbounded cost.** Turns become 1–N LLM calls with N
-  decided by the model. Needs a hard call cap, like `crag.max_retries` but
-  load-bearing rather than a safety net.
-- **The local 9b model has to be good at tool calling**, which is a different
-  skill from answering, and the known-limitations section already notes every
-  judgment in this pipeline runs on that one model. If it calls search
-  erratically, this is strictly worse than always retrieving — which is the
-  outcome to measure for.
-- **Evals need rethinking.** `retrieval_eval` assumes exactly one retrieval per
-  query with a fixed k; here there may be zero, or four with different queries.
-  Expect a new metric shape, not just new numbers.
-
-Design notes for whoever picks this up:
-
-- The tool should wrap the **existing `Retriever`**, hybrid/expansion/floor and
-  all — this milestone changes *when* retrieval happens and who decides, not
-  how it works.
-- CRAG is largely redundant with a competent agent loop (grading and retrying
-  are what a model does natively between tool calls) but should stay switchable
-  and independently measurable rather than being deleted alongside.
-- Citations get harder: passages arrive across several tool calls, so the
-  `Passage [n]` numbering that is currently the single source of truth mapping
-  `[n]` → `Citation` needs to survive accumulation across calls.
-- Keep it behind config (`chat.mode: pipeline | agentic`) so the two paths can
-  be compared on the same eval set. Comparing them is the point of the
-  milestone; shipping the agent isn't.
-
-## Known limitations / roadmap
-
-- **Neither Milestone 9 nor 10 is measured on this corpus yet.** Both are off by
-  default and both were verified functionally (live runs, above) rather than
-  evaluated. `data/eval/eval_set.json` is now real — 43 samples against
-  documents that exist in `data/corpus/` — so retrieval and answer eval finally
-  produce signal, but no before/after numbers have been recorded for either
-  feature. Run `retrieval_eval` with `chunking.contextual` on vs. off, and
-  `answer_eval` with `crag` on vs. off, before recommending either.
-- The retry rewriter has the same domain-drift failure mode HyDE does, and it's
-  severe: on this corpus "How do I raise my throttling ceiling?" was rewritten
-  to "Increase maximum CPU frequency limits via BIOS configuration" — a fluent,
-  confident rewrite of a completely different question. Unlike HyDE, there's no
-  `include_original` safety net, because a retry only happens once the original
-  has already failed. The bound on the damage is `max_retries` and the fact that
-  generation never answers the rewrite.
-- The contextualizer's blurbs on `qwen3.5:9b-mlx` mostly begin "This excerpt…"
-  despite the system prompt forbidding it. Harmless — the identifying terms are
-  still there and that's what's being indexed — but it wastes a few tokens of
-  the `max_context_chars` budget on every chunk.
-- The grader, the retry rewriter, the groundedness checker, the condenser, the
-  expanders, and the answering model are all the *same* local 9b model. A
-  groundedness check is only as good as the model performing it, and a model
-  checking output shaped like its own has an obvious blind spot. A larger or
-  simply different judge model would be a real improvement and needs no
-  interface change — only a second `LLMClient` in the builder.
-- CRAG's latency is not visible in `retrieval.min_score`-style tuning: enabling
-  `grade_documents` multiplies the per-turn LLM calls by roughly
-  `rerank_top_k`, and there's no batching or concurrency in the grader (one
-  sequential call per passage, chosen for parse reliability over speed).
-  Concurrent grading is the obvious optimization and nothing in the design
-  prevents it.
-- Contextual chunking's cost scales linearly with corpus size and is paid in
-  full on any `--reset`. At 31 chunks that's ~107s; at 10,000 it's a batch job,
-  and this repo has no checkpoint/resume for a partially-completed index run.
-- Because the content hash covers `chunk.text` only, changing a
-  `chunking.contextual` value or the context prompt itself leaves stale contexts
-  in the index with nothing detecting it. `--reset` is the only remedy, and it's
-  a documented convention rather than an enforced one.
-- Chunking is character-based fixed-size with overlap; token-aware and
-  structure-aware/semantic chunking are deferred until the end-to-end
-  pipeline is proven (both fit behind the existing `Chunker` interface).
-- Query expansion defaults to `none` and is unmeasured on this corpus: the
-  shipped `data/eval/eval_set.json` still references placeholder documents
-  (`policies.pdf`, `user-guide.pdf`, …) that aren't in `data/corpus/`, so every
-  retrieval metric reads 0.000 regardless of settings. Fix the eval set before
-  tuning `expansion`, `min_score`, or anything else — right now there is no
-  signal to tune against.
-- Expansion can't help *stage 1* at the current corpus size (9 chunks): `top_k: 20`
-  means every query already retrieves every chunk, so fusion has nothing to
-  recover. All the observable effect at this size comes from reranking against
-  the expanded queries — which does change outcomes ("Can I get my erased files
-  back?" goes from 0 results to 1 with `multi_query` + `aggregate: max`), but
-  surfaced the right *document* and the wrong *chunk* on the run inspected.
-- Expansion makes retrieval **non-deterministic**: rephrasings and HyDE passages
-  differ per run, so the same query can score differently and cross the
-  `min_score` floor on one run and not the next. Worth remembering when a result
-  seems to change for no reason, and a reason to hold expansion fixed while
-  tuning anything else.
-- HyDE's failure mode is domain drift, and it's severe on ambiguous queries: on
-  this corpus, "How do I raise my throttling ceiling?" produced a confident
-  hypothetical passage about reactor coolant loops and terminal code 99-DELTA.
-  `include_original: true` (the default) exists precisely so a generation that
-  wanders can't sink the search.
-- `retrieval.min_score` is tuned by hand against the eval set; there's no
-  calibration step, and its meaningful range shifts with the reranker. Set it
-  too high and answerable questions get refused; too low and it does nothing.
-- Query condensing costs an extra LLM round trip on every turn that has
-  history, and the rewrite is only as good as the local model. The rewritten
-  query is reported back on `ChatAnswer`/`ChatResponse` and shown in the UI, so
-  a bad rewrite is at least visible — but nothing detects or corrects one.
-- Conversation history is never shown to the *answering* model, only to the
-  condenser. Questions whose answer depends on the thread rather than on the
-  corpus ("summarize what you just told me") aren't served by this design.
-- Reranking is opt-in via config (`reranker.provider: none` is still the
-  default in `config.yaml`); switch to `cross_encoder` to enable it. A
-  pure-LLM reranker (reusing the existing `LLMClient`/Ollama setup) remains
-  a possible lighter-weight alternative behind the same `Reranker` interface.
-- The `index` command always re-embeds every chunk it's given; there's no
-  change-detection to skip unchanged documents. Fine at corpus sizes seen so
-  far — worth revisiting if re-indexing becomes slow.
-- Embedding dimensionality is discovered lazily and cached per `OllamaEmbedder`
-  instance, not persisted — switching embedding models still requires
-  `index --reset` to avoid mixing incompatible vectors in one collection (the
-  adapter doesn't currently detect this for you).
+- **`docs/milestone-notes.md`** — why each shipped milestone (2–10: ingestion
+  through Corrective RAG) is built the way it is. Read before touching a
+  component to see what tradeoff its current shape already encodes.
+- **`docs/measured-results.md`** — Milestone 11: retrieval, reranker-model,
+  contextual-chunking and CRAG numbers on the EDGAR corpus, with the caveats
+  needed to read them safely. Read before turning on anything that is off by
+  default — several features measured as no better than noise.
+- **`docs/backlog.md`** — Milestones 11–22, planned work not yet started.
+- **`docs/known-limitations.md`** — known gaps and failure modes in what's
+  shipped, worth checking before recommending a feature that's off by default.

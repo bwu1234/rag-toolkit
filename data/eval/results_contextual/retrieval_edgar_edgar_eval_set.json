@@ -1,0 +1,124 @@
+{
+  "label": "contextual index, bge-v2-m3",
+  "corpus": "edgar (isolated)",
+  "collection": "rag_corpus__edgar",
+  "eval_set": "data/eval/edgar_eval_set.json",
+  "num_samples": 174,
+  "results": [
+    {
+      "variant": "baseline",
+      "axis": "baseline",
+      "overrides": {},
+      "fingerprint": "9e771a42053d",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "True",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 212.0,
+      "metrics": {
+        "hit_rate": 0.8908,
+        "recall": 0.8908,
+        "precision": 0.1943,
+        "mrr": 0.7193,
+        "ndcg": 0.8059
+      },
+      "recall_by_k": {
+        "1": 0.5977,
+        "3": 0.8391,
+        "5": 0.8908
+      }
+    },
+    {
+      "variant": "mode=dense",
+      "axis": "mode",
+      "overrides": {
+        "retrieval.mode": "dense"
+      },
+      "fingerprint": "00e4bd918ed3",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "True",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "dense",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 225.5,
+      "metrics": {
+        "hit_rate": 0.7816,
+        "recall": 0.7816,
+        "precision": 0.1736,
+        "mrr": 0.6401,
+        "ndcg": 0.7214
+      },
+      "recall_by_k": {
+        "1": 0.5402,
+        "3": 0.7414,
+        "5": 0.7816
+      }
+    },
+    {
+      "variant": "mode=hybrid",
+      "axis": "mode",
+      "overrides": {
+        "retrieval.mode": "hybrid"
+      },
+      "fingerprint": "9e771a42053d",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "True",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 174,
+      "elapsed_s": 206.9,
+      "metrics": {
+        "hit_rate": 0.8908,
+        "recall": 0.8908,
+        "precision": 0.1943,
+        "mrr": 0.7193,
+        "ndcg": 0.8059
+      },
+      "recall_by_k": {
+        "1": 0.5977,
+        "3": 0.8391,
+        "5": 0.8908
+      }
+    }
+  ]
+}

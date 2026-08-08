@@ -24,6 +24,29 @@ logger = logging.getLogger(__name__)
 RerankAggregation = Literal["max", "mean"]
 
 
+def _load_with_raw_logits(cross_encoder_cls, model_name: str, identity):  # type: ignore[no-untyped-def]
+    """Construct a `CrossEncoder` whose `predict()` returns unactivated logits.
+
+    The keyword was renamed (`default_activation_function` -> `activation_fn`)
+    in sentence-transformers 4, so try the current name and fall back rather
+    than pinning a version for one argument.
+    """
+
+    for keyword in ("activation_fn", "default_activation_function"):
+        try:
+            return cross_encoder_cls(model_name, **{keyword: identity})
+        except TypeError:
+            continue
+    # Neither keyword accepted: fall back to the default and set the attribute
+    # directly, so an unexpected library version degrades to a warning rather
+    # than a failed reranker.
+    logger.warning(
+        "sentence-transformers did not accept an activation override; reranker "
+        "scores may be double-normalized for models defaulting to Sigmoid"
+    )
+    return cross_encoder_cls(model_name)
+
+
 class CrossEncoderReranker(Reranker):
     """Rescores `(query, chunk)` pairs with a local sentence-transformers `CrossEncoder`.
 
@@ -33,10 +56,33 @@ class CrossEncoderReranker(Reranker):
     downloading or holding several hundred MB of model weights in memory.
     """
 
-    def __init__(self, model: str, *, aggregate: RerankAggregation = "max") -> None:
+    def __init__(
+        self,
+        model: str,
+        *,
+        aggregate: RerankAggregation = "max",
+        query_prefix: str = "",
+        document_prefix: str = "",
+    ) -> None:
         self.model_name = model
         self.aggregate: RerankAggregation = aggregate
+        self.query_prefix = query_prefix
+        self.document_prefix = document_prefix
         self._model: object | None = None
+
+    def _format(self, template: str, field: str, value: str) -> str:
+        """Apply a prefix template, substituting `{query}`/`{document}` if present.
+
+        Instruction-tuned rerankers expect their training template around each
+        side of the pair; models trained on bare pairs want this to do nothing,
+        which is what an empty template gives.
+        """
+        if not template:
+            return value
+        placeholder = "{" + field + "}"
+        if placeholder in template:
+            return template.replace(placeholder, value)
+        return f"{template}{value}"
 
     def rerank(self, queries: list[str], candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
         if not candidates or not queries:
@@ -47,7 +93,14 @@ class CrossEncoderReranker(Reranker):
         # the per-call overhead. That N× is the real price of reranking an
         # expanded query, and why `retrieval.expansion` isn't free after stage 1.
         count = len(candidates)
-        pairs = [(query, candidate.text) for query in queries for candidate in candidates]
+        pairs = [
+            (
+                self._format(self.query_prefix, "query", query),
+                self._format(self.document_prefix, "document", candidate.text),
+            )
+            for query in queries
+            for candidate in candidates
+        ]
         raw_scores = [float(score) for score in self._cross_encoder.predict(pairs)]
 
         # `pairs` is query-major: candidate i under query j sits at j*count + i.
@@ -101,7 +154,24 @@ class CrossEncoderReranker(Reranker):
             # would otherwise crash the import.
             os.environ.setdefault("USE_TF", "0")
             from sentence_transformers import CrossEncoder
+            from torch import nn
 
             logger.info("Loading cross-encoder reranker model %r (first use)", self.model_name)
-            self._model = CrossEncoder(self.model_name)
+            # Force raw logits out of `predict()`.
+            #
+            # sentence-transformers picks a per-model default activation, and it
+            # is NOT the same across rerankers: `cross-encoder/ms-marco-*` uses
+            # Identity (raw logits) while `BAAI/bge-reranker-*` uses Sigmoid.
+            # Left alone, a BGE model returns values already in [0, 1] and
+            # `normalize_rerank_score` sigmoids them a second time, crushing every
+            # score into [0.5, 0.73]. Ranking order survives (sigmoid is
+            # monotonic) so the damage is invisible in hit rate or NDCG -- but
+            # `retrieval.min_score` becomes meaningless, and `aggregate: mean`
+            # silently stops being log-odds pooling and starts averaging
+            # probabilities.
+            #
+            # Normalizing in exactly one place is what makes the documented score
+            # convention ("[0, 1], this reranker's own judgment") hold for every
+            # model rather than for the one it was written against.
+            self._model = _load_with_raw_logits(CrossEncoder, self.model_name, nn.Identity())
         return self._model

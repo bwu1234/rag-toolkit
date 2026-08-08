@@ -1,0 +1,130 @@
+{
+  "corpus": "edgar (isolated)",
+  "collection": "rag_corpus__edgar",
+  "answerable_set": "data/eval/edgar_eval_set.json",
+  "refusal_set": "data/eval/edgar_refusal_set.json",
+  "results": [
+    {
+      "variant": "crag=off",
+      "overrides": {
+        "crag.enabled": false
+      },
+      "answerable": {
+        "num_evaluated": 40,
+        "num_passed": 31,
+        "num_failed": 9,
+        "num_unparseable": 0,
+        "pass_rate": 0.775,
+        "elapsed_s": 403.3
+      },
+      "refusals": {
+        "num_evaluated": 16,
+        "num_passed": 14,
+        "num_failed": 2,
+        "num_unparseable": 0,
+        "pass_rate": 0.875,
+        "elapsed_s": 162.5
+      }
+    },
+    {
+      "variant": "crag=on (all)",
+      "overrides": {
+        "crag.enabled": true,
+        "crag.grade_documents": true,
+        "crag.check_groundedness": true,
+        "crag.max_retries": 1
+      },
+      "answerable": {
+        "num_evaluated": 40,
+        "num_passed": 32,
+        "num_failed": 8,
+        "num_unparseable": 0,
+        "pass_rate": 0.8,
+        "elapsed_s": 726.0
+      },
+      "refusals": {
+        "num_evaluated": 16,
+        "num_passed": 14,
+        "num_failed": 2,
+        "num_unparseable": 0,
+        "pass_rate": 0.875,
+        "elapsed_s": 371.6
+      }
+    },
+    {
+      "variant": "crag=grade only",
+      "overrides": {
+        "crag.enabled": true,
+        "crag.grade_documents": true,
+        "crag.check_groundedness": false,
+        "crag.max_retries": 0
+      },
+      "answerable": {
+        "num_evaluated": 40,
+        "num_passed": 34,
+        "num_failed": 6,
+        "num_unparseable": 0,
+        "pass_rate": 0.85,
+        "elapsed_s": 491.4
+      },
+      "refusals": {
+        "num_evaluated": 16,
+        "num_passed": 14,
+        "num_failed": 2,
+        "num_unparseable": 0,
+        "pass_rate": 0.875,
+        "elapsed_s": 184.2
+      }
+    },
+    {
+      "variant": "crag=grade+retry",
+      "overrides": {
+        "crag.enabled": true,
+        "crag.grade_documents": true,
+        "crag.check_groundedness": false,
+        "crag.max_retries": 1
+      },
+      "answerable": {
+        "num_evaluated": 40,
+        "num_passed": 32,
+        "num_failed": 8,
+        "num_unparseable": 0,
+        "pass_rate": 0.8,
+        "elapsed_s": 502.8
+      },
+      "refusals": {
+        "num_evaluated": 16,
+        "num_passed": 14,
+        "num_failed": 2,
+        "num_unparseable": 0,
+        "pass_rate": 0.875,
+        "elapsed_s": 221.7
+      }
+    },
+    {
+      "variant": "crag=groundedness only",
+      "overrides": {
+        "crag.enabled": true,
+        "crag.grade_documents": false,
+        "crag.check_groundedness": true,
+        "crag.max_retries": 0
+      },
+      "answerable": {
+        "num_evaluated": 40,
+        "num_passed": 34,
+        "num_failed": 6,
+        "num_unparseable": 0,
+        "pass_rate": 0.85,
+        "elapsed_s": 603.8
+      },
+      "refusals": {
+        "num_evaluated": 16,
+        "num_passed": 14,
+        "num_failed": 2,
+        "num_unparseable": 0,
+        "pass_rate": 0.875,
+        "elapsed_s": 277.1
+      }
+    }
+  ]
+}

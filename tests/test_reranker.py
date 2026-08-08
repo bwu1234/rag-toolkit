@@ -166,6 +166,113 @@ def test_cross_encoder_reranker_loads_model_lazily(monkeypatch: pytest.MonkeyPat
     assert constructed == ["org/my-cross-encoder"]
 
 
+def test_cross_encoder_is_loaded_with_raw_logits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regression: the model must not normalize its own scores before we do.
+
+    sentence-transformers picks a per-model default activation, and it differs
+    between rerankers: `cross-encoder/ms-marco-*` uses Identity (raw logits)
+    while `BAAI/bge-reranker-*` uses Sigmoid. Left alone, a BGE model returns
+    values already in [0, 1] and `normalize_rerank_score` sigmoids them a second
+    time, crushing every score into [0.5, 0.73].
+
+    Ranking order survives (sigmoid is monotonic), so this is invisible in hit
+    rate or NDCG -- which is exactly why it needs a test. What breaks is
+    `retrieval.min_score`, which is calibrated against the score *scale*, and
+    `aggregate: mean`, which silently stops being log-odds pooling.
+    """
+    seen: dict[str, object] = {}
+
+    class _StubCrossEncoder:
+        def __init__(self, model_name: str, activation_fn=None) -> None:  # type: ignore[no-untyped-def]
+            seen["model"] = model_name
+            seen["activation"] = activation_fn
+
+        def predict(self, pairs):  # type: ignore[no-untyped-def]
+            # A raw logit of 0.0; one sigmoid puts it at exactly 0.5.
+            return [0.0 for _ in pairs]
+
+    import sys
+    import types
+
+    fake_module = types.ModuleType("sentence_transformers")
+    fake_module.CrossEncoder = _StubCrossEncoder  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+
+    reranker = CrossEncoderReranker(model="BAAI/bge-reranker-base")
+    [result] = reranker.rerank(["q"], [_scored("a", "ta")], top_k=1)
+
+    assert type(seen["activation"]).__name__ == "Identity", (
+        "the model must be loaded with an identity activation so predict() "
+        "returns raw logits"
+    )
+    assert result.score == pytest.approx(0.5), (
+        "a raw logit of 0.0 must normalize to 0.5; 0.622 would mean the score "
+        "was sigmoided twice"
+    )
+
+
+def test_prefixes_default_to_leaving_pairs_untouched() -> None:
+    """Models trained on bare pairs (ms-marco, BGE) must see exactly the pair."""
+    reranker = CrossEncoderReranker(model="m")
+    fake = _PairKeyedCrossEncoder({("what is x?", "text a"): 1.0})
+    reranker._model = fake
+
+    reranker.rerank(["what is x?"], [_scored("a", "text a")], top_k=1)
+
+    assert fake.seen_pairs == [("what is x?", "text a")]
+
+
+def test_prefix_templates_substitute_placeholders() -> None:
+    """Instruction-tuned rerankers need their training template around each side."""
+    reranker = CrossEncoderReranker(
+        model="m",
+        query_prefix="<Instruct>: rank\n<Query>: {query}",
+        document_prefix="<Document>: {document}",
+    )
+    expected = ("<Instruct>: rank\n<Query>: what is x?", "<Document>: text a")
+    fake = _PairKeyedCrossEncoder({expected: 1.0})
+    reranker._model = fake
+
+    reranker.rerank(["what is x?"], [_scored("a", "text a")], top_k=1)
+
+    assert fake.seen_pairs == [expected]
+
+
+def test_prefix_without_a_placeholder_is_prepended() -> None:
+    reranker = CrossEncoderReranker(model="m", query_prefix="query: ", document_prefix="passage: ")
+    expected = ("query: what is x?", "passage: text a")
+    fake = _PairKeyedCrossEncoder({expected: 1.0})
+    reranker._model = fake
+
+    reranker.rerank(["what is x?"], [_scored("a", "text a")], top_k=1)
+
+    assert fake.seen_pairs == [expected]
+
+
+def test_cross_encoder_load_falls_back_when_activation_kwarg_is_unsupported(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unexpected sentence-transformers version must degrade, not crash."""
+
+    class _OldCrossEncoder:
+        def __init__(self, model_name: str) -> None:
+            self.model_name = model_name
+
+        def predict(self, pairs):  # type: ignore[no-untyped-def]
+            return [0.0 for _ in pairs]
+
+    import sys
+    import types
+
+    fake_module = types.ModuleType("sentence_transformers")
+    fake_module.CrossEncoder = _OldCrossEncoder  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+
+    reranker = CrossEncoderReranker(model="org/legacy")
+    [result] = reranker.rerank(["q"], [_scored("a", "ta")], top_k=1)
+    assert result.score == pytest.approx(0.5)
+
+
 # ---------------------------------------------------------------------------
 # get_reranker factory
 # ---------------------------------------------------------------------------

@@ -1,73 +1,95 @@
 """Retrieval quality metrics for the RAG evaluation pipeline.
 
-All functions are pure — they operate on lists of ids and return scalars.
+All functions are pure — they operate on relevance grades and return scalars.
 No I/O, no dependencies beyond the stdlib.
 
-Retrieval is evaluated at the **document level**: a retrieved chunk is
-considered relevant if its ``document_id`` appears in the sample's
-``expected_doc_ids`` list, regardless of which specific chunk was returned.
-This is deliberately lenient — for a corpus of page-granularity chunks it
-ensures a hit anywhere in the right document counts, which is appropriate for
-open-domain QA where any passage from the source could be helpful.
+Metrics take **gains**: the relevance grade of each retrieved result, in rank
+order, as produced by :mod:`rag.eval.relevance`.  A grade of ``0`` means "not
+relevant"; any positive value means relevant, and larger means more relevant.
+
+Taking grades rather than id lists is what lets one set of metrics serve both
+span-level and document-level ground truth (and any future scheme) without
+knowing which is in play — the judging step decides what "relevant" means, and
+these functions only rank-weight the answer.
 
 Metrics
 -------
 ``hit_rate``
-    1.0 if at least one relevant document appears in the top-k results,
-    else 0.0.  Averaged across samples this equals Recall@k in the binary
-    relevance sense (one relevant document per query).
+    1.0 if any retrieved result was relevant, else 0.0.  Averaged across
+    samples this is the fraction of queries that found *something* useful.
 
 ``recall_at_k``
-    Fraction of expected documents covered by the top-k results.  Equal to
-    ``hit_rate`` when there is exactly one expected document per query, but
-    more informative when a query has multiple ground-truth sources.
+    Fraction of the sample's expected items that the ranking covered.  Takes
+    counts rather than gains, because "how many of the things I was supposed to
+    find did I find" cannot be read off a rank-ordered gain list — a single
+    expected item can be matched by several retrieved chunks.
 
 ``precision_at_k``
-    Fraction of the top-k results that are relevant.
+    Fraction of retrieved results that were relevant.
 
 ``reciprocal_rank``
-    1 / rank of the first relevant result (0.0 if none found within k).
-    Average across samples = MRR (Mean Reciprocal Rank).
+    1 / rank of the first relevant result (0.0 if none).  Average across
+    samples = MRR (Mean Reciprocal Rank).
+
+``ndcg_at_k``
+    Discounted cumulative gain against the best achievable ranking.  Unlike the
+    others this rewards *ordering* and respects grades, so a run that surfaces
+    the passage stating the exact figure above one merely discussing the topic
+    scores higher — a distinction binary metrics discard entirely.
 """
 
 from __future__ import annotations
 
+from math import log2
 
-def hit_rate(retrieved_doc_ids: list[str], expected_doc_ids: list[str]) -> float:
-    """1.0 if any expected document appears in ``retrieved_doc_ids``, else 0.0."""
-    if not expected_doc_ids:
+
+def hit_rate(gains: list[int]) -> float:
+    """1.0 if any retrieved result was relevant, else 0.0."""
+    return 1.0 if any(gain > 0 for gain in gains) else 0.0
+
+
+def recall_at_k(covered: int, total_expected: int) -> float:
+    """Fraction of expected items covered; 0.0 when nothing was expected."""
+    if total_expected <= 0:
         return 0.0
-    expected = set(expected_doc_ids)
-    return 1.0 if any(doc_id in expected for doc_id in retrieved_doc_ids) else 0.0
+    return covered / total_expected
 
 
-def recall_at_k(retrieved_doc_ids: list[str], expected_doc_ids: list[str]) -> float:
-    """Fraction of ``expected_doc_ids`` covered by ``retrieved_doc_ids``."""
-    if not expected_doc_ids:
+def precision_at_k(gains: list[int]) -> float:
+    """Fraction of retrieved results that were relevant."""
+    if not gains:
         return 0.0
-    expected = set(expected_doc_ids)
-    hits = sum(1 for doc_id in expected if doc_id in set(retrieved_doc_ids))
-    return hits / len(expected)
+    return sum(1 for gain in gains if gain > 0) / len(gains)
 
 
-def precision_at_k(retrieved_doc_ids: list[str], expected_doc_ids: list[str]) -> float:
-    """Fraction of ``retrieved_doc_ids`` that are relevant."""
-    if not retrieved_doc_ids:
-        return 0.0
-    expected = set(expected_doc_ids)
-    hits = sum(1 for doc_id in retrieved_doc_ids if doc_id in expected)
-    return hits / len(retrieved_doc_ids)
-
-
-def reciprocal_rank(retrieved_doc_ids: list[str], expected_doc_ids: list[str]) -> float:
-    """1 / rank of the first relevant result; 0.0 if none found."""
-    if not expected_doc_ids:
-        return 0.0
-    expected = set(expected_doc_ids)
-    for rank, doc_id in enumerate(retrieved_doc_ids, start=1):
-        if doc_id in expected:
+def reciprocal_rank(gains: list[int]) -> float:
+    """1 / rank of the first relevant result; 0.0 if none."""
+    for rank, gain in enumerate(gains, start=1):
+        if gain > 0:
             return 1.0 / rank
     return 0.0
+
+
+def dcg(gains: list[int]) -> float:
+    """Discounted cumulative gain with the standard ``2**g - 1`` numerator.
+
+    The exponential numerator is what makes grades matter super-linearly: a
+    grade-3 result is worth substantially more than three grade-1 results, which
+    is the intended reading of "this passage actually states the answer".
+    """
+    return sum((2**gain - 1) / log2(rank + 1) for rank, gain in enumerate(gains, start=1))
+
+
+def ndcg_at_k(gains: list[int], ideal_gains: list[int]) -> float:
+    """DCG normalized by the DCG of the best achievable ranking.
+
+    Returns 0.0 when no relevant result was achievable, so an unanswerable
+    sample cannot inflate the mean.
+    """
+    ideal = dcg(ideal_gains)
+    if ideal <= 0.0:
+        return 0.0
+    return dcg(gains) / ideal
 
 
 def mean(values: list[float]) -> float:

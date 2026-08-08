@@ -88,6 +88,9 @@ class _FakeSparseIndex(SparseIndex):
     def count(self) -> int:
         return len(self.candidates)
 
+    def has_chunk(self, chunk_id: str) -> bool:
+        return any(c.chunk_id == chunk_id for c in self.candidates)
+
     def reset(self) -> None:
         raise AssertionError("Retriever should never call sparse reset")
 

@@ -58,7 +58,7 @@ To run the full pipeline locally, you will need:
 - Python 3.10+
 - A virtual environment (recommended)
 - Ollama running locally at http://localhost:11434
-- A corpus placed under [data/corpus](data/corpus)
+- A corpus placed under [data/corpora/baseline/documents](data/corpora/baseline/documents) (or any corpus registered in `rag/config/config.yaml`)
 
 The project is designed to work locally by default, and the tests are structured to avoid depending on a running Ollama or Chroma server whenever possible.
 
@@ -83,7 +83,7 @@ pip install -e .[dev]
 pytest -q
 ```
 
-4. Add your own documents under [data/corpus](data/corpus) and run the pipeline:
+4. Add your own documents under [data/corpora/baseline/documents](data/corpora/baseline/documents) and run the pipeline:
 
 ```bash
 python -m rag.cli ingest --show 3
