@@ -1,0 +1,377 @@
+"""The MCP tool surface, defined once and shared by both transports.
+
+A `ToolSpec` is a name, a description, and a type-annotated handler. The JSON
+Schema an MCP client sees is *derived* from the handler's signature via
+pydantic rather than written out by hand, which is what lets the SDK-backed
+server and the dependency-free fallback advertise byte-identical schemas
+without either one owning the contract.
+
+Only read-only tools live here. Indexing is deliberately absent: it is a
+minutes-long, embedding-cost operation that rewrites shared state, and an
+autonomous agent should not be able to trigger it as a side effect of
+answering a question. Build indexes with `python -m rag.cli index`.
+"""
+
+from __future__ import annotations
+
+import inspect
+import logging
+import threading
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Annotated, Any, get_type_hints
+
+from pydantic import Field, create_model
+
+from rag.config.settings import REPO_ROOT, CorpusSelection, RagConfig, load_config
+from rag.retrieval.builder import build_retriever
+from rag.retrieval.retriever import Retriever
+from rag.retrieval.sparse import BM25Index, bm25_index_path
+
+logger = logging.getLogger(__name__)
+
+#: Server identity, shared by both transports so a client sees the same server
+#: whichever way it connected. Lives here rather than in `rag.mcp.server`
+#: because the fallback must not import anything that pulls in the `mcp` SDK.
+SERVER_NAME = "rag-toolkit"
+SERVER_VERSION = "0.1.0"
+
+INSTRUCTIONS = """\
+Retrieval over a local document corpus. Call rag_list_corpora to see what is \
+searchable, then rag_search to pull ranked passages with their source paths. \
+Search results are raw passages, not answers -- read them and cite the \
+`document_id` of whatever you use."""
+
+#: Hard ceiling on results per `rag_search` call. Retrievers are cached and
+#: built with `rerank_top_k` widened to this, so a per-call `top_k` is served
+#: by slicing an already-ranked list -- no rebuild, no mutation of shared
+#: state, and taking the best 5 of a 20-deep rerank is identical to a 5-deep
+#: one because the reranker returns them sorted.
+MAX_RESULTS = 20
+
+#: Per-chunk character budget. Chunks run ~1000 chars and a default search
+#: returns five of them; handing an agent the full text of all of them at once
+#: is a meaningful bite out of its context for passages it may well discard.
+#: Callers that want the whole span ask for it explicitly.
+DEFAULT_MAX_CHARS = 1200
+
+
+@dataclass(frozen=True)
+class ToolSpec:
+    """One MCP tool: its wire identity plus the callable behind it."""
+
+    name: str
+    description: str
+    handler: Callable[..., dict[str, Any]]
+
+    @property
+    def input_schema(self) -> dict[str, Any]:
+        """JSON Schema for this tool's arguments, derived from the handler."""
+
+        return input_schema_for(self.handler)
+
+
+def input_schema_for(handler: Callable[..., Any]) -> dict[str, Any]:
+    """Build a JSON Schema for `handler`'s parameters using pydantic.
+
+    The `mcp` SDK does this itself when it registers a function, so the
+    fallback transport calls this to arrive at the same schema from the same
+    signature instead of maintaining a parallel hand-written copy that would
+    quietly rot. `tests/test_mcp.py` asserts the two agree.
+    """
+
+    hints = get_type_hints(handler, include_extras=True)
+    fields: dict[str, Any] = {}
+    for name, parameter in inspect.signature(handler).parameters.items():
+        annotation = hints.get(name, Any)
+        default = ... if parameter.default is parameter.empty else parameter.default
+        fields[name] = (annotation, default)
+
+    model = create_model(f"{handler.__name__}Arguments", **fields)
+    schema = model.model_json_schema()
+    schema.pop("title", None)
+    return schema
+
+
+def _relative_to_repo(path: Path) -> str:
+    """Render a path relative to the repo when it sits inside it.
+
+    Absolute paths leak the developer's home directory into every result and
+    cost context for no information; a repo-relative one is also what the user
+    would type to open the file.
+    """
+
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+class RagTools:
+    """Lazily-built, cached access to the retrieval pipeline for tool handlers.
+
+    Two properties matter for serving MCP:
+
+    - **Lazy.** Nothing is constructed at import or at server startup. Under
+      stdio the client expects an `initialize` response promptly, and eagerly
+      importing Chroma and a sentence-transformers cross-encoder would spend
+      seconds before the handshake -- so the first `rag_search` pays that cost
+      instead, and `rag_list_corpora` never pays it at all.
+    - **Cached per corpus selection.** One `Retriever` per selection slug,
+      reused across calls. The cross-encoder holds several hundred MB of
+      weights once loaded; rebuilding a retriever per call would reload them.
+
+    Handlers run on worker threads (both transports dispatch synchronous tools
+    off the event loop), so the cache is guarded by a reentrant lock. Only the
+    build is locked -- `Retriever.retrieve` is read-only with respect to the
+    retriever, so concurrent searches proceed in parallel.
+    """
+
+    def __init__(self, config_path: str | Path | None = None) -> None:
+        self._config_path = config_path
+        self._config: RagConfig | None = None
+        self._retrievers: dict[str, tuple[CorpusSelection, Retriever]] = {}
+        # Reentrant: `_retriever_for` holds the lock and reads `.config`,
+        # which takes it again.
+        self._lock = threading.RLock()
+
+    @property
+    def config(self) -> RagConfig:
+        with self._lock:
+            if self._config is None:
+                self._config = load_config(self._config_path)
+            return self._config
+
+    def _retriever_for(
+        self, corpora: Sequence[str] | None
+    ) -> tuple[CorpusSelection, Retriever]:
+        config = self.config
+        # Raises ValueError naming the available corpora on a typo, which the
+        # transports surface as a tool error -- an agent that guesses a corpus
+        # name gets told the real ones rather than an empty result set.
+        selection = config.corpus_selection(corpora)
+
+        with self._lock:
+            cached = self._retrievers.get(selection.slug)
+            if cached is None:
+                logger.info("Building retriever for corpus selection %s", selection.describe())
+                retriever = build_retriever(config, corpora=selection.names)
+                # Widen stage 2 only. Stage-1 `top_k` governs candidate width
+                # and fusion, so changing it would change which chunks compete;
+                # `rerank_top_k` only governs how deep the sorted output runs.
+                retriever.rerank_top_k = max(retriever.rerank_top_k, MAX_RESULTS)
+                cached = (selection, retriever)
+                self._retrievers[selection.slug] = cached
+            return cached
+
+    def search(
+        self,
+        query: str,
+        corpus: str | list[str] | None = None,
+        top_k: int | None = None,
+        max_chars: int | None = None,
+    ) -> dict[str, Any]:
+        """Run retrieve -> rerank and return ranked passages."""
+
+        if not query.strip():
+            raise ValueError("query must not be empty")
+
+        requested = self.config.retrieval.rerank_top_k if top_k is None else top_k
+        if not 1 <= requested <= MAX_RESULTS:
+            raise ValueError(f"top_k must be between 1 and {MAX_RESULTS} (got {requested})")
+        budget = DEFAULT_MAX_CHARS if max_chars is None else max_chars
+        if budget < 1:
+            raise ValueError(f"max_chars must be at least 1 (got {budget})")
+
+        names = [corpus] if isinstance(corpus, str) else corpus
+        selection, retriever = self._retriever_for(names)
+        outcome = retriever.retrieve(query)
+        chunks = outcome.chunks[:requested]
+
+        payload: dict[str, Any] = {
+            "query": query,
+            "corpora": list(selection.names),
+            "pooled": selection.is_pooled,
+            "candidate_count": outcome.candidate_count,
+            "returned": len(chunks),
+            "results": [
+                _result_entry(rank, chunk, budget)
+                for rank, chunk in enumerate(chunks, start=1)
+            ],
+        }
+        if outcome.search_queries:
+            payload["search_queries"] = outcome.search_queries
+        if outcome.dropped_below_min_score:
+            payload["dropped_below_min_score"] = outcome.dropped_below_min_score
+
+        # "No results" has two causes an agent must not conflate: an index that
+        # was never built, versus a corpus that genuinely has nothing to say.
+        # `RetrievalResult` distinguishes them, so pass the distinction on as a
+        # actionable hint rather than letting the agent guess from an empty list.
+        if not chunks:
+            if outcome.candidate_count == 0:
+                payload["hint"] = (
+                    f"No candidates at all -- the index for {selection.describe()} looks "
+                    f"empty or unbuilt. Build it with: python -m rag.cli index "
+                    + " ".join(f"--corpus {name}" for name in selection.names)
+                )
+            else:
+                payload["hint"] = (
+                    f"{outcome.candidate_count} candidate(s) retrieved but all scored below "
+                    f"retrieval.min_score={self.config.retrieval.min_score}. The corpus may "
+                    "not cover this question."
+                )
+        return payload
+
+    def list_corpora(self) -> dict[str, Any]:
+        """Describe every registered corpus and whether it has been indexed."""
+
+        config = self.config
+        active = list(config.corpus_selection(None).names)
+        registry = config.corpora.registry
+        names = sorted(registry) if registry else [config.IMPLICIT_CORPUS_NAME]
+
+        corpora: list[dict[str, Any]] = []
+        for name in names:
+            selection = config.corpus_selection([name])
+            entry: dict[str, Any] = {
+                "name": name,
+                "active": name in active,
+                "documents_dir": _relative_to_repo(selection.document_dirs[0]),
+                "documents_present": selection.document_dirs[0].is_dir(),
+            }
+            description = registry[name].description if registry else None
+            if description:
+                entry["description"] = " ".join(description.split())
+
+            # Read the BM25 sidecar rather than opening the vector collection:
+            # `get_vector_store` uses get_or_create, so probing it here would
+            # litter the store with empty collections just from listing. The
+            # indexer always writes both, so the sidecar is a faithful signal.
+            sidecar = bm25_index_path(selection.index_dir, selection.slug)
+            if sidecar.exists():
+                try:
+                    entry["indexed_chunks"] = BM25Index(sidecar).count()
+                except Exception:  # pragma: no cover - corrupt sidecar
+                    logger.warning("Could not read BM25 index at %s", sidecar, exc_info=True)
+                    entry["indexed_chunks"] = None
+            else:
+                entry["indexed_chunks"] = 0
+            entry["indexed"] = bool(entry["indexed_chunks"])
+            corpora.append(entry)
+
+        return {
+            "corpora": corpora,
+            "active": active,
+            "retrieval": {
+                "mode": config.retrieval.mode,
+                "top_k": config.retrieval.top_k,
+                "rerank_top_k": config.retrieval.rerank_top_k,
+                "reranker": config.reranker.provider,
+                "min_score": config.retrieval.min_score,
+            },
+        }
+
+
+def _result_entry(rank: int, chunk: Any, max_chars: int) -> dict[str, Any]:
+    text = chunk.text
+    truncated = len(text) > max_chars
+    entry: dict[str, Any] = {
+        "rank": rank,
+        "score": round(chunk.score, 4),
+        "chunk_id": chunk.chunk_id,
+        "document_id": chunk.document_id,
+        # `source` is a Path; JSON has no such type.
+        "source": _relative_to_repo(chunk.source),
+        "text": text[:max_chars],
+    }
+    if truncated:
+        entry["truncated"] = True
+        entry["full_length"] = len(text)
+    page = chunk.metadata.get("page")
+    if page is not None:
+        entry["page"] = page
+    # Present only when contextual chunking generated one at index time.
+    if chunk.context:
+        entry["context"] = chunk.context
+    return entry
+
+
+_SEARCH_DESCRIPTION = """\
+Search the indexed document corpus and return the most relevant passages, \
+ranked best first. Runs the full retrieval pipeline (hybrid dense + BM25 \
+search, then cross-encoder reranking) and returns raw passages with their \
+provenance -- it does not generate an answer.
+
+Use this to ground an answer in the user's own documents. Each result carries \
+a `document_id`, `source` path, and `score`, so you can cite exactly where a \
+claim came from. If you do not know which corpora exist, call rag_list_corpora \
+first."""
+
+_LIST_CORPORA_DESCRIPTION = """\
+List the document corpora available to search, with a description of each, \
+whether its index has been built, and how many chunks it holds. Also reports \
+the active retrieval settings. Call this before rag_search when you are unsure \
+what `corpus` to pass, or to check whether a corpus is indexed at all."""
+
+
+def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
+    """Bind `tools` into the list of MCP tools both transports serve.
+
+    The handlers are defined here as closures with fully annotated signatures
+    because those annotations *are* the published schema -- including the
+    `Field(description=...)` text, which is what an agent reads when deciding
+    whether a tool applies.
+    """
+
+    def rag_search(
+        query: Annotated[
+            str,
+            Field(description="Natural-language question or search phrase to retrieve passages for."),
+        ],
+        corpus: Annotated[
+            str | list[str] | None,
+            Field(
+                description=(
+                    "Corpus name to search, or several to search them as one pooled index. "
+                    "Omit to use the configured active corpora. Call rag_list_corpora for valid names."
+                )
+            ),
+        ] = None,
+        top_k: Annotated[
+            int | None,
+            Field(
+                ge=1,
+                le=MAX_RESULTS,
+                description=(
+                    f"How many passages to return (1-{MAX_RESULTS}). "
+                    "Omit to use the configured retrieval.rerank_top_k."
+                ),
+            ),
+        ] = None,
+        max_chars: Annotated[
+            int | None,
+            Field(
+                ge=1,
+                description=(
+                    f"Truncate each passage to this many characters (default {DEFAULT_MAX_CHARS}). "
+                    "Raise it when you need a full passage verbatim; truncated results are "
+                    "flagged with `truncated` and `full_length`."
+                ),
+            ),
+        ] = None,
+    ) -> dict[str, Any]:
+        return tools.search(query, corpus=corpus, top_k=top_k, max_chars=max_chars)
+
+    def rag_list_corpora() -> dict[str, Any]:
+        return tools.list_corpora()
+
+    return [
+        ToolSpec(name="rag_search", description=_SEARCH_DESCRIPTION, handler=rag_search),
+        ToolSpec(
+            name="rag_list_corpora",
+            description=_LIST_CORPORA_DESCRIPTION,
+            handler=rag_list_corpora,
+        ),
+    ]

@@ -21,6 +21,10 @@ milestone. Local-first by default: Ollama serves both embeddings
       was the bottleneck (swapped, +10.4pp hit rate); contextual chunking, CRAG,
       query expansion and `min_score` all measured as no better than noise on
       this corpus and stay off.
+- [x] MCP server — retrieval exposed to external agents as read-only tools
+      (`rag_search`, `rag_list_corpora`) over stdio and streamable HTTP.
+      Not Milestone 19: that is *this* system calling search as a tool;
+      this is an outside agent calling ours. See [MCP server](docs/mcp-server.md).
 - [ ] Milestone 12 — Observability (query logs, latency/cost, feedback)
 - [ ] Milestone 13 — Query result caching
 - [ ] Milestone 14 — Richer document parsing (tables, layout, OCR fallback)
@@ -118,6 +122,8 @@ rag/
   retrieval/    Retriever + Reranker
   generation/   LLMClient interface + Ollama adapter, prompt templates
   api/          FastAPI app and routes
+  mcp/          MCP server (tools.py defines the surface; server.py = SDK
+                transports, fallback.py = zero-dep stdio JSON-RPC)
   eval/         retrieval & answer evaluation scripts + eval set
   ui/           Streamlit app
 tests/          pytest suite, mirrors rag/ layout
@@ -150,6 +156,9 @@ docs/           design rationale, measured results, backlog, known limitations
 - Retrieve & rerank for a query: `python -m rag.cli retrieve "your question"`
 - Ask a question end to end (retrieve → rerank → generate, with citations): `python -m rag.cli chat "your question"`
 - Start the API: `uvicorn rag.api.main:app --reload` (then `POST /chat` with `{"query": "..."}`, or check `/health`)
+- Serve retrieval to an external agent over MCP: `python -m rag.mcp` (stdio), or
+  `POST /mcp` on the running API (streamable HTTP). Exposes two read-only tools,
+  `rag_search` and `rag_list_corpora` — see [MCP server](docs/mcp-server.md).
 - Start the UI: `streamlit run rag/ui/app.py`
 - Run retrieval eval: `python -m rag.eval.retrieval_eval` (add `-v` for per-sample detail;
   `--eval-set data/eval/edgar_eval_set.json --corpus edgar` for the EDGAR set)
@@ -183,3 +192,5 @@ live in `docs/`, read on demand rather than always-loaded:
 - **`docs/backlog.md`** — Milestones 11–22, planned work not yet started.
 - **`docs/known-limitations.md`** — known gaps and failure modes in what's
   shipped, worth checking before recommending a feature that's off by default.
+- **`docs/mcp-server.md`** — the MCP tool contract, both transports, how to
+  point an external agent at it, and why indexing is not exposed as a tool.
