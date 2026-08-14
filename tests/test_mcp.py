@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 
 from rag.mcp.fallback import FallbackServer, serve
-from rag.mcp.tools import MAX_RESULTS, RagTools, build_tool_specs
+from rag.mcp.tools import MAX_RESULTS, PROTOCOL_VERSION, RagTools, build_tool_specs
 from rag.retrieval.retriever import RetrievalResult
 from rag.vectorstore.base import ScoredChunk
 
@@ -270,27 +270,93 @@ def rpc(tools: RagTools) -> FallbackServer:
     return FallbackServer(build_tool_specs(tools), instructions="hi")
 
 
+_ENVELOPE = {
+    "io.modelcontextprotocol/protocolVersion": PROTOCOL_VERSION,
+    "io.modelcontextprotocol/clientCapabilities": {},
+}
+
+
 def _request(method: str, params: dict | None = None, request_id: int | None = 1) -> dict:
+    """A well-formed 2026-07-28 request: the `_meta` envelope is not optional."""
+
     payload: dict = {"jsonrpc": "2.0", "method": method}
     if request_id is not None:
         payload["id"] = request_id
-    if params is not None:
-        payload["params"] = params
+    params = dict(params or {})
+    params["_meta"] = {**_ENVELOPE, **params.get("_meta", {})}
+    payload["params"] = params
     return payload
 
 
-def test_initialize_echoes_a_supported_protocol_version(rpc: FallbackServer) -> None:
-    response = rpc.handle(_request("initialize", {"protocolVersion": "2024-11-05"}))
+def test_discover_advertises_the_one_served_version(rpc: FallbackServer) -> None:
+    response = rpc.handle(_request("server/discover"))
     assert response is not None
-    assert response["result"]["protocolVersion"] == "2024-11-05"
-    assert response["result"]["serverInfo"]["name"] == "rag-toolkit"
-    assert response["result"]["capabilities"]["tools"] == {"listChanged": False}
+    result = response["result"]
+    assert result["supportedVersions"] == [PROTOCOL_VERSION]
+    assert result["capabilities"]["tools"] == {"listChanged": False}
+    assert result["instructions"] == "hi"
 
 
-def test_initialize_falls_back_on_an_unknown_protocol_version(rpc: FallbackServer) -> None:
-    response = rpc.handle(_request("initialize", {"protocolVersion": "1999-01-01"}))
+def test_every_result_carries_result_type_and_server_info(rpc: FallbackServer) -> None:
+    """Both are MUSTs on 2026-07-28, which has no handshake to carry identity."""
+
+    for method in ("server/discover", "tools/list"):
+        result = rpc.handle(_request(method))["result"]  # type: ignore[index]
+        assert result["resultType"] == "complete"
+        info = result["_meta"]["io.modelcontextprotocol/serverInfo"]
+        assert info == {"name": "rag-toolkit", "version": "0.1.0"}
+
+
+def test_cacheable_results_carry_freshness_hints(rpc: FallbackServer) -> None:
+    for method in ("server/discover", "tools/list"):
+        result = rpc.handle(_request(method))["result"]  # type: ignore[index]
+        assert result["ttlMs"] == 0
+        assert result["cacheScope"] == "private"
+
+
+def test_initialize_is_refused_with_the_version_that_is_served(rpc: FallbackServer) -> None:
+    """The handshake is gone at 2026-07-28.
+
+    -32022 rather than METHOD_NOT_FOUND: an auto-negotiating client reads the
+    supported list off this error and can retry with the envelope.
+    """
+
+    response = rpc.handle(
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}}
+    )
     assert response is not None
-    assert response["result"]["protocolVersion"] == "2025-06-18"
+    assert response["error"]["code"] == -32022
+    assert response["error"]["data"] == {"supported": [PROTOCOL_VERSION], "requested": "2025-06-18"}
+
+
+def test_an_older_protocol_version_is_refused_not_negotiated_down(rpc: FallbackServer) -> None:
+    request = _request("tools/list")
+    request["params"]["_meta"]["io.modelcontextprotocol/protocolVersion"] = "2025-11-25"
+
+    response = rpc.handle(request)
+    assert response is not None
+    assert response["error"]["code"] == -32022
+    assert response["error"]["data"]["supported"] == [PROTOCOL_VERSION]
+
+
+def test_a_missing_envelope_is_a_params_error(rpc: FallbackServer) -> None:
+    """A shape defect, not a negotiation outcome -- so not -32022."""
+
+    bare = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
+    assert rpc.handle(bare)["error"]["code"] == -32602  # type: ignore[index]
+
+    partial = _request("tools/list")
+    del partial["params"]["_meta"]["io.modelcontextprotocol/clientCapabilities"]
+    response = rpc.handle(partial)
+    assert response is not None
+    assert response["error"]["code"] == -32602
+    assert "clientCapabilities" in response["error"]["message"]
+
+
+def test_a_non_string_protocol_version_is_a_params_error(rpc: FallbackServer) -> None:
+    request = _request("tools/list")
+    request["params"]["_meta"]["io.modelcontextprotocol/protocolVersion"] = 20260728
+    assert rpc.handle(request)["error"]["code"] == -32602  # type: ignore[index]
 
 
 def test_tools_list_advertises_both_tools_as_read_only(rpc: FallbackServer) -> None:
@@ -340,17 +406,17 @@ def test_unknown_method_is_reported(rpc: FallbackServer) -> None:
 def test_notifications_never_draw_a_response(rpc: FallbackServer) -> None:
     # A response to a notification is a protocol violation -- an id-less
     # message must be answered with silence.
-    assert rpc.handle(_request("notifications/initialized", request_id=None)) is None
+    assert rpc.handle(_request("notifications/cancelled", request_id=None)) is None
 
 
 def test_serve_round_trips_a_session_and_skips_malformed_lines(rpc: FallbackServer) -> None:
     stdin = io.StringIO(
         "\n".join(
             [
-                json.dumps(_request("initialize", {"protocolVersion": "2025-06-18"})),
+                json.dumps(_request("server/discover")),
                 "{ this is not json",
                 "",
-                json.dumps(_request("notifications/initialized", request_id=None)),
+                json.dumps(_request("notifications/cancelled", request_id=None)),
                 json.dumps(_request("tools/list", request_id=2)),
             ]
         )
@@ -411,6 +477,42 @@ def test_mount_does_not_shadow_the_existing_api_routes() -> None:
 
     paths = {getattr(route, "path", None) for route in app.routes}
     assert {"/health", "/docs"} <= paths
+
+
+def test_sdk_serves_only_the_pinned_protocol_version() -> None:
+    """The SDK ships every revision it knows; this project serves one."""
+
+    pytest.importorskip("mcp")
+    from mcp_types.version import MODERN_PROTOCOL_VERSIONS
+
+    assert MODERN_PROTOCOL_VERSIONS == (PROTOCOL_VERSION,)
+
+
+def test_sdk_gate_refuses_a_handshake_era_request(tools: RagTools) -> None:
+    """A 2025 connection reaches the gate with its negotiated version.
+
+    Driving a full legacy session would need a client; the gate is the whole
+    behaviour, so it is called directly with the context the runner builds.
+    """
+
+    pytest.importorskip("mcp")
+    import anyio
+    from mcp.shared.exceptions import MCPError
+
+    from rag.mcp.server import ProtocolVersionGate
+
+    class _Ctx:
+        protocol_version = "2025-06-18"
+        request_id = 1
+
+    async def _call_next(_ctx):  # type: ignore[no-untyped-def]
+        raise AssertionError("the handler must not run for a refused version")
+
+    with pytest.raises(MCPError) as excinfo:
+        anyio.run(lambda: ProtocolVersionGate()(_Ctx(), _call_next))  # type: ignore[arg-type]
+
+    assert excinfo.value.code == -32022
+    assert excinfo.value.data == {"supported": [PROTOCOL_VERSION], "requested": "2025-06-18"}
 
 
 def test_sdk_marks_both_tools_read_only(tools: RagTools) -> None:

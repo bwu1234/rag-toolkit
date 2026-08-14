@@ -24,8 +24,9 @@ dev = [
 ]
 # Optional so the core install stays lean: `rag.mcp` serves stdio without it
 # via a built-in JSON-RPC fallback. Installing it adds the official transports
-# (including streamable HTTP at /mcp on the FastAPI app) and spec-compliant
-# version negotiation.
+# (including streamable HTTP at /mcp on the FastAPI app). The floor is 2.0
+# because that is where MCP 2026-07-28 -- the only revision this project
+# serves -- and the `MCPServer` API arrived.
 mcp = [
     "mcp>=2.0",
 ]

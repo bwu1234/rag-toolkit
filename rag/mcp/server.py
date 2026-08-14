@@ -4,20 +4,29 @@ Imports the official `mcp` package, so it is only reachable when the optional
 `mcp` extra is installed (`pip install -e '.[mcp]'`). `rag.mcp.__main__` falls
 back to `rag.mcp.fallback` when it is not; nothing else imports this module at
 package import time, so the fallback path never pays for a missing dependency.
+
+Protocol revision 2026-07-28 only. The SDK would otherwise also serve the
+handshake era off the same server object; `ProtocolVersionGate` turns that off
+so both transports here honour exactly one contract. Requires `mcp >= 2.0`,
+which is where 2026-07-28 support (and the `MCPServer` API used below) landed.
 """
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from mcp.server import MCPServer
+from mcp.server.context import CallNext, HandlerResult, ServerRequestContext
 from mcp.server.transport_security import TransportSecuritySettings
-from mcp.types import ToolAnnotations
+from mcp.shared.exceptions import MCPError
+from mcp.types import UNSUPPORTED_PROTOCOL_VERSION, ToolAnnotations
 from starlette.applications import Starlette
 
 from rag.mcp.tools import (
     INSTRUCTIONS,
+    PROTOCOL_VERSION,
     SERVER_NAME,
     SERVER_VERSION,
     RagTools,
@@ -37,6 +46,37 @@ DEFAULT_ALLOWED_HOSTS = [
 ]
 
 
+class ProtocolVersionGate:
+    """Refuse every request that is not on `PROTOCOL_VERSION`.
+
+    The SDK serves both protocol eras off one server object: a request
+    carrying the 2026-07-28 `_meta` envelope opens a modern connection, and
+    anything else -- notably an `initialize` handshake -- opens a legacy one
+    and negotiates down to a 2025 revision. This project serves 2026-07-28 and
+    nothing else, so the older era is turned off here rather than left as a
+    quiet second contract that the fallback transport does not honour.
+
+    Middleware is where the check belongs because it sees every inbound
+    request on both transports (stdio and streamable HTTP), before validation
+    or handshake commit, with the connection's negotiated version on
+    `ctx.protocol_version`. `-32022` names what is served, so an
+    auto-negotiating client learns the version instead of guessing from a
+    closed connection.
+    """
+
+    async def __call__(self, ctx: ServerRequestContext[Any, Any], call_next: CallNext) -> HandlerResult:
+        # `request_id is None` means a notification: it draws no response, so
+        # refusing it would only log noise. The request that matters on a
+        # legacy connection (`initialize`) is refused before it can commit.
+        if ctx.request_id is not None and ctx.protocol_version != PROTOCOL_VERSION:
+            raise MCPError(
+                code=UNSUPPORTED_PROTOCOL_VERSION,
+                message=f"this server speaks MCP {PROTOCOL_VERSION} only",
+                data={"supported": [PROTOCOL_VERSION], "requested": ctx.protocol_version},
+            )
+        return await call_next(ctx)
+
+
 def build_mcp_server(
     tools: RagTools | None = None, *, config_path: str | Path | None = None
 ) -> MCPServer:
@@ -52,6 +92,7 @@ def build_mcp_server(
         name=SERVER_NAME,
         version=SERVER_VERSION,
         instructions=INSTRUCTIONS,
+        middleware=[ProtocolVersionGate()],
     )
     for spec in build_tool_specs(tools):
         server.add_tool(

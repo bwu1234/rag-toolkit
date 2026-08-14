@@ -37,6 +37,14 @@ logger = logging.getLogger(__name__)
 SERVER_NAME = "rag-toolkit"
 SERVER_VERSION = "0.1.0"
 
+#: The one MCP revision this server speaks, on both transports. 2026-07-28 has
+#: no `initialize` handshake: every request is self-contained and carries the
+#: protocol version and the client's capabilities in `params._meta`. Older
+#: revisions are refused rather than negotiated down -- there is no wire this
+#: server serves them on, so a client that offers one is told what is served
+#: (`-32022` with `supported: ["2026-07-28"]`) instead of half-working.
+PROTOCOL_VERSION = "2026-07-28"
+
 INSTRUCTIONS = """\
 Retrieval over a local document corpus. Call rag_list_corpora to see what is \
 searchable, then rag_search to pull ranked passages with their source paths. \

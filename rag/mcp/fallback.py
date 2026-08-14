@@ -1,15 +1,23 @@
 """Dependency-free MCP stdio server, used when the `mcp` SDK is absent.
 
 MCP over stdio is newline-delimited JSON-RPC 2.0, and the read-only slice this
-project needs is four methods wide -- so `python -m rag.mcp` stays runnable in
+project needs is three methods wide -- so `python -m rag.mcp` stays runnable in
 a checkout that only installed the core dependencies, rather than failing at
 import with a stack trace about a missing extra.
 
+Protocol revision 2026-07-28 only, matching the SDK path. That revision
+deleted the `initialize` handshake: there is no session state, and every
+request is self-contained, carrying the protocol version and the client's
+capabilities in `params._meta` (`io.modelcontextprotocol/protocolVersion` and
+`io.modelcontextprotocol/clientCapabilities`, both required). Servers advertise
+themselves through `server/discover` instead, which a client MAY call and MAY
+skip. `ping` and `notifications/initialized` are gone with the handshake.
+
 This is a deliberate subset, not a reimplementation of the SDK. It serves one
-request at a time and supports no resources, prompts, sampling, progress, or
-cancellation. Tool names, schemas, and results are identical to the SDK path
-because both are generated from the same `ToolSpec`s. Install the extra
-(`pip install -e '.[mcp]'`) to get the real transport.
+request at a time and supports no resources, prompts, sampling, subscriptions,
+progress, or cancellation. Tool names, schemas, and results are identical to
+the SDK path because both are generated from the same `ToolSpec`s. Install the
+extra (`pip install -e '.[mcp]'`) to get the real transport.
 """
 
 from __future__ import annotations
@@ -23,6 +31,7 @@ from typing import Any, BinaryIO
 
 from rag.mcp.tools import (
     INSTRUCTIONS,
+    PROTOCOL_VERSION,
     SERVER_NAME,
     SERVER_VERSION,
     RagTools,
@@ -32,15 +41,28 @@ from rag.mcp.tools import (
 
 logger = logging.getLogger(__name__)
 
-#: Advertised when the client asks for something we don't recognize. Clients
-#: are expected to accept a different version in the response or disconnect.
-LATEST_PROTOCOL_VERSION = "2025-06-18"
-SUPPORTED_PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
+#: The per-request envelope keys 2026-07-28 puts in `params._meta`. The
+#: `io.modelcontextprotocol/` prefix is reserved by the spec, so no other
+#: traffic mints them.
+_PROTOCOL_VERSION_KEY = "io.modelcontextprotocol/protocolVersion"
+_CLIENT_CAPABILITIES_KEY = "io.modelcontextprotocol/clientCapabilities"
+#: Stamped on every result: the spec asks servers to identify themselves on
+#: each response now that there is no handshake to do it once.
+_SERVER_INFO_KEY = "io.modelcontextprotocol/serverInfo"
 
-# JSON-RPC reserved codes.
+# JSON-RPC reserved codes, plus the MCP-specific ones this server can raise.
 _METHOD_NOT_FOUND = -32601
 _INVALID_PARAMS = -32602
 _INTERNAL_ERROR = -32603
+_UNSUPPORTED_PROTOCOL_VERSION = -32022
+
+#: Freshness hints on cacheable results (`server/discover`, `tools/list`).
+#: Both are the spec's conservative reading: immediately stale, never shared
+#: across authorization contexts. The tool list is cheap to recompute and the
+#: corpus registry can change under a long-lived client, so nothing here is
+#: worth serving from a cache.
+_TTL_MS = 0
+_CACHE_SCOPE = "private"
 
 
 def _divert_stdout() -> BinaryIO:
@@ -75,39 +97,112 @@ class FallbackServer:
         is_notification = "id" not in request
 
         try:
+            if is_notification:
+                # `notifications/cancelled` is the only one a 2026-07-28 client
+                # sends us, and single-request-at-a-time serving means it can
+                # only ever arrive after the work it would cancel is done.
+                return None
             if method == "initialize":
-                result = self._initialize(request.get("params") or {})
+                # Removed in 2026-07-28. Naming what is served beats a bare
+                # METHOD_NOT_FOUND: a client that auto-negotiates can read the
+                # supported list and retry with the envelope.
+                raise _RpcError(
+                    _UNSUPPORTED_PROTOCOL_VERSION,
+                    "this server speaks the 2026-07-28 protocol, which has no "
+                    "`initialize` handshake; send self-contained requests carrying "
+                    "the per-request `_meta` envelope instead",
+                    data=self._unsupported_data((request.get("params") or {}).get("protocolVersion")),
+                )
+
+            self._check_envelope(request.get("params"))
+
+            if method == "server/discover":
+                result = self._discover()
             elif method == "tools/list":
-                result = {"tools": [self._describe(spec) for spec in self._specs.values()]}
+                result = {
+                    "tools": [self._describe(spec) for spec in self._specs.values()],
+                    "ttlMs": _TTL_MS,
+                    "cacheScope": _CACHE_SCOPE,
+                }
             elif method == "tools/call":
                 result = self._call(request.get("params") or {})
-            elif method == "ping":
-                result = {}
-            elif is_notification:
-                # `notifications/initialized` and friends: nothing to do, and
-                # nothing to say back.
-                return None
             else:
                 return _error(request_id, _METHOD_NOT_FOUND, f"Unknown method: {method!r}")
         except _RpcError as exc:
-            return _error(request_id, exc.code, str(exc))
+            return _error(request_id, exc.code, str(exc), data=exc.data)
         except Exception as exc:  # pragma: no cover - defensive
             logger.exception("Unhandled error in %s", method)
             return _error(request_id, _INTERNAL_ERROR, f"{type(exc).__name__}: {exc}")
 
-        if is_notification:
-            return None
-        return {"jsonrpc": "2.0", "id": request_id, "result": result}
+        return {"jsonrpc": "2.0", "id": request_id, "result": self._finish(result)}
 
-    def _initialize(self, params: dict[str, Any]) -> dict[str, Any]:
-        requested = params.get("protocolVersion")
-        version = requested if requested in SUPPORTED_PROTOCOL_VERSIONS else LATEST_PROTOCOL_VERSION
+    def _check_envelope(self, params: Any) -> None:
+        """Run the 2026-07-28 inbound ladder over a request's params.
+
+        Two rungs, first failure wins: the required envelope keys are present
+        in a `_meta` object, and the version they carry is the one served.
+        Shape defects are INVALID_PARAMS; a well-formed request offering
+        another revision is -32022, the one code an auto-negotiating client is
+        required *not* to fall back from.
+        """
+
+        meta = params.get("_meta") if isinstance(params, dict) else None
+        if not isinstance(meta, dict):
+            raise _RpcError(
+                _INVALID_PARAMS,
+                f"params._meta must be an object carrying the required {_PROTOCOL_VERSION_KEY!r} "
+                f"and {_CLIENT_CAPABILITIES_KEY!r} envelope keys",
+            )
+        missing = [key for key in (_PROTOCOL_VERSION_KEY, _CLIENT_CAPABILITIES_KEY) if key not in meta]
+        if missing:
+            raise _RpcError(
+                _INVALID_PARAMS,
+                f"params._meta is missing the required envelope key(s): {', '.join(missing)}",
+            )
+
+        version = meta[_PROTOCOL_VERSION_KEY]
+        if not isinstance(version, str):
+            # A non-string is a malformed envelope, not a negotiation outcome,
+            # so it must not come back as -32022.
+            raise _RpcError(_INVALID_PARAMS, "the protocol-version envelope value must be a string")
+        if version != PROTOCOL_VERSION:
+            raise _RpcError(
+                _UNSUPPORTED_PROTOCOL_VERSION,
+                "Unsupported protocol version",
+                data=self._unsupported_data(version),
+            )
+
+    @staticmethod
+    def _unsupported_data(requested: Any) -> dict[str, Any]:
+        data: dict[str, Any] = {"supported": [PROTOCOL_VERSION]}
+        if isinstance(requested, str):
+            data["requested"] = requested
+        return data
+
+    def _discover(self) -> dict[str, Any]:
+        """Answer `server/discover`: what this server is and what it serves."""
+
         return {
-            "protocolVersion": version,
+            "supportedVersions": [PROTOCOL_VERSION],
             "capabilities": {"tools": {"listChanged": False}},
-            "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
             "instructions": self._instructions,
+            "ttlMs": _TTL_MS,
+            "cacheScope": _CACHE_SCOPE,
         }
+
+    def _finish(self, result: dict[str, Any]) -> dict[str, Any]:
+        """Apply what 2026-07-28 requires of every result.
+
+        `resultType` is mandatory on this revision (there is no absent-means-
+        complete bridge for a server that speaks it), and `serverInfo` replaces
+        the identity the deleted handshake used to carry.
+        """
+
+        result.setdefault("resultType", "complete")
+        meta = dict(result.get("_meta") or {})
+        meta.setdefault(_SERVER_INFO_KEY, {"name": SERVER_NAME, "version": SERVER_VERSION})
+        result["_meta"] = meta
+        return result
 
     def _describe(self, spec: ToolSpec) -> dict[str, Any]:
         return {
@@ -141,13 +236,17 @@ class FallbackServer:
 
 
 class _RpcError(Exception):
-    def __init__(self, code: int, message: str) -> None:
+    def __init__(self, code: int, message: str, data: Any = None) -> None:
         super().__init__(message)
         self.code = code
+        self.data = data
 
 
-def _error(request_id: Any, code: int, message: str) -> dict[str, Any]:
-    return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
+def _error(request_id: Any, code: int, message: str, data: Any = None) -> dict[str, Any]:
+    error: dict[str, Any] = {"code": code, "message": message}
+    if data is not None:
+        error["data"] = data
+    return {"jsonrpc": "2.0", "id": request_id, "error": error}
 
 
 def _tool_error(message: str) -> dict[str, Any]:

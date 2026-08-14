@@ -23,6 +23,9 @@ milestone. Local-first by default: Ollama serves both embeddings
       this corpus and stay off.
 - [x] MCP server — retrieval exposed to external agents as read-only tools
       (`rag_search`, `rag_list_corpora`) over stdio and streamable HTTP.
+      MCP **2026-07-28 only** on both transports (no handshake; per-request
+      `_meta` envelope) — older revisions are refused, not negotiated down.
+      Needs `mcp >= 2.0` for the SDK path.
       Not Milestone 19: that is *this* system calling search as a tool;
       this is an outside agent calling ours. See [MCP server](docs/mcp-server.md).
 - [ ] Milestone 12 — Observability (query logs, latency/cost, feedback)

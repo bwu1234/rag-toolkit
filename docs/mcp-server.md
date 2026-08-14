@@ -61,6 +61,42 @@ agent that can trigger it as a side effect of answering a question will
 eventually do so in a loop. Build indexes deliberately:
 `python -m rag.cli index --corpus <name>`.
 
+## Protocol revision
+
+**2026-07-28, and nothing else.** Both transports serve exactly one revision;
+older ones are refused rather than negotiated down. A client offering one gets
+`-32022` (`UNSUPPORTED_PROTOCOL_VERSION`) naming what is served, which is the
+one error code an auto-negotiating client is required *not* to silently retry
+past — so it fails loudly instead of half-working.
+
+What that revision changes, if you have only seen the 2025 wire:
+
+- **No `initialize` handshake, and no session state.** Every request is
+  self-contained and carries the envelope in `params._meta`:
+  `io.modelcontextprotocol/protocolVersion` and
+  `io.modelcontextprotocol/clientCapabilities` are both required, and a request
+  missing them is `-32602` (a shape defect, not a version disagreement).
+- **`server/discover` replaces it**, returning `supportedVersions`,
+  `capabilities`, and `instructions`. A client MAY call it and MAY skip it.
+- **`ping` and `notifications/initialized` are gone** with the handshake.
+- **Every result carries `resultType`** (`"complete"` here) and a
+  `_meta["io.modelcontextprotocol/serverInfo"]` stamp — with no handshake,
+  that stamp is where server identity now lives. Cacheable results
+  (`server/discover`, `tools/list`) also carry `ttlMs`/`cacheScope`; both are
+  set to *immediately stale, never shared across authorization contexts*,
+  since the tool list is cheap to recompute and the corpus registry can change
+  under a long-lived client.
+
+The SDK would otherwise serve both eras off one server object — a request with
+the envelope opens a modern connection, an `initialize` opens a legacy one.
+`ProtocolVersionGate` in `rag/mcp/server.py` turns the legacy era off, as
+middleware, because that is the one place that sees every inbound request on
+both SDK transports. The fallback implements the modern envelope directly.
+`PROTOCOL_VERSION` in `rag/mcp/tools.py` is the single source both read.
+
+This needs `mcp >= 2.0`; 2026-07-28 support and the `MCPServer` API both landed
+there.
+
 ## Transports
 
 Both serve the identical tool surface, generated from the same `ToolSpec`s in
@@ -108,19 +144,19 @@ pip install -e '.[mcp]'
 ```
 
 Optional on purpose. Without it, stdio still works via `rag/mcp/fallback.py`, a
-~150-line JSON-RPC loop covering `initialize`, `tools/list`, `tools/call`, and
-`ping`. It is a deliberate subset — one request at a time, no resources,
-prompts, sampling, or cancellation — and exists so a core-only checkout still
-runs the server. The extra buys the real transports, streamable HTTP, and
-protocol-version negotiation.
+~200-line JSON-RPC loop covering `server/discover`, `tools/list`, and
+`tools/call` — the whole of 2026-07-28 that a read-only tool server needs. It
+is a deliberate subset — one request at a time, no resources, prompts,
+sampling, subscriptions, or cancellation — and exists so a core-only checkout
+still runs the server. The extra buys the real transports and streamable HTTP.
 
 `tests/test_mcp.py` asserts the SDK's derived schemas equal the fallback's,
 since silent drift between the two is the way this arrangement breaks.
 
 ## Things worth knowing
 
-- **Startup is lazy.** Nothing is built at import or at handshake. Under stdio a
-  client expects a prompt `initialize` response, and importing Chroma plus a
+- **Startup is lazy.** Nothing is built at import or at discovery. Under stdio a
+  client expects a prompt `server/discover` response, and importing Chroma plus a
   sentence-transformers cross-encoder eagerly would spend seconds first. The
   first `rag_search` pays that cost; `rag_list_corpora` never does.
 - **Retrievers are cached per corpus selection** and reused. The cross-encoder
