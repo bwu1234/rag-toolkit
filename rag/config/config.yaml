@@ -145,6 +145,13 @@ chat:
   # before retrieval. Costs one extra LLM call per turn that has history.
   condense_history: true
   max_history_turns: 6
+  # How the generation prompt is phrased:
+  #   grounded -- numbered passages, inline [n] citations, "say so if the
+  #               passages don't answer" (the served pipeline)
+  #   plain    -- bare "context + question", no citations, no refusal
+  #               instruction; a baseline for measuring what grounding buys
+  #               (used by vanilla.yaml)
+  prompt: grounded
 
 # Corrective RAG -- let the pipeline reject its own intermediate results.
 # `retrieval.min_score` filters on a similarity score; these filter on

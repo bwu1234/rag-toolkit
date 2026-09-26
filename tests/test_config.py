@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from rag.config.settings import RagConfig, load_config
+from rag.config.settings import DEFAULT_CONFIG_PATH, RagConfig, _deep_merge, load_config
 
 
 def test_default_config_has_expected_models(default_config: RagConfig) -> None:
@@ -159,3 +159,145 @@ def test_env_override_cannot_descend_into_a_scalar(monkeypatch: pytest.MonkeyPat
 
     with pytest.raises(ValueError, match="non-mapping"):
         load_config()
+
+
+# ---------------------------------------------------------------------------
+# Vanilla baseline config
+# ---------------------------------------------------------------------------
+
+VANILLA_CONFIG_PATH = DEFAULT_CONFIG_PATH.parent / "vanilla.yaml"
+
+
+def test_vanilla_config_disables_every_extra() -> None:
+    cfg = load_config(VANILLA_CONFIG_PATH)
+
+    assert cfg.retrieval.mode == "dense"
+    assert cfg.reranker.provider == "none"
+    assert cfg.retrieval.expansion.provider == "none"
+    assert not cfg.retrieval.web_search.enabled
+    assert cfg.retrieval.min_score == 0.0
+    assert not cfg.chat.condense_history
+    assert cfg.chat.prompt == "plain"
+    assert not cfg.crag.enabled
+    assert not cfg.chunking.contextual.enabled
+    assert cfg.retrieval.top_k >= cfg.retrieval.rerank_top_k
+
+
+def test_vanilla_config_inherits_everything_it_does_not_change() -> None:
+    default = load_config()
+    vanilla = load_config(VANILLA_CONFIG_PATH)
+
+    changed = {
+        "retrieval": {"mode": "dense", "top_k": 5},
+        "reranker": {"provider": "none"},
+        "chat": {"condense_history": False, "prompt": "plain"},
+    }
+    expected = RagConfig.model_validate(_deep_merge(default.model_dump(), changed))
+    assert vanilla == expected
+
+
+# ---------------------------------------------------------------------------
+# `base:` inheritance
+# ---------------------------------------------------------------------------
+
+
+def _write(path: Path, text: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_base_merges_nested_mappings_and_child_wins(tmp_path: Path) -> None:
+    _write(tmp_path / "base.yaml", "llm:\n  model: base-model\n  temperature: 0.7\nretrieval:\n  top_k: 9\n")
+    child = _write(tmp_path / "child.yaml", "base: base.yaml\nllm:\n  model: child-model\n")
+
+    cfg = load_config(child)
+
+    assert cfg.llm.model == "child-model"
+    assert cfg.llm.temperature == 0.7  # sibling key kept from the base
+    assert cfg.retrieval.top_k == 9  # untouched section kept from the base
+
+
+def test_base_lists_replace_rather_than_concatenate(tmp_path: Path) -> None:
+    _write(
+        tmp_path / "base.yaml",
+        "corpora:\n  active: [a]\n  registry:\n    a: {documents_dir: a}\n    b: {documents_dir: b}\n",
+    )
+    child = _write(tmp_path / "child.yaml", "base: base.yaml\ncorpora:\n  active: [b]\n")
+
+    # Concatenating would silently select the pooled a+b index.
+    assert load_config(child).corpora.active == ["b"]
+
+
+def test_base_null_overrides_the_base_value(tmp_path: Path) -> None:
+    _write(tmp_path / "base.yaml", "eval:\n  judge:\n    model: some-judge\n")
+    child = _write(tmp_path / "child.yaml", "base: base.yaml\neval:\n  judge: null\n")
+
+    assert load_config(child).eval.judge is None
+
+
+def test_base_resolves_relative_to_the_naming_file_and_chains(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write(tmp_path / "configs" / "root.yaml", "llm:\n  model: root\n  temperature: 0.1\n")
+    _write(tmp_path / "configs" / "mid" / "mid.yaml", "base: ../root.yaml\nllm:\n  temperature: 0.5\n")
+    leaf = _write(tmp_path / "configs" / "mid" / "leaf.yaml", "base: mid.yaml\nretrieval:\n  top_k: 3\n")
+    monkeypatch.chdir(tmp_path)  # not the files' directory
+
+    cfg = load_config(leaf)
+
+    assert (cfg.llm.model, cfg.llm.temperature, cfg.retrieval.top_k) == ("root", 0.5, 3)
+
+
+def test_base_naming_a_missing_file_raises(tmp_path: Path) -> None:
+    child = _write(tmp_path / "child.yaml", "base: nope.yaml\n")
+
+    with pytest.raises(FileNotFoundError, match="nope.yaml"):
+        load_config(child)
+
+
+def test_base_cycle_raises(tmp_path: Path) -> None:
+    _write(tmp_path / "a.yaml", "base: b.yaml\n")
+    _write(tmp_path / "b.yaml", "base: a.yaml\n")
+
+    with pytest.raises(ValueError, match="loops"):
+        load_config(tmp_path / "a.yaml")
+
+
+def test_base_must_be_a_path(tmp_path: Path) -> None:
+    child = _write(tmp_path / "child.yaml", "base: [a.yaml]\n")
+
+    with pytest.raises(ValueError, match="must be a file path"):
+        load_config(child)
+
+
+def test_env_override_applies_on_top_of_the_merged_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write(tmp_path / "base.yaml", "llm:\n  model: base-model\n")
+    child = _write(tmp_path / "child.yaml", "base: base.yaml\nllm:\n  model: child-model\n")
+    monkeypatch.setenv("RAG__LLM__MODEL", "env-model")
+
+    assert load_config(child).llm.model == "env-model"
+
+
+# ---------------------------------------------------------------------------
+# chat.prompt
+# ---------------------------------------------------------------------------
+
+
+def test_prompt_style_defaults_to_grounded() -> None:
+    assert RagConfig().chat.prompt == "grounded"
+    assert load_config().chat.prompt == "grounded"
+
+
+def test_plain_prompt_rejects_crag_regeneration() -> None:
+    with pytest.raises(ValidationError, match="max_regenerations"):
+        RagConfig.model_validate({"chat": {"prompt": "plain"}, "crag": {"enabled": True}})
+
+
+def test_plain_prompt_allows_crag_without_regeneration() -> None:
+    cfg = RagConfig.model_validate(
+        {"chat": {"prompt": "plain"}, "crag": {"enabled": True, "max_regenerations": 0}}
+    )
+    assert cfg.crag.check_groundedness

@@ -32,6 +32,11 @@ validated by pydantic models in `rag/config/settings.py`. Load it via
 `load_config()`. Don't hardcode model names, chunk sizes, or paths in pipeline
 code — read them from `RagConfig`.
 
+A config file may start with `base: <path>` (relative to itself) to inherit
+another and list only what it changes — mappings merge, lists replace.
+`rag/config/vanilla.yaml` does this: plain dense RAG, no reranker,
+`chat.prompt: plain`; pass it via `--config`.
+
 ### Corpora
 
 `corpora.registry` names bodies of documents; `corpora.active` picks which ones

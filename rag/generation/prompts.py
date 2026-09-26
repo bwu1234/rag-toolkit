@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 
+from rag.config.settings import PromptStyle
 from rag.vectorstore.base import ScoredChunk
 
 SYSTEM_PROMPT = (
@@ -73,6 +74,46 @@ def build_rag_prompt(query: str, chunks: list[ScoredChunk]) -> str:
         "Answer the question using only the passages above, citing them by "
         "number as you go."
     )
+
+
+# The `plain` style (`chat.prompt: plain`): the textbook RAG template, kept as
+# a baseline for measuring what the grounded prompt's instructions are worth.
+# Deliberately missing everything `build_rag_prompt` adds -- no passage
+# numbers, no source labels, no citation request, and no instruction to admit
+# when the context falls short -- so it is not a variant of the grounded
+# prompt, it is the thing the grounded prompt was built to improve on. It has
+# no system prompt for the same reason: "use only the context" is itself one of
+# the grounding instructions.
+PLAIN_SYSTEM_PROMPT: str | None = None
+
+
+def build_plain_prompt(query: str, chunks: list[ScoredChunk]) -> str:
+    """Render chunks and question as undecorated context followed by the question.
+
+    Generated context (`chunk.context`) is left out: labelling it is how the
+    grounded prompt keeps the model from quoting it, and without a label it
+    would reach the model as corpus text.
+    """
+
+    context = "\n\n".join(chunk.text for chunk in chunks)
+    return (
+        "Use the following context to answer the question.\n\n"
+        f"Context:\n{context}\n\n"
+        f"Question: {query}\n"
+        "Answer:"
+    )
+
+
+def system_prompt_for(style: PromptStyle) -> str | None:
+    """The generation system prompt for `style`."""
+
+    return SYSTEM_PROMPT if style == "grounded" else PLAIN_SYSTEM_PROMPT
+
+
+def build_prompt(style: PromptStyle, query: str, chunks: list[ScoredChunk]) -> str:
+    """Render the generation user turn in `style`."""
+
+    return build_rag_prompt(query, chunks) if style == "grounded" else build_plain_prompt(query, chunks)
 
 
 # `[1]`, `[2][3]`, and the comma-list form small models drift into despite the
