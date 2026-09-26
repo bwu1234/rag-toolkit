@@ -378,8 +378,12 @@ nothing else in this list and is worth pulling ahead of it.
   it once from `manifest.json` in a CI job and store it with `actions/cache`,
   keyed on the manifest, the `FINGERPRINTED` chunking settings and the
   embedding model, so it rebuilds only when one of those changes. Commit the
-  174 eval queries' embeddings (derived from our own questions, not the
-  corpus) so the per-PR run needs no embedding server at all.
+  Add a precomputed-vector path to `retrieval_eval` and the retriever: load the
+  committed 174 query embeddings and pass each vector directly to retrieval,
+  bypassing the configured embedding provider. Validate the vector metadata
+  (model, dimension and query ordering) before running the gate; the vectors
+  are derived from our own questions, not the corpus, so the per-PR run needs
+  no embedding server.
 - **Check the reranker fits the time budget.** `bge-reranker-v2-m3` took
   ~1.1s/query on Apple Silicon; a CPU runner will be slower. If the full set is
   too slow per PR, gate on a fixed stratified subset and run all 174 nightly.
