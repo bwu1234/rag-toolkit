@@ -1,6 +1,7 @@
 """Format-specific loaders plus a directory walker that dispatches by extension.
 
-Adding a new format: write a `Loader` subclass, add it to `_LOADERS` below.
+Adding a new format: write a `Loader` subclass, add an instance to the tuple
+that builds `_LOADERS` below.
 Nothing else in the pipeline needs to change — `load_corpus` and the CLI only
 depend on the `Loader` interface.
 """
