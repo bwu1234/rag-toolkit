@@ -56,18 +56,13 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   `mypy --ignore-missing-imports rag` (mypy is scoped to `rag/` on purpose —
   tests use structural fakes that nominal typing flags falsely).
 - Whole pipeline end to end: `scripts/demo.sh` (takes `--corpus`, `--question "..."`)
-- Ingest & inspect: `python -m rag.cli ingest --show 3`
-- Chunk & inspect chunk sizes: `python -m rag.cli chunk --show 3`
 - Build the index: `python -m rag.cli index`. Add `--reset` to rebuild; it's
   **required** after changing anything under `chunking.contextual`. Generated
   contexts survive `--reset` on purpose (so rebuilds don't re-pay for them);
   `--clear-context-cache` forces regeneration.
-- Retrieve & rerank: `python -m rag.cli retrieve "your question"`
-- Ask end to end, with citations: `python -m rag.cli chat "your question"`
 - API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`, `/health`)
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.
   Serves MCP 2026-07-28 only and needs `mcp >= 2.0` — see [MCP server](docs/mcp-server.md).
-- UI: `streamlit run rag/ui/app.py`
 - Logged turns and feedback: `python -m rag.cli turns` (`--feedback down` for
   the thumbs-down ones). The API, UI and `cli chat` append every turn to
   `data/logs/turns.jsonl`; the eval runners never do.
