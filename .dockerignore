@@ -1,0 +1,14 @@
+# Keep the build context to what the image needs. compose bind-mounts the repo
+# over /app anyway, so data and indexes reach the containers without being
+# baked into the image.
+.git/
+.venv/
+venv/
+**/__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+pytest-cache-files-*/
+draft/
+data/
+.env

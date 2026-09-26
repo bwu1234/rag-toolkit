@@ -98,3 +98,64 @@ def test_crag_rejects_an_out_of_range_retry_count(tmp_path: Path) -> None:
 
     with pytest.raises(ValidationError):
         load_config(path)
+
+
+# ---------------------------------------------------------------------------
+# RAG__SECTION__KEY environment overrides
+# ---------------------------------------------------------------------------
+
+
+def test_env_overrides_ollama_urls_over_yaml(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The docker-compose case: the shared YAML says localhost, the container
+    # needs the `ollama` service name.
+    monkeypatch.setenv("RAG__LLM__BASE_URL", "http://ollama:11434")
+    monkeypatch.setenv("RAG__EMBEDDING__BASE_URL", "http://ollama:11434")
+
+    config = load_config()
+
+    assert config.llm.base_url == "http://ollama:11434"
+    assert config.embedding.base_url == "http://ollama:11434"
+    # Untouched keys in the same section still come from the YAML.
+    assert config.llm.model == "qwen3.5:9b-mlx"
+
+
+def test_env_override_values_are_coerced_by_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAG__RETRIEVAL__TOP_K", "7")
+    monkeypatch.setenv("RAG__CHAT__CONDENSE_HISTORY", "false")
+
+    config = load_config()
+
+    assert config.retrieval.top_k == 7
+    assert config.chat.condense_history is False
+
+
+def test_env_override_applies_without_a_config_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("RAG__LLM__BASE_URL", "http://ollama:11434")
+
+    config = load_config(tmp_path / "does_not_exist.yaml")
+
+    assert config.llm.base_url == "http://ollama:11434"
+
+
+def test_env_override_is_still_validated(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAG__CRAG__MAX_RETRIES", "99")
+
+    with pytest.raises(ValidationError):
+        load_config()
+
+
+@pytest.mark.parametrize("name", ["RAG__", "RAG__LLM__", "RAG__LLM____BASE_URL"])
+def test_malformed_env_override_raises(name: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(name, "x")
+
+    with pytest.raises(ValueError, match="Malformed"):
+        load_config()
+
+
+def test_env_override_cannot_descend_into_a_scalar(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RAG__LLM__MODEL__NAME", "x")
+
+    with pytest.raises(ValueError, match="non-mapping"):
+        load_config()
