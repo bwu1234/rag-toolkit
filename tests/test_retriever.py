@@ -67,6 +67,12 @@ class _FakeVectorStore(VectorStore):
     def count(self) -> int:
         return len(self.candidates)
 
+    def ids(self) -> set[str]:
+        return {c.chunk_id for c in self.candidates}
+
+    def delete(self, ids: list[str]) -> None:
+        raise AssertionError("Retriever should never call delete")
+
     def reset(self) -> None:
         raise AssertionError("Retriever should never call reset")
 
@@ -90,6 +96,12 @@ class _FakeSparseIndex(SparseIndex):
 
     def has_chunk(self, chunk_id: str) -> bool:
         return any(c.chunk_id == chunk_id for c in self.candidates)
+
+    def ids(self) -> set[str]:
+        return {c.chunk_id for c in self.candidates}
+
+    def delete(self, ids: list[str]) -> None:
+        raise AssertionError("Retriever should never call sparse delete")
 
     def reset(self) -> None:
         raise AssertionError("Retriever should never call sparse reset")

@@ -29,12 +29,15 @@ flowchart LR
     A[corpus_selection] --> B[load_corpus<br/>per corpus]
     B --> C[clean_documents]
     C --> D[Chunker]
-    D --> E{changed?<br/>content hash}
+    D --> M{{manifest<br/>matches config?}}
+    M -- no --> X[stop: needs --reset]
+    M -- yes --> E{changed?<br/>content hash}
     E -- no --> S[skip]
     E -- yes --> F[ChunkContextualizer<br/><i>optional</i>]
     F --> G[EmbeddingModel<br/>embed contextual_text]
     G --> H[(VectorStore<br/>Chroma)]
     F --> I[(BM25Index<br/>JSON)]
+    H & I --> P[purge ids the<br/>corpus no longer produces]
 ```
 
 All of it lives in `_cmd_index` in `rag/cli.py`; there is no separate indexing
@@ -46,30 +49,43 @@ service.
    ([why](milestone-notes.md#named-corpora-notes-shipped-with-milestone-11)).
 2. **Clean and chunk.** `rag/ingestion/cleaners.py`, then the configured
    `Chunker` (`rag/chunking/`).
-3. **Skip what hasn't changed.** Each chunk's text is hashed and compared with
+3. **Check the manifest.** Before anything is written, the index's
+   `index_manifest__<slug>.json` is compared with the configured embedder and
+   `chunking.contextual` settings. On a mismatch the run stops and asks for
+   `--reset`, because what changed would alter vectors without altering chunk
+   text, which is all the hash below can see. An empty index, or one that
+   predates manifests, takes the current config.
+   ([Index maintenance notes](milestone-notes.md#index-maintenance-notes))
+4. **Skip what hasn't changed.** Each chunk's text is hashed and compared with
    the `content_hash` stored in the vector store's metadata. A chunk is
    re-processed if its hash differs **or it is missing from the BM25 index**:
    Chroma persists on every write but BM25 flushes once at the end, so an
    interrupted run can leave the two out of step.
-4. **Contextualize (optional, `chunking.contextual`).** An LLM writes a short
+5. **Contextualize (optional, `chunking.contextual`).** An LLM writes a short
    situating blurb per changed chunk, checkpointed to
    `contextual_cache.jsonl` keyed by prompt content — which is why the cache
-   survives `--reset`. The hash in step 3 covers chunk text only, so toggling
-   this flag needs an explicit `--reset`.
+   survives `--reset`. The hash in step 4 covers chunk text only, which is why
+   step 3 guards these settings.
    ([Milestone 9 notes](milestone-notes.md#contextual-chunking-notes-milestone-9))
-5. **Write both indexes.** The embedder embeds `chunk.contextual_text`
+6. **Write both indexes.** The embedder embeds `chunk.contextual_text`
    (blurb + chunk), but the store keeps `chunk.text` verbatim, so retrieval
    matches the enriched string while citations quote the real source. BM25 is
    **always** built alongside the vectors, whatever `retrieval.mode` says, so
    switching to hybrid later never forces a re-embed.
+7. **Purge stale chunks.** Chunk ids are positional, so a deleted document
+   leaves all its chunks and a shortened one leaves its tail. Any id a store
+   holds that this run didn't produce is deleted from that store, then BM25 is
+   flushed.
 
 ### Storage naming
 
 Everything a selection writes is named after its slug (sorted, `+`-joined
 corpus names): Chroma collection `<base>__<slug>`, BM25 file
-`bm25_index__<slug>.json`. Isolated and pooled indexes therefore sit side by
-side in `data/index/`, and a query-time component built for one selection
-cannot read another's index.
+`bm25_index__<slug>.json`, manifest `index_manifest__<slug>.json`. Isolated
+and pooled indexes therefore sit side by side in `data/index/`, and a
+query-time component built for one selection cannot read another's index.
+`build_retriever` also refuses an index whose manifest names a different
+embedder than the config, since those query vectors wouldn't be comparable.
 
 ## Query-time path
 

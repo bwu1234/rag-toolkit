@@ -387,11 +387,10 @@ graph LR
   match. Add both, shared between the index and query paths so they stay
   consistent; move to per-field weights (title/headings/body) once Milestone
   14 gives the index real fields to weight.
-- **Deletion support.** Neither `VectorStore` nor `SparseIndex` exposes
-  `delete(ids)` — a document removed from a corpus leaves orphaned vectors and
-  BM25 records permanently. Diff the corpus's current chunk ids against each
-  index's at index time and purge the difference; pairs naturally with the
-  incremental-indexing change-detection that already ships (`rag/cli.py`).
+- **Deletion support** *(shipped, ahead of the rest of this milestone)*.
+  `VectorStore`/`SparseIndex` gained `ids()`/`delete(ids)`, and `index`
+  purges chunks the corpus no longer produces
+  ([notes](milestone-notes.md#index-maintenance-notes)).
 - **Scalable sparse backend**, only once corpus scale demands it. `BM25Index`
   holds every chunk's text in a Python dict, persists as one JSON blob, and
   rebuilds the whole index after any upsert — workable to roughly 10⁴ chunks,
@@ -401,8 +400,8 @@ graph LR
   scoped with the config-fingerprint requirement a naive cache would miss.
 - Suggested build order: filter pushdown (shared interfaces) → aggregation +
   dedup (largest visible result-quality win) → ranking signals (title match
-  and recency first, link graph later) → snippets → BM25F → deletion support
-  (pair with incremental indexing) → scalable backend (last, scale-gated).
+  and recency first, link graph later) → snippets → BM25F → scalable backend
+  (last, scale-gated).
 
 ### Milestone 21 — Streaming & citation fidelity
 

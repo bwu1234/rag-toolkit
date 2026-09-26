@@ -56,7 +56,9 @@ the docs fit together.
   `index` after small corpus edits replaces existing vectors in place rather
   than duplicating them. Use `index --reset` to wipe the collection after a
   chunking/embedding config change that invalidates old ids or vector
-  dimensions.
+  dimensions. *(Later: stale ids are now purged automatically, and an
+  embedder change is refused until `--reset`; see
+  [index maintenance notes](#index-maintenance-notes).)*
 - `ChromaVectorStore` uses Chroma's persistent local mode (a single on-disk
   directory under `paths.index_dir`, no server process) configured for cosine
   similarity (`hnsw:space: cosine`). Chroma metadata values must be flat
@@ -454,7 +456,8 @@ the docs fit together.
   before, so chunks already in the index cost nothing. The content hash covers
   `chunk.text` alone, which means toggling `contextual.enabled` does *not*
   invalidate an existing index by itself — re-index with `--reset` after
-  changing anything under `chunking.contextual`.
+  changing anything under `chunking.contextual`. *(Later: now enforced by the
+  index manifest; see [index maintenance notes](#index-maintenance-notes).)*
 - Measured cost on the small corpus: 31 chunks took ~107s and 31 `/api/chat`
   calls on `qwen3.5:9b-mlx`. A no-change re-index afterwards took 1.7s and zero
   LLM calls, confirming the skip path holds.
@@ -673,3 +676,52 @@ Code: `rag/observability/` (records, sink, metering), wired through
   record feedback). Reading back is a property of the JSONL store
   (`read_turn_log`), not of the interface, because an OpenTelemetry exporter,
   the planned later adapter, can't be read back.
+
+## Index maintenance notes
+
+Two gaps in incremental indexing, closed together: stale chunks that were never
+removed, and config changes the content hash couldn't see.
+
+- **Stale chunks are purged by diffing ids, not by tracking deletions.** Chunk
+  ids are positional (`<doc>::chunk<n>`), so a deleted document leaves all of
+  its chunks behind and a shortened one leaves its tail. At the end of each
+  `index` run, anything either store holds that this run didn't produce is
+  deleted from that store. Each store is diffed on its own, so an interrupted
+  run that left them out of step is repaired as well. This needed
+  `ids()`/`delete(ids)` on both `VectorStore` and `SparseIndex`. The obvious
+  alternative, recording which files existed last run, would add a third piece
+  of state to keep consistent. The stores already know what they hold.
+- **The purge runs after the upserts, and never on an empty load.** An empty
+  corpus aborts `index` before anything is written, so a mistyped
+  `documents_dir` can't wipe an index. A single file that fails to load does
+  lose its chunks for that run
+  ([known limitation](known-limitations.md)).
+- **An index manifest guards what the hash can't see.** The per-chunk hash
+  covers `chunk.text`, so switching the embedding model or toggling contextual
+  chunking left existing vectors in place and embedded new chunks differently,
+  all in one collection. Chroma only errors when the *dimensions* differ. Each
+  index now has `index_manifest__<slug>.json` recording the embedder
+  (provider, model, dimensions) and the contextual settings (plus a hash of
+  the context prompt). `index` refuses to add to an index whose manifest
+  differs, naming the changed keys and pointing at `--reset`;
+  `build_retriever` does the same for the embedder only, since querying with
+  the wrong model fails just as silently.
+- **Why refuse rather than re-embed automatically.** Folding the settings into
+  every chunk's hash would re-embed everything on a change, but a model with
+  different dimensions would then fail partway through the run against the
+  existing collection. A clear refusal costs the same to build and never
+  leaves the index half-converted.
+- **Why a sidecar file, not Chroma collection metadata.** The manifest
+  describes the vector and BM25 indexes together, and keeping it outside the
+  vector store means a new `VectorStore` backend doesn't have to implement it.
+- **Chunking settings are deliberately not in the manifest.** Changing
+  `chunk_size` changes chunk text and ids, which the hash and the purge
+  already handle incrementally. Putting it in the manifest would force a
+  `--reset` that isn't needed.
+- **Indexes built before manifests are adopted, not rejected.** Requiring a
+  rebuild of every existing index (~4h for a contextual EDGAR build) to check
+  something unverifiable wasn't worth it. The first run writes the manifest
+  from the current config and logs a warning. When this shipped, all three
+  local indexes (`baseline`, `edgar`, contextual `edgar`) were checked
+  read-only and held exactly the chunk ids their corpora produce, so adopting
+  them lost nothing.

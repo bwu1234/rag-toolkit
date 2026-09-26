@@ -18,6 +18,7 @@ from rag.config.settings import CorpusSelection, RagConfig, load_config
 from rag.embedding.factory import get_embedder
 from rag.generation.builder import build_chat_service
 from rag.generation.factory import get_llm_client
+from rag.index_manifest import IndexManifestMismatch, index_manifest_path, prepare_for_indexing
 from rag.ingestion.cleaners import clean_documents, clean_text
 from rag.ingestion.loaders import load_corpus
 from rag.ingestion.models import Document
@@ -149,10 +150,11 @@ def _cmd_index(args: argparse.Namespace) -> None:
 
     Unlike `ingest`/`chunk`, this command has side effects (writes to
     `paths.index_dir`) and costs real time/compute (one embedding call per
-    chunk batch). Upserting is keyed by `chunk.id`, so re-running after small
-    corpus edits is safe and idempotent; pass `--reset` to wipe the collection
-    first after a chunking/embedding config change that invalidates old ids or
-    vector dimensions.
+    chunk batch). It is incremental: unchanged chunks are skipped by content
+    hash, and chunks the corpus no longer produces (deleted or shortened
+    documents) are removed from both indexes. Changing the embedder or
+    contextual settings can't be applied incrementally; the index manifest
+    refuses the run until `--reset` rebuilds it (see `rag.index_manifest`).
     """
 
     config = load_config(args.config)
@@ -202,6 +204,14 @@ def _cmd_index(args: argparse.Namespace) -> None:
         logger.info("Resetting collection %r before indexing", selection.collection_name)
         store.reset()
         sparse.reset()
+
+    # Before any write: refuse to extend an index built with a different
+    # embedder or contextual settings, which the per-chunk text hash can't see.
+    prepare_for_indexing(
+        index_manifest_path(selection.index_dir, selection.slug),
+        config,
+        index_is_empty=store.count() == 0 and sparse.count() == 0,
+    )
 
     print(f"\nCorpus: {selection.describe()}")
     print(f"{len(documents)} document(s) -> {len(chunks)} chunk(s) to index")
@@ -279,6 +289,17 @@ def _cmd_index(args: argparse.Namespace) -> None:
         sparse.upsert(to_update)
         done = min(start + _INDEX_BATCH_SIZE, len(chunks))
         print(f"  embedded + upserted {len(to_update)} (changed) / {done}/{len(chunks)} chunk(s)")
+
+    # Chunk ids are positional (`<doc>::chunk<n>`), so a deleted document leaves
+    # all its chunks behind and a shortened one leaves its tail. Anything either
+    # index holds that this run didn't produce is stale.
+    current_ids = {chunk.id for chunk in chunks}
+    stale_vectors = sorted(store.ids() - current_ids)
+    stale_sparse = sorted(sparse.ids() - current_ids)
+    if stale_vectors or stale_sparse:
+        store.delete(stale_vectors)
+        sparse.delete(stale_sparse)
+        print(f"  removed {max(len(stale_vectors), len(stale_sparse))} stale chunk(s) no longer in the corpus")
 
     sparse.flush()
     if context_cache is not None:
@@ -534,7 +555,11 @@ def main() -> None:
     configure_logging()
     parser = build_parser()
     args = parser.parse_args()
-    args.func(args)
+    try:
+        args.func(args)
+    except IndexManifestMismatch as exc:
+        # An expected, user-fixable condition: print the instructions, not a traceback.
+        parser.exit(2, f"error: {exc}\n")
 
 
 if __name__ == "__main__":
