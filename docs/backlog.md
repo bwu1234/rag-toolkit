@@ -173,14 +173,96 @@ off local.
   caller-supplied precisely so this works).
 - Hosted `LLMClient` / `EmbeddingModel` adapters. `LLMConfig.provider` already
   validates `anthropic`/`openai` and raises "recognized but not implemented" —
-  this is where that gets closed.
+  this is where that gets closed. Gemini comes first: the GCP plan below
+  runs on it.
 - A local, non-Ollama `EmbeddingModel` adapter (`sentence-transformers`,
   already a dependency via `CrossEncoderReranker`) is worth adding alongside
-  the hosted ones — same interface, no daemon required.
+  the hosted ones — same interface, no daemon required. `EmbeddingConfig`
+  already accepts `provider: sentence_transformers`, but `get_embedder` has
+  no branch for it, so selecting it raises today.
 - A hosted `VectorStore` adapter (Chroma's own server mode is the smallest
   step; Qdrant or similar if a managed tier is wanted).
 - The claim to earn: swapping any of these is a config change, no pipeline
   code touched. If it isn't, that's an interface bug worth finding.
+
+#### GCP deployment plan
+
+The API on Cloud Run (CPU only, scale to zero), with generation on Gemini
+3.1 Flash-Lite's free tier. A GPU running Ollama costs about $0.67/hour per
+live instance, and a warm minimum instance is fixed monthly cost. That buys
+nothing a hosted model doesn't at demo traffic, and swapping the generator by
+config is the claim this milestone exists to earn. Local Ollama stays the
+default for development and every eval. Depends on Milestone 28's auth, input
+bounds and production container: the service is not exposed before those
+land.
+
+- **Gemini `LLMClient` adapter** (use the `add-provider` skill). Call the REST
+  `generateContent` endpoint over `httpx`, which is already a dependency, and
+  don't add the `google-genai` SDK. The key comes from the environment
+  (Secret Manager on Cloud Run), never from `config.yaml` or a committed file.
+  Map a quota `429` to a 503 that says the daily quota is spent, not a 500.
+  Hermetic tests against a mocked transport, like the Ollama adapter's.
+- **The free tier is the budget guard.** A project's actual limits are shown in
+  AI Studio. Third-party sources disagree (500 vs. 1,000 requests/day, about
+  15/min), so read the numbers from there and put them in config. One
+  `/chat` turn is one generation call, two with `history` (the condenser),
+  and more with CRAG or expansion, both of which stay off here. That puts a
+  ceiling of a few hundred turns a day on the whole deployment.
+  - Keep an in-app daily counter that refuses at a margin below the quota, so
+    one caller can't use up everyone's day. Milestone 28's per-key rate limit
+    covers bursts, not this.
+  - **No evals and no load tests against the Gemini key.** One `answer_eval`
+    over the 174-sample EDGAR set is generation plus a judge call per sample,
+    which is most of a day's quota. Load-test the deployed service with a
+    fake `LLMClient` behind a test-only config instead: what's under test is
+    Cloud Run, the reranker and the index, not Google's latency.
+- **Measure Gemini as a generator before calling it the deployed default.**
+  Every answer-quality number in `docs/measured-results.md` is from the local
+  qwen model. Run `answer_eval --limit 40` once with Gemini as the generator
+  and the usual local judge, using the `measure-change` skill, and record it.
+  Two runs of that fit one day's quota. Keep the judge a different model from
+  the generator, as now.
+- **Free-tier data terms.** On unpaid Gemini services Google may use prompts
+  and responses to improve its products, and human reviewers may read them.
+  The corpus is public SEC filings, so passages are fine, but user queries go
+  to Google too. Say so on any public page, and don't point this deployment
+  at a non-public corpus. Paid-tier terms are the remedy if that changes.
+- **Embeddings without Ollama.** Query-time embedding must match the index,
+  and there is no Ollama on Cloud Run. Implement the `sentence_transformers`
+  `EmbeddingModel` above and serve `Qwen/Qwen3-Embedding-0.6B` through it.
+  It isn't guaranteed to produce the same vectors as Ollama's
+  `qwen3-embedding:0.6b` build, so rebuild the index with the serving
+  embedder and re-run `retrieval_eval` on EDGAR. Treat a change in hit rate
+  or NDCG as a regression to explain, not noise.
+- **The index is baked into the image.** Serving is read-only and the index is
+  rebuilt by hand, so a CI job builds it from `manifest.json` with the serving
+  embedder. It writes both the Chroma collection and the BM25 index
+  (`retrieval.mode: hybrid`) into the image, along with the reranker and
+  embedder weights, so a cold start downloads nothing. Every replica is then
+  identical and there is no database to run. This holds only while reindexing
+  stays manual. Once it's scheduled, move to Chroma server mode or a managed
+  store, and take on the zero-downtime reindex that Milestone 28 lists as out
+  of scope. The image contains the corpus, so the registry is private.
+- **Size the instance from measurements, not guesses.** `bge-reranker-v2-m3`
+  took ~1.1s/query on Apple Silicon and will be slower on Cloud Run's CPUs.
+  Measure memory with both models loaded, reranker latency, and cold-start
+  time, then set CPU and memory from those numbers and record them next to
+  Milestone 28's load test. If the reranker is too slow on CPU, that's a
+  measured-tradeoff decision (MiniLM was −10.4pp hit rate), not a quiet swap.
+- **Infrastructure as code.** Terraform for Artifact Registry, the Cloud Run
+  service (with `max-instances` as a hard cost ceiling), Secret Manager
+  entries for the Gemini key and Milestone 28's API keys, a least-privilege
+  runtime service account, an uptime check and alert on `/ready`, and a
+  billing budget alert. Nothing is created by hand in the console.
+- **CI deploys on merge.** GitHub Actions authenticates to GCP with Workload
+  Identity Federation, not a downloaded service-account key. It builds an
+  image tagged with the commit SHA and deploys it as a new Cloud Run
+  revision. To roll back, send traffic to the previous revision. Deploys run
+  only after `ruff`, `mypy`, `pytest` and Milestone 23's retrieval gate pass.
+- **Scope.** The API (`/chat`, `/feedback`, `/mcp`) only. The Streamlit UI
+  builds its own pipeline rather than calling the API, so deploying it would
+  mean a second service drawing on the same Gemini quota. It stays local
+  until it's a client of the API.
 
 ### Milestone 19 — Agentic retrieval
 
@@ -546,3 +628,82 @@ of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
   prunes lists. Pad to k instead. The `baseline` corpus's `eval_set.json` is
   document-matched only and hasn't been measured since the reranker change:
   add spans or retire it as a control.
+
+### Milestone 28 — Production hardening
+
+Milestone 18 makes the components swappable for hosted ones. It doesn't make
+the service safe to expose. Today nothing is authenticated: `/chat`,
+`/feedback` and `/mcp` are open to anyone who can reach the port, and
+`/mcp`'s `allowed_hosts` only blocks DNS rebinding. `ChatRequest.query` and
+`history` have no length limit. `/chat` logs every raw query at INFO. `/health`
+returns `ok` while Ollama or Chroma is down. `docker-compose.yml` runs
+`uvicorn --reload` over a bind-mounted checkout as root. This milestone
+closes those gaps.
+
+**Target: one internal team, stated up front.** That means a known set of
+callers, one shared corpus, one deployment, and no per-user access control.
+Write the target and a short threat model in `docs/operations.md` before any
+code. Every item below is measured against that target, and anything outside
+it is listed as deliberately out of scope rather than silently missing. A
+public demo URL changes the threat model (anyone can call it), and auth plus
+rate limiting are what cover that case.
+
+- **Auth.** An API-key check as a FastAPI dependency (`APIKeyHeader`,
+  constant-time compare, keys from the environment, never `config.yaml`) on
+  `/chat` and `/feedback`. `/health` stays open. `/mcp` is a mounted
+  sub-app, which router dependencies don't reach, so it needs the same check
+  as ASGI middleware. Test it: a request to `/mcp` without a key must fail.
+  *The right mechanism for more than one team* is an auth proxy or gateway
+  (OIDC) in front, with the app trusting it. Key auth is the step before that
+  and won't have to be removed when the proxy arrives.
+- **Input bounds and rate limiting.** `max_length` on `query`, and a cap on
+  `history` turns and total characters, so a single request can't buy an
+  unbounded prompt. Per-key rate limiting: an in-process token bucket needs
+  no new dependency but is per replica. Say so, and name the gateway as the
+  place it belongs once there is more than one replica.
+- **Prompt-injection delimiters.** Wrap each passage and the query in
+  explicit tags in `build_rag_prompt`, and tell the system prompt that tagged
+  content is data, not instructions. This changes the grounded prompt, so
+  re-measure answer quality with the `measure-change` skill before and after.
+  Also add a few adversarial documents (planted "ignore previous
+  instructions" text) to a separate eval tier, and report how often they
+  work. Delimiters reduce injection; they don't prevent it. Record the rate
+  rather than claiming a fix.
+- **Failure behaviour.** A `/ready` check that pings Ollama and Chroma,
+  separate from `/health` (liveness). An upstream failure maps to a fast
+  503 with a clear message instead of a 500. A hung Ollama currently holds a
+  thread-pool worker for up to `llm.timeout_s` (120s), and Starlette's
+  default pool is 40 threads. Add a test per dependency-down case.
+- **Production container.** A non-editable install, a non-root user, no
+  `--reload`, no bind mount, and a pinned Ollama image instead of `:latest`.
+  Keep the dev compose file as it is and add a production one alongside it.
+  Pull Milestone 18's Chroma server mode forward into it: an in-process
+  persistent Chroma pins the API to one replica.
+- **Log hygiene and retention.** Log `turn_id` and query length at INFO, not
+  the query text. Add a retention/rotation setting to
+  `observability.turn_log`. `JsonlTurnSink`'s lock covers threads, not
+  processes, so either run one worker per log file or verify multi-worker
+  appends of multi-KB records don't interleave.
+- **Load test with published numbers.** A small script over `httpx` (already
+  a dependency, so no locust) that ramps concurrent `/chat` calls against the
+  EDGAR index and reports p50/p95 and error rate per concurrency level, plus
+  the saturation point. Use Milestone 24's percentile code if it has landed.
+  Record the results in `docs/measured-results.md` with the hardware and
+  config attached, the same as any other measured result. The expected
+  finding is that one local Ollama is the bottleneck. The number is what
+  justifies Milestone 18's hosted adapters.
+- **Runbook.** In `docs/operations.md`: deploy, rotate a key, rebuild the
+  index, what `/ready` failing means, and restoring the index from its
+  corpus manifest.
+
+Out of scope, stated so it doesn't read as forgotten: multi-tenancy,
+per-document access control, SSO in the app itself, autoscaling, and
+zero-downtime reindexing (building a new collection while the old one serves,
+then switching over). The last is the natural next milestone once the index
+is rebuilt on a schedule rather than by hand.
+
+Ordering: do this ahead of Milestone 13. Auth, input bounds and the
+production container come first, because they're what make any deployment
+safe to expose. Milestone 23's retrieval gate pairs with it: "production
+ready" includes "a change can't quietly make answers worse", and that gate
+has no dependencies either.
