@@ -41,6 +41,8 @@ The code is organized around small interfaces so components can be swapped witho
 - [rag/ui](rag/ui) provides a simple interactive interface
 - [tests](tests) mirrors the package layout and exercises the core behavior
 
+For how these connect at runtime — the index-time and query-time paths, and which entrypoint uses which layer — see [docs/architecture.md](docs/architecture.md).
+
 ## Tech stack
 
 - Python 3.10+

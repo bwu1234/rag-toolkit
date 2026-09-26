@@ -1,4 +1,4 @@
-# Milestone notes (2–10)
+# Milestone notes (2–11)
 
 Design rationale for each shipped milestone: why things are built the way
 they are, not just what they do. Split out of `CLAUDE.md` to keep that file
@@ -568,3 +568,36 @@ the docs fit together.
   uses stubs for all three to test the loop itself — when a retry fires, which
   query gets graded and answered, when generation is skipped, and the exact
   event sequence.
+
+## Named corpora notes (shipped with Milestone 11)
+
+Moved here from `CLAUDE.md`, which keeps only the operational rules.
+
+- **Why pooling is the point of the registry.** One name is *isolated*
+  (retrieval quality within a corpus); several are *pooled* (robustness to
+  plausible-but-wrong neighbours). The gap between the two is the
+  **cross-corpus interference cost**, which can't be observed with a single
+  corpus. Pooling is also what makes `retrieval.min_score` and CRAG's document
+  grader measurable at all: on a small, topically-distinct corpus nothing
+  irrelevant is ever nearby, so the grader has no job to do.
+- **Why selections derive their own storage names** (`rag_corpus__edgar` vs.
+  `rag_corpus__baseline+edgar`, `bm25_index__<slug>.json`). Isolated and pooled
+  indexes must coexist rather than silently overwrite each other, because
+  comparing them is the exercise. Selections are sorted and deduped so
+  argument order doesn't create a second index.
+- **Why an unknown corpus name raises.** A typo would otherwise produce an
+  empty index and a plausible-looking all-zero eval run.
+- **Why duplicate `Document.id`s are refused rather than namespaced.** Ids are
+  corpus-relative paths, so two corpora each containing `faq.txt` would collide
+  and the store would silently upsert one over the other. Namespacing ids by
+  corpus was rejected: it would change every `document_id`, invalidating the
+  `expected_doc_ids` already recorded in the eval sets, to solve a problem the
+  current corpora don't have.
+- **Backward compatibility.** An empty registry falls back to a single implicit
+  corpus at `paths.corpus_dir`. Indexes built before the registry need one
+  rebuild (`python -m rag.cli index --corpus <name>`) because collection and
+  BM25 names now carry the selection slug; the contextual cache is keyed by
+  prompt content, not index name, so contexts are not re-paid for.
+- **What's committed.** `baseline` is committed despite the general
+  `data/corpora/*/documents/` ignore rule (see the exemption in `.gitignore`);
+  other corpora are fetched and reproduced from their `manifest.json`.

@@ -9,6 +9,9 @@ layer over `build_retriever`, the same call the CLI's `retrieve` command and the
 chat API already go through — so the passages an agent gets back are the same
 ones `python -m rag.cli retrieve` prints.
 
+This is **not** Milestone 19. That milestone is *this* system calling search
+as a tool; this server is an outside agent calling ours.
+
 ## The tools
 
 Two, both read-only.
