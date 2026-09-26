@@ -1,13 +1,13 @@
 # RAG_Project
 
 Retrieval-Augmented Generation system, built up milestone by
-milestone. Local-first by default: Ollama serves both embeddings
-(`qwen3-embedding:0.6b`) and chat (`qwen3.5:9b-mlx`); Chroma is the vector store.
+milestone. Local-first by default: Ollama serves both embeddings and chat;
+Chroma is the vector store. Model names live in `rag/config/config.yaml`.
 
 ## Status
 
-Milestones 1–12 and the MCP server are shipped; next is Milestone 13
-(Query result caching). Full list and ordering in [Backlog](docs/backlog.md).
+What has shipped and what is next is tracked in [Backlog](docs/backlog.md);
+the MCP server is also shipped.
 
 - **Measured-off features stay off.** Contextual chunking, CRAG, query
   expansion and `retrieval.min_score` all measured as no better than noise on
@@ -67,7 +67,9 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   `--clear-context-cache` forces regeneration.
 - API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`, `/health`)
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.
-  Serves MCP 2026-07-28 only and needs `mcp >= 2.0` — see [MCP server](docs/mcp-server.md).
+  The `mcp` extra is required only for the streamable HTTP transport; stdio
+  uses the fallback implementation without it. The MCP server serves exactly
+  one protocol revision — see [MCP server](docs/mcp-server.md).
 - Logged turns and feedback: `python -m rag.cli turns` (`--feedback down` for
   the thumbs-down ones). With the `jsonl` provider, the API, UI and `cli chat`
   append every turn to `observability.turn_log.path` (default
@@ -100,10 +102,11 @@ Design rationale, history, and planning live in `docs/`, read on demand:
 - **`docs/milestone-notes.md`** — why each shipped component is built the way
   it is. Read before touching a component to see what tradeoff its current
   shape already encodes.
-- **`docs/measured-results.md`** — Milestone 11 eval numbers with the caveats
+- **`docs/measured-results.md`** — eval numbers with the caveats
   needed to read them safely. Read before turning on anything that is off by
   default. To measure a new change, use the `measure-change` skill.
-- **`docs/backlog.md`** — Milestones 11–22: the plan behind each, and why they are ordered as they are.
+- **`docs/backlog.md`** — the planned milestones: the plan behind each, and
+  why they are ordered as they are.
 - **`docs/known-limitations.md`** — known gaps and failure modes in what's
   shipped, worth checking before recommending a feature that's off by default.
 - **`docs/milestone-19-plan.md`** — phased plan for agentic retrieval, with the
