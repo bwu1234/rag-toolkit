@@ -12,7 +12,7 @@ sits behind an interface (`EmbeddingModel`, `VectorStore`, `Reranker`,
 is a config change rather than a code change.
 
 The same pipeline is reachable from a CLI, a FastAPI service, a Streamlit UI,
-and an MCP server. Every chat turn is logged with its retrieved and cited
+and an MCP server. By default, every chat turn is logged with its retrieved and cited
 passages, per-stage latency, LLM token counts, and any thumbs up/down feedback.
 
 ## Prerequisites
@@ -151,7 +151,9 @@ contract, and why indexing isn't exposed are in
 ### Logged turns
 
 The API, UI, and `cli chat` append every turn to `data/logs/turns.jsonl`
-(gitignored); the eval runners never do.
+(gitignored); the eval runners never do. Set
+`observability.turn_log.provider: none` to turn logging off — `POST /feedback`
+then returns 503, since there is no turn record to attach the rating to.
 
 ```bash
 python -m rag.cli turns --show 20 --feedback down
