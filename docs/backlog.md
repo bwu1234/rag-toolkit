@@ -200,7 +200,7 @@ land.
   `generateContent` endpoint over `httpx`, which is already a dependency, and
   don't add the `google-genai` SDK. The key comes from the environment
   (Secret Manager on Cloud Run), never from `config.yaml` or a committed file.
-  Map a quota `429` to a 503 that says the daily quota is spent, not a 500.
+  Distinguish daily-quota exhaustion from transient rate limiting using provider error details and/or `Retry-After`; only report the daily budget as spent when that condition is confirmed.
   Hermetic tests against a mocked transport, like the Ollama adapter's.
 - **The free tier is the budget guard.** A project's actual limits are shown in
   AI Studio. Third-party sources disagree (500 vs. 1,000 requests/day, about
