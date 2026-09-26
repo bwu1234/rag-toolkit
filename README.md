@@ -28,6 +28,33 @@ The system takes a corpus of documents, turns them into searchable chunks, store
 - evaluation scripts for retrieval and answer quality
 - per-turn observability: every chat turn logged with its retrieved and cited passages, CRAG verdicts, per-stage latency and LLM token counts, plus thumbs up/down feedback (`python -m rag.cli turns`)
 
+## Supported document formats
+
+Ingestion dispatches on file extension. Files with any other extension are skipped (at `DEBUG` log level — check the `N file(s) skipped` count in the ingest summary if a document seems missing):
+
+| Extension | Loader | Granularity |
+|---|---|---|
+| `.pdf` | `PdfLoader` (pypdf) | one document **per page**, so citations can reference a page number |
+| `.md`, `.markdown` | `MarkdownLoader` | one document per file |
+| `.txt` | `TextLoader` | one document per file |
+
+Formats **not** currently supported include `.docx`, `.pptx`, `.xlsx`, `.csv`, `.html`, `.json`, and `.epub`.
+
+Some limits worth knowing before pointing the pipeline at a corpus:
+
+- **No OCR.** PDF text comes from `pypdf`'s text layer. A scanned or image-only PDF extracts as empty text and contributes zero chunks — it loads without error but adds nothing to the index.
+- **Text only.** Images and layout structure are dropped, and PDF tables are linearized into running text rather than preserved as tables.
+- **Chunking is format-blind** — fixed-size character windows over the extracted text (see `chunking` in [rag/config/config.yaml](rag/config/config.yaml)), which suits prose better than highly structured content.
+- **Ingestion is an offline CLI step.** There is no upload endpoint or widget; the API and UI only query an index that `python -m rag.cli index` already built. Add documents by placing files under `data/corpus` and re-running the indexer.
+
+### Adding a format
+
+The loader interface is the extension point — everything downstream operates on `Document.text` uniformly, so no other pipeline code changes:
+
+1. Subclass `Loader` ([rag/ingestion/models.py](rag/ingestion/models.py)), set `extensions`, and implement `load()`, building ids with `make_document_id`.
+2. Register an instance in the `_LOADERS` table in [rag/ingestion/loaders.py](rag/ingestion/loaders.py).
+3. Add the parsing dependency to [pyproject.toml](pyproject.toml).
+
 ## Architecture at a glance
 
 The code is organized around small interfaces so components can be swapped without rewriting the pipeline:
