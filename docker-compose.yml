@@ -1,39 +1,77 @@
-version: '3.8'
+# Inside a container `localhost` is the container itself, so the shared
+# config.yaml's http://localhost:11434 can't reach Ollama. Point both clients
+# at the `ollama` service instead; load_config() applies RAG__SECTION__KEY
+# environment variables on top of the YAML.
+#
+# The chat model is overridden too: config.yaml's qwen3.5:9b-mlx is built for
+# Apple Silicon's MLX stack and won't load in a Linux container. qwen3.5:9b is
+# the same model as a GGUF (Q4_K_M) build. It is a different quantization from
+# the one docs/measured-results.md was measured with, so answers may differ
+# slightly -- don't report eval numbers from this setup as the measured config.
+x-ollama-env: &ollama-env
+  RAG__LLM__BASE_URL: http://ollama:11434
+  RAG__EMBEDDING__BASE_URL: http://ollama:11434
+  RAG__LLM__MODEL: qwen3.5:9b
+
+# Shared by every service built from this repo. The repo is bind-mounted over
+# /app so code edits and host-built indexes are visible without a rebuild.
+# The Hugging Face cache is a named volume so the reranker (a multi-GB
+# download) survives container recreation.
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - ./:/app:cached
+    - hf-cache:/root/.cache/huggingface
+  environment: *ollama-env
 
 services:
   ollama:
-    # Ollama image can be pinned via environment override; default uses 'latest'.
-    image: ${OLLAMA_IMAGE:-ghcr.io/ollama/ollama:latest}
-    ports:
-      - "11434:11434"
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+    # No published port: the app containers reach it over the compose
+    # network, and publishing 11434 would collide with an Ollama already
+    # running on the host.
     volumes:
-      - ./data/ollama:/var/lib/ollama
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # One-shot: pulls the models the effective config names (YAML plus the env
+  # above), then exits. A no-op after the first run apart from a manifest check.
+  pull-models:
+    <<: *app
+    command: python scripts/pull_models.py
+    depends_on:
+      ollama:
+        condition: service_healthy
 
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *app
     command: uvicorn rag.api.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - ./:/app:cached
     ports:
       - "8000:8000"
-    environment:
-      - RAG_CONFIG_PATH=/app/rag/config/config.yaml
     depends_on:
-      - ollama
+      pull-models:
+        condition: service_completed_successfully
 
+  # The UI builds its own pipeline rather than calling the API, which is why it
+  # needs the same Ollama environment.
   ui:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *app
     command: streamlit run rag/ui/app.py --server.port 8501 --server.address 0.0.0.0
-    volumes:
-      - ./:/app:cached
     ports:
       - "8501:8501"
     depends_on:
-      - api
+      pull-models:
+        condition: service_completed_successfully
+
+volumes:
+  ollama-models:
+  hf-cache:
 
 # If you prefer a dedicated Chroma server image, set CHROMA_IMAGE and add
 # an additional service entry. By default, the Python client uses local
@@ -41,5 +79,6 @@ services:
 # not included here.
 
 # Example usage:
-#   OLLAMA_IMAGE=ghcr.io/ollama/ollama:stable docker-compose up --build
+#   docker compose up --build
+#   docker compose run --rm api python -m rag.cli index   # if no index exists yet
 # Then visit http://localhost:8501 for the Streamlit UI and http://localhost:8000 for the API.

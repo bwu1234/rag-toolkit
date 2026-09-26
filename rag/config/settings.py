@@ -9,10 +9,11 @@ code.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import os
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -479,18 +480,53 @@ class RagConfig(BaseModel):
         )
 
 
+ENV_OVERRIDE_PREFIX = "RAG__"
+
+
+def _apply_env_overrides(raw: dict[str, Any], environ: Mapping[str, str]) -> None:
+    """Overlay `RAG__SECTION__KEY=value` environment variables onto the parsed YAML.
+
+    Exists for deployment-specific values the shared YAML can't know -- chiefly
+    `llm.base_url` / `embedding.base_url`, which are `localhost` on a laptop but
+    the `ollama` service name inside docker-compose. Keeping the override in the
+    environment means there is no second config file to drift from this one.
+
+    Values stay strings; pydantic coerces them (`"5"` -> int, `"false"` -> bool)
+    during validation. Lists and mappings can't be expressed this way -- set
+    those in YAML.
+    """
+
+    for name, value in environ.items():
+        if not name.startswith(ENV_OVERRIDE_PREFIX):
+            continue
+        keys = [part.lower() for part in name[len(ENV_OVERRIDE_PREFIX):].split("__")]
+        if not all(keys):
+            raise ValueError(f"Malformed config override {name!r}: expected RAG__SECTION__KEY")
+        node = raw
+        for key in keys[:-1]:
+            child = node.get(key)
+            if child is None:
+                child = node[key] = {}
+            elif not isinstance(child, dict):
+                raise ValueError(f"Config override {name!r} descends into non-mapping key {key!r}")
+            node = child
+        node[keys[-1]] = value
+
+
 def load_config(path: str | Path | None = None) -> RagConfig:
     """Load and validate config from a YAML file, falling back to defaults for missing keys.
 
     Passing no path loads `rag/config/config.yaml`. A missing file simply
     yields the default `RagConfig()` so the system runs out of the box.
+    `RAG__SECTION__KEY` environment variables override individual keys on top
+    of either (see `_apply_env_overrides`).
     """
 
     config_path = Path(path) if path is not None else DEFAULT_CONFIG_PATH
-    if not config_path.exists():
-        return RagConfig()
+    raw: dict[str, Any] = {}
+    if config_path.exists():
+        with config_path.open("r", encoding="utf-8") as f:
+            raw = yaml.safe_load(f) or {}
 
-    with config_path.open("r", encoding="utf-8") as f:
-        raw = yaml.safe_load(f) or {}
-
+    _apply_env_overrides(raw, os.environ)
     return RagConfig.model_validate(raw)

@@ -3,10 +3,16 @@ FROM python:3.14-slim
 # Lightweight Dockerfile for the rag app image used by docker-compose.
 WORKDIR /app
 
-# Install runtime deps first for better caching. Copy pyproject only to
-# avoid copying the whole repo before installing deps.
+# Install runtime deps first for better caching: this layer only rebuilds when
+# pyproject.toml changes. The stub package is what makes it work -- installing
+# with no `rag/` present registers an editable install that maps nothing, and
+# `rag` is then importable only from /app (so `streamlit run rag/ui/app.py`,
+# which doesn't put the working directory on sys.path, fails). With the stub,
+# the install maps `rag` to /app/rag, which the COPY below then fills in.
 COPY pyproject.toml /app/
-RUN python -m pip install --upgrade pip && pip install -e .
+RUN mkdir -p rag && touch rag/__init__.py \
+    && python -m pip install --upgrade pip \
+    && pip install -e .
 
 # Copy application code.
 COPY . /app

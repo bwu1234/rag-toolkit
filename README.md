@@ -164,6 +164,11 @@ lives in [rag/config/config.yaml](rag/config/config.yaml) and is validated by
 pydantic models in [rag/config/settings.py](rag/config/settings.py). The YAML
 is commented with why each default is what it is.
 
+Any single key can be overridden with an environment variable named
+`RAG__SECTION__KEY`, for example `RAG__LLM__BASE_URL=http://ollama:11434`.
+This is meant for per-deployment values such as service URLs; lists and
+mappings still have to be set in the YAML.
+
 Several features ship **disabled** because they measured as no better than
 noise on the EDGAR corpus: contextual chunking, corrective RAG (CRAG), query
 expansion (HyDE / multi-query), and the `retrieval.min_score` relevance floor.
