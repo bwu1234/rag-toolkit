@@ -70,7 +70,9 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 - UI: `streamlit run rag/ui/app.py`
 - Retrieval eval: `python -m rag.eval.retrieval_eval` (`-v` for per-sample;
   `--eval-set data/eval/edgar_eval_set.json --corpus edgar` for EDGAR)
-- Answer eval (LLM-as-judge): `python -m rag.eval.answer_eval`
+- Answer eval (LLM-as-judge): `python -m rag.eval.answer_eval`. The judge is
+  `eval.judge`, else the generator grading itself (warned); `--judge-model`
+  overrides. Multi-hop: `python -m rag.eval.multihop_eval --corpus edgar`.
 
 ## Conventions
 

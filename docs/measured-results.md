@@ -299,6 +299,64 @@ It also colours earlier numbers: the 9b scored 0.775–0.825 judging itself in t
 CRAG runs and 0.900 on the same 40 samples under the gemma judge. Treat the CRAG
 table as internally comparable only. Fixing it (a separately configured judge)
 is step 0 of the Milestone 19 plan.
+**Fixed:** `eval.judge` / `--judge-model`, with results filed per judge. See the
+next section.
+
+### Pipeline baseline under a fixed judge (Milestone 19, phase 0)
+
+**Setup.** `edgar`, non-contextual index, shipped retrieval (hybrid,
+`bge-reranker-v2-m3`, `top_k 20`, `rerank_top_k 5`), CRAG off, generator
+`qwen3.5:9b-mlx`. **Judge `gemma4:31b-mlx` at temperature 0**, set through the
+new `eval.judge` config rather than a scratch script. Answerable is the same 40
+evenly-spaced samples as the CRAG and generator-swap runs. Multi-hop is the new
+`data/eval/edgar_multihop_set.json`: 34 questions (21 cross-period, 8
+cross-company, 5 aggregation), each built from 2–3 verified single-hop samples
+by `scripts/build_multihop_set.py`, and judged part by part. A question is
+**complete** only if every company or period and the requested conclusion
+pass. Results: `data/eval/results/answer_edgar__judge-gemma4-31b-mlx.json`.
+
+| set | result |
+|---|---|
+| answerable | 35/40 (0.875) |
+| refusals | 14/15 (0.933); the miss is `neg-unanswerable-comparison` |
+| multi-hop, complete & correct | **15/34 (0.441)**: cross-period 13/21, cross-company 2/8, aggregation 0/5 |
+| multi-hop, mean completeness | 0.588 |
+| multi-hop, evidence recall | **0.583** |
+| latency | ~10–16 s/turn, always 1 retrieval round |
+
+- **This reproduces the probe.** The answerable and refusal numbers are within
+  one sample of the generator-swap run under the same judge (36/40, 14/15). So
+  the harness now gives the same answer that experiment's hand-built script did.
+- **The pipeline's multi-hop ceiling is retrieval, not generation.** Evidence
+  recall is 0.583: one search of 5 passages usually covers one of the entities
+  asked about and not the other. It falls with the number of entities, and
+  aggregation questions never complete. Most incomplete answers correctly say
+  a company's data "is not in the passages". That is honest, but it is not an
+  answer. This is the gap Milestone 19 exists to close, and evidence recall is
+  the metric that shows whether searching again helps.
+- **Among the answers that do find both pieces of evidence, the 9b's usual
+  error is the comparison, not the figures.** In both runs it stated both
+  figures correctly and then reversed the conclusion ("decreased from $15.6B to
+  $16.8B"; "Walmart is larger" followed by "$7.3B is larger than $5.9B"). Those
+  errors are why run-to-run results differ.
+
+**Noise.** The multi-hop set was run twice. The first run used a spec that
+also scored conclusions two questions never asked for, which has since been
+fixed. Evidence recall was identical across runs (retrieval is deterministic).
+Complete & correct moved by ±1 on two questions because of 9b sampling at
+temperature 0.2. Treat **±2 questions (~6 pp) on complete & correct** as noise.
+Phase 4 should repeat each variant rather than read one run.
+
+**Judge check.** All 15 answers judged complete were read by hand. One is a
+false pass that the temperature-0 judge made in both runs: `mh-msft-div` passed
+the FY2025 part even though the answer says FY2025 isn't in the passages and
+attaches $24.7B to the wrong period. So the true rate is ~14/34. The failures
+spot-checked were all real errors.
+
+**Not measured in phase 0:** generated and prompt tokens. No production code
+counts them yet; that is Milestone 12's per-stage accounting. Cap-hit rate and
+searches per turn are defined only for the agent (the pipeline always does one
+retrieval round), and arrive with phase 3.
 
 ### Not yet measured
 

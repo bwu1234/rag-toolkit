@@ -1,0 +1,1206 @@
+[
+  {
+    "id": "mh-aapl-lease-yoy",
+    "query": "How did Apple's fixed lease payment obligations change between September 28, 2024 and September 27, 2025?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2024-09-28.md",
+      "AAPL_10-K_2025-09-27.md"
+    ],
+    "expected_spans": [
+      "As of September 28, 2024, the Company had fixed lease payment obligations of $15.6 billion, with $2.0 billion payable within 12 months.",
+      "As of September 27, 2025, the Company had fixed lease payment obligations of $16.8 billion"
+    ],
+    "expected_answer": "Apple, as of September 28, 2024: $15.6 billion; Apple, as of September 27, 2025: $16.8 billion. Conclusion: They increased, from $15.6 billion to $16.8 billion.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Apple, as of September 28, 2024",
+        "answer": "$15.6 billion",
+        "spans": [
+          "As of September 28, 2024, the Company had fixed lease payment obligations of $15.6 billion, with $2.0 billion payable within 12 months."
+        ],
+        "source_id": "AAPL_10-K_2024-09-28.md::chunk12"
+      },
+      {
+        "label": "Apple, as of September 27, 2025",
+        "answer": "$16.8 billion",
+        "spans": [
+          "As of September 27, 2025, the Company had fixed lease payment obligations of $16.8 billion"
+        ],
+        "source_id": "AAPL_10-K_2025-09-27.md::chunk14"
+      }
+    ],
+    "conclusion": "They increased, from $15.6 billion to $16.8 billion."
+  },
+  {
+    "id": "mh-aapl-buyback-q2q3",
+    "query": "How much of its common stock did Apple repurchase in the second quarter and in the third quarter of fiscal 2026, and in which quarter was it larger?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-03-28.md",
+      "AAPL_10-Q_2026-06-27.md"
+    ],
+    "expected_spans": [
+      "During the second quarter of 2026, the Company repurchased $11.0 billion of its common stock",
+      "During the third quarter of 2026, the Company repurchased $25.8 billion of its common stock"
+    ],
+    "expected_answer": "Apple, second quarter of fiscal 2026: $11.0 billion; Apple, third quarter of fiscal 2026: $25.8 billion. Conclusion: The third quarter ($25.8 billion vs $11.0 billion).",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Apple, second quarter of fiscal 2026",
+        "answer": "$11.0 billion",
+        "spans": [
+          "During the second quarter of 2026, the Company repurchased $11.0 billion of its common stock"
+        ],
+        "source_id": "AAPL_10-Q_2026-03-28.md::chunk23"
+      },
+      {
+        "label": "Apple, third quarter of fiscal 2026",
+        "answer": "$25.8 billion",
+        "spans": [
+          "During the third quarter of 2026, the Company repurchased $25.8 billion of its common stock"
+        ],
+        "source_id": "AAPL_10-Q_2026-06-27.md::chunk22"
+      }
+    ],
+    "conclusion": "The third quarter ($25.8 billion vs $11.0 billion)."
+  },
+  {
+    "id": "mh-dal-oplease-yoy",
+    "query": "How did Delta Air Lines' minimum operating lease obligations change from December 31, 2024 to December 31, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md",
+      "DAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "As of December 31, 2024 we had a total of $8.4 billion of minimum operating lease obligations.",
+      "as of December 31, 2025 we had a total of $7.8 billion of minimum operating lease obligations."
+    ],
+    "expected_answer": "Delta, as of December 31, 2024: $8.4 billion; Delta, as of December 31, 2025: $7.8 billion. Conclusion: They decreased, from $8.4 billion to $7.8 billion.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Delta, as of December 31, 2024",
+        "answer": "$8.4 billion",
+        "spans": [
+          "As of December 31, 2024 we had a total of $8.4 billion of minimum operating lease obligations."
+        ],
+        "source_id": "DAL_10-K_2024-12-31.md::chunk35"
+      },
+      {
+        "label": "Delta, as of December 31, 2025",
+        "answer": "$7.8 billion",
+        "spans": [
+          "as of December 31, 2025 we had a total of $7.8 billion of minimum operating lease obligations."
+        ],
+        "source_id": "DAL_10-K_2025-12-31.md::chunk33"
+      }
+    ],
+    "conclusion": "They decreased, from $8.4 billion to $7.8 billion."
+  },
+  {
+    "id": "mh-dal-debt-yoy",
+    "query": "How did the principal amount of Delta Air Lines' debt and finance leases change from December 31, 2024 to December 31, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md",
+      "DAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "The principal amount of our debt and finance leases was $16.2 billion at December 31, 2024.",
+      "The principal amount of our debt and finance leases was $14.1 billion at December 31, 2025."
+    ],
+    "expected_answer": "Delta, at December 31, 2024: $16.2 billion; Delta, at December 31, 2025: $14.1 billion. Conclusion: It decreased, from $16.2 billion to $14.1 billion.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Delta, at December 31, 2024",
+        "answer": "$16.2 billion",
+        "spans": [
+          "The principal amount of our debt and finance leases was $16.2 billion at December 31, 2024."
+        ],
+        "source_id": "DAL_10-K_2024-12-31.md::chunk42"
+      },
+      {
+        "label": "Delta, at December 31, 2025",
+        "answer": "$14.1 billion",
+        "spans": [
+          "The principal amount of our debt and finance leases was $14.1 billion at December 31, 2025."
+        ],
+        "source_id": "DAL_10-K_2025-12-31.md::chunk40"
+      }
+    ],
+    "conclusion": "It decreased, from $16.2 billion to $14.1 billion."
+  },
+  {
+    "id": "mh-dal-debt-repay",
+    "query": "What cash outflows did Delta Air Lines report for repayments of debt and finance lease obligations in the nine months ended September 30, 2025, and in the three months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2025-09-30.md",
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "In the nine months ended September 30, 2025, we had cash outflows of $3.9 billion related to repayments of our debt and finance lease obligations.",
+      "In the three months ended March 31, 2026, we had cash outflows of $1.6 billion related to repayments of our debt and finance lease obligations."
+    ],
+    "expected_answer": "Delta, nine months ended September 30, 2025: $3.9 billion; Delta, three months ended March 31, 2026: $1.6 billion",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Delta, nine months ended September 30, 2025",
+        "answer": "$3.9 billion",
+        "spans": [
+          "In the nine months ended September 30, 2025, we had cash outflows of $3.9 billion related to repayments of our debt and finance lease obligations."
+        ],
+        "source_id": "DAL_10-Q_2025-09-30.md::chunk39"
+      },
+      {
+        "label": "Delta, three months ended March 31, 2026",
+        "answer": "$1.6 billion",
+        "spans": [
+          "In the three months ended March 31, 2026, we had cash outflows of $1.6 billion related to repayments of our debt and finance lease obligations."
+        ],
+        "source_id": "DAL_10-Q_2026-03-31.md::chunk28"
+      }
+    ]
+  },
+  {
+    "id": "mh-dal-buyback-2026",
+    "query": "Had Delta Air Lines repurchased any shares under its June 2025 repurchase program as of March 31, 2026, and as of June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md",
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "No shares have been repurchased under this program through March 31, 2026.",
+      "No shares have been repurchased under this program through June 30, 2026."
+    ],
+    "expected_answer": "Delta, through March 31, 2026: No shares had been repurchased.; Delta, through June 30, 2026: No shares had been repurchased.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Delta, through March 31, 2026",
+        "answer": "No shares had been repurchased.",
+        "spans": [
+          "No shares have been repurchased under this program through March 31, 2026."
+        ],
+        "source_id": "DAL_10-Q_2026-03-31.md::chunk30"
+      },
+      {
+        "label": "Delta, through June 30, 2026",
+        "answer": "No shares had been repurchased.",
+        "spans": [
+          "No shares have been repurchased under this program through June 30, 2026."
+        ],
+        "source_id": "DAL_10-Q_2026-06-30.md::chunk41"
+      }
+    ]
+  },
+  {
+    "id": "mh-cost-credit",
+    "query": "How did Costco's borrowing capacity under its bank credit facilities change between September 1, 2024 and February 15, 2026?",
+    "expected_doc_ids": [
+      "COST_10-K_2024-09-01.md",
+      "COST_10-Q_2026-02-15.md"
+    ],
+    "expected_spans": [
+      "At September 1, 2024, we had borrowing capacity under these facilities of $1,198.",
+      "At February 15, 2026, we had borrowing capacity under these facilities of $1,447."
+    ],
+    "expected_answer": "Costco, at September 1, 2024: $1,198 million; Costco, at February 15, 2026: $1,447 million. Conclusion: It increased, by $249 million.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Costco, at September 1, 2024",
+        "answer": "$1,198 million",
+        "spans": [
+          "At September 1, 2024, we had borrowing capacity under these facilities of $1,198."
+        ],
+        "source_id": "COST_10-K_2024-09-01.md::chunk29"
+      },
+      {
+        "label": "Costco, at February 15, 2026",
+        "answer": "$1,447 million",
+        "spans": [
+          "At February 15, 2026, we had borrowing capacity under these facilities of $1,447."
+        ],
+        "source_id": "COST_10-Q_2026-02-15.md::chunk34"
+      }
+    ],
+    "conclusion": "It increased, by $249 million."
+  },
+  {
+    "id": "mh-cost-ocf-q2",
+    "query": "Costco reports net cash provided by operating activities for the first quarter and the first half of fiscal 2026. What were those figures, and how much did it generate in the second quarter alone?",
+    "expected_doc_ids": [
+      "COST_10-Q_2025-11-23.md",
+      "COST_10-Q_2026-02-15.md"
+    ],
+    "expected_spans": [
+      "Net cash provided by operating activities totaled $4,688 in the first quarter of 2026",
+      "Net cash provided by operating activities totaled $7,684 in the first half of 2026"
+    ],
+    "expected_answer": "Costco, first quarter of fiscal 2026: $4,688 million; Costco, first half of fiscal 2026: $7,684 million. Conclusion: About $2,996 million in the second quarter ($7,684 million minus $4,688 million).",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Costco, first quarter of fiscal 2026",
+        "answer": "$4,688 million",
+        "spans": [
+          "Net cash provided by operating activities totaled $4,688 in the first quarter of 2026"
+        ],
+        "source_id": "COST_10-Q_2025-11-23.md::chunk24"
+      },
+      {
+        "label": "Costco, first half of fiscal 2026",
+        "answer": "$7,684 million",
+        "spans": [
+          "Net cash provided by operating activities totaled $7,684 in the first half of 2026"
+        ],
+        "source_id": "COST_10-Q_2026-02-15.md::chunk30"
+      }
+    ],
+    "conclusion": "About $2,996 million in the second quarter ($7,684 million minus $4,688 million)."
+  },
+  {
+    "id": "mh-nvda-cash",
+    "query": "How much did NVIDIA's cash, cash equivalents, and marketable securities change between January 26, 2025 and October 26, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md",
+      "NVDA_10-Q_2025-10-26.md"
+    ],
+    "expected_spans": [
+      "As of January 26, 2025, we had $43.2 billion in cash, cash equivalents, and marketable securities.",
+      "As of October 26, 2025, we had $60.6 billion in cash, cash equivalents, and marketable securities."
+    ],
+    "expected_answer": "NVIDIA, as of January 26, 2025: $43.2 billion; NVIDIA, as of October 26, 2025: $60.6 billion. Conclusion: They increased by $17.4 billion.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "NVIDIA, as of January 26, 2025",
+        "answer": "$43.2 billion",
+        "spans": [
+          "As of January 26, 2025, we had $43.2 billion in cash, cash equivalents, and marketable securities."
+        ],
+        "source_id": "NVDA_10-K_2025-01-26.md::chunk39"
+      },
+      {
+        "label": "NVIDIA, as of October 26, 2025",
+        "answer": "$60.6 billion",
+        "spans": [
+          "As of October 26, 2025, we had $60.6 billion in cash, cash equivalents, and marketable securities."
+        ],
+        "source_id": "NVDA_10-Q_2025-10-26.md::chunk33"
+      }
+    ],
+    "conclusion": "They increased by $17.4 billion."
+  },
+  {
+    "id": "mh-nvda-gm",
+    "query": "What was NVIDIA's gross margin for the third quarter of fiscal 2026, and for the full fiscal year 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md",
+      "NVDA_10-Q_2025-10-26.md"
+    ],
+    "expected_spans": [
+      "Gross margins decreased to 73.4% for the third quarter of fiscal year 2026 compared to 74.6% for the third quarter of fiscal year 2025",
+      "Gross margins decreased to 71.1% in fiscal year 2026 from 75.0% in fiscal year 2025"
+    ],
+    "expected_answer": "NVIDIA, third quarter of fiscal 2026: 73.4%; NVIDIA, fiscal year 2026: 71.1%",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "NVIDIA, third quarter of fiscal 2026",
+        "answer": "73.4%",
+        "spans": [
+          "Gross margins decreased to 73.4% for the third quarter of fiscal year 2026 compared to 74.6% for the third quarter of fiscal year 2025"
+        ],
+        "source_id": "NVDA_10-Q_2025-10-26.md::chunk23"
+      },
+      {
+        "label": "NVIDIA, fiscal year 2026",
+        "answer": "71.1%",
+        "spans": [
+          "Gross margins decreased to 71.1% in fiscal year 2026 from 75.0% in fiscal year 2025"
+        ],
+        "source_id": "NVDA_10-K_2026-01-25.md::chunk27"
+      }
+    ]
+  },
+  {
+    "id": "mh-msft-ocf",
+    "query": "What was Microsoft's cash from operations for the three months ended September 30, 2025, and for the nine months ended March 31, 2026? What does that imply for the six months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2025-09-30.md",
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "$45.1 billion for the three months ended September 30, 2025",
+      "$127.5 billion for the nine months ended March 31, 2026"
+    ],
+    "expected_answer": "Microsoft, three months ended September 30, 2025: $45.1 billion; Microsoft, nine months ended March 31, 2026: $127.5 billion. Conclusion: About $82.4 billion for the six months ended March 31, 2026.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Microsoft, three months ended September 30, 2025",
+        "answer": "$45.1 billion",
+        "spans": [
+          "$45.1 billion for the three months ended September 30, 2025"
+        ],
+        "source_id": "MSFT_10-Q_2025-09-30.md::chunk38"
+      },
+      {
+        "label": "Microsoft, nine months ended March 31, 2026",
+        "answer": "$127.5 billion",
+        "spans": [
+          "$127.5 billion for the nine months ended March 31, 2026"
+        ],
+        "source_id": "MSFT_10-Q_2026-03-31.md::chunk51"
+      }
+    ],
+    "conclusion": "About $82.4 billion for the six months ended March 31, 2026."
+  },
+  {
+    "id": "mh-msft-div",
+    "query": "What dividends did Microsoft's Board of Directors declare in fiscal year 2025, and in the nine months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md",
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "During fiscal years 2025 and 2024, our Board of Directors declared dividends totaling $24.7 billion and $22.3 billion, respectively.",
+      "For the nine months ended March 31, 2026 and 2025, our Board of Directors declared dividends totaling $20.3 billion and $18.5 billion, respectively."
+    ],
+    "expected_answer": "Microsoft, fiscal year 2025: $24.7 billion; Microsoft, nine months ended March 31, 2026: $20.3 billion",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Microsoft, fiscal year 2025",
+        "answer": "$24.7 billion",
+        "spans": [
+          "During fiscal years 2025 and 2024, our Board of Directors declared dividends totaling $24.7 billion and $22.3 billion, respectively."
+        ],
+        "source_id": "MSFT_10-K_2025-06-30.md::chunk41"
+      },
+      {
+        "label": "Microsoft, nine months ended March 31, 2026",
+        "answer": "$20.3 billion",
+        "spans": [
+          "For the nine months ended March 31, 2026 and 2025, our Board of Directors declared dividends totaling $20.3 billion and $18.5 billion, respectively."
+        ],
+        "source_id": "MSFT_10-Q_2026-03-31.md::chunk55"
+      }
+    ]
+  },
+  {
+    "id": "mh-luv-salaries",
+    "query": "How did the year-over-year growth in Southwest Airlines' salaries, wages, and benefits expense evolve across full-year 2025, the first quarter of 2026, and the second quarter of 2026?",
+    "expected_doc_ids": [
+      "LUV_10-K_2025-12-31.md",
+      "LUV_10-Q_2026-03-31.md",
+      "LUV_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Salaries, wages, and benefits expense for 2025 increased by $723 million, or 5.9 percent, compared with 2024.",
+      "Salaries, wages, and benefits expense for first quarter 2026 increased by $195 million, or 6.3 percent, compared with first quarter 2025.",
+      "Salaries, wages, and benefits expense for second quarter 2026 increased by $237 million, or 7.3 percent, compared with second quarter 2025."
+    ],
+    "expected_answer": "Southwest, full-year 2025: 5.9 percent; Southwest, first quarter of 2026: 6.3 percent; Southwest, second quarter of 2026: 7.3 percent. Conclusion: The growth rate accelerated in each period (5.9%, then 6.3%, then 7.3%).",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Southwest, full-year 2025",
+        "answer": "5.9 percent",
+        "spans": [
+          "Salaries, wages, and benefits expense for 2025 increased by $723 million, or 5.9 percent, compared with 2024."
+        ],
+        "source_id": "LUV_10-K_2025-12-31.md::chunk22"
+      },
+      {
+        "label": "Southwest, first quarter of 2026",
+        "answer": "6.3 percent",
+        "spans": [
+          "Salaries, wages, and benefits expense for first quarter 2026 increased by $195 million, or 6.3 percent, compared with first quarter 2025."
+        ],
+        "source_id": "LUV_10-Q_2026-03-31.md::chunk17"
+      },
+      {
+        "label": "Southwest, second quarter of 2026",
+        "answer": "7.3 percent",
+        "spans": [
+          "Salaries, wages, and benefits expense for second quarter 2026 increased by $237 million, or 7.3 percent, compared with second quarter 2025."
+        ],
+        "source_id": "LUV_10-Q_2026-06-30.md::chunk21"
+      }
+    ],
+    "conclusion": "The growth rate accelerated in each period (5.9%, then 6.3%, then 7.3%)."
+  },
+  {
+    "id": "mh-luv-casm",
+    "query": "How did Southwest Airlines' operating expenses per available seat mile change in the third quarter of 2025 and in the first six months of 2026, each compared with the prior-year period?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2025-09-30.md",
+      "LUV_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Operating expenses per ASM for third quarter 2025 increased by 0.4 percent compared with third quarter 2024",
+      "Operating expenses per ASM for the first six months of 2026 increased 9.3 percent, compared with the first six months of 2025"
+    ],
+    "expected_answer": "Southwest, third quarter of 2025: increased by 0.4 percent; Southwest, first six months of 2026: Increased 9.3 percent",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Southwest, third quarter of 2025",
+        "answer": "increased by 0.4 percent",
+        "spans": [
+          "Operating expenses per ASM for third quarter 2025 increased by 0.4 percent compared with third quarter 2024"
+        ],
+        "source_id": "LUV_10-Q_2025-09-30.md::chunk30"
+      },
+      {
+        "label": "Southwest, first six months of 2026",
+        "answer": "Increased 9.3 percent",
+        "spans": [
+          "Operating expenses per ASM for the first six months of 2026 increased 9.3 percent, compared with the first six months of 2025"
+        ],
+        "source_id": "LUV_10-Q_2026-06-30.md::chunk33"
+      }
+    ]
+  },
+  {
+    "id": "mh-ual-fuel",
+    "query": "How did United Airlines' aircraft fuel expense change year over year in the first quarter of 2026 and in the second quarter of 2026?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-03-31.md",
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Aircraft fuel expense increased $339 million, or 12.6%, in the first quarter of 2026 as compared to the year-ago period",
+      "Aircraft fuel expense increased $2.3 billion, or 84.1%, in the second quarter of 2026 as compared to the year-ago period"
+    ],
+    "expected_answer": "United, first quarter of 2026: Increased $339 million, or 12.6%; United, second quarter of 2026: Increased $2.3 billion, or 84.1%",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "United, first quarter of 2026",
+        "answer": "Increased $339 million, or 12.6%",
+        "spans": [
+          "Aircraft fuel expense increased $339 million, or 12.6%, in the first quarter of 2026 as compared to the year-ago period"
+        ],
+        "source_id": "UAL_10-Q_2026-03-31.md::chunk11"
+      },
+      {
+        "label": "United, second quarter of 2026",
+        "answer": "Increased $2.3 billion, or 84.1%",
+        "spans": [
+          "Aircraft fuel expense increased $2.3 billion, or 84.1%, in the second quarter of 2026 as compared to the year-ago period"
+        ],
+        "source_id": "UAL_10-Q_2026-06-30.md::chunk11"
+      }
+    ]
+  },
+  {
+    "id": "mh-ual-unrealized",
+    "query": "What were United Airlines' net unrealized losses on investments for 2024, and for the first nine months of 2025?",
+    "expected_doc_ids": [
+      "UAL_10-K_2024-12-31.md",
+      "UAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023",
+      "Unrealized losses on investments, net, were $8 million in the first nine months of 2025 as compared to $160 million in the year-ago period"
+    ],
+    "expected_answer": "United, 2024: $199 million; United, first nine months of 2025: $8 million",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "United, 2024",
+        "answer": "$199 million",
+        "spans": [
+          "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023"
+        ],
+        "source_id": "UAL_10-K_2024-12-31.md::chunk24"
+      },
+      {
+        "label": "United, first nine months of 2025",
+        "answer": "$8 million",
+        "spans": [
+          "Unrealized losses on investments, net, were $8 million in the first nine months of 2025 as compared to $160 million in the year-ago period"
+        ],
+        "source_id": "UAL_10-Q_2025-09-30.md::chunk30"
+      }
+    ]
+  },
+  {
+    "id": "mh-wmt-etr",
+    "query": "Compare Walmart's effective income tax rate for fiscal 2025 with its rate for the three months ended April 30, 2026.",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "Our effective income tax rate was 23.4%, 25.5%, and 33.6% for fiscal 2025, 2024 and 2023, respectively.",
+      "Our effective income tax rate was 23.2% for the three months ended April 30, 2026"
+    ],
+    "expected_answer": "Walmart, fiscal 2025: 23.4%; Walmart, three months ended April 30, 2026: 23.2%. Conclusion: Slightly lower in the 2026 quarter (23.2% vs 23.4%).",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Walmart, fiscal 2025",
+        "answer": "23.4%",
+        "spans": [
+          "Our effective income tax rate was 23.4%, 25.5%, and 33.6% for fiscal 2025, 2024 and 2023, respectively."
+        ],
+        "source_id": "WMT_10-K_2025-01-31.md::chunk33"
+      },
+      {
+        "label": "Walmart, three months ended April 30, 2026",
+        "answer": "23.2%",
+        "spans": [
+          "Our effective income tax rate was 23.2% for the three months ended April 30, 2026"
+        ],
+        "source_id": "WMT_10-Q_2026-04-30.md::chunk25"
+      }
+    ],
+    "conclusion": "Slightly lower in the 2026 quarter (23.2% vs 23.4%)."
+  },
+  {
+    "id": "mh-wmt-comps",
+    "query": "What was Walmart U.S. comparable sales growth for the three months ended July 31, 2025, and for full fiscal 2026?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md",
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "expected_spans": [
+      "Walmart U.S. segment had comparable sales growth of 4.7% and for 3.9% the three and six months ended July 31, 2025, respectively",
+      "Walmart U.S. comparable sales increased 4.3% and 4.8% in fiscal 2026 and 2025, respectively."
+    ],
+    "expected_answer": "Walmart U.S., three months ended July 31, 2025: 4.7%; Walmart U.S., fiscal 2026: 4.3%",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Walmart U.S., three months ended July 31, 2025",
+        "answer": "4.7%",
+        "spans": [
+          "Walmart U.S. segment had comparable sales growth of 4.7% and for 3.9% the three and six months ended July 31, 2025, respectively"
+        ],
+        "source_id": "WMT_10-Q_2025-07-31.md::chunk6"
+      },
+      {
+        "label": "Walmart U.S., fiscal 2026",
+        "answer": "4.3%",
+        "spans": [
+          "Walmart U.S. comparable sales increased 4.3% and 4.8% in fiscal 2026 and 2025, respectively."
+        ],
+        "source_id": "WMT_10-K_2026-01-31.md::chunk9"
+      }
+    ]
+  },
+  {
+    "id": "mh-tgt-gm",
+    "query": "Compare Target's gross margin rate for the quarter ended August 2, 2025 with its rate for the quarter ended May 2, 2026.",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-08-02.md",
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "For the three months ended August 2, 2025, our gross margin rate was 29.0 percent compared with 30.0 percent in the comparable prior-year period.",
+      "For the three months ended May 2, 2026, our gross margin rate was 29.0 percent compared with 28.2 percent in the comparable prior-year period."
+    ],
+    "expected_answer": "Target, quarter ended August 2, 2025: 29.0 percent; Target, quarter ended May 2, 2026: 29.0 percent. Conclusion: They were the same, 29.0 percent in both quarters.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Target, quarter ended August 2, 2025",
+        "answer": "29.0 percent",
+        "spans": [
+          "For the three months ended August 2, 2025, our gross margin rate was 29.0 percent compared with 30.0 percent in the comparable prior-year period."
+        ],
+        "source_id": "TGT_10-Q_2025-08-02.md::chunk12"
+      },
+      {
+        "label": "Target, quarter ended May 2, 2026",
+        "answer": "29.0 percent",
+        "spans": [
+          "For the three months ended May 2, 2026, our gross margin rate was 29.0 percent compared with 28.2 percent in the comparable prior-year period."
+        ],
+        "source_id": "TGT_10-Q_2026-05-02.md::chunk14"
+      }
+    ],
+    "conclusion": "They were the same, 29.0 percent in both quarters."
+  },
+  {
+    "id": "mh-tgt-moodys",
+    "query": "What was Target's Moody's long-term debt credit rating as of February 1, 2025, and as of May 2, 2026?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md",
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A",
+      "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A"
+    ],
+    "expected_answer": "Target, as of February 1, 2025: A2; Target, as of May 2, 2026: A2",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Target, as of February 1, 2025",
+        "answer": "A2",
+        "spans": [
+          "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A"
+        ],
+        "source_id": "TGT_10-K_2025-02-01.md::chunk30"
+      },
+      {
+        "label": "Target, as of May 2, 2026",
+        "answer": "A2",
+        "spans": [
+          "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A"
+        ],
+        "source_id": "TGT_10-Q_2026-05-02.md::chunk28"
+      }
+    ]
+  },
+  {
+    "id": "mh-cvx-fields",
+    "query": "Which has the longer estimated remaining production life: Chevron's Ballymore field, or its Jack and St. Malo fields?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "The field has an estimated remaining production life of 30 years.",
+      "The Jack and St. Malo fields have an estimated remaining production life of 20"
+    ],
+    "expected_answer": "Chevron, Ballymore field: 30 years; Chevron, Jack and St. Malo fields: 20 years. Conclusion: Ballymore, by 10 years.",
+    "tier": "multihop",
+    "kind": "cross_period",
+    "parts": [
+      {
+        "label": "Chevron, Ballymore field",
+        "answer": "30 years",
+        "spans": [
+          "The field has an estimated remaining production life of 30 years."
+        ],
+        "source_id": "CVX_10-K_2024-12-31.md::chunk25"
+      },
+      {
+        "label": "Chevron, Jack and St. Malo fields",
+        "answer": "20 years",
+        "spans": [
+          "The Jack and St. Malo fields have an estimated remaining production life of 20"
+        ],
+        "source_id": "CVX_10-K_2024-12-31.md::chunk26"
+      }
+    ],
+    "conclusion": "Ballymore, by 10 years."
+  },
+  {
+    "id": "mh-lease-aapl-dal",
+    "query": "Which was larger: Apple's fixed lease payment obligations as of September 27, 2025, or Delta Air Lines' minimum operating lease obligations as of December 31, 2025?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2025-09-27.md",
+      "DAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "As of September 27, 2025, the Company had fixed lease payment obligations of $16.8 billion",
+      "as of December 31, 2025 we had a total of $7.8 billion of minimum operating lease obligations."
+    ],
+    "expected_answer": "Apple, as of September 27, 2025: $16.8 billion; Delta, as of December 31, 2025: $7.8 billion. Conclusion: Apple's.",
+    "tier": "multihop",
+    "kind": "cross_company",
+    "parts": [
+      {
+        "label": "Apple, as of September 27, 2025",
+        "answer": "$16.8 billion",
+        "spans": [
+          "As of September 27, 2025, the Company had fixed lease payment obligations of $16.8 billion"
+        ],
+        "source_id": "AAPL_10-K_2025-09-27.md::chunk14"
+      },
+      {
+        "label": "Delta, as of December 31, 2025",
+        "answer": "$7.8 billion",
+        "spans": [
+          "as of December 31, 2025 we had a total of $7.8 billion of minimum operating lease obligations."
+        ],
+        "source_id": "DAL_10-K_2025-12-31.md::chunk33"
+      }
+    ],
+    "conclusion": "Apple's."
+  },
+  {
+    "id": "mh-capex-dal-nvda",
+    "query": "Compare Delta Air Lines' capital expenditures for 2024 with NVIDIA's capital expenditures for fiscal year 2026.",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md",
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "expected_spans": [
+      "were $5.1 billion and $5.3 billion in 2024 and 2023, respectively",
+      "During fiscal year 2026 and fiscal year 2025, we spent $6.1 billion and $3.4 billion on capital expenditures, respectively."
+    ],
+    "expected_answer": "Delta, 2024: $5.1 billion; NVIDIA, fiscal year 2026: $6.1 billion. Conclusion: NVIDIA's were larger ($6.1 billion vs $5.1 billion).",
+    "tier": "multihop",
+    "kind": "cross_company",
+    "parts": [
+      {
+        "label": "Delta, 2024",
+        "answer": "$5.1 billion",
+        "spans": [
+          "were $5.1 billion and $5.3 billion in 2024 and 2023, respectively"
+        ],
+        "source_id": "DAL_10-K_2024-12-31.md::chunk36"
+      },
+      {
+        "label": "NVIDIA, fiscal year 2026",
+        "answer": "$6.1 billion",
+        "spans": [
+          "During fiscal year 2026 and fiscal year 2025, we spent $6.1 billion and $3.4 billion on capital expenditures, respectively."
+        ],
+        "source_id": "NVDA_10-K_2026-01-25.md::chunk40"
+      }
+    ],
+    "conclusion": "NVIDIA's were larger ($6.1 billion vs $5.1 billion)."
+  },
+  {
+    "id": "mh-cash-ual-luv",
+    "query": "Compare United Airlines' unrestricted cash as of September 30, 2025 with Southwest Airlines' unrestricted cash as of March 31, 2026.",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md",
+      "UAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash",
+      "unrestricted cash of $3.3 billion as of March 31, 2026"
+    ],
+    "expected_answer": "United, as of September 30, 2025: $13.3 billion; Southwest, as of March 31, 2026: $3.3 billion. Conclusion: United's was larger.",
+    "tier": "multihop",
+    "kind": "cross_company",
+    "parts": [
+      {
+        "label": "United, as of September 30, 2025",
+        "answer": "$13.3 billion",
+        "spans": [
+          "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash"
+        ],
+        "source_id": "UAL_10-Q_2025-09-30.md::chunk31"
+      },
+      {
+        "label": "Southwest, as of March 31, 2026",
+        "answer": "$3.3 billion",
+        "spans": [
+          "unrestricted cash of $3.3 billion as of March 31, 2026"
+        ],
+        "source_id": "LUV_10-Q_2026-03-31.md::chunk42"
+      }
+    ],
+    "conclusion": "United's was larger."
+  },
+  {
+    "id": "mh-ocf-xom-cost",
+    "query": "Which generated more cash from operating activities in the first half of fiscal 2026: ExxonMobil or Costco?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-02-15.md",
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Cash provided by operating activities totaled $32.3 billion for the first six months of 2026",
+      "Net cash provided by operating activities totaled $7,684 in the first half of 2026"
+    ],
+    "expected_answer": "ExxonMobil, first six months of 2026: $32.3 billion; Costco, first half of fiscal 2026: $7,684 million. Conclusion: ExxonMobil.",
+    "tier": "multihop",
+    "kind": "cross_company",
+    "parts": [
+      {
+        "label": "ExxonMobil, first six months of 2026",
+        "answer": "$32.3 billion",
+        "spans": [
+          "Cash provided by operating activities totaled $32.3 billion for the first six months of 2026"
+        ],
+        "source_id": "XOM_10-Q_2026-06-30.md::chunk39"
+      },
+      {
+        "label": "Costco, first half of fiscal 2026",
+        "answer": "$7,684 million",
+        "spans": [
+          "Net cash provided by operating activities totaled $7,684 in the first half of 2026"
+        ],
+        "source_id": "COST_10-Q_2026-02-15.md::chunk30"
+      }
+    ],
+    "conclusion": "ExxonMobil."
+  },
+  {
+    "id": "mh-auth-mrk-wmt",
+    "query": "Which had the larger remaining share repurchase authorization: Merck as of December 31, 2025, or Walmart as of July 31, 2025?",
+    "expected_doc_ids": [
+      "MRK_10-K_2025-12-31.md",
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "expected_spans": [
+      "As of December 31, 2025, the Company's remaining share repurchase authorization was $7.3 billion.",
+      "As of July 31, 2025, authorization for $5.9 billion of share repurchases remained under the share repurchase program."
+    ],
+    "expected_answer": "Merck, as of December 31, 2025: $7.3 billion; Walmart, as of July 31, 2025: $5.9 billion. Conclusion: Merck's.",
+    "tier": "multihop",
+    "kind": "cross_company",
+    "parts": [
+      {
+        "label": "Merck, as of December 31, 2025",
+        "answer": "$7.3 billion",
+        "spans": [
+          "As of December 31, 2025, the Company's remaining share repurchase authorization was $7.3 billion."
+        ],
+        "source_id": "MRK_10-K_2025-12-31.md::chunk114"
+      },
+      {
+        "label": "Walmart, as of July 31, 2025",
+        "answer": "$5.9 billion",
+        "spans": [
+          "As of July 31, 2025, authorization for $5.9 billion of share repurchases remained under the share repurchase program."
+        ],
+        "source_id": "WMT_10-Q_2025-07-31.md::chunk47"
+      }
+    ],
+    "conclusion": "Merck's."
+  },
+  {
+    "id": "mh-buyback-cvx-aapl",
+    "query": "How much did Chevron spend repurchasing shares in the third quarter of 2025, and how much common stock did Apple repurchase in the second quarter of fiscal 2026? Which was larger?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-03-28.md",
+      "CVX_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "16.6 million shares repurchased for $2.6 billion in third quarter 2025",
+      "During the second quarter of 2026, the Company repurchased $11.0 billion of its common stock"
+    ],
+    "expected_answer": "Chevron, third quarter of 2025: $2.6 billion (16.6 million shares); Apple, second quarter of fiscal 2026: $11.0 billion. Conclusion: Apple's.",
+    "tier": "multihop",
+    "kind": "cross_company",
+    "parts": [
+      {
+        "label": "Chevron, third quarter of 2025",
+        "answer": "$2.6 billion (16.6 million shares)",
+        "spans": [
+          "16.6 million shares repurchased for $2.6 billion in third quarter 2025"
+        ],
+        "source_id": "CVX_10-Q_2025-09-30.md::chunk63"
+      },
+      {
+        "label": "Apple, second quarter of fiscal 2026",
+        "answer": "$11.0 billion",
+        "spans": [
+          "During the second quarter of 2026, the Company repurchased $11.0 billion of its common stock"
+        ],
+        "source_id": "AAPL_10-Q_2026-03-28.md::chunk23"
+      }
+    ],
+    "conclusion": "Apple's."
+  },
+  {
+    "id": "mh-tariff-wmt-tgt",
+    "query": "Had Walmart (as of the three months ended April 30, 2026) and Target (as of May 2, 2026) recognized anything from their tariff refund claims?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2026-05-02.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "Accordingly, the Company did not recognize any amounts related to these claims in the three months ended April 30, 2026.",
+      "As of May 2, 2026, no refunds had been received and no receivable was recorded."
+    ],
+    "expected_answer": "Walmart, three months ended April 30, 2026: No amounts related to the claims were recognized.; Target, as of May 2, 2026: No refunds had been received and no receivable was recorded.",
+    "tier": "multihop",
+    "kind": "cross_company",
+    "parts": [
+      {
+        "label": "Walmart, three months ended April 30, 2026",
+        "answer": "No amounts related to the claims were recognized.",
+        "spans": [
+          "Accordingly, the Company did not recognize any amounts related to these claims in the three months ended April 30, 2026."
+        ],
+        "source_id": "WMT_10-Q_2026-04-30.md::chunk2"
+      },
+      {
+        "label": "Target, as of May 2, 2026",
+        "answer": "No refunds had been received and no receivable was recorded.",
+        "spans": [
+          "As of May 2, 2026, no refunds had been received and no receivable was recorded."
+        ],
+        "source_id": "TGT_10-Q_2026-05-02.md::chunk3"
+      }
+    ]
+  },
+  {
+    "id": "mh-gm-nvda-tgt",
+    "query": "Which had the higher gross margin: NVIDIA for the third quarter of fiscal 2026, or Target for the quarter ended August 2, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-10-26.md",
+      "TGT_10-Q_2025-08-02.md"
+    ],
+    "expected_spans": [
+      "Gross margins decreased to 73.4% for the third quarter of fiscal year 2026 compared to 74.6% for the third quarter of fiscal year 2025",
+      "For the three months ended August 2, 2025, our gross margin rate was 29.0 percent compared with 30.0 percent in the comparable prior-year period."
+    ],
+    "expected_answer": "NVIDIA, third quarter of fiscal 2026: 73.4%; Target, quarter ended August 2, 2025: 29.0 percent. Conclusion: NVIDIA.",
+    "tier": "multihop",
+    "kind": "cross_company",
+    "parts": [
+      {
+        "label": "NVIDIA, third quarter of fiscal 2026",
+        "answer": "73.4%",
+        "spans": [
+          "Gross margins decreased to 73.4% for the third quarter of fiscal year 2026 compared to 74.6% for the third quarter of fiscal year 2025"
+        ],
+        "source_id": "NVDA_10-Q_2025-10-26.md::chunk23"
+      },
+      {
+        "label": "Target, quarter ended August 2, 2025",
+        "answer": "29.0 percent",
+        "spans": [
+          "For the three months ended August 2, 2025, our gross margin rate was 29.0 percent compared with 30.0 percent in the comparable prior-year period."
+        ],
+        "source_id": "TGT_10-Q_2025-08-02.md::chunk12"
+      }
+    ],
+    "conclusion": "NVIDIA."
+  },
+  {
+    "id": "mh-agg-ocf-q1-2026",
+    "query": "Which of Delta Air Lines, Southwest Airlines, and Merck generated the most cash from operating activities in the three months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md",
+      "LUV_10-Q_2026-03-31.md",
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "We generated cash flows from operations of $2.4 billion in both the three months ended March 31, 2026 and 2025.",
+      "Net cash provided by operating activities was $1.4 billion for the three months ended March 31, 2026",
+      "Cash provided by operating activities was $3.9 billion in the first three months of 2026"
+    ],
+    "expected_answer": "Delta, three months ended March 31, 2026: $2.4 billion; Southwest, three months ended March 31, 2026: $1.4 billion; Merck, first three months of 2026: $3.9 billion. Conclusion: Merck ($3.9 billion).",
+    "tier": "multihop",
+    "kind": "aggregation",
+    "parts": [
+      {
+        "label": "Delta, three months ended March 31, 2026",
+        "answer": "$2.4 billion",
+        "spans": [
+          "We generated cash flows from operations of $2.4 billion in both the three months ended March 31, 2026 and 2025."
+        ],
+        "source_id": "DAL_10-Q_2026-03-31.md::chunk23"
+      },
+      {
+        "label": "Southwest, three months ended March 31, 2026",
+        "answer": "$1.4 billion",
+        "spans": [
+          "Net cash provided by operating activities was $1.4 billion for the three months ended March 31, 2026"
+        ],
+        "source_id": "LUV_10-Q_2026-03-31.md::chunk33"
+      },
+      {
+        "label": "Merck, first three months of 2026",
+        "answer": "$3.9 billion",
+        "spans": [
+          "Cash provided by operating activities was $3.9 billion in the first three months of 2026"
+        ],
+        "source_id": "MRK_10-Q_2026-03-31.md::chunk84"
+      }
+    ],
+    "conclusion": "Merck ($3.9 billion)."
+  },
+  {
+    "id": "mh-agg-buybacks",
+    "query": "Which spent the most on share repurchases: NVIDIA in fiscal year 2026, Walmart in the nine months ended October 31, 2025, or Target in the six months ended August 2, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md",
+      "TGT_10-Q_2025-08-02.md",
+      "WMT_10-Q_2025-10-31.md"
+    ],
+    "expected_spans": [
+      "In fiscal year 2026, we repurchased 282 million shares of our common stock for $40.4 billion.",
+      "During the nine months ended October 31, 2025, the Company repurchased $7.0 billion in shares of its common stock",
+      "We deployed $251 million to repurchase shares during the six months ended August 2, 2025."
+    ],
+    "expected_answer": "NVIDIA, fiscal year 2026: $40.4 billion; Walmart, nine months ended October 31, 2025: $7.0 billion; Target, six months ended August 2, 2025: $251 million. Conclusion: NVIDIA ($40.4 billion).",
+    "tier": "multihop",
+    "kind": "aggregation",
+    "parts": [
+      {
+        "label": "NVIDIA, fiscal year 2026",
+        "answer": "$40.4 billion",
+        "spans": [
+          "In fiscal year 2026, we repurchased 282 million shares of our common stock for $40.4 billion."
+        ],
+        "source_id": "NVDA_10-K_2026-01-25.md::chunk36"
+      },
+      {
+        "label": "Walmart, nine months ended October 31, 2025",
+        "answer": "$7.0 billion",
+        "spans": [
+          "During the nine months ended October 31, 2025, the Company repurchased $7.0 billion in shares of its common stock"
+        ],
+        "source_id": "WMT_10-Q_2025-10-31.md::chunk49"
+      },
+      {
+        "label": "Target, six months ended August 2, 2025",
+        "answer": "$251 million",
+        "spans": [
+          "We deployed $251 million to repurchase shares during the six months ended August 2, 2025."
+        ],
+        "source_id": "TGT_10-Q_2025-08-02.md::chunk29"
+      }
+    ],
+    "conclusion": "NVIDIA ($40.4 billion)."
+  },
+  {
+    "id": "mh-agg-etr",
+    "query": "Which had the highest effective tax rate: Walmart for fiscal 2025, Southwest Airlines for the first nine months of 2025, or Microsoft for the three months ended December 31, 2025?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2025-09-30.md",
+      "MSFT_10-Q_2025-12-31.md",
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "Our effective income tax rate was 23.4%, 25.5%, and 33.6% for fiscal 2025, 2024 and 2023, respectively.",
+      "The Company's effective tax rate was approximately 24.6 percent for the first nine months of 2025",
+      "Our effective tax rate was 20% for both the three and six months ended December 31, 2025"
+    ],
+    "expected_answer": "Walmart, fiscal 2025: 23.4%; Southwest, first nine months of 2025: approximately 24.6 percent; Microsoft, three months ended December 31, 2025: 20%. Conclusion: Southwest (about 24.6%).",
+    "tier": "multihop",
+    "kind": "aggregation",
+    "parts": [
+      {
+        "label": "Walmart, fiscal 2025",
+        "answer": "23.4%",
+        "spans": [
+          "Our effective income tax rate was 23.4%, 25.5%, and 33.6% for fiscal 2025, 2024 and 2023, respectively."
+        ],
+        "source_id": "WMT_10-K_2025-01-31.md::chunk33"
+      },
+      {
+        "label": "Southwest, first nine months of 2025",
+        "answer": "approximately 24.6 percent",
+        "spans": [
+          "The Company's effective tax rate was approximately 24.6 percent for the first nine months of 2025"
+        ],
+        "source_id": "LUV_10-Q_2025-09-30.md::chunk53"
+      },
+      {
+        "label": "Microsoft, three months ended December 31, 2025",
+        "answer": "20%",
+        "spans": [
+          "Our effective tax rate was 20% for both the three and six months ended December 31, 2025"
+        ],
+        "source_id": "MSFT_10-Q_2025-12-31.md::chunk40"
+      }
+    ],
+    "conclusion": "Southwest (about 24.6%)."
+  },
+  {
+    "id": "mh-agg-dividend",
+    "query": "Rank these per-share dividends from highest to lowest: Apple's quarterly cash dividend as of September 27, 2025, the dividend Pfizer declared in June 2026, and the dividend Target paid in the first quarter of 2026.",
+    "expected_doc_ids": [
+      "AAPL_10-K_2025-09-27.md",
+      "PFE_10-Q_2026-06-28.md",
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "As of September 27, 2025, the Company's quarterly cash dividend was $0.26 per share.",
+      "In June 2026, our BOD declared a dividend of $0.43 per share",
+      "$526 million ($1.14 per share) during the first quarter of 2026"
+    ],
+    "expected_answer": "Apple, as of September 27, 2025: $0.26 per share; Pfizer, declared June 2026: $0.43 per share; Target, first quarter of 2026: $1.14 per share ($526 million). Conclusion: Target, then Pfizer, then Apple.",
+    "tier": "multihop",
+    "kind": "aggregation",
+    "parts": [
+      {
+        "label": "Apple, as of September 27, 2025",
+        "answer": "$0.26 per share",
+        "spans": [
+          "As of September 27, 2025, the Company's quarterly cash dividend was $0.26 per share."
+        ],
+        "source_id": "AAPL_10-K_2025-09-27.md::chunk16"
+      },
+      {
+        "label": "Pfizer, declared June 2026",
+        "answer": "$0.43 per share",
+        "spans": [
+          "In June 2026, our BOD declared a dividend of $0.43 per share"
+        ],
+        "source_id": "PFE_10-Q_2026-06-28.md::chunk81"
+      },
+      {
+        "label": "Target, first quarter of 2026",
+        "answer": "$1.14 per share ($526 million)",
+        "spans": [
+          "$526 million ($1.14 per share) during the first quarter of 2026"
+        ],
+        "source_id": "TGT_10-Q_2026-05-02.md::chunk27"
+      }
+    ],
+    "conclusion": "Target, then Pfizer, then Apple."
+  },
+  {
+    "id": "mh-agg-tariffs",
+    "query": "What did Walmart (three months ended April 30, 2026), Target (as of May 2, 2026), and Merck (period ended September 30, 2025) each report about tariffs?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2025-09-30.md",
+      "TGT_10-Q_2026-05-02.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "Accordingly, the Company did not recognize any amounts related to these claims in the three months ended April 30, 2026.",
+      "As of May 2, 2026, no refunds had been received and no receivable was recorded.",
+      "At this time, the Company anticipates that tariffs implemented to date will result in less than $100 million"
+    ],
+    "expected_answer": "Walmart, three months ended April 30, 2026: Did not recognize any amounts related to tariff refund claims.; Target, as of May 2, 2026: No IEEPA tariff refunds had been received and no receivable was recorded.; Merck, period ended September 30, 2025: Expected tariffs implemented to date to cost less than $100 million.",
+    "tier": "multihop",
+    "kind": "aggregation",
+    "parts": [
+      {
+        "label": "Walmart, three months ended April 30, 2026",
+        "answer": "Did not recognize any amounts related to tariff refund claims.",
+        "spans": [
+          "Accordingly, the Company did not recognize any amounts related to these claims in the three months ended April 30, 2026."
+        ],
+        "source_id": "WMT_10-Q_2026-04-30.md::chunk2"
+      },
+      {
+        "label": "Target, as of May 2, 2026",
+        "answer": "No IEEPA tariff refunds had been received and no receivable was recorded.",
+        "spans": [
+          "As of May 2, 2026, no refunds had been received and no receivable was recorded."
+        ],
+        "source_id": "TGT_10-Q_2026-05-02.md::chunk3"
+      },
+      {
+        "label": "Merck, period ended September 30, 2025",
+        "answer": "Expected tariffs implemented to date to cost less than $100 million.",
+        "spans": [
+          "At this time, the Company anticipates that tariffs implemented to date will result in less than $100 million"
+        ],
+        "source_id": "MRK_10-Q_2025-09-30.md::chunk10"
+      }
+    ]
+  }
+]

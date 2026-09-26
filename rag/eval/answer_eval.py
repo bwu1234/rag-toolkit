@@ -2,14 +2,17 @@
 
 Loads an eval set, runs the full retrieve→rerank→generate pipeline via
 :class:`~rag.generation.chat_service.ChatService` for each query, then asks
-the configured LLM to judge each answer against the sample's
-``expected_answer``.
+the judge LLM to grade each answer against the sample's ``expected_answer``.
+
+The judge is ``eval.judge`` from config, falling back to the generator (``llm``)
+when that is unset -- see :func:`resolve_judge_config`.
 
 Usage::
 
     python -m rag.eval.answer_eval                             # uses default eval set
     python -m rag.eval.answer_eval --eval-set path/to/set.json
     python -m rag.eval.answer_eval --config path/to/config.yaml
+    python -m rag.eval.answer_eval --judge-model gemma4:31b-mlx
 
 The judge prompt is deliberately minimal: it asks the LLM to output exactly
 ``PASS`` or ``FAIL`` (optionally followed by a brief reason on the same line)
@@ -25,14 +28,16 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from rag.config.settings import load_config
+from rag.config.settings import LLMConfig, RagConfig, load_config
 from rag.eval.dataset import EvalDataset, EvalSample
 from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatService
+from rag.generation.factory import get_llm_client
 from rag.generation.llm import LLMClient
 from rag.logging_config import configure_logging
 
@@ -87,6 +92,34 @@ def _refusal_judge_prompt(query: str, criteria: str, actual: str) -> str:
     )
 
 
+def resolve_judge_config(config: RagConfig, model: str | None = None) -> LLMConfig:
+    """The LLM that grades answers: `eval.judge`, else the generator; `model` overrides its name.
+
+    Warns when the result is the generator. A model judging its own answers is
+    the pre-Milestone 19 default, kept so old results reproduce, but it biases
+    every score and makes a generator comparison meaningless: 0.775-0.825
+    self-judged versus 0.900 under a separate judge on the same 40 samples
+    (docs/measured-results.md).
+    """
+    judge = (config.eval.judge or config.llm).model_copy()
+    if model:
+        judge.model = model
+    if (judge.provider, judge.model) == (config.llm.provider, config.llm.model):
+        logger.warning(
+            "Judge and generator are the same model (%s:%s): scores are self-graded "
+            "and not comparable across generators. Set eval.judge or pass --judge-model.",
+            judge.provider, judge.model,
+        )
+    return judge
+
+
+def build_judge(config: RagConfig, model: str | None = None) -> LLMClient:
+    """Instantiate the judge chosen by :func:`resolve_judge_config`."""
+    judge = resolve_judge_config(config, model)
+    logger.info("Judge: %s:%s", judge.provider, judge.model)
+    return get_llm_client(judge)
+
+
 def judge_for(sample: EvalSample) -> tuple[str, Callable[[str, str, str], str]]:
     """Pick the judging rubric for a sample.
 
@@ -124,6 +157,10 @@ class AnswerSampleResult:
     judge_output: str
     passed: bool | None  # None = unparseable verdict
     num_citations: int
+    #: Wall-clock seconds for the turn, excluding the judge call.
+    latency_s: float = 0.0
+    #: Times retrieval ran for the turn (more than one only when CRAG retried).
+    retrieval_rounds: int = 1
 
 
 @dataclass
@@ -137,6 +174,8 @@ class AnswerEvalReport:
     num_unparseable: int
     pass_rate: float         # num_passed / num_evaluated (0.0 if 0 evaluated)
     sample_results: list[AnswerSampleResult]
+    num_empty: int = 0       # turns that produced no answer text
+    mean_latency_s: float = 0.0
 
 
 def run_answer_eval(
@@ -153,7 +192,9 @@ def run_answer_eval(
             skipped += 1
             continue
 
+        started = time.monotonic()
         chat_answer = chat_service.ask(sample.query)
+        latency = time.monotonic() - started
         judge_system, judge_prompt = judge_for(sample)
         judge_out = llm_client.generate(
             judge_prompt(sample.query, sample.expected_answer, chat_answer.answer),
@@ -170,6 +211,8 @@ def run_answer_eval(
                 judge_output=judge_out.strip(),
                 passed=verdict,
                 num_citations=len(chat_answer.citations),
+                latency_s=latency,
+                retrieval_rounds=chat_answer.retrieval_attempts,
             )
         )
 
@@ -186,6 +229,8 @@ def run_answer_eval(
         num_unparseable=unparseable,
         pass_rate=passed / n if n > 0 else 0.0,
         sample_results=results,
+        num_empty=sum(1 for r in results if not r.actual_answer.strip()),
+        mean_latency_s=sum(r.latency_s for r in results) / n if n > 0 else 0.0,
     )
 
 
@@ -197,6 +242,9 @@ def print_report(report: AnswerEvalReport, *, verbose: bool = False) -> None:
     print(f"  Pass rate   {report.pass_rate:.3f}  ({report.num_passed}/{report.num_evaluated})")
     if report.num_unparseable:
         print(f"  Unparseable verdicts: {report.num_unparseable}")
+    if report.num_empty:
+        print(f"  Empty answers: {report.num_empty}")
+    print(f"  Mean latency  {report.mean_latency_s:.1f}s per turn (generation only)")
     print(f"{'=' * 60}")
 
     if verbose:
@@ -228,6 +276,9 @@ def _build_parser() -> argparse.ArgumentParser:
                              "the expensive one (generation + judge per sample, plus one call "
                              "per passage when crag.grade_documents is on), so a subset is "
                              "often the only affordable way to compare configurations.")
+    parser.add_argument("--judge-model", default=None, metavar="MODEL",
+                        help="Judge with this model instead of eval.judge (or the generator, "
+                             "if eval.judge is unset). Other judge settings are kept.")
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Print per-sample results in addition to aggregate metrics")
     return parser
@@ -277,9 +328,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     chat_service = build_chat_service(config, corpora=args.corpus)
 
-    # Reuse the same LLM client for judging — same model judges as generates.
-    from rag.generation.factory import get_llm_client
-    judge_llm = get_llm_client(config.llm)
+    judge_llm = build_judge(config, args.judge_model)
 
     logger.info("Running answer eval on %d sample(s)", len(dataset))
     report = run_answer_eval(dataset, chat_service, judge_llm)

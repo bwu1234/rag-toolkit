@@ -90,6 +90,15 @@ The parts that shape this plan:
 
 ### 0 — Eval harness that can see the difference (before any agent code)
 
+**Done, with one gap.** The baseline is in
+[measured results](measured-results.md#pipeline-baseline-under-a-fixed-judge-milestone-19-phase-0):
+15/34 multi-hop questions complete, evidence recall 0.583. The runner is
+`rag.eval.multihop_eval`, also a third set in `run_answer_matrix.py`; there is
+no separate `run_agent_matrix.py`. The gap is token counts, which need
+per-call accounting in `LLMClient` (Milestone 12's per-stage work) and are
+not yet reported for either mode. Search count and cap-hit rate come with the
+agent in phase 3.
+
 - **Separate judge:** `eval.judge: LLMConfig | None` in config, plus a
   `--judge-model` flag on `answer_eval` and `run_answer_matrix.py`. Default to
   the generator so old results reproduce, but log a warning whenever

@@ -122,3 +122,12 @@ def test_get_llm_client_factory_rejects_unknown_provider() -> None:
 
     with pytest.raises(ValueError, match="Unknown LLM provider"):
         get_llm_client(config)
+
+
+def test_get_llm_client_factory_passes_the_configured_timeout() -> None:
+    # A judge grading a long multi-hop answer needs far more than the 120s
+    # default; the setting must actually reach the HTTP client.
+    client = get_llm_client(LLMConfig(model="m", timeout_s=900))
+
+    assert isinstance(client, OllamaLLMClient)
+    assert client._client.timeout.read == 900

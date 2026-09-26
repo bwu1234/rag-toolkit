@@ -26,6 +26,7 @@ def get_llm_client(config: LLMConfig) -> LLMClient:
             temperature=config.temperature,
             max_tokens=config.max_tokens,
             think=config.think,
+            timeout=config.timeout_s,
         )
 
     if config.provider in _KNOWN_BUT_UNIMPLEMENTED:

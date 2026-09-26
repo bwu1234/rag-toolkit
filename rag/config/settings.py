@@ -128,6 +128,10 @@ class LLMConfig(BaseModel):
     # before the real answer; on a long RAG prompt that can exhaust the
     # budget and leave `content` empty. Off by default for reliable answers.
     think: bool = False
+    # Per-request HTTP timeout. The default suits a generation over 5 passages;
+    # a judge grading a long multi-hop answer on a shared GPU needs far more
+    # (the 9b-vs-27b probe needed 900s for an 11k-token grading prompt).
+    timeout_s: float = Field(default=120.0, gt=0, description="Per-request timeout in seconds")
 
 
 class ContextualChunkingConfig(BaseModel):
@@ -378,6 +382,20 @@ class CragConfig(BaseModel):
     )
 
 
+class EvalConfig(BaseModel):
+    """Settings read only by the eval runners -- nothing on the query path uses these.
+
+    `judge` is the LLM that grades answers in `answer_eval`, `multihop_eval` and
+    `scripts/run_answer_matrix.py`. `None` judges with `llm`, the generator,
+    which is how every result before Milestone 19 was produced and so is kept
+    as the default for reproducibility. It is also why those results cannot
+    compare generators: swapping the generator swaps the judge with it. The
+    runners warn whenever the judge and the generator are the same model.
+    """
+
+    judge: LLMConfig | None = None
+
+
 class RagConfig(BaseModel):
     """Top-level config object — the single source of truth for component selection."""
 
@@ -391,6 +409,7 @@ class RagConfig(BaseModel):
     retrieval: RetrievalConfig = RetrievalConfig()
     chat: ChatConfig = ChatConfig()
     crag: CragConfig = CragConfig()
+    eval: EvalConfig = EvalConfig()
 
     #: Name used when no registry is configured -- see `corpus_selection`.
     IMPLICIT_CORPUS_NAME: ClassVar[str] = "default"

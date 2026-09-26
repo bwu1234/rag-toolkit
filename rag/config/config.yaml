@@ -165,3 +165,20 @@ crag:
   # Read the generated answer back against its passages; regenerate if unsupported.
   check_groundedness: true
   max_regenerations: 1
+
+# Settings read only by the eval runners.
+eval:
+  # The LLM-as-judge for answer_eval, multihop_eval and run_answer_matrix.py.
+  # null judges with `llm` -- the generator grading itself. That reproduces
+  # every result recorded before Milestone 19, but it makes a generator
+  # comparison meaningless (swap the generator and the judge swaps too), so the
+  # runners warn while it's null. Override per run with --judge-model. The
+  # fixed judge the Milestone 19 baselines use:
+  #
+  #   judge:
+  #     provider: ollama
+  #     model: gemma4:31b-mlx
+  #     base_url: http://localhost:11434
+  #     temperature: 0.0
+  #     timeout_s: 900
+  judge: null

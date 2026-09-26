@@ -31,7 +31,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from rag.eval.dataset import MODE_DOCUMENT, MODE_SPAN, EvalSample
+from rag.eval.dataset import MODE_DOCUMENT, MODE_SPAN, EvalSample, ExpectedSpan
 from rag.vectorstore.base import ScoredChunk
 
 _WHITESPACE = re.compile(r"\s+")
@@ -137,3 +137,17 @@ def _judge_by_document(sample: EvalSample, chunks: list[ScoredChunk]) -> Judgmen
 def _fit(values: list[int], length: int) -> list[int]:
     """Pad with zeros or truncate so ``values`` has exactly ``length`` entries."""
     return (values + [0] * length)[:length]
+
+
+def unmatched_spans(spans: list[ExpectedSpan], texts: list[str]) -> list[str]:
+    """Spans that appear in none of `texts`, under the same normalization as ranking.
+
+    Order-free on purpose: this is for evidence recall over the *union* of
+    everything a turn retrieved, where there is no single ranking to grade --
+    an agent may search four times, and a span found by any search counts.
+    """
+    haystacks = [normalize(text) for text in texts]
+    return [
+        span.text for span in spans
+        if not any(normalize(span.text) in haystack for haystack in haystacks)
+    ]
