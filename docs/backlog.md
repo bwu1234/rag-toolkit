@@ -91,6 +91,8 @@ where the same questions run over and over.
 
 ### Milestone 14 — Richer document parsing
 
+**Planned:** see [Chunking and indexing plan](chunking-indexing-plan.md), Phase 4.
+
 `pypdf` gives page text and nothing else. Tables arrive as collapsed
 whitespace, headings are indistinguishable from body text, and a scanned PDF
 yields an empty `Document` with no error. This is the highest-leverage quality
@@ -112,6 +114,10 @@ the parser threw away.
   loader interface if the text-based parser proves insufficient.
 
 ### Milestone 15 — Semantic chunking
+
+**Planned:** see [Chunking and indexing plan](chunking-indexing-plan.md), Phase 5. It proposes a
+structure-aware chunker in place of the semantic one described below, on
+the evidence summarized there.
 
 Fixed-size character windows split mid-argument; contextual chunking patches
 the symptom at index time. A `SemanticChunker` slots behind the existing
@@ -510,6 +516,9 @@ Every turn already records per-stage timings (`TurnRecord.stage_ms`), and
 
 ### Milestone 25 — Chunk size and overlap sweep
 
+**Planned:** see [Chunking and indexing plan](chunking-indexing-plan.md), Phase 7: run the sweep
+on whichever chunker Phase 5 leaves as the default.
+
 `chunking.chunk_size` and `chunk_overlap` are in `run_matrix.py`'s fingerprint
 but have never been varied. The matrix excludes them because each value needs
 its own index build, not a config flip. The shipped values were never tuned
@@ -574,7 +583,9 @@ of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
   rose most", "how exposed is Apple to China"). Add a separate,
   hand-reviewed tier of underspecified and paraphrased questions. Report it
   apart from the generated set, and re-measure contextual chunking and
-  expansion on it before treating either verdict as general.
+  expansion on it before treating either verdict as general. *Planned in
+  [Chunking and indexing plan](chunking-indexing-plan.md) Phase 0, alongside
+  `period` and `table` tiers.*
 - **Turn log → eval candidates.** Milestone 12 called logged queries with
   feedback "the cheapest source of new eval samples", but nothing converts
   them. Add a `rag.cli turns --export-candidates` path that writes thumbs-down
