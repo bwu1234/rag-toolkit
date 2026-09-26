@@ -64,8 +64,10 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.
   Serves MCP 2026-07-28 only and needs `mcp >= 2.0` — see [MCP server](docs/mcp-server.md).
 - Logged turns and feedback: `python -m rag.cli turns` (`--feedback down` for
-  the thumbs-down ones). The API, UI and `cli chat` append every turn to
-  `data/logs/turns.jsonl`; the eval runners never do.
+  the thumbs-down ones). With the `jsonl` provider, the API, UI and `cli chat`
+  append every turn to `observability.turn_log.path` (default
+  `data/logs/turns.jsonl`); `provider: none` logs nothing. The eval runners
+  never do.
 - Retrieval eval: `python -m rag.eval.retrieval_eval` (`-v` for per-sample;
   `--eval-set data/eval/edgar_eval_set.json --corpus edgar` for EDGAR)
 - Answer eval (LLM-as-judge): `python -m rag.eval.answer_eval`. The judge is
