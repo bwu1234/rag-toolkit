@@ -175,6 +175,9 @@ off local.
 
 ### Milestone 19 — Agentic retrieval
 
+**Planned:** see [Milestone 19 plan](milestone-19-plan.md) for the phased
+implementation and the pre-work measurements behind it.
+
 Expose search as a **tool the answering model calls**, rather than a stage that
 always runs before it. Unlike the rest of this list, this one *replaces* shipped
 behavior — it's the largest item here and the only one that can make the system

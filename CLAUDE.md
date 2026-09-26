@@ -195,5 +195,7 @@ live in `docs/`, read on demand rather than always-loaded:
 - **`docs/backlog.md`** — Milestones 11–22, planned work not yet started.
 - **`docs/known-limitations.md`** — known gaps and failure modes in what's
   shipped, worth checking before recommending a feature that's off by default.
+- **`docs/milestone-19-plan.md`** — phased plan for agentic retrieval, with the
+  9b-vs-27b agent probe that shaped it. Read before starting Milestone 19.
 - **`docs/mcp-server.md`** — the MCP tool contract, both transports, how to
   point an external agent at it, and why indexing is not exposed as a tool.

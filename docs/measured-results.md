@@ -215,6 +215,85 @@ stores (`SparseIndex.has_chunk`), with regression tests; re-running afterwards
 detected exactly those 64, took their contexts from cache at zero LLM cost, and
 restored 4,236/4,236.
 
+### Generator model: `qwen3.5:9b` vs `qwen3.8:27b` (pre-Milestone 19)
+
+**Setup.** `edgar`, non-contextual index, shipped retrieval (hybrid,
+`bge-reranker-v2-m3`, `top_k 20`, `rerank_top_k 5`), CRAG off, `think: false`
+for both models. Two experiments, run from scratch scripts rather than the
+matrix harness (see the judge bug below for why):
+
+1. **Pipeline, generator swapped only** — the same 40 evenly-spaced answerable
+   samples + 15 hard negatives as the CRAG run.
+2. **Agentic probe** — a throwaway tool loop (one `rag_search` tool wrapping the
+   shipped `Retriever`, passages numbered across calls, cap of 8 searches) on 10
+   single-hop samples (disjoint from 1), 4 hard negatives, and 6 hand-written
+   multi-company / multi-period questions. The multi-hop answers were also run
+   through the pipeline for comparison.
+
+The judge in both was **`gemma4:31b-mlx`, fixed**, a different model family from
+the generators.
+
+| pipeline | answerable | refusals |
+|---|---|---|
+| `qwen3.5:9b` | 36/40 (0.900) | 14/15 |
+| `qwen3.8:27b` | 35/40 (0.875) | 15/15 |
+
+| agentic probe | single-hop | refusals | multi-hop (judge) | multi-hop complete & correct† | searches | prompt tokens |
+|---|---|---|---|---|---|---|
+| `qwen3.5:9b` | 10/10 | 4/4 | 5/6 (pipeline: 3/6) | **1/5** | 25 | 64k |
+| `qwen3.8:27b` | 10/10 | 2/4 | 5/6 (pipeline: 6/6) | **5/5** | 65 | 374k |
+
+† Hand-counted over the five multi-hop questions that name their entities:
+does the answer give a correct, cited figure for *every* company/period asked
+about? The judge rubric passes an answer that honestly says "the passages don't
+cover United", so the judge column can't see this difference. n=5 is small, so
+this is a direction, not a result. The one surprising figure, Microsoft's
+$443,506M lease obligations, was checked against the filing.
+
+- **In the pipeline, the bigger model buys nothing.** 35/40 vs 36/40 and 15/15
+  vs 14/15 are inside the noise floor. Three of the 9b's four answerable
+  failures were **retrieval misses**: the top 5 held other companies' filings
+  and the 9b correctly said so. No generator fixes that in a single pass. The
+  fourth was a real generation error (mixed up the UAL and LUV tickers).
+- **As an agent, the two models behave differently, not just faster or
+  slower.** The 9b decomposes perfectly (one search per company, entity
+  coverage 1.0) but **never searches a second time**. Nearly every turn was
+  exactly two LLM calls: fan out, then answer. When a search missed, it
+  reported the gap and stopped. The 27b **re-searches after a miss** (4–8
+  searches to find United's FY2025 revenue, Microsoft's lease table, Pfizer's
+  IRA statement) and picks the *most recent* filing when asked for one. The 9b
+  cited Apple's FY2024 lease figure where FY2025 was asked for.
+- **The 27b's agentic failures are all harness-fixable, and the prototype
+  surfaced them:**
+  - *Cap exhaustion without an answer.* Twice it spent all 8 searches and
+    returned either nothing or "Let me try to find…". The loop needs a forced
+    synthesis turn at the cap.
+  - *Identical-query loops.* It sent the same Tesla query five times in a row.
+    Repeated queries should be refused without spending a search.
+  - *Parametric leakage.* On the Apple FY2015 negative it declined correctly,
+    then added the real figure from memory "for reference". A bigger model
+    knows more, so it has more to leak. The judge rightly failed it.
+  - *Guessed figures in queries* ("United 2025 revenue 51 billion 52 billion").
+    Harmless to BM25 here, but it shows the model searching for its prior.
+- **Cost.** 2.6× the searches, 5.9× the prompt tokens (history plus every
+  passage re-sent each turn), ~1.8× slower decode (26 vs 47 tok/s measured solo
+  on an M2 Max 64GB). Hard multi-hop questions took 2–6 minutes each with the
+  27b. **Wall-clock numbers from this run are inflated and not quoted here**: an
+  unrelated Ollama client ran concurrently from partway through the 27b pipeline
+  run onward, and forced a model reload that dropped one request. Token counts
+  are unaffected.
+- **Decision: `llm.model` stays `qwen3.5:9b-mlx`.** The 27b is the model the
+  Milestone 19 agent should be designed around, not a drop-in upgrade. See
+  [Milestone 19 plan](milestone-19-plan.md).
+
+**The measurement bug this found:** `run_answer_matrix.py` and `answer_eval`
+judge with the **generating** model (`get_llm_client(config.llm)`). Any model
+comparison through them swaps the judge too, so the numbers are not comparable.
+It also colours earlier numbers: the 9b scored 0.775–0.825 judging itself in the
+CRAG runs and 0.900 on the same 40 samples under the gemma judge. Treat the CRAG
+table as internally comparable only. Fixing it (a separately configured judge)
+is step 0 of the Milestone 19 plan.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a
