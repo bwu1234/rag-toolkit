@@ -679,8 +679,8 @@ rate limiting are what cover that case.
 - **Production container.** A non-editable install, a non-root user, no
   `--reload`, no bind mount, and a pinned Ollama image instead of `:latest`.
   Keep the dev compose file as it is and add a production one alongside it.
-  Pull Milestone 18's Chroma server mode forward into it: an in-process
-  persistent Chroma pins the API to one replica.
+  Use persistent in-process Chroma for this deployment; it pins the API to one
+  replica.
 - **Log hygiene and retention.** Log `turn_id` and query length at INFO, not
   the query text. Add a retention/rotation setting to
   `observability.turn_log`. `JsonlTurnSink`'s lock covers threads, not
