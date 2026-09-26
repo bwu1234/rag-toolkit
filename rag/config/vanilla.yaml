@@ -1,0 +1,33 @@
+# Vanilla RAG baseline: embed the question, take the nearest chunks by vector
+# similarity, paste them into a plain prompt, generate. Nothing else.
+#
+#   python -m rag.cli --config rag/config/vanilla.yaml chat
+#   python -m rag.eval.retrieval_eval --config rag/config/vanilla.yaml --corpus edgar ...
+#
+# The point is a floor to measure the default pipeline against -- what hybrid
+# search, reranking and the grounded prompt actually buy on a given corpus.
+#
+# Inherits config.yaml and lists only what it changes, so it always reads the
+# same index (paths, corpora, embedder, chunking) with the same generator.
+# Extras that config.yaml already leaves off (query expansion, web search,
+# min_score, CRAG, contextual chunking) aren't repeated here;
+# tests/test_config.py fails if turning one on in config.yaml leaks into this
+# baseline.
+base: config.yaml
+
+retrieval:
+  # Vector similarity only -- no BM25, no RRF.
+  mode: dense
+  # With no reranker, `rerank_top_k` (5, inherited) is simply "chunks handed to
+  # the LLM", so there's no point fetching a wider candidate pool.
+  top_k: 5
+
+reranker:
+  # NoOpReranker: truncates the similarity-ordered list, no rescoring.
+  provider: none
+
+chat:
+  # No follow-up rewriting: each turn's raw text is what gets embedded.
+  condense_history: false
+  # "Context + question" -- no citations, no instruction to refuse.
+  prompt: plain

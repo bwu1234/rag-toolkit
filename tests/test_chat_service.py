@@ -14,6 +14,7 @@ from pathlib import Path
 from rag.events import EventSink
 from rag.generation.chat_service import ChatService, Citation
 from rag.generation.crag import GradedChunks
+from rag.generation.prompts import build_plain_prompt
 from rag.generation.query_rewriter import ChatTurn, QueryCondenser
 from rag.retrieval.retriever import RetrievalResult
 from rag.vectorstore.base import ScoredChunk
@@ -122,6 +123,22 @@ def test_ask_passes_a_grounded_prompt_and_system_prompt_to_the_llm() -> None:
     assert "Refunds within 30 days." in prompt
     assert "what is the refund policy" in prompt
     assert system is not None and "cite" in system.lower()
+
+
+def test_ask_with_plain_prompt_style_sends_the_plain_prompt_and_no_system_prompt() -> None:
+    chunks = [_scored("a", "Refunds within 30 days."), _scored("b", "Exchanges allowed.")]
+    llm_client = _FakeLLMClient(reply="Refunds are accepted within 30 days.")
+    service = ChatService(retriever=_FakeRetriever(chunks), llm_client=llm_client, prompt_style="plain")
+
+    result = service.ask("what is the refund policy")
+
+    [(prompt, system)] = llm_client.calls
+    assert prompt == build_plain_prompt("what is the refund policy", chunks)
+    assert system is None
+    # Every shown passage is still reported; none is marked cited, since the
+    # plain prompt never asks for `[n]` markers.
+    assert [c.chunk_id for c in result.citations] == ["a", "b"]
+    assert result.cited_chunk_ids == []
 
 
 def test_ask_on_blank_query_skips_retrieval_and_generation() -> None:

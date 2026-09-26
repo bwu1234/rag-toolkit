@@ -16,11 +16,20 @@ from pathlib import Path
 from typing import Any, ClassVar, Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # Repo root = two levels up from this file (rag/config/settings.py -> repo/)
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
+
+# Top-level YAML key naming a config file to merge underneath this one (see
+# `load_config`). Consumed at load time -- it never reaches `RagConfig`.
+BASE_KEY = "base"
+
+# How the generation prompt is phrased (`chat.prompt`); see
+# `rag.generation.prompts`. Defined here so the config layer stays a leaf that
+# the generation code imports from, not the other way round.
+PromptStyle = Literal["grounded", "plain"]
 
 
 class PathsConfig(BaseModel):
@@ -341,6 +350,13 @@ class ChatConfig(BaseModel):
         ge=0,
         description="Most recent turns fed to the condenser (keeps the rewrite prompt bounded)",
     )
+    # `grounded` numbers the passages, asks for inline `[n]` citations and tells
+    # the model to say so when the passages don't answer. `plain` is the
+    # textbook "context + question" template with none of that -- a baseline for
+    # measuring what the grounding instructions buy, not something to serve.
+    # Under `plain` the answer carries no `[n]` markers, so a turn's
+    # `cited_chunk_ids` is always empty.
+    prompt: PromptStyle = "grounded"
 
 
 class CragConfig(BaseModel):
@@ -432,6 +448,21 @@ class RagConfig(BaseModel):
     eval: EvalConfig = EvalConfig()
     observability: ObservabilityConfig = ObservabilityConfig()
 
+    @model_validator(mode="after")
+    def _plain_prompt_cannot_regenerate(self) -> "RagConfig":
+        # CRAG regeneration answers under `REGROUND_SYSTEM_PROMPT`, a stricter
+        # restatement of the *grounded* rules. With `chat.prompt: plain` a
+        # rejected answer would silently switch prompt style mid-turn, so a run
+        # meant to measure the plain prompt would partly measure the grounded
+        # one. Grading and the groundedness verdict alone are fine.
+        crag = self.crag
+        if self.chat.prompt == "plain" and crag.enabled and crag.check_groundedness and crag.max_regenerations:
+            raise ValueError(
+                "chat.prompt: plain can't be combined with CRAG regeneration, which answers under "
+                "the grounded prompt; set crag.max_regenerations: 0 (the groundedness check still runs)"
+            )
+        return self
+
     #: Name used when no registry is configured -- see `corpus_selection`.
     IMPLICIT_CORPUS_NAME: ClassVar[str] = "default"
 
@@ -513,20 +544,74 @@ def _apply_env_overrides(raw: dict[str, Any], environ: Mapping[str, str]) -> Non
         node[keys[-1]] = value
 
 
+def _deep_merge(base: dict[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
+    """Return `base` with `override` laid over it; neither input is mutated.
+
+    Mappings merge key by key, recursively. Anything else -- scalars, lists,
+    `null` -- replaces the base value outright. Lists replace rather than
+    concatenate on purpose: `corpora.active: [edgar]` over a base of
+    `[baseline]` means "edgar", not "baseline and edgar" (which would be a
+    different, pooled index).
+    """
+
+    merged = dict(base)
+    for key, value in override.items():
+        existing = merged.get(key)
+        if isinstance(existing, dict) and isinstance(value, Mapping):
+            merged[key] = _deep_merge(existing, value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _read_config_yaml(path: Path, chain: tuple[Path, ...] = ()) -> dict[str, Any]:
+    """Parse `path`, first merging in the file its `base:` key names, if any.
+
+    `base` resolves relative to the file that names it (not the working
+    directory), so `base: config.yaml` in `rag/config/vanilla.yaml` works from
+    anywhere. Bases can chain. Unlike the top-level file, a named base that
+    doesn't exist raises: silently falling back to defaults under a typo'd
+    base would run a different pipeline than the one asked for.
+    """
+
+    resolved = path.resolve()
+    if resolved in chain:
+        cycle = " -> ".join(str(p) for p in (*chain, resolved))
+        raise ValueError(f"Config `{BASE_KEY}` chain loops: {cycle}")
+
+    with resolved.open("r", encoding="utf-8") as f:
+        raw = yaml.safe_load(f) or {}
+    if not isinstance(raw, dict):
+        raise ValueError(f"Config file {resolved} must contain a mapping at the top level")
+
+    base = raw.pop(BASE_KEY, None)
+    if base is None:
+        return raw
+    if not isinstance(base, str):
+        raise ValueError(f"Config `{BASE_KEY}` in {resolved} must be a file path, got {base!r}")
+
+    base_path = resolved.parent / base
+    if not base_path.exists():
+        raise FileNotFoundError(f"Config `{BASE_KEY}` in {resolved} names a missing file: {base_path}")
+    return _deep_merge(_read_config_yaml(base_path, (*chain, resolved)), raw)
+
+
 def load_config(path: str | Path | None = None) -> RagConfig:
     """Load and validate config from a YAML file, falling back to defaults for missing keys.
 
     Passing no path loads `rag/config/config.yaml`. A missing file simply
     yields the default `RagConfig()` so the system runs out of the box.
+
+    A file may start with `base: <path>` to inherit another config and list
+    only what it changes (see `_read_config_yaml` / `_deep_merge`) -- e.g.
+    `rag/config/vanilla.yaml` is `config.yaml` with the extras switched off.
+
     `RAG__SECTION__KEY` environment variables override individual keys on top
-    of either (see `_apply_env_overrides`).
+    of the merged result (see `_apply_env_overrides`).
     """
 
     config_path = Path(path) if path is not None else DEFAULT_CONFIG_PATH
-    raw: dict[str, Any] = {}
-    if config_path.exists():
-        with config_path.open("r", encoding="utf-8") as f:
-            raw = yaml.safe_load(f) or {}
+    raw = _read_config_yaml(config_path) if config_path.exists() else {}
 
     _apply_env_overrides(raw, os.environ)
     return RagConfig.model_validate(raw)

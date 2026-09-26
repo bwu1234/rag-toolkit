@@ -75,6 +75,7 @@ def build_chat_service(
         max_retries=crag.max_retries if crag.enabled else 0,
         max_regenerations=crag.max_regenerations if crag.enabled else 0,
         turn_sink=turn_sink,
+        prompt_style=config.chat.prompt,
         turn_metadata={
             "corpus": config.corpus_selection(corpora).slug,
             "llm": f"{config.llm.provider}:{config.llm.model}",

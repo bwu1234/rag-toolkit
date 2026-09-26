@@ -19,11 +19,12 @@ from dataclasses import dataclass, field
 from rag.events import EventSink, PipelineEvent, emit
 from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryRewriter
 from rag.generation.llm import LLMClient
+from rag.config.settings import PromptStyle
 from rag.generation.prompts import (
     REGROUND_SYSTEM_PROMPT,
-    SYSTEM_PROMPT,
-    build_rag_prompt,
+    build_prompt,
     parse_cited_passages,
+    system_prompt_for,
 )
 from rag.generation.query_rewriter import ChatTurn, QueryCondenser
 from rag.observability.records import (
@@ -235,6 +236,7 @@ class ChatService:
         max_regenerations: int = 0,
         turn_sink: TurnSink | None = None,
         turn_metadata: Mapping[str, str] | None = None,
+        prompt_style: PromptStyle = "grounded",
     ) -> None:
         self._retriever = retriever
         self._llm_client = llm_client
@@ -246,6 +248,7 @@ class ChatService:
         self.max_regenerations = max_regenerations
         self._turn_sink = turn_sink
         self._turn_metadata = dict(turn_metadata or {})
+        self.prompt_style: PromptStyle = prompt_style
 
     def ask(
         self,
@@ -422,7 +425,7 @@ class ChatService:
         # rewrite is a search device, like a HyDE passage: it exists to find
         # passages, and answering the reworded version would quietly change the
         # question the user actually asked.
-        prompt = build_rag_prompt(search_query, chunks)
+        prompt = build_prompt(self.prompt_style, search_query, chunks)
         emit(on_event, start, "prompt", f"Built prompt from {len(chunks)} passage(s)")
 
         answer, grounded = self._generate_grounded(search_query, chunks, prompt, on_event, trace)
@@ -559,7 +562,7 @@ class ChatService:
         """
 
         start = time.monotonic()
-        answer = self._llm_client.generate(prompt, system=SYSTEM_PROMPT)
+        answer = self._llm_client.generate(prompt, system=system_prompt_for(self.prompt_style))
         emit(on_event, start, "generate", "Generated answer")
 
         if self._groundedness_checker is None:

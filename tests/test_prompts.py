@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 
-from rag.generation.prompts import REGROUND_SYSTEM_PROMPT, SYSTEM_PROMPT, build_rag_prompt
+from rag.generation.prompts import (
+    REGROUND_SYSTEM_PROMPT,
+    SYSTEM_PROMPT,
+    build_plain_prompt,
+    build_prompt,
+    build_rag_prompt,
+    system_prompt_for,
+)
 from rag.vectorstore.base import ScoredChunk
 
 
@@ -87,3 +95,31 @@ def test_reground_system_prompt_states_the_previous_attempt_failed() -> None:
     assert "previous attempt" in REGROUND_SYSTEM_PROMPT
     assert REGROUND_SYSTEM_PROMPT != SYSTEM_PROMPT
     assert REGROUND_SYSTEM_PROMPT.startswith(SYSTEM_PROMPT), "it must still carry the base grounding rules"
+
+
+def test_plain_prompt_is_undecorated_context_then_question() -> None:
+    chunks = [_scored("a", "Refunds within 30 days."), _scored("b", "Shipping is free.")]
+
+    prompt = build_plain_prompt("What is the refund policy?", chunks)
+
+    assert "Refunds within 30 days.\n\nShipping is free." in prompt
+    assert prompt.rstrip().endswith("Question: What is the refund policy?\nAnswer:")
+    # None of the grounding apparatus: numbering, source labels, citation asks.
+    assert "[1]" not in prompt
+    assert "source" not in prompt.lower()
+    assert "cit" not in prompt.lower()
+
+
+def test_plain_prompt_leaves_out_generated_context() -> None:
+    contextual = dataclasses.replace(_scored("a", "The limit is 1,000/min."), context="From the Orders API docs.")
+
+    assert "Orders API" not in build_plain_prompt("q", [contextual])
+
+
+def test_prompt_style_selects_builder_and_system_prompt() -> None:
+    chunks = [_scored("a", "text")]
+
+    assert build_prompt("grounded", "q", chunks) == build_rag_prompt("q", chunks)
+    assert build_prompt("plain", "q", chunks) == build_plain_prompt("q", chunks)
+    assert system_prompt_for("grounded") == SYSTEM_PROMPT
+    assert system_prompt_for("plain") is None
