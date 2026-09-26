@@ -12,6 +12,7 @@ from rag.config.settings import RagConfig
 from rag.events import PipelineEvent
 from rag.generation.chat_service import ChatAnswer, Citation
 from rag.generation.query_rewriter import ChatTurn
+from rag.observability.records import Rating
 
 
 def history_from_messages(messages: list[dict[str, Any]]) -> list[ChatTurn]:
@@ -78,6 +79,33 @@ def format_answer_notices(answer: ChatAnswer) -> list[str]:
     if answer.grounded is False:
         notices.append("⚠️ This answer failed its groundedness check — treat it as unverified")
     return notices
+
+
+def format_turn_metrics(answer: ChatAnswer) -> str | None:
+    """Return a one-line cost summary: wall time, LLM calls, tokens, and how many passages were cited.
+
+    `None` for a turn that was never measured (no `total_ms`), so a hand-built
+    `ChatAnswer` doesn't render a misleading "0 ms".
+    """
+
+    if answer.total_ms is None:
+        return None
+    parts = [f"⏱️ {answer.total_ms / 1000:.1f} s", f"{answer.llm_calls} LLM call(s)"]
+    if answer.prompt_tokens is not None or answer.completion_tokens is not None:
+        prompt = "?" if answer.prompt_tokens is None else f"{answer.prompt_tokens:,}"
+        completion = "?" if answer.completion_tokens is None else f"{answer.completion_tokens:,}"
+        parts.append(f"{prompt} → {completion} tokens")
+    if answer.citations:
+        parts.append(f"cited {len(answer.cited_chunk_ids)} of {len(answer.citations)} passage(s)")
+    return " · ".join(parts)
+
+
+def rating_from_feedback_widget(value: int | None) -> Rating | None:
+    """Map `st.feedback("thumbs")`'s value (1 up, 0 down, None cleared) to a stored rating."""
+
+    if value is None:
+        return None
+    return "up" if value == 1 else "down"
 
 
 def format_event_line(event: PipelineEvent) -> str:

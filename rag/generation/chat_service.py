@@ -10,15 +10,33 @@ without spinning up FastAPI.
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from rag.events import EventSink, PipelineEvent, emit
 from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryRewriter
 from rag.generation.llm import LLMClient
-from rag.generation.prompts import REGROUND_SYSTEM_PROMPT, SYSTEM_PROMPT, build_rag_prompt
+from rag.generation.prompts import (
+    REGROUND_SYSTEM_PROMPT,
+    SYSTEM_PROMPT,
+    build_rag_prompt,
+    parse_cited_passages,
+)
 from rag.generation.query_rewriter import ChatTurn, QueryCondenser
+from rag.observability.records import (
+    RetrievalAttempt,
+    RetrievedPassage,
+    StageEvent,
+    TurnOutcome,
+    TurnRecord,
+    new_id,
+    utc_now,
+)
+from rag.observability.sink import TurnSink
+from rag.observability.usage import UsageMeter, metered
 from rag.retrieval.retriever import RetrievalResult, Retriever
 from rag.vectorstore.base import ScoredChunk
 
@@ -109,6 +127,43 @@ class ChatAnswer:
     """Times retrieval ran for this turn -- more than one means CRAG retried."""
     grounded: bool | None = None
     """CRAG's groundedness verdict: True/False, or None if unchecked or inconclusive."""
+    cited_chunk_ids: list[str] = field(default_factory=list)
+    """Chunk ids of the passages the answer actually cites as `[n]`, in first-cited order."""
+    turn_id: str | None = None
+    """Id of this turn's record -- what feedback is attached to. Set by `ChatService.ask`."""
+    stage_ms: dict[str, float] = field(default_factory=dict)
+    """Milliseconds per pipeline stage, summed when a stage ran more than once (CRAG retries)."""
+    total_ms: float | None = None
+    """Wall-clock milliseconds for the whole turn."""
+    llm_calls: int = 0
+    """LLM calls this turn made, from every component: expansion, condensing, CRAG, generation."""
+    prompt_tokens: int | None = None
+    """Prompt tokens across those calls; None when the provider doesn't report them."""
+    completion_tokens: int | None = None
+    """Generated tokens across those calls; None when the provider doesn't report them."""
+
+
+@dataclass
+class _TurnTrace:
+    """What a turn did that `ChatAnswer` doesn't carry, collected for its `TurnRecord`.
+
+    Mutable and private: the pipeline methods append to it as they go, which
+    keeps their return types about the answer rather than about logging.
+    """
+
+    events: list[PipelineEvent] = field(default_factory=list)
+    attempts: list[RetrievalAttempt] = field(default_factory=list)
+    groundedness_checks: list[bool | None] = field(default_factory=list)
+    shown_chunk_ids: list[str] = field(default_factory=list)
+    outcome: TurnOutcome = "answered"
+
+
+def _stage_totals(events: list[PipelineEvent]) -> dict[str, float]:
+    totals: dict[str, float] = {}
+    for event in events:
+        if event.elapsed_ms is not None:
+            totals[event.stage] = totals.get(event.stage, 0.0) + event.elapsed_ms
+    return totals
 
 
 @dataclass(frozen=True)
@@ -178,6 +233,8 @@ class ChatService:
         groundedness_checker: GroundednessChecker | None = None,
         max_retries: int = 0,
         max_regenerations: int = 0,
+        turn_sink: TurnSink | None = None,
+        turn_metadata: Mapping[str, str] | None = None,
     ) -> None:
         self._retriever = retriever
         self._llm_client = llm_client
@@ -187,6 +244,8 @@ class ChatService:
         self._groundedness_checker = groundedness_checker
         self.max_retries = max_retries
         self.max_regenerations = max_regenerations
+        self._turn_sink = turn_sink
+        self._turn_metadata = dict(turn_metadata or {})
 
     def ask(
         self,
@@ -230,9 +289,114 @@ class ChatService:
         with a `PipelineEvent` -- the seam the UI uses to show a
         from-prompt-to-answer trace. Purely observational: omitting it changes
         no return value.
+
+        Every turn is also measured and, when a `TurnSink` is wired in,
+        recorded: the returned `ChatAnswer` carries per-stage latency, LLM call
+        and token counts, the passages the answer cited, and the `turn_id`
+        feedback attaches to. A turn that raises is recorded too (outcome
+        `error`) before the exception propagates -- a failing turn is exactly
+        the one worth finding in the log afterwards.
         """
 
+        turn_id = new_id()
+        timestamp = utc_now()
+        trace = _TurnTrace()
+
+        # Tee every pipeline event into the trace as well as the caller's sink.
+        # The events already carry each stage's timing, so latency comes from
+        # the same stream the UI renders rather than from a second set of timers.
+        def observe(event: PipelineEvent) -> None:
+            trace.events.append(event)
+            if on_event is not None:
+                on_event(event)
+
+        start = time.monotonic()
+        with metered() as meter:
+            try:
+                answer = self._answer(query, history, observe, trace)
+            except Exception as exc:
+                trace.outcome = "error"
+                self._record(
+                    turn_id, timestamp, query, history, None, trace, meter,
+                    total_ms=(time.monotonic() - start) * 1000,
+                    error=f"{type(exc).__name__}: {exc}",
+                )
+                raise
+
+        answer = dataclasses.replace(
+            answer,
+            turn_id=turn_id,
+            stage_ms=_stage_totals(trace.events),
+            total_ms=(time.monotonic() - start) * 1000,
+            llm_calls=meter.calls,
+            prompt_tokens=meter.prompt_tokens,
+            completion_tokens=meter.completion_tokens,
+        )
+        self._record(turn_id, timestamp, query, history, answer, trace, meter, total_ms=answer.total_ms or 0.0)
+        return answer
+
+    def _record(
+        self,
+        turn_id: str,
+        timestamp: str,
+        query: str,
+        history: list[ChatTurn] | None,
+        answer: ChatAnswer | None,
+        trace: _TurnTrace,
+        meter: UsageMeter,
+        *,
+        total_ms: float,
+        error: str | None = None,
+    ) -> None:
+        """Write this turn's `TurnRecord` to the sink, if there is one.
+
+        A failed write is logged and swallowed: losing one log line is not a
+        reason to fail the user's turn, which has already been answered.
+        """
+
+        if self._turn_sink is None:
+            return
+        record = TurnRecord(
+            turn_id=turn_id,
+            timestamp=timestamp,
+            query=query,
+            outcome=trace.outcome,
+            answer=answer.answer if answer is not None else None,
+            history_turns=len(history or []),
+            rewritten_query=answer.rewritten_query if answer is not None else None,
+            search_queries=answer.search_queries if answer is not None else [],
+            retry_queries=answer.retry_queries if answer is not None else [],
+            attempts=trace.attempts,
+            shown_chunk_ids=trace.shown_chunk_ids,
+            cited_chunk_ids=answer.cited_chunk_ids if answer is not None else [],
+            groundedness_checks=trace.groundedness_checks,
+            grounded=answer.grounded if answer is not None else None,
+            stage_ms=_stage_totals(trace.events),
+            total_ms=total_ms,
+            llm_calls=meter.calls,
+            llm_ms=meter.llm_ms,
+            prompt_tokens=meter.prompt_tokens,
+            completion_tokens=meter.completion_tokens,
+            events=[StageEvent(e.stage, e.message, e.elapsed_ms) for e in trace.events],
+            error=error,
+            metadata=self._turn_metadata,
+        )
+        try:
+            self._turn_sink.record_turn(record)
+        except Exception:
+            logger.warning("Failed to record turn %s; the answer is unaffected", turn_id, exc_info=True)
+
+    def _answer(
+        self,
+        query: str,
+        history: list[ChatTurn] | None,
+        on_event: EventSink,
+        trace: _TurnTrace,
+    ) -> ChatAnswer:
+        """The pipeline itself: condense, retrieve with correction, generate, cite."""
+
         if not query.strip():
+            trace.outcome = "blank_query"
             return ChatAnswer(answer=_BLANK_QUERY_ANSWER, citations=[])
 
         search_query = query
@@ -246,10 +410,11 @@ class ChatService:
         # make callers render "rewritten to: <the same question>".
         rewritten_query = search_query if search_query != query else None
 
-        corrected = self._retrieve_with_correction(search_query, on_event)
+        corrected = self._retrieve_with_correction(search_query, on_event, trace)
         chunks = corrected.chunks
         if not chunks:
-            return self._no_context_answer(query, corrected, rewritten_query, on_event)
+            return self._no_context_answer(query, corrected, rewritten_query, on_event, trace)
+        trace.shown_chunk_ids = [chunk.chunk_id for chunk in chunks]
 
         start = time.monotonic()
         # Generation always answers `search_query` -- the user's question, or
@@ -260,8 +425,12 @@ class ChatService:
         prompt = build_rag_prompt(search_query, chunks)
         emit(on_event, start, "prompt", f"Built prompt from {len(chunks)} passage(s)")
 
-        answer, grounded = self._generate_grounded(search_query, chunks, prompt, on_event)
+        answer, grounded = self._generate_grounded(search_query, chunks, prompt, on_event, trace)
         citations = [_to_citation(chunk) for chunk in chunks]
+        # `citations` stays every passage shown, in prompt order -- that's the
+        # numbering the answer's `[n]` markers refer to. Which of them the model
+        # actually relied on is reported separately.
+        cited_chunk_ids = [chunks[n - 1].chunk_id for n in parse_cited_passages(answer, len(chunks))]
 
         logger.info(
             "Answered query %r with %d citation(s) (%d withheld below min_score, "
@@ -283,9 +452,12 @@ class ChatService:
             retry_queries=corrected.retry_queries,
             retrieval_attempts=corrected.attempts,
             grounded=grounded,
+            cited_chunk_ids=cited_chunk_ids,
         )
 
-    def _retrieve_with_correction(self, query: str, on_event: EventSink | None) -> "_CorrectedRetrieval":
+    def _retrieve_with_correction(
+        self, query: str, on_event: EventSink | None, trace: _TurnTrace
+    ) -> "_CorrectedRetrieval":
         """Retrieve, grade, and retry with a reworded query until something survives.
 
         The loop runs at least once and at most `1 + max_retries` times, exiting
@@ -321,6 +493,7 @@ class ChatService:
 
             result = self._retriever.retrieve(attempt_query, on_event=on_event)
             chunks = result.chunks
+            kept_ids: list[str] | None = None
 
             if chunks and self._grader is not None:
                 start = time.monotonic()
@@ -334,6 +507,17 @@ class ChatService:
                     f"Graded {len(result.chunks)} passage(s): kept {len(chunks)}, "
                     f"dropped {graded.graded_out} as irrelevant",
                 )
+                kept_ids = [chunk.chunk_id for chunk in chunks]
+
+            trace.attempts.append(
+                RetrievalAttempt(
+                    query=attempt_query,
+                    retrieved=[RetrievedPassage(c.chunk_id, c.document_id, c.score) for c in result.chunks],
+                    kept=kept_ids,
+                    candidate_count=result.candidate_count,
+                    dropped_below_min_score=result.dropped_below_min_score,
+                )
+            )
 
             if chunks:
                 return _CorrectedRetrieval(
@@ -358,6 +542,7 @@ class ChatService:
         chunks: list[ScoredChunk],
         prompt: str,
         on_event: EventSink | None,
+        trace: _TurnTrace,
     ) -> tuple[str, bool | None]:
         """Generate an answer and, if a checker is wired in, verify it's supported.
 
@@ -382,6 +567,7 @@ class ChatService:
 
         start = time.monotonic()
         grounded = self._groundedness_checker.check(query, chunks, answer)
+        trace.groundedness_checks.append(grounded)
         emit(on_event, start, "crag_groundedness", f"Groundedness check: {_verdict_label(grounded)}")
 
         for attempt in range(1, self.max_regenerations + 1):
@@ -394,6 +580,7 @@ class ChatService:
 
             start = time.monotonic()
             grounded = self._groundedness_checker.check(query, chunks, answer)
+            trace.groundedness_checks.append(grounded)
             emit(
                 on_event,
                 start,
@@ -411,6 +598,7 @@ class ChatService:
         corrected: _CorrectedRetrieval,
         rewritten_query: str | None,
         on_event: EventSink | None,
+        trace: _TurnTrace,
     ) -> ChatAnswer:
         """Explain *which* kind of nothing retrieval came back with, and skip generation."""
 
@@ -426,10 +614,13 @@ class ChatService:
                 f"{corrected.graded_out} passage(s) graded irrelevant across "
                 f"{corrected.attempts} attempt(s)"
             )
+            trace.outcome = "graded_out"
         elif result.candidate_count == 0:
             answer = _EMPTY_INDEX_ANSWER
             reason = "index returned no candidates at all"
+            trace.outcome = "empty_index"
         else:
+            trace.outcome = "below_min_score"
             answer = _no_relevant_context_answer(result.candidate_count, result.dropped_below_min_score)
             reason = (
                 f"{result.candidate_count} candidate(s) retrieved, all "

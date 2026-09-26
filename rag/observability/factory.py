@@ -1,0 +1,38 @@
+"""Config-driven factory for `TurnSink`, plus the config fingerprint stamped on every record."""
+
+from __future__ import annotations
+
+import hashlib
+from pathlib import Path
+
+from rag.config.settings import REPO_ROOT, RagConfig, TurnLogConfig
+from rag.observability.sink import JsonlTurnSink, TurnSink
+
+
+def get_turn_sink(config: TurnLogConfig) -> TurnSink | None:
+    """Instantiate the sink selected by `config.provider`, or `None` for `"none"`."""
+
+    if config.provider == "none":
+        return None
+    if config.provider == "jsonl":
+        return JsonlTurnSink(turn_log_path(config))
+    raise ValueError(
+        f"Unknown turn log provider: {config.provider!r}. "
+        "Add a TurnSink adapter and register it here to support a new one."
+    )
+
+
+def turn_log_path(config: TurnLogConfig) -> Path:
+    return (REPO_ROOT / config.path).resolve()
+
+
+def config_fingerprint(config: RagConfig) -> str:
+    """A short, stable hash of every setting that can change what a turn does.
+
+    `observability` and `eval` are excluded: where the log goes and which judge
+    the eval runners use don't change a single answer, and including them would
+    split identical-behaviour turns into different buckets.
+    """
+
+    payload = config.model_dump_json(exclude={"observability", "eval"})
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]

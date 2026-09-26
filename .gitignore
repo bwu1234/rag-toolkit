@@ -21,6 +21,9 @@ data/index/*
 # 79MB of Chroma sqlite and binary blobs, rebuildable from the corpus.
 data/index_ctx/
 
+# Per-turn logs (Milestone 12) -- local usage data, not source.
+data/logs/
+
 .env
 draft/
 pytest-cache-files-gvcbngex/

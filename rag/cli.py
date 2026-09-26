@@ -22,6 +22,8 @@ from rag.ingestion.cleaners import clean_documents, clean_text
 from rag.ingestion.loaders import load_corpus
 from rag.ingestion.models import Document
 from rag.logging_config import configure_logging
+from rag.observability.factory import get_turn_sink, turn_log_path
+from rag.observability.sink import read_turn_log, turns_with_feedback
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.sparse import BM25Index, bm25_index_path
 from rag.vectorstore.factory import get_vector_store
@@ -352,7 +354,9 @@ def _cmd_chat(args: argparse.Namespace) -> None:
     """
 
     config = load_config(args.config)
-    chat_service = build_chat_service(config, corpora=args.corpus)
+    chat_service = build_chat_service(
+        config, corpora=args.corpus, turn_sink=get_turn_sink(config.observability.turn_log)
+    )
 
     print(f"\nQuestion: {args.query!r}")
     print(f"LLM: {config.llm.provider}:{config.llm.model} ({config.llm.base_url})")
@@ -394,6 +398,67 @@ def _cmd_chat(args: argparse.Namespace) -> None:
             preview = citation.text[:160].replace("\n", " ")
             print(f"\n[{rank}] score={citation.score:.3f}  {label}")
             print(f"  {preview}{'...' if len(preview) == 160 else ''}")
+
+    _print_turn_metrics(result.stage_ms, result.total_ms, result.llm_calls,
+                        result.prompt_tokens, result.completion_tokens)
+    if result.citations:
+        print(f"Cited in the answer: {len(result.cited_chunk_ids)} of {len(result.citations)} passage(s)")
+    if result.turn_id and config.observability.turn_log.provider != "none":
+        print(f"Turn {result.turn_id} logged to {turn_log_path(config.observability.turn_log)}")
+
+
+def _print_turn_metrics(
+    stage_ms: dict[str, float],
+    total_ms: float | None,
+    llm_calls: int,
+    prompt_tokens: int | None,
+    completion_tokens: int | None,
+) -> None:
+    tokens = (
+        f", {'?' if prompt_tokens is None else prompt_tokens} prompt -> "
+        f"{'?' if completion_tokens is None else completion_tokens} generated tokens"
+        if prompt_tokens is not None or completion_tokens is not None
+        else ""
+    )
+    total = f"{total_ms:.0f} ms" if total_ms is not None else "?"
+    print(f"\nTurn: {total} total, {llm_calls} LLM call(s){tokens}")
+    if stage_ms:
+        print("  " + ", ".join(f"{stage} {ms:.0f} ms" for stage, ms in stage_ms.items()))
+
+
+def _cmd_turns(args: argparse.Namespace) -> None:
+    """Print the most recent logged chat turns, with any feedback given on them.
+
+    The read side of Milestone 12's turn log: a quick way to find the turns
+    worth turning into eval samples (`--feedback down`) without writing a script.
+    """
+
+    config = load_config(args.config)
+    turn_log = config.observability.turn_log
+    if turn_log.provider != "jsonl":
+        print(f"Turn log provider is {turn_log.provider!r}; only 'jsonl' can be read back.")
+        return
+    path = turn_log_path(turn_log)
+    pairs = turns_with_feedback(read_turn_log(path))
+    if args.feedback == "any":
+        pairs = [(turn, fb) for turn, fb in pairs if fb is not None]
+    elif args.feedback in ("up", "down"):
+        pairs = [(turn, fb) for turn, fb in pairs if fb is not None and fb.get("rating") == args.feedback]
+
+    print(f"{path}: showing {min(args.show, len(pairs))} of {len(pairs)} matching turn(s)")
+    for turn, fb in pairs[-args.show:] if args.show else []:
+        rating = f"  feedback={fb['rating']}" if fb else ""
+        print(f"\n[{turn.get('timestamp')}] {turn.get('turn_id')}  outcome={turn.get('outcome')}{rating}")
+        print(f"  Q: {turn.get('query')!r}")
+        if turn.get("rewritten_query"):
+            print(f"  searched for: {turn['rewritten_query']!r}")
+        answer = (turn.get("answer") or turn.get("error") or "").replace("\n", " ")
+        print(f"  A: {answer[:200]}{'...' if len(answer) > 200 else ''}")
+        print(f"  shown={len(turn.get('shown_chunk_ids', []))} cited={turn.get('cited_chunk_ids', [])}")
+        _print_turn_metrics(turn.get("stage_ms", {}), turn.get("total_ms"), turn.get("llm_calls", 0),
+                            turn.get("prompt_tokens"), turn.get("completion_tokens"))
+        if fb and fb.get("comment"):
+            print(f"  comment: {fb['comment']!r}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -453,6 +518,14 @@ def build_parser() -> argparse.ArgumentParser:
     chat = subparsers.add_parser("chat", help="Ask a question and get a generated, cited answer (retrieve -> rerank -> generate)", parents=[corpus_args])
     chat.add_argument("query", help="The question to ask")
     chat.set_defaults(func=_cmd_chat)
+
+    turns = subparsers.add_parser("turns", help="Show recently logged chat turns and their feedback")
+    turns.add_argument("--show", type=int, default=10, metavar="N", help="How many of the most recent turns to print")
+    turns.add_argument(
+        "--feedback", choices=["all", "any", "up", "down"], default="all",
+        help="Filter by feedback: all turns, turns with any rating, or only thumbs up/down",
+    )
+    turns.set_defaults(func=_cmd_turns)
 
     return parser
 

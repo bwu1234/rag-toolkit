@@ -21,6 +21,7 @@ from rag.api.routes.chat import router as chat_router
 from rag.config.settings import load_config
 from rag.generation.builder import build_chat_service
 from rag.logging_config import configure_logging
+from rag.observability.factory import get_turn_sink
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     config = load_config()
     logger.info("Building chat service (embedding=%s, vector_store=%s, reranker=%s, llm=%s)",
                 config.embedding.provider, config.vector_store.provider, config.reranker.provider, config.llm.provider)
-    app.state.chat_service = build_chat_service(config)
+    app.state.turn_sink = get_turn_sink(config.observability.turn_log)
+    app.state.chat_service = build_chat_service(config, turn_sink=app.state.turn_sink)
 
     if _mcp_app is None:
         yield

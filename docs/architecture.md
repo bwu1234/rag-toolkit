@@ -106,7 +106,8 @@ flowchart TD
     RL -- nothing survives --> NC[no-context answer<br/>no LLM call]
     P --> G[LLMClient.generate]
     G --> GC[GroundednessChecker<br/><i>optional, may regenerate</i>]
-    GC --> A[ChatAnswer<br/>answer + citations + diagnostics]
+    GC --> A[ChatAnswer<br/>answer + citations + diagnostics<br/>+ latency, LLM usage, cited ids]
+    A -. TurnRecord .-> TS[(TurnSink<br/><i>if wired in</i>)]
 ```
 
 ### `Retriever.retrieve`
@@ -156,9 +157,10 @@ get an identically configured stack from the same config:
 | Entrypoint | Builder | Gets | Notes |
 |---|---|---|---|
 | `rag.cli retrieve` | `build_retriever` | passages | |
-| `rag.cli chat` | `build_chat_service` | answer | single turn, no history |
-| API `POST /chat` | `build_chat_service` | answer | built once in the app lifespan; takes history |
-| Streamlit UI | `build_chat_service` | answer | passes `on_event` for the live trace |
+| `rag.cli chat` | `build_chat_service` | answer | single turn, no history; logs the turn |
+| API `POST /chat` | `build_chat_service` | answer | built once in the app lifespan; takes history; logs the turn |
+| API `POST /feedback` | — | — | appends a rating to the turn log |
+| Streamlit UI | `build_chat_service` | answer | passes `on_event` for the live trace; logs turns and thumbs up/down |
 | MCP `rag_search` | `build_retriever` | passages | one cached `Retriever` per selection |
 | `rag.eval.retrieval_eval` | `build_retriever` | passages | |
 | `rag.eval.answer_eval` | `build_chat_service` | answer | plus an LLM judge |
@@ -185,8 +187,19 @@ Two consequences worth knowing:
   `LLMClient` and hands it to the expander, condenser and every CRAG component.
 - **Pipeline events.** `Retriever` and `ChatService` accept an optional
   `on_event` callback (`rag/events.py`) and call it once per completed stage
-  with a timed `PipelineEvent`. Purely observational — the UI's trace is the
-  only current consumer, and it is the natural hook for Milestone 12.
+  with a timed `PipelineEvent`. Purely observational. `ChatService.ask` always
+  tees the stream into the turn's own trace, which is where `ChatAnswer.stage_ms`
+  and the persisted event list come from; the UI's live trace is the other
+  consumer.
+- **Turn records and metering (`rag/observability/`).** `build_chat_service`
+  wraps the shared `LLMClient` in a `MeteredLLMClient`, so every LLM call a
+  turn makes — from any component — is counted into that turn's
+  `llm_calls`/tokens via a context-local meter. With a `TurnSink` passed in
+  (the API, the UI and `cli chat` do; the eval runners don't), each turn —
+  including one that raises — is written as one `TurnRecord`, and feedback
+  from the UI or `POST /feedback` is appended to the same store, joined on
+  `turn_id` at read time (`cli turns`).
+  ([Milestone 12 notes](milestone-notes.md#observability-notes-milestone-12))
 - **Diagnostics travel with results.** `RetrievalResult` and `ChatAnswer`
   carry what the pipeline did that the answer text can't show (rewritten query,
   expansion queries, dropped/graded-out counts, retry queries, groundedness), so
