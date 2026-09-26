@@ -233,6 +233,12 @@ matrix harness (see the judge bug below for why):
 The judge in both was **`gemma4:31b-mlx`, fixed**, a different model family from
 the generators.
 
+Scripts: `scripts/experiments/2026-09-generator-probe/` (a frozen record, not
+maintained). Raw records: `data/eval/results/probe_2026-09_*.json`, including
+every agentic query and answer behind the hand count below. The 27b pipeline
+answerable run has only its total: a crash lost its per-sample detail before
+per-phase checkpointing was added, and it was not rerun.
+
 | pipeline | answerable | refusals |
 |---|---|---|
 | `qwen3.5:9b` | 36/40 (0.900) | 14/15 |

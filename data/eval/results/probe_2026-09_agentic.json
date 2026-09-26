@@ -1,0 +1,1288 @@
+{
+ "qwen3.5:9b-mlx": [
+  {
+   "id": "AAPL_10-K_2025-09-27.md::chunk2",
+   "group": "single",
+   "answer": "Based on the search results:\n\n- **Fiscal Year 2023**: Spanned **53 weeks** [1][2][3].\n- **Fiscal Years 2024 and 2025**: Each spanned **52 weeks** [1][2][3].\n\nApple Inc.'s fiscal year 2023 was one week longer than both fiscal years 2024 and 2025. This difference occurred because an additional week was included in the first fiscal quarter of 2023 to realign the Company's fiscal quarters with calendar quarters [1][2][3].",
+   "queries": [
+    "Apple Inc fiscal year 2023 number of weeks span"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "TGT_10-K_2026-01-31.md"
+   ],
+   "gen_tokens": 172,
+   "prompt_tokens": 2739,
+   "llm_calls": 2,
+   "latency_s": 23.9,
+   "passed": true,
+   "judge": "PASS The system answer is factually consistent with and covers all details of the reference answer.",
+   "doc_hit": true
+  },
+  {
+   "id": "COST_10-Q_2026-05-10.md::chunk32",
+   "group": "single",
+   "answer": "Based on Passage [3] and Passage [4], Costco Wholesale Corp reported **net cash used in investing activities** of **$4,160 million** for the first thirty-six weeks ended May 10, 2026. This amount is primarily related to capital expenditures and includes purchases and maturities of short-term investments [3][4].",
+   "queries": [
+    "Costco Wholesale Corp net cash used in investing activities first thirty-six weeks 2026"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "COST_10-Q_2026-05-10.md",
+    "COST_10-Q_2026-05-10.md",
+    "COST_10-Q_2026-05-10.md",
+    "COST_10-Q_2026-05-10.md",
+    "LUV_10-Q_2026-06-30.md"
+   ],
+   "gen_tokens": 117,
+   "prompt_tokens": 2339,
+   "llm_calls": 2,
+   "latency_s": 11.1,
+   "passed": true,
+   "judge": "PASS The system answer is factually consistent with the reference answer.",
+   "doc_hit": true
+  },
+  {
+   "id": "DAL_10-K_2025-12-31.md::chunk40",
+   "group": "single",
+   "answer": "Based on the search results, Delta Air Lines' total principal debt amount (including debt and finance leases) as of December 31, 2025, was **$14.1 billion** [1].",
+   "queries": [
+    "Delta Air Lines total principal debt amount December 31 2025"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "DAL_10-K_2025-12-31.md",
+    "DAL_10-K_2024-12-31.md",
+    "DAL_10-K_2025-12-31.md",
+    "DAL_10-K_2024-12-31.md",
+    "DAL_10-K_2025-12-31.md"
+   ],
+   "gen_tokens": 86,
+   "prompt_tokens": 2437,
+   "llm_calls": 2,
+   "latency_s": 7.1,
+   "passed": true,
+   "judge": "PASS",
+   "doc_hit": true
+  },
+  {
+   "id": "JNJ_10-K_2025-12-28.md::chunk43",
+   "group": "single",
+   "answer": "Based on the filings, Johnson & Johnson's net debt position as of December 28, 2025, was **$27.8 billion**. This represents an increase from the prior year's net debt position of $12.1 billion [1].",
+   "queries": [
+    "Johnson & Johnson net debt December 28 2025 balance sheet"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "JNJ_10-K_2025-12-28.md",
+    "JNJ_10-K_2025-12-28.md",
+    "JNJ_10-Q_2026-06-28.md",
+    "JNJ_10-K_2025-12-28.md",
+    "JNJ_10-Q_2026-06-28.md"
+   ],
+   "gen_tokens": 96,
+   "prompt_tokens": 2629,
+   "llm_calls": 2,
+   "latency_s": 7.8,
+   "passed": true,
+   "judge": "PASS",
+   "doc_hit": true
+  },
+  {
+   "id": "LUV_10-Q_2026-03-31.md::chunk17",
+   "group": "single",
+   "answer": "The year-over-year percentage increase in Salaries, wages, and benefits expense for Southwest Airlines Co in the first quarter of 2026 was **6.3 percent** [1].",
+   "queries": [
+    "Southwest Airlines Co Salaries wages benefits expense year-over-year percentage increase first quarter 2026"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-06-30.md",
+    "LUV_10-Q_2026-06-30.md"
+   ],
+   "gen_tokens": 84,
+   "prompt_tokens": 2661,
+   "llm_calls": 2,
+   "latency_s": 7.6,
+   "passed": true,
+   "judge": "PASS",
+   "doc_hit": true
+  },
+  {
+   "id": "MRK_10-Q_2026-06-30.md::chunk52",
+   "group": "single",
+   "answer": "Based on Passage [1] from the second quarter of 2026 filing for Merck & Co., Inc., sales of Lagevrio decreased **95%** in the second quarter of 2026, largely due to lower demand in Japan and the U.S. driven primarily by declining COVID-19 cases.",
+   "queries": [
+    "Merck & Co., Inc. Lagevrio sales second quarter 2026 percentage decrease"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "MRK_10-Q_2026-06-30.md",
+    "MRK_10-Q_2025-09-30.md",
+    "MRK_10-Q_2026-06-30.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-K_2025-12-31.md"
+   ],
+   "gen_tokens": 112,
+   "prompt_tokens": 3001,
+   "llm_calls": 2,
+   "latency_s": 9.2,
+   "passed": true,
+   "judge": "PASS",
+   "doc_hit": true
+  },
+  {
+   "id": "NVDA_10-K_2026-01-25.md::chunk38",
+   "group": "single",
+   "answer": "As of January 25, 2026, the amount of outstanding commercial paper for NVIDIA Corp was $0 [2]. The company had increased its commercial paper program limit to $25.0 billion in January 2026, but no commercial paper was outstanding as of that date.",
+   "queries": [
+    "NVIDIA Corp outstanding commercial paper January 25 2026"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "NVDA_10-K_2026-01-25.md",
+    "NVDA_10-K_2026-01-25.md",
+    "NVDA_10-Q_2026-04-26.md",
+    "NVDA_10-Q_2025-07-27.md",
+    "NVDA_10-Q_2025-10-26.md"
+   ],
+   "gen_tokens": 102,
+   "prompt_tokens": 2302,
+   "llm_calls": 2,
+   "latency_s": 6.6,
+   "passed": true,
+   "judge": "PASS The system answer is factually consistent with the reference answer.",
+   "doc_hit": true
+  },
+  {
+   "id": "TGT_10-K_2025-02-01.md::chunk40",
+   "group": "single",
+   "answer": "Based on Passage [1] from TARGET CORP's 2024 Form 10-K, if average claim costs had increased by 10 percent, it would have impacted the company's self-insurance expense by **$77 million** in 2024.",
+   "queries": [
+    "TARGET CORP self-insurance expense 2024 average claim costs"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "TGT_10-K_2025-02-01.md",
+    "TGT_10-K_2026-01-31.md",
+    "COST_10-K_2024-09-01.md",
+    "COST_10-K_2024-09-01.md",
+    "COST_10-K_2024-09-01.md"
+   ],
+   "gen_tokens": 98,
+   "prompt_tokens": 2257,
+   "llm_calls": 2,
+   "latency_s": 6.6,
+   "passed": true,
+   "judge": "PASS",
+   "doc_hit": true
+  },
+  {
+   "id": "UAL_10-Q_2026-03-31.md::chunk11",
+   "group": "single",
+   "answer": "United Airlines Holdings, Inc.'s aircraft fuel expense increased **$339 million** in the first quarter of 2026 compared to the year-ago period [1].",
+   "queries": [
+    "United Airlines Holdings Inc aircraft fuel expense first quarter 2026 year-ago period dollar increase"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "UAL_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-06-30.md",
+    "UAL_10-Q_2026-06-30.md"
+   ],
+   "gen_tokens": 82,
+   "prompt_tokens": 2500,
+   "llm_calls": 2,
+   "latency_s": 7.4,
+   "passed": true,
+   "judge": "PASS",
+   "doc_hit": true
+  },
+  {
+   "id": "WMT_10-Q_2025-07-31.md::chunk6",
+   "group": "single",
+   "answer": "The comparable sales growth percentage for the Walmart U.S. segment for the three months ended July 31, 2025, was **4.7%** [1][2][3][4].",
+   "queries": [
+    "Walmart U.S. segment comparable sales growth percentage three months ended July 31 2025"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-K_2025-01-31.md"
+   ],
+   "gen_tokens": 89,
+   "prompt_tokens": 2999,
+   "llm_calls": 2,
+   "latency_s": 8.8,
+   "passed": true,
+   "judge": "PASS",
+   "doc_hit": true
+  },
+  {
+   "id": "neg-entity-tesla-margin",
+   "group": "refusal",
+   "answer": "The provided search results do not contain information about Tesla's automotive gross margin for the quarter ended June 2026. The only document retrieved that mentions a \"quarter ended June 2026\" is from Apple (AAPL), and other documents are from NVIDIA, Merck, Delta Air Lines, and Costco. Therefore, I cannot answer the question based on the available passages.",
+   "queries": [
+    "Tesla automotive gross margin quarter ended June 2026"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-Q_2026-06-27.md",
+    "NVDA_10-Q_2025-10-26.md",
+    "MRK_10-Q_2026-06-30.md",
+    "DAL_10-Q_2026-06-30.md",
+    "COST_10-Q_2026-05-10.md"
+   ],
+   "gen_tokens": 115,
+   "prompt_tokens": 2607,
+   "llm_calls": 2,
+   "latency_s": 8.3,
+   "passed": true,
+   "judge": "PASS The system correctly stated it could not find the information."
+  },
+  {
+   "id": "neg-period-aapl-2015",
+   "group": "refusal",
+   "answer": "The provided search results do not contain information about Apple's total net sales for fiscal year 2015. The documents retrieved cover fiscal years 2022 through 2026 and a portion of 2027, but do not include data for fiscal year 2015.",
+   "queries": [
+    "Apple total net sales fiscal year 2015"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-Q_2025-12-27.md",
+    "AAPL_10-Q_2026-06-27.md"
+   ],
+   "gen_tokens": 99,
+   "prompt_tokens": 3191,
+   "llm_calls": 2,
+   "latency_s": 9.5,
+   "passed": true,
+   "judge": "PASS"
+  },
+  {
+   "id": "neg-scope-wmt-board",
+   "group": "refusal",
+   "answer": "Based on the provided search results, the specific list of individuals serving on Walmart's board of directors is not included in the text snippets. The available passages contain financial tables and management discussion overviews [4, 6, 8, 10] but do not list the board members. The previous search returned board member lists for Costco (COST) rather than Walmart (WMT) [1, 3].\n\nTherefore, I cannot answer who serves on Walmart's board of directors from the provided passages.",
+   "queries": [
+    "Walmart board of directors members names roles fiscal 2024",
+    "Walmart Inc WMT board of directors members names roles fiscal year 2024 January 31"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "COST_10-K_2025-08-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "COST_10-K_2024-09-01.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-K_2026-01-31.md",
+    "WMT_10-K_2026-01-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-Q_2025-10-31.md",
+    "WMT_10-Q_2025-07-31.md"
+   ],
+   "gen_tokens": 496,
+   "prompt_tokens": 7043,
+   "llm_calls": 3,
+   "latency_s": 27.0,
+   "passed": true,
+   "judge": "PASS The system correctly stated it could not answer the question from the provided passages."
+  },
+  {
+   "id": "neg-cross-corpus-acs-auth",
+   "group": "refusal",
+   "answer": "I cannot answer this question based on the provided SEC 10-K/10-Q filings. The documents contain financial and operational data for US public companies but do not include technical documentation or specifications regarding the Authentication Control System (ACS) API or its authentication headers.",
+   "queries": [],
+   "bad_calls": 0,
+   "docs": [],
+   "gen_tokens": 53,
+   "prompt_tokens": 458,
+   "llm_calls": 1,
+   "latency_s": 1.5,
+   "passed": true,
+   "judge": "PASS The system correctly stated it cannot answer based on the provided documents."
+  },
+  {
+   "id": "mh-airlines-rev",
+   "group": "multi",
+   "answer": "Based on the search results, here is the comparison of total operating revenue for fiscal year 2025:\n\n*   **Delta Air Lines:** Total operating revenue for the full fiscal year ended December 31, 2025 was **$63,364 million** [2].\n*   **United Airlines:** The search results do not contain a specific table showing United Airlines' total operating revenue for the full fiscal year 2025. Passage [6] mentions that passenger revenue increased by $1.6 billion in 2025 compared to 2024, but it does not state the total operating revenue figure for the full year [6].\n\nTherefore, a direct comparison of the **total** operating revenue for both companies for fiscal year 2025 cannot be made with the provided passages.",
+   "queries": [
+    "Delta Air Lines total operating revenue fiscal year 2025",
+    "United Airlines total operating revenue fiscal year 2025"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "DAL_10-Q_2025-09-30.md",
+    "DAL_10-K_2025-12-31.md",
+    "DAL_10-Q_2026-06-30.md",
+    "DAL_10-Q_2025-09-30.md",
+    "DAL_10-Q_2026-03-31.md",
+    "UAL_10-K_2025-12-31.md",
+    "LUV_10-K_2025-12-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2025-09-30.md",
+    "UAL_10-Q_2026-03-31.md"
+   ],
+   "gen_tokens": 250,
+   "prompt_tokens": 5559,
+   "llm_calls": 2,
+   "latency_s": 24.4,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer correctly identifies Delta's total operating revenue from passage [2] and accurately states that the provided passages do not contain the total operating revenue figure for United Air",
+   "pipeline": {
+    "answer": "Based on the provided passages, it is **not possible** to compare Delta Air Lines' and United Airlines' total operating revenue for fiscal year 2025.\n\nThe documents contain detailed financial data for **Delta Air Lines, Inc.** for the fiscal year ended December 31, 2025:\n*   Delta's Total Operating Revenue for 2025 was **$63,364 million** [3].\n\nHowever, none of the provided passages (Passages [1] through [5]) contain any financial information, revenue figures, or mentions regarding **United Airlines**. Therefore, a comparison cannot be made using only the supplied context.",
+    "passed": true,
+    "judge": "PASS\n\nThe answer correctly identifies Delta's 2025 total operating revenue from the provided text and explicitly states that the passages do not cover United Airlines, making a comparison impossible.",
+    "latency_s": 57.2
+   }
+  },
+  {
+   "id": "mh-lease",
+   "group": "multi",
+   "answer": "Based on the search results, **Apple** reported larger fixed lease payment obligations in its most recent 10-K (fiscal year ended September 28, 2024) compared to Microsoft's data available in the provided passages.\n\n*   **Apple**: As of September 28, 2024, Apple had fixed lease payment obligations of **$15.6 billion** [3][9].\n*   **Microsoft**: The search results for Microsoft (Passages [6] and [7]) discuss the company's financial condition and results of operations but do not contain specific figures for fixed lease payment obligations in the most recent 10-K periods provided.\n\nTherefore, based on the available data, Apple reported larger fixed lease payment obligations ($15.6 billion) than Microsoft (data not found).",
+   "queries": [
+    "Apple fixed lease payment obligations 10-K fiscal year 2024",
+    "Microsoft fixed lease payment obligations 10-K fiscal year 2024"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2024-09-28.md",
+    "MSFT_10-K_2025-06-30.md",
+    "MSFT_10-K_2026-06-30.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2024-09-28.md",
+    "DAL_10-K_2024-12-31.md"
+   ],
+   "gen_tokens": 253,
+   "prompt_tokens": 3858,
+   "llm_calls": 2,
+   "latency_s": 20.2,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer correctly identifies Apple's fixed lease payment obligations ($15.6 billion) from the provided passages and explicitly states that the figures for Microsoft were not available in the ",
+   "pipeline": {
+    "answer": "Based on the provided passages, **Apple** reported larger fixed lease payment obligations in its most recent 10-K compared to Microsoft.\n\nAccording to Passage [3], which details Apple's 2024 Form 10-K (filed September 28, 2024), the Company had fixed lease payment obligations of **$15.6 billion** [3]. In contrast, Passage [1] regarding Microsoft's 2025 Form 10-K discusses its financial condition and results of operations but does not contain specific figures for fixed lease payment obligations [1]. Therefore, based on the available data, Apple's reported obligation is larger.",
+    "passed": false,
+    "judge": "FAIL The answer asserts that Apple's obligations are larger than Microsoft's, but the provided passages for Microsoft do not contain any figures for lease obligations. A comparison cannot be establish",
+    "latency_s": 42.3
+   }
+  },
+  {
+   "id": "mh-retail-comps",
+   "group": "multi",
+   "answer": "Based on the most recent reported quarters available in the filings:\n\n**Walmart:**\n*   **Most Recent Quarter (ended April 30, 2026):** Walmart's U.S. comparable sales increased by **4.3%**, driven by growth in transactions and average ticket, reflecting strength in grocery and general merchandise [5].\n    *   *(Note: The next most recent quarter ended July 31, 2025, saw a 4.7% increase [1].)*\n\n**Target:**\n*   **Most Recent Quarter (ended August 2, 2025):** Target's comparable sales **decreased by 1.9%**, reflecting a 1.3% decrease in traffic and a 0.6% decrease in average transaction amount [6].\n    *   *(Note: The quarter ended November 1, 2025, saw a larger decrease of 2.7% [7].)*",
+   "queries": [
+    "Walmart comparable sales change most recent quarter",
+    "Target comparable sales change most recent quarter"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2025-10-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-Q_2026-04-30.md",
+    "TGT_10-Q_2025-08-02.md",
+    "TGT_10-Q_2025-11-01.md",
+    "TGT_10-Q_2025-08-02.md",
+    "TGT_10-Q_2025-11-01.md",
+    "TGT_10-Q_2025-08-02.md"
+   ],
+   "gen_tokens": 268,
+   "prompt_tokens": 4635,
+   "llm_calls": 2,
+   "latency_s": 26.3,
+   "entity_coverage": 1.0,
+   "passed": false,
+   "judge": "FAIL Target's most recent reported quarter in the provided passages is the one ended November 1, 2025 (passage [7]), but the answer identifies the quarter ended August 2, 2025 (passage [6]) as the mos",
+   "pipeline": {
+    "answer": "Based on the provided passages, here is how Walmart's and Target's comparable sales changed in their most recent reported quarters:\n\n**Walmart:**\n*   **Most Recent Quarter (Three Months Ended April 30, 2026):** Walmart U.S. comparable sales increased by **4.3%** [1]. This growth was driven by increases in both transactions and average ticket, reflecting strength in grocery and general merchandise [1].\n*   **Previous Reported Quarter (Three Months Ended October 31, 2025):** For comparison, the prior quarter showed a comparable sales increase of **4.8%** for Walmart U.S., driven by growth in average ticket and transactions [2].\n\n**Target:**\n*   **Most Recent Quarter (Second Quarter Ended August 2, 2025):** Target's comparable sales **decreased by 1.9%**. This decline was attributed to a 1.3% decrease in traffic and a 0.6% decrease in the average transaction amount [5].",
+    "passed": true,
+    "judge": "PASS\n\nThe answer correctly identifies the most recent reported quarter for Walmart (three months ended April 30, 2026) and Target (second quarter ended August 2, 2025) and provides the specific compar",
+    "latency_s": 46.3
+   }
+  },
+  {
+   "id": "mh-pharma-ira",
+   "group": "multi",
+   "answer": "Based on the search results, here is what each company said regarding Medicare drug price negotiation under the Inflation Reduction Act (IRA):\n\n**Merck:**\nMerck acknowledges that the IRA created significant changes to Medicare coverage and payment, including government price setting for certain Medicare Part D drugs starting in 2026 [2]. The company notes that HHS selected its diabetes products\u2014Januvia (sitagliptin), Janumet, and Janumet XR\u2014for the IRA's \"Drug Price Negotiation Program.\" Specifically, a price was set for Januvia effective January 1, 2026, and prices were set for Janumet and Janumet XR effective January 1, 2027 [4]. Merck states that these government-set prices will impact its business.\n\n**Johnson & Johnson:**\nJ&J (specifically its Janssen subsidiary) filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program, arguing it violates rights under the First and Fifth Amendments [9][13]. The company states that while CMS has publicly announced maximum fair prices for selected drugs, the implementation of the program remains ongoing and the impact on J&J's business is uncertain due to this pending litigation [9].\n\n**Pfizer:**\nThe search results do not contain specific information about Pfizer's statements regarding Medicare drug price negotiation under the Inflation Reduction Act. The available passages focus on Merck and Johnson & Johnson, with no corresponding data for Pfizer in the provided filings.",
+   "queries": [
+    "Merck Medicare drug price negotiation Inflation Reduction Act",
+    "Pfizer Medicare drug price negotiation Inflation Reduction Act",
+    "Johnson & Johnson Medicare drug price negotiation Inflation Reduction Act"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "MRK_10-Q_2025-09-30.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-K_2025-12-31.md",
+    "MRK_10-Q_2026-03-31.md",
+    "MRK_10-K_2025-12-31.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-Q_2025-09-30.md",
+    "MRK_10-Q_2026-03-31.md",
+    "JNJ_10-K_2024-12-29.md",
+    "MRK_10-K_2025-12-31.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-Q_2025-09-30.md",
+    "JNJ_10-K_2024-12-29.md",
+    "MRK_10-Q_2026-06-30.md",
+    "MRK_10-K_2025-12-31.md"
+   ],
+   "gen_tokens": 424,
+   "prompt_tokens": 4860,
+   "llm_calls": 2,
+   "latency_s": 27.5,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer accurately summarizes the statements from Merck and Johnson & Johnson based on the provided passages and explicitly states that the passages did not cover Pfizer.",
+   "pipeline": {
+    "answer": "Based on the provided passages, there is no information regarding what **Pfizer** or **Johnson & Johnson** said about Medicare drug price negotiation under the Inflation Reduction Act. The text exclusively discusses the actions and impacts of the Inflation Reduction Act (IRA) on **Merck** [1][2][3][4][5].\n\nRegarding Merck's position, the passages state that the IRA made significant changes to how drugs are covered and paid for under the Medicare program, including \"government price setting for certain Medicare Part D drugs (starting in 2026) and Medicare Part B drugs (starting in 2028)\" [1][2][4]. Additionally, Merck noted that these government price-setting measures \"may also impact pricing in the private market\" [2].",
+    "passed": true,
+    "judge": "PASS\n\nThe answer correctly identifies that the provided passages only contain information for Merck and explicitly states that information for Pfizer and Johnson & Johnson is missing. The details prov",
+    "latency_s": 32.6
+   }
+  },
+  {
+   "id": "mh-luv-fuel",
+   "group": "multi",
+   "answer": "Southwest Airlines' average economic fuel cost per gallon decreased from **$2.66** in fiscal 2024 to **$2.41** in fiscal 2025, a reduction of **$0.25 per gallon**.\n\nThis change is detailed as follows:\n*   **Fiscal 2024:** The average economic fuel cost was $2.66 per gallon (net of approximately $53 million in cash settlements from hedging activities) [1].\n*   **Fiscal 2025:** The average economic fuel cost was $2.41 per gallon with no cash settlements from hedging activities, compared to the prior year [2].\n\nThe decrease was primarily attributable to a decline in jet fuel prices [2].",
+   "queries": [
+    "Southwest Airlines average fuel cost per gallon fiscal 2024 fiscal 2025"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "LUV_10-K_2024-12-31.md",
+    "LUV_10-K_2025-12-31.md",
+    "LUV_10-Q_2025-09-30.md",
+    "DAL_10-Q_2025-09-30.md",
+    "LUV_10-Q_2025-09-30.md"
+   ],
+   "gen_tokens": 208,
+   "prompt_tokens": 2669,
+   "llm_calls": 2,
+   "latency_s": 15.8,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer accurately reports the average economic fuel costs for fiscal 2024 ($2.66) and fiscal 2025 ($2.41) as stated in passages [1] and [2], correctly calculates the difference ($0.25), and ",
+   "pipeline": {
+    "answer": "Southwest Airlines' average economic fuel cost per gallon decreased from **$2.66** in fiscal 2024 to **$2.41** in fiscal 2025 [3]. This represents a decrease of $0.25 per gallon.\n\nThis change was primarily attributable to a decrease in fuel prices, although the text notes that for the full year comparison, this decrease was partially offset by an increase in fuel gallons consumed on a dollar basis [4]. The 2024 figure of $2.66 was net of approximately $53 million in cash settlements from hedging activities, while the 2025 figure of $2.41 had no cash settlements from hedging activities [3][4].",
+    "passed": false,
+    "judge": "FAIL\n\nReason: The answer incorrectly attributes the claim that the decrease was \"partially offset by an increase in fuel gallons consumed\" to the change between 2024 and 2025. Passage [4] explicitly s",
+    "latency_s": 40.1
+   }
+  },
+  {
+   "id": "mh-superlative",
+   "group": "multi",
+   "answer": "Based on the search results, only **Target (TGT)** explicitly reports an \"Operating income margin rate\" in its last quarter (Three Months Ended November 1, 2025), which was **3.8%** [4].\n\nThe other companies mentioned in the snippets\u2014**Apple (AAPL)** and **NVIDIA (NVDA)**\u2014provide data on operating expenses or gross margins but do not explicitly state their operating margin percentages for the most recent quarter in the provided text. Without explicit operating margin figures for AAPL and NVDA, it is impossible to definitively determine which company had the highest operating margin last quarter among all companies in the corpus.\n\nTherefore, based strictly on the available passages, **Target (TGT)** has the only reported operating margin for its last quarter, at 3.8%.",
+   "queries": [
+    "operating margin last quarter fiscal 2024-2026 companies"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-Q_2025-12-27.md",
+    "NVDA_10-Q_2025-10-26.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "TGT_10-Q_2025-11-01.md",
+    "NVDA_10-Q_2025-07-27.md"
+   ],
+   "gen_tokens": 210,
+   "prompt_tokens": 2923,
+   "llm_calls": 2,
+   "latency_s": 16.4,
+   "entity_coverage": null,
+   "passed": true,
+   "judge": "PASS\n\nThe answer correctly identifies that only Target (TGT) provides an explicit operating margin percentage (3.8%) in the provided text. It accurately notes that while Apple (AAPL) and NVIDIA (NVDA)",
+   "pipeline": {
+    "answer": "Based on the provided passages, **Target (TGT)** had the highest operating margin last quarter.\n\nAccording to Passage [5], which covers Target's financials for the three months ended November 1, 2025 (the most recent \"last quarter\" data available in the text), the **Operating income margin rate** was **3.8%** [5].\n\nIn contrast, the other companies' operating margins for their respective \"last quarters\" reported are lower:\n*   **Walmart (WMT):** For the three months ended April 30, 2026, Passage [4] states that \"Operating income as a percentage of net sales **decreased 8 basis points**,\" implying the margin was lower than the previous year's rate. Since Walmart's gross margins were impacted by higher fuel and eCommerce costs while advertising growth only partially offset these, the operating margin decline indicates it was not the highest [4].\n*   **Apple (AAPL):** Passage [1] and Passage [3] discuss Apple's operating expenses but do not explicitly state the operating income margin rate for the three months ended June 2026 or March 2026, only noting that gross margins face downward pressure [1][3].\n\nTherefore, with a reported operating income margin rate of 3.8%, Target is the highest among the companies with explicit margin data in this corpus.",
+    "passed": false,
+    "judge": "FAIL The answer asserts that Target had the highest operating margin, but the passages do not provide the actual operating margin for Walmart or Apple, making a comparison impossible. Specifically, it",
+    "latency_s": 48.6
+   }
+  }
+ ],
+ "qwen3.8:27b-mlx": [
+  {
+   "id": "AAPL_10-K_2025-09-27.md::chunk2",
+   "group": "single",
+   "answer": "Based on Apple's 10-K filings, the number of weeks in each fiscal year was:\n\n- **Fiscal year 2023:** 53 weeks\n- **Fiscal year 2024:** 52 weeks\n- **Fiscal year 2025:** 52 weeks\n\nApple's fiscal year is defined as the 52- or 53-week period ending on the last Saturday of September. An extra week is added in the first fiscal quarter every five or six years to realign fiscal quarters with calendar quarters, which is why fiscal 2023 had 53 weeks while 2024 and 2025 each had 52 weeks [1][2][3].",
+   "queries": [
+    "Apple fiscal year 2023 2024 2025 number of weeks"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "TGT_10-K_2026-01-31.md"
+   ],
+   "gen_tokens": 203,
+   "prompt_tokens": 2751,
+   "llm_calls": 2,
+   "latency_s": 59.0,
+   "passed": true,
+   "judge": "PASS The system answer is factually consistent with and covers all details of the reference answer.",
+   "doc_hit": true
+  },
+  {
+   "id": "COST_10-Q_2026-05-10.md::chunk32",
+   "group": "single",
+   "answer": "Based on the Costco Wholesale Corp 10-Q filing for the period ended May 10, 2026, **net cash used in investing activities totaled $4,160 million** in the first thirty-six weeks of 2026, compared to $3,343 million in the same period of 2025 [2][3]. This was primarily related to capital expenditures, and also included purchases and maturities of short-term investments [2].",
+   "queries": [
+    "Costco Wholesale net cash used in investing activities first thirty-six weeks 2026"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "COST_10-Q_2026-05-10.md",
+    "COST_10-Q_2026-05-10.md",
+    "COST_10-Q_2026-05-10.md",
+    "COST_10-Q_2026-05-10.md",
+    "LUV_10-Q_2026-06-30.md"
+   ],
+   "gen_tokens": 143,
+   "prompt_tokens": 2342,
+   "llm_calls": 2,
+   "latency_s": 41.2,
+   "passed": true,
+   "judge": "PASS The system answer matches the reference answer.",
+   "doc_hit": true
+  },
+  {
+   "id": "DAL_10-K_2025-12-31.md::chunk40",
+   "group": "single",
+   "answer": "According to Delta Air Lines' 2025 Form 10-K, the total principal amount of Delta's debt and finance leases was **$14.1 billion** as of December 31, 2025 [1]. This represented a decrease from $16.2 billion at December 31, 2024 [2].\n\nThe filing also notes that during 2025, Delta had financing cash outflows of $4.8 billion related to repayment of debt and finance leases, including $2.9 billion for early repayments, while issuing $2.0 billion in aggregate principal amount of unsecured notes [3].",
+   "queries": [
+    "Delta Air Lines total principal amount of debt December 31 2025"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "DAL_10-K_2025-12-31.md",
+    "DAL_10-K_2024-12-31.md",
+    "DAL_10-K_2025-12-31.md",
+    "DAL_10-K_2024-12-31.md",
+    "DAL_10-K_2025-12-31.md"
+   ],
+   "gen_tokens": 181,
+   "prompt_tokens": 2442,
+   "llm_calls": 2,
+   "latency_s": 24.5,
+   "passed": true,
+   "judge": "PASS The system answer matches the reference answer.",
+   "doc_hit": true
+  },
+  {
+   "id": "JNJ_10-K_2025-12-28.md::chunk43",
+   "group": "single",
+   "answer": "Based on the search results, Johnson & Johnson's net debt position as of December 28, 2025 was **$27.8 billion**, compared to $12.1 billion in the prior year (2024). [1]\n\nThe filing also notes that the total debt balance at the end of 2025 was $47.9 billion, up from $36.6 billion in 2024. The increase was largely driven by $9.2 billion in senior unsecured notes issued in the first quarter of 2025, with net proceeds used to fund the Intra-Cellular Therapies, Inc. acquisition (approximately $14.5 billion, which closed April 2, 2025) and for general corporate purposes. [1]",
+   "queries": [
+    "Johnson & Johnson net debt position December 28 2025"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "JNJ_10-K_2025-12-28.md",
+    "JNJ_10-K_2025-12-28.md",
+    "JNJ_10-Q_2026-06-28.md",
+    "JNJ_10-Q_2025-09-28.md",
+    "JNJ_10-K_2025-12-28.md"
+   ],
+   "gen_tokens": 213,
+   "prompt_tokens": 2642,
+   "llm_calls": 2,
+   "latency_s": 27.8,
+   "passed": true,
+   "judge": "PASS The system answer accurately provides the net debt position of $27.8 billion as stated in the reference.",
+   "doc_hit": true
+  },
+  {
+   "id": "LUV_10-Q_2026-03-31.md::chunk17",
+   "group": "single",
+   "answer": "Based on the filings, Southwest Airlines Co's **Salaries, wages, and benefits expense for the first quarter of 2026 increased by 6.3 percent year-over-year** (a $195 million increase compared with first quarter 2025) [2].\n\nOn a per ASM (available seat mile) basis, the increase was 4.7 percent [2]. The majority of the increase was driven by contractual step/pay rate increases and related benefits for the company's workforce [2].",
+   "queries": [
+    "Southwest Airlines Salaries wages benefits expense first quarter 2026 year-over-year"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-06-30.md",
+    "LUV_10-Q_2026-06-30.md"
+   ],
+   "gen_tokens": 149,
+   "prompt_tokens": 2629,
+   "llm_calls": 2,
+   "latency_s": 31.0,
+   "passed": true,
+   "judge": "PASS The system answer correctly identifies the 6.3 percent increase.",
+   "doc_hit": true
+  },
+  {
+   "id": "MRK_10-Q_2026-06-30.md::chunk52",
+   "group": "single",
+   "answer": "Based on the Merck & Co. 10-Q filing for the period ending June 30, 2026, sales of Lagevrio decreased **95%** in the second quarter of 2026 [1]. This decline was largely driven by lower demand in Japan and the U.S., primarily due to declining COVID-19 cases. The company also noted that it expected the Lagevrio sales decline to continue during 2026.",
+   "queries": [
+    "Merck & Co. Lagevrio sales second quarter 2026 percentage decrease"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "MRK_10-Q_2026-06-30.md",
+    "MRK_10-Q_2025-09-30.md",
+    "COST_10-Q_2026-02-15.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-Q_2026-06-30.md"
+   ],
+   "gen_tokens": 140,
+   "prompt_tokens": 2551,
+   "llm_calls": 2,
+   "latency_s": 24.0,
+   "passed": true,
+   "judge": "PASS The system answer correctly identifies the 95% decrease for the second quarter.",
+   "doc_hit": true
+  },
+  {
+   "id": "NVDA_10-K_2026-01-25.md::chunk38",
+   "group": "single",
+   "answer": "As of January 25, 2026, **no commercial paper was outstanding** for NVIDIA Corp [2].\n\nThe filing notes that in January 2026 NVIDIA increased its commercial paper program to allow issuance of unsecured commercial paper notes up to $25.0 billion, but as of the fiscal year-end date of January 25, 2026, none had been issued [2].",
+   "queries": [
+    "NVIDIA Corp outstanding commercial paper January 25 2026"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "NVDA_10-K_2026-01-25.md",
+    "NVDA_10-K_2026-01-25.md",
+    "NVDA_10-Q_2026-04-26.md",
+    "NVDA_10-Q_2025-07-27.md",
+    "NVDA_10-Q_2025-10-26.md"
+   ],
+   "gen_tokens": 128,
+   "prompt_tokens": 2306,
+   "llm_calls": 2,
+   "latency_s": 20.3,
+   "passed": true,
+   "judge": "PASS The system answer is factually consistent with the reference answer.",
+   "doc_hit": true
+  },
+  {
+   "id": "TGT_10-K_2025-02-01.md::chunk40",
+   "group": "single",
+   "answer": "Based on Target Corporation's 2024 Form 10-K (fiscal year ended February 1, 2025), a 10 percent increase in average claim costs would have increased Target's self-insurance expense by **$77 million** in 2024. [1]\n\nThis figure is disclosed in Target's MD&A under \"Analysis of Financial Condition & New Accounting Pronouncements,\" where the company notes that its workers' compensation and general liability accruals could be significantly affected if future occurrences or loss developments differ from their assumptions. The $77 million sensitivity estimate applies to a 10 percent increase *or* decrease in average claim costs. [1]\n\nFor comparison, in the subsequent fiscal year (2025, ended January 31, 2026), the equivalent sensitivity figure was $87 million, reflecting the larger accrual balance of $881 million at that time. [2]",
+   "queries": [
+    "Target Corp self-insurance expense 2024 average claim costs"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "TGT_10-K_2025-02-01.md",
+    "TGT_10-K_2026-01-31.md",
+    "COST_10-K_2024-09-01.md",
+    "TGT_10-K_2026-01-31.md",
+    "TGT_10-Q_2025-08-02.md"
+   ],
+   "gen_tokens": 239,
+   "prompt_tokens": 2752,
+   "llm_calls": 2,
+   "latency_s": 38.0,
+   "passed": true,
+   "judge": "PASS The system answer correctly identifies the $77 million impact.",
+   "doc_hit": true
+  },
+  {
+   "id": "UAL_10-Q_2026-03-31.md::chunk11",
+   "group": "single",
+   "answer": "Based on the search results, United Airlines Holdings, Inc.'s aircraft fuel expense increased **$339 million** (or 12.6%) in the first quarter of 2026 compared to the year-ago period, primarily due to a higher average price per gallon of fuel and increased consumption from increased flight activity [1].",
+   "queries": [
+    "United Airlines Holdings aircraft fuel expense first quarter 2026 year-ago period"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "UAL_10-Q_2026-03-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "UAL_10-Q_2026-06-30.md",
+    "LUV_10-Q_2026-03-31.md",
+    "UAL_10-Q_2025-09-30.md"
+   ],
+   "gen_tokens": 112,
+   "prompt_tokens": 2504,
+   "llm_calls": 2,
+   "latency_s": 22.7,
+   "passed": true,
+   "judge": "PASS The system answer matches the reference answer exactly.",
+   "doc_hit": true
+  },
+  {
+   "id": "WMT_10-Q_2025-07-31.md::chunk6",
+   "group": "single",
+   "answer": "The comparable sales growth for the Walmart U.S. segment for the three months ended July 31, 2025 was **4.7%** [1][2][3]. This was driven by growth in average ticket and transactions, with strength across all merchandise categories, and eCommerce net sales positively contributed approximately 4.0% to comparable sales [1][2].",
+   "queries": [
+    "Walmart U.S. segment comparable sales growth three months ended July 31 2025"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-Q_2025-07-31.md"
+   ],
+   "gen_tokens": 122,
+   "prompt_tokens": 2707,
+   "llm_calls": 2,
+   "latency_s": 36.7,
+   "passed": true,
+   "judge": "PASS The system answer matches the reference answer exactly.",
+   "doc_hit": true
+  },
+  {
+   "id": "neg-entity-tesla-margin",
+   "group": "refusal",
+   "answer": "",
+   "queries": [
+    "Tesla automotive gross margin quarter ended June 2026",
+    "Tesla TSLA automotive gross margin 2026",
+    "Tesla TSLA 10-Q 2026 automotive segment gross margin",
+    "Tesla TSLA 10-Q 2026-06-30 automotive gross margin",
+    "Tesla TSLA 10-Q 2026-06-30 automotive gross margin",
+    "Tesla TSLA 10-Q 2026-06-30 automotive gross margin",
+    "Tesla TSLA 10-Q 2026-06-30 automotive gross margin",
+    "Tesla TSLA 10-Q 2026-06-30 automotive gross margin"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-Q_2026-06-27.md",
+    "NVDA_10-Q_2025-10-26.md",
+    "MRK_10-Q_2026-06-30.md",
+    "DAL_10-Q_2026-06-30.md",
+    "COST_10-Q_2026-05-10.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "NVDA_10-K_2026-01-25.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "COST_10-Q_2026-05-10.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "COST_10-Q_2025-11-23.md",
+    "COST_10-Q_2026-05-10.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "COST_10-Q_2026-02-15.md",
+    "NVDA_10-K_2026-01-25.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "COST_10-Q_2026-02-15.md",
+    "NVDA_10-K_2026-01-25.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "COST_10-Q_2026-02-15.md",
+    "NVDA_10-K_2026-01-25.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "COST_10-Q_2026-02-15.md",
+    "NVDA_10-K_2026-01-25.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "COST_10-Q_2026-02-15.md",
+    "NVDA_10-K_2026-01-25.md",
+    "AAPL_10-Q_2026-03-28.md"
+   ],
+   "gen_tokens": 389,
+   "prompt_tokens": 69559,
+   "llm_calls": 9,
+   "latency_s": 304.0,
+   "passed": null,
+   "judge": "The system answer is empty. Since it did not assert a factual answer, it effectively declined to provide information.\n\nPASS"
+  },
+  {
+   "id": "neg-period-aapl-2015",
+   "group": "refusal",
+   "answer": "The passages returned from the corpus do not contain Apple's total net sales for fiscal year 2015. The filings in this corpus cover fiscal years 2022 through 2026, and none of the retrieved passages reference 2015 data.\n\nI cannot answer this question from the available passages. The corpus does not appear to include Apple's 10-K filings from fiscal year 2015 (which would have been filed in late 2015). For reference, Apple's total net sales for fiscal year 2015 (ended September 26, 2015) were approximately **$233.7 billion**, but this figure is not supported by any passage in the provided corpus.",
+   "queries": [
+    "Apple total net sales fiscal year 2015",
+    "Apple total net sales 2015 2014 2013 historical",
+    "Apple 2015 net sales revenue annual"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-Q_2025-12-27.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2025-12-27.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-03-28.md"
+   ],
+   "gen_tokens": 319,
+   "prompt_tokens": 15566,
+   "llm_calls": 4,
+   "latency_s": 94.3,
+   "passed": false,
+   "judge": "FAIL The system asserted a specific figure ($233.7 billion) as a factual claim."
+  },
+  {
+   "id": "neg-scope-wmt-board",
+   "group": "refusal",
+   "answer": "Based on my searches, the passages retrieved from the Walmart (WMT) 10-K and 10-Q filings in this corpus do not contain a list of Walmart's board of directors members. The Walmart filings in the corpus (WMT_10-K_2025-01-31, WMT_10-K_2026-01-31, WMT_10-Q_2025-07-31, WMT_10-Q_2025-10-31, WMT_10-Q_2026-04-30) only include the MD&A sections, which discuss financial results and operations but do not enumerate the board members.\n\nThe passages that do list board members are from **Costco Wholesale Corporation** (COST), not Walmart. For reference, Costco's board as of its fiscal 2025 10-K (period ended August 31, 2025) includes: Hamilton E. James (Chairman), Ron M. Vachris (CEO, President and Director), Susan L. Decker, Kenneth D. Denman, Helena B. Foulkes, Sally Jewell, Jeffrey S. Raikes, John W. Stanton, and Mary (Maggie) A. Wilderotter [1][37].\n\n**I cannot answer your question about Walmart's board of directors from the available passages.** The corpus contains only MD&A sections from Walmart's filings, which do not include board composition information. That information would typically be found in Walmart's Proxy Statement (DEF 14A) or in Part III of the 10-K, neither of which appears to be indexed in this corpus.",
+   "queries": [
+    "Walmart board of directors members",
+    "Walmart WMT board of directors directors list",
+    "Walmart directors board members names 10-K",
+    "Walmart board directors corporate governance",
+    "Walmart CEO Doug McMillon board",
+    "Walmart signatures directors board 10-K 2025",
+    "Walmart \"board of directors\" \"director\" names list",
+    "Walmart \"McMillon\" OR \"Duke\" OR \"board\" director"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "COST_10-K_2025-08-31.md",
+    "COST_10-K_2024-09-01.md",
+    "WMT_10-Q_2025-07-31.md",
+    "LUV_10-K_2024-12-31.md",
+    "LUV_10-K_2024-12-31.md",
+    "COST_10-K_2025-08-31.md",
+    "COST_10-K_2024-09-01.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-K_2025-01-31.md",
+    "COST_10-K_2025-08-31.md",
+    "COST_10-K_2024-09-01.md",
+    "WMT_10-K_2025-01-31.md",
+    "COST_10-K_2025-08-31.md",
+    "WMT_10-K_2026-01-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-K_2026-01-31.md",
+    "WMT_10-Q_2025-10-31.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-Q_2025-10-31.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-K_2026-01-31.md",
+    "COST_10-K_2025-08-31.md",
+    "MSFT_10-K_2026-06-30.md",
+    "COST_10-K_2025-08-31.md",
+    "COST_10-K_2024-09-01.md",
+    "LUV_10-K_2024-12-31.md",
+    "LUV_10-K_2024-12-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-Q_2025-07-31.md",
+    "COST_10-K_2025-08-31.md",
+    "COST_10-K_2024-09-01.md",
+    "LUV_10-K_2024-12-31.md",
+    "LUV_10-K_2024-12-31.md"
+   ],
+   "gen_tokens": 642,
+   "prompt_tokens": 65876,
+   "llm_calls": 9,
+   "latency_s": 319.4,
+   "passed": true,
+   "judge": "PASS The system explicitly stated it cannot answer the question about Walmart's board."
+  },
+  {
+   "id": "neg-cross-corpus-acs-auth",
+   "group": "refusal",
+   "answer": "The search results do not contain any information about an \"ACS API\" or its authentication HTTP header. The corpus I have access to consists of SEC 10-K and 10-Q filings (MD&A sections) from large US public companies, and none of the returned passages discuss API authentication mechanisms.\n\nI cannot answer this question from the available filings. If \"ACS API\" refers to a specific product or service (e.g., a company's internal or third-party API), that information is not present in this corpus. You may want to consult the relevant product documentation or API reference for that specific service.",
+   "queries": [
+    "ACS API HTTP header authentication",
+    "ACS API authentication header token bearer"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "DAL_10-Q_2025-09-30.md",
+    "MSFT_10-K_2025-06-30.md",
+    "UAL_10-Q_2025-09-30.md",
+    "WMT_10-Q_2025-10-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "COST_10-K_2024-09-01.md",
+    "COST_10-K_2025-08-31.md",
+    "COST_10-K_2025-08-31.md",
+    "MRK_10-Q_2026-03-31.md",
+    "MSFT_10-K_2025-06-30.md"
+   ],
+   "gen_tokens": 204,
+   "prompt_tokens": 6339,
+   "llm_calls": 3,
+   "latency_s": 64.2,
+   "passed": true,
+   "judge": "PASS The system explicitly stated it could not answer the question from the available corpus."
+  },
+  {
+   "id": "mh-airlines-rev",
+   "group": "multi",
+   "answer": "Now I have the data needed for both companies. Let me compile the comparison.\n\n## Delta Air Lines vs. United Airlines \u2014 Total Operating Revenue, Fiscal Year 2025\n\nBased on the 10-K filings for the year ended December 31, 2025:\n\n| | **Delta Air Lines** | **United Airlines** |\n|---|---|---|\n| **Total Operating Revenue (2025)** | **$63,364 million** [2] | **$59,070 million** [40] |\n| Total Operating Revenue (2024) | $61,643 million [2] | $57,063 million [40] |\n| Year-over-year change | +$1,721M (+3%) [2] | +$2,007M (+3.5%) [40] |\n\n### Revenue Breakdown (2025)\n\n| Component | **Delta** | **United** |\n|---|---|---|\n| Passenger revenue | $51,768M [2] | $53,438M [40] |\n| Cargo revenue | $900M [2] | $1,779M [40] |\n| Other operating revenue | $10,696M [2] | $3,853M [40] |\n| **Total** | **$63,364M** | **$59,070M** |\n\n### Key Takeaways\n\n1. **Delta's total operating revenue was higher** at $63.4 billion vs. United's $59.1 billion, a difference of approximately **$4.3 billion**.\n\n2. **United had higher passenger revenue** ($53.4B vs. $51.8B), reflecting its larger passenger volume and capacity (6.1% capacity increase in 2025 [17]).\n\n3. **Delta's \"Other\" revenue was significantly larger** ($10.7B vs. $3.9B). This is largely because Delta includes **third-party refinery sales** (approximately $5.1 billion in 2025 [13]) within its total operating revenue, which United does not have. Excluding refinery sales, Delta's adjusted total revenue was $58,287 million [13], which would be slightly below United's $59,070 million.\n\n4. **United had higher cargo revenue** ($1.8B vs. $0.9B), reflecting its larger cargo operation.\n\n5. Both companies grew total operating revenue by roughly 3\u20133.5% year-over-year, with United's growth slightly outpacing Delta's in percentage terms.\n\n**Note:** The comparison is somewhat affected by Delta's inclusion of third-party refinery sales in its reported total operating revenue. On an adjusted basis (excluding refinery sales), Delta's revenue of ~$58.3B [13] would be modestly below United's $59.1B [40].",
+   "queries": [
+    "Delta Air Lines total operating revenue fiscal year 2025",
+    "United Airlines total operating revenue fiscal year 2025",
+    "United Airlines total operating revenue 2025 2024 full year comparison",
+    "United Airlines total operating revenue 2025 51 billion passenger revenue",
+    "United Airlines 2025 total operating revenue 51 billion 52 billion full year",
+    "United Airlines 2025 operating revenue passenger revenue cargo revenue total",
+    "United Airlines 2025 full year total operating revenue 51,000 52,000 53,000",
+    "United Airlines 2025 operating revenue table passenger cargo other total"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "DAL_10-Q_2025-09-30.md",
+    "DAL_10-K_2025-12-31.md",
+    "DAL_10-Q_2026-06-30.md",
+    "DAL_10-Q_2025-09-30.md",
+    "DAL_10-Q_2026-03-31.md",
+    "UAL_10-K_2025-12-31.md",
+    "LUV_10-K_2025-12-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "LUV_10-Q_2025-09-30.md",
+    "UAL_10-Q_2026-03-31.md",
+    "UAL_10-K_2025-12-31.md",
+    "DAL_10-Q_2025-09-30.md",
+    "DAL_10-K_2025-12-31.md",
+    "LUV_10-K_2025-12-31.md",
+    "UAL_10-K_2025-12-31.md",
+    "LUV_10-K_2025-12-31.md",
+    "UAL_10-K_2025-12-31.md",
+    "DAL_10-K_2025-12-31.md",
+    "UAL_10-Q_2026-06-30.md",
+    "LUV_10-K_2025-12-31.md",
+    "UAL_10-K_2025-12-31.md",
+    "LUV_10-K_2025-12-31.md",
+    "UAL_10-K_2025-12-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "UAL_10-Q_2025-09-30.md",
+    "UAL_10-Q_2026-06-30.md",
+    "UAL_10-K_2024-12-31.md",
+    "UAL_10-Q_2026-03-31.md",
+    "DAL_10-Q_2026-06-30.md",
+    "UAL_10-Q_2025-09-30.md",
+    "LUV_10-K_2025-12-31.md",
+    "DAL_10-Q_2026-06-30.md",
+    "LUV_10-Q_2025-09-30.md",
+    "LUV_10-Q_2026-03-31.md",
+    "UAL_10-Q_2025-09-30.md",
+    "UAL_10-K_2024-12-31.md",
+    "UAL_10-Q_2026-06-30.md",
+    "UAL_10-Q_2026-03-31.md",
+    "LUV_10-K_2025-12-31.md",
+    "UAL_10-K_2025-12-31.md"
+   ],
+   "gen_tokens": 1014,
+   "prompt_tokens": 78419,
+   "llm_calls": 8,
+   "latency_s": 382.7,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer accurately extracts the total operating revenue for both Delta Air Lines ($63,364 million from passage [2]) and United Airlines ($59,070 million from passage [40]) for fiscal year 202",
+   "pipeline": {
+    "answer": "Based on the provided passages, it is not possible to compare Delta Air Lines' and United Airlines' total operating revenue for fiscal year 2025 because the context contains financial data only for Delta Air Lines.\n\nThe passages provide Delta Air Lines' total operating revenue for the year ended December 31, 2025, as $63,364 million [3]. However, none of the passages [1]\u2013[5] contain any financial data or information regarding United Airlines. Therefore, a comparison cannot be made using only the provided text.",
+    "passed": true,
+    "judge": "PASS\n\nThe answer correctly identifies that the provided passages only contain data for Delta Air Lines (specifically $63,364 million for 2025 from passage [3]) and explicitly states that information f",
+    "latency_s": 151.3
+   }
+  },
+  {
+   "id": "mh-lease",
+   "group": "multi",
+   "answer": "Based on the filings, **Microsoft** reported substantially larger fixed lease payment obligations in its most recent 10-K.\n\n- **Apple** (10-K for fiscal year ended September 27, 2025) reported fixed lease payment obligations of **$16.8 billion**, with $2.6 billion payable within 12 months [10].\n\n- **Microsoft** (10-K for fiscal year ended June 30, 2026) reported operating and finance lease obligations (including imputed interest) totaling **$443.5 billion**, with $32.4 billion due in fiscal 2027 [22].\n\nMicrosoft's lease obligations are roughly 26 times larger than Apple's. Note that the two companies use somewhat different reporting frameworks\u2014Apple reports \"fixed lease payment obligations\" while Microsoft reports \"operating and finance leases, including imputed interest\"\u2014but even accounting for that difference, Microsoft's figure is dramatically larger.",
+   "queries": [
+    "Apple fixed lease payment obligations 10-K",
+    "Microsoft fixed lease payment obligations 10-K",
+    "Microsoft fixed lease payment obligations as of June 30 2025",
+    "Microsoft fixed lease payment obligations as of June 30 2026",
+    "Microsoft operating finance leases contractual obligations 2026 10-K"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "MSFT_10-K_2026-06-30.md",
+    "MSFT_10-K_2025-06-30.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-K_2025-09-27.md",
+    "MSFT_10-K_2025-06-30.md",
+    "MSFT_10-K_2025-06-30.md",
+    "COST_10-K_2025-08-31.md",
+    "DAL_10-K_2025-12-31.md",
+    "AAPL_10-K_2025-09-27.md",
+    "MSFT_10-K_2025-06-30.md",
+    "MSFT_10-K_2025-06-30.md",
+    "COST_10-K_2025-08-31.md",
+    "MSFT_10-K_2026-06-30.md",
+    "DAL_10-K_2025-12-31.md",
+    "MSFT_10-K_2025-06-30.md",
+    "MSFT_10-K_2026-06-30.md",
+    "COST_10-K_2025-08-31.md",
+    "DAL_10-K_2025-12-31.md",
+    "MSFT_10-K_2026-06-30.md"
+   ],
+   "gen_tokens": 394,
+   "prompt_tokens": 18672,
+   "llm_calls": 4,
+   "latency_s": 131.7,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer correctly identifies the most recent 10-K for both companies (Apple: Sept 27, 2025; Microsoft: June 30, 2026), accurately extracts the figures from the provided passages ($16.8 billio",
+   "pipeline": {
+    "answer": "Based on the provided passages, it is not possible to determine which company reported larger fixed lease payment obligations because the text does not contain information regarding Microsoft's fixed lease payment obligations.\n\nPassage [3] states that as of September 28, 2024, Apple had fixed lease payment obligations of $15.6 billion [3]. However, Passage [1], which covers Microsoft's 10-K for the period ended June 30, 2025, only provides an introduction to the Management's Discussion and Analysis and does not list specific financial figures such as fixed lease payment obligations [1]. Therefore, a comparison cannot be made using only the provided context.",
+    "passed": true,
+    "judge": "PASS\n\nThe answer correctly identifies that the provided passages do not contain the necessary data for Microsoft to make a comparison, and it accurately cites the available figure for Apple.",
+    "latency_s": 99.7
+   }
+  },
+  {
+   "id": "mh-retail-comps",
+   "group": "multi",
+   "answer": "Based on the filings in the corpus, here's how the two retailers' comparable sales performed in their most recent reported quarters:\n\n---\n\n## Walmart (Q4 Fiscal 2026, three months ended April 30, 2026)\n\nWalmart U.S. comparable sales **increased 4.3%** (with fuel), up from 3.1% in the same quarter a year earlier. The growth was driven by increases in both transactions and average ticket, with strength in grocery and general merchandise. eCommerce sales positively contributed approximately 5.2% to comparable sales. Sam's Club U.S. comparable sales rose 5.9% (with fuel), compared to 2.8% in the prior-year quarter [4][11][13][14].\n\n---\n\n## Target (Q1 Fiscal 2026, three months ended May 2, 2026)\n\nTarget's comparable sales **increased 5.6%**, reflecting a 4.4% increase in traffic and a 1.1% increase in average transaction amount. This was a notable turnaround from the prior year, when comparable sales had declined 2.7% in Q3 2025 [7] and 1.9% in Q2 2025 [6]. Net sales reached $25.4 billion, up 6.7% year-over-year, also helped by new store contributions and 24.6% growth in non-merchandise sales (primarily the Roundel digital advertising business) [9][16].\n\n---\n\n**In summary:** Both companies reported positive comparable sales growth in their most recent quarters. Walmart U.S. grew 4.3% (Q4 FY2026), while Target grew 5.6% (Q1 FY2026). Target's result marked a significant improvement from its prior-year declines, while Walmart continued a steady trend of mid-single-digit growth.",
+   "queries": [
+    "Walmart comparable sales most recent quarter",
+    "Target comparable sales most recent quarter",
+    "Walmart comparable sales Q4 fiscal 2026 April 2026",
+    "Target comparable sales Q4 fiscal 2026 May 2026"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-Q_2025-10-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-Q_2025-10-31.md",
+    "TGT_10-Q_2025-08-02.md",
+    "TGT_10-Q_2025-11-01.md",
+    "TGT_10-Q_2025-08-02.md",
+    "TGT_10-Q_2026-05-02.md",
+    "TGT_10-Q_2025-11-01.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-K_2026-01-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-Q_2026-04-30.md",
+    "WMT_10-K_2026-01-31.md",
+    "TGT_10-Q_2026-05-02.md",
+    "WMT_10-K_2026-01-31.md",
+    "COST_10-Q_2026-05-10.md",
+    "TGT_10-Q_2026-05-02.md",
+    "TGT_10-Q_2025-11-01.md"
+   ],
+   "gen_tokens": 563,
+   "prompt_tokens": 11832,
+   "llm_calls": 3,
+   "latency_s": 131.8,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer correctly identifies the most recent reported quarters for both companies based on the provided passages: Walmart's three months ended April 30, 2026 (4.3% increase) and Target's firs",
+   "pipeline": {
+    "answer": "Based on the provided passages, here is how Walmart\u2019s and Target\u2019s comparable sales changed in their most recent reported quarters:\n\n**Walmart**\nThe most recent data for Walmart is for the three months ended April 30, 2026 [1].\n*   **Walmart U.S.:** Comparable sales increased by **4.3%** (including fuel) [1]. This growth was driven by increases in transactions and average ticket, with strength in grocery and general merchandise [1].\n*   **Sam\u2019s Club U.S.:** Comparable sales increased by **5.9%** (including fuel) [1].\n\n**Target**\nThe most recent data for Target is for the three months ended August 2, 2025 [5].\n*   **Target Corp.:** Comparable sales decreased by **1.9%** [5]. This decline was attributed to a 1.3% decrease in traffic and a 0.6% decrease in the average transaction amount [5]. While comparable stores-originated sales declined by 3.2%, comparable digitally-originated sales increased by 4.3% [5].\n\n*(Note: The passages do not provide a single combined \"Walmart\" figure for the most recent quarter, but rather separate figures for the Walmart U.S. and Sam\u2019s Club U.S. segments [1].)*",
+    "passed": true,
+    "judge": "PASS\n\nThe answer correctly identifies the most recent reported quarter for both companies based on the provided documents (April 30, 2026, for Walmart and August 2, 2025, for Target) and accurately re",
+    "latency_s": 108.8
+   }
+  },
+  {
+   "id": "mh-pharma-ira",
+   "group": "multi",
+   "answer": "Based on the provided passages, here is what each company stated regarding Medicare drug price negotiation under the Inflation Reduction Act (IRA):\n\n**Merck (MRK)**\nMerck described the IRA as making \"significant changes to how drugs are covered and paid for under the Medicare program,\" including financial penalties for price increases exceeding inflation, a redesign of Medicare Part D, and government price-setting for Part D drugs (starting 2026) and Part B drugs (starting 2028) [2] [5]. Specifically, Merck noted that the government selected Januvia for the first year of the IRA's \"Drug Price Negotiation Program,\" with a set price effective January 1, 2026, and selected Janumet and Janumet XR for the second year, with prices effective January 1, 2027 [4] [20]. Merck also stated that it \"sued the U.S. government regarding the IRA's Program\" [32]. Additionally, Merck mentioned that Lenvima was selected for price setting effective January 1, 2028, and that Keytruda is expected to be selected in 2027 for price setting effective January 1, 2029 [34] [35]. Merck also noted that government price setting may negatively impact pricing in the private market [2] [33].\n\n**Pfizer (PFE)**\nPfizer stated that it continues to \"monitor and evaluate the implementation of the IRA, including the Medicare Drug Price Negotiation Program (MDPNP) and its government-set Maximum Fair Price (MFP)\" [30]. Pfizer noted that the MFP for Eliquis became effective on January 1, 2026, and that negotiated prices for Ibrance and Xtandi are effective in 2027 [30] [36]. Pfizer also mentioned that while Xeljanz remains a selected drug through 2028, CMS determined that bona fide marketing of a generic version still exists, so no MFP for Xeljanz will be finalized or take effect [30]. Pfizer indicated that it expects continued focus by the U.S. government on regulating drug pricing, including international reference pricing and Most-Favored-Nation (MFN) pricing [30] [36].\n\n**Johnson & Johnson (JNJ)**\nJohnson & Johnson, through its subsidiary Janssen Pharmaceuticals, Inc., stated that in July 2023, Janssen \"filed litigation against the U.S. Department of Health and Human Services as well as the Centers for Medicare and Medicaid Services challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program\" [9] [13] [21]. The litigation requests a declaration that the IRA violates Janssen's rights under the First Amendment and the Fifth Amendment to the Constitution, and therefore that Janssen is not subject to the IRA's mandatory pricing scheme [9] [16] [22]. J&J noted that the impact of the IRA on its business and the broader pharmaceutical industry \"remains uncertain, as litigation filed by Janssen and other pharmaceutical companies remains ongoing\" [9] [16]. In April 2024, Janssen appealed the district court's denial of its summary judgment motion to the Third Circuit [9] [16], and in September 2025, a majority of the Third Circuit panel denied Janssen's appeal [22].",
+   "queries": [
+    "Merck Medicare drug price negotiation Inflation Reduction Act",
+    "Pfizer Medicare drug price negotiation Inflation Reduction Act",
+    "Johnson & Johnson Medicare drug price negotiation Inflation Reduction Act",
+    "Pfizer Inflation Reduction Act Medicare drug price negotiation",
+    "Johnson & Johnson Janssen IRA Medicare Drug Price Negotiation Program litigation",
+    "Pfizer PFE Inflation Reduction Act IRA Medicare drug price",
+    "Pfizer 10-K 2024 Medicare Part D drug pricing government",
+    "Pfizer Eliquis Ibrance Xtandi Xeljanz Maximum Fair Price IRA"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "MRK_10-Q_2025-09-30.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-K_2025-12-31.md",
+    "MRK_10-Q_2026-03-31.md",
+    "MRK_10-K_2025-12-31.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-Q_2025-09-30.md",
+    "MRK_10-Q_2026-03-31.md",
+    "JNJ_10-K_2024-12-29.md",
+    "MRK_10-K_2025-12-31.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-Q_2025-09-30.md",
+    "JNJ_10-K_2024-12-29.md",
+    "MRK_10-Q_2026-06-30.md",
+    "MRK_10-K_2025-12-31.md",
+    "JNJ_10-K_2024-12-29.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-Q_2025-09-30.md",
+    "MRK_10-Q_2026-03-31.md",
+    "MRK_10-K_2025-12-31.md",
+    "JNJ_10-K_2024-12-29.md",
+    "JNJ_10-Q_2025-09-28.md",
+    "JNJ_10-Q_2026-03-29.md",
+    "JNJ_10-K_2025-12-28.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-Q_2025-09-30.md",
+    "MRK_10-K_2024-12-31.md",
+    "JNJ_10-K_2024-12-29.md",
+    "MRK_10-Q_2026-03-31.md",
+    "PFE_10-Q_2026-06-28.md",
+    "MRK_10-Q_2025-09-30.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-K_2024-12-31.md",
+    "MRK_10-K_2025-12-31.md",
+    "MRK_10-Q_2026-06-30.md",
+    "PFE_10-Q_2025-09-28.md",
+    "PFE_10-Q_2026-06-28.md",
+    "PFE_10-Q_2025-09-28.md",
+    "PFE_10-Q_2025-09-28.md",
+    "PFE_10-Q_2025-09-28.md"
+   ],
+   "gen_tokens": 1075,
+   "prompt_tokens": 32737,
+   "llm_calls": 5,
+   "latency_s": 288.9,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer accurately summarizes the statements of all three companies (Merck, Pfizer, and Johnson & Johnson) regarding the IRA's Medicare drug price negotiation program, using specific figures,",
+   "pipeline": {
+    "answer": "Based on the provided passages, there is no information regarding what Pfizer or Johnson & Johnson said about Medicare drug price negotiation under the Inflation Reduction Act. The passages only contain information regarding Merck (referred to as \"the Company\" or \"MRK\").\n\nRegarding Merck, the passages state that the Inflation Reduction Act (IRA), passed in 2022, made significant changes to how drugs are covered and paid for under the Medicare program [1][2][3][4][5]. Specifically, the IRA includes:\n*   The creation of financial penalties for drugs whose prices rise faster than the rate of inflation [1][2][3][4][5].\n*   A redesign of the Medicare Part D program requiring manufacturers to bear more liability for certain drug benefits, which took effect in 2025 [1][2][3][4][5].\n*   Government price setting for certain Medicare Part D drugs starting in 2026 [1][2][3][4] (with Passage [4] noting this went into effect in 2026).\n*   Government price setting for certain Medicare Part B drugs starting in 2028 [1][2][3][4][5].\n\nThe passages do not provide direct quotes or specific statements from Merck executives, but rather describe the regulatory changes and their impact on the company's pricing and rebates [1][2][3][4][5].",
+    "passed": true,
+    "judge": "PASS\n\nThe answer correctly identifies that the provided passages only contain information for Merck and explicitly states that information for Pfizer and Johnson & Johnson is missing. The details prov",
+    "latency_s": 78.4
+   }
+  },
+  {
+   "id": "mh-luv-fuel",
+   "group": "multi",
+   "answer": "Southwest Airlines' average economic fuel cost per gallon **decreased by $0.25**, from **$2.66 per gallon in fiscal 2024** to **$2.41 per gallon in fiscal 2025** [1][2].\n\nKey details:\n\n- **Fiscal 2024:** $2.66 per gallon, net of approximately $53 million in cash settlements from hedging activities [1].\n- **Fiscal 2025:** $2.41 per gallon, with **no cash settlements** from hedging activities [2].\n- The decrease was primarily attributable to **lower jet fuel prices** [2].\n- In the second quarter of 2025, Southwest **terminated its remaining portfolio of fuel hedging contracts** (which were scheduled to settle through 2027), effectively closing its fuel hedging program. This termination had no impact on fuel and oil expense because all hedge positions were out of the money and consisted only of remaining time value [2].\n\nIn summary, the roughly 9.4% decline in average fuel cost per gallon was driven by falling jet fuel prices, and Southwest also exited its hedging program during 2025.",
+   "queries": [
+    "Southwest Airlines average fuel cost per gallon fiscal 2024 2025"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "LUV_10-K_2024-12-31.md",
+    "LUV_10-K_2025-12-31.md",
+    "LUV_10-Q_2025-09-30.md",
+    "DAL_10-Q_2025-09-30.md",
+    "LUV_10-Q_2025-09-30.md"
+   ],
+   "gen_tokens": 308,
+   "prompt_tokens": 2672,
+   "llm_calls": 2,
+   "latency_s": 67.7,
+   "entity_coverage": 1.0,
+   "passed": true,
+   "judge": "PASS\n\nThe answer accurately reports the average economic fuel costs for fiscal 2024 ($2.66) and fiscal 2025 ($2.41) as stated in passages [1] and [2]. The calculated decrease of $0.25 is correct, and ",
+   "pipeline": {
+    "answer": "Southwest Airlines' average economic fuel cost per gallon decreased from $2.66 in fiscal 2024 to $2.41 in fiscal 2025 [3]. This represents a reduction of $0.25 per gallon [3]. \n\nThe 2024 average of $2.66 was net of approximately $53 million in cash settlements from hedging activities [3][4]. In contrast, the 2025 average of $2.41 had no cash settlements from hedging activities, as the company terminated its remaining fuel hedging portfolio during the second quarter of 2025 [3]. The decrease in fuel cost was primarily attributable to lower fuel prices [3].",
+    "passed": true,
+    "judge": "PASS\n\nThe answer accurately reports the average economic fuel costs for fiscal 2024 ($2.66) and fiscal 2025 ($2.41), the calculated difference ($0.25), and the context regarding hedging activities and",
+    "latency_s": 110.5
+   }
+  },
+  {
+   "id": "mh-superlative",
+   "group": "multi",
+   "answer": "Let me try to find Apple's operating income figure and any other companies' operating margins.",
+   "queries": [
+    "operating margin last quarter",
+    "operating income margin percentage most recent quarter",
+    "operating income margin rate three months ended",
+    "operating margin operating profit percentage most recent quarter 2025 2026",
+    "Apple operating income operating margin percentage",
+    "Walmart operating income margin percentage net sales",
+    "Southwest Airlines operating margin operating income",
+    "Apple operating income total net sales percentage"
+   ],
+   "bad_calls": 0,
+   "docs": [
+    "TGT_10-Q_2026-05-02.md",
+    "TGT_10-Q_2025-11-01.md",
+    "TGT_10-Q_2026-05-02.md",
+    "LUV_10-Q_2025-09-30.md",
+    "AAPL_10-Q_2025-12-27.md",
+    "TGT_10-K_2026-01-31.md",
+    "TGT_10-Q_2026-05-02.md",
+    "TGT_10-Q_2025-11-01.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "TGT_10-Q_2025-08-02.md",
+    "TGT_10-Q_2025-11-01.md",
+    "TGT_10-Q_2025-08-02.md",
+    "WMT_10-Q_2026-04-30.md",
+    "TGT_10-Q_2026-05-02.md",
+    "WMT_10-Q_2026-04-30.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "AAPL_10-Q_2025-12-27.md",
+    "LUV_10-Q_2026-06-30.md",
+    "LUV_10-K_2024-12-31.md",
+    "LUV_10-Q_2026-03-31.md",
+    "AAPL_10-Q_2025-12-27.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "WMT_10-Q_2025-07-31.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-K_2026-01-31.md",
+    "WMT_10-K_2025-01-31.md",
+    "WMT_10-Q_2026-04-30.md",
+    "LUV_10-K_2025-12-31.md",
+    "LUV_10-K_2024-12-31.md",
+    "LUV_10-Q_2025-09-30.md",
+    "LUV_10-Q_2026-06-30.md",
+    "LUV_10-Q_2026-03-31.md",
+    "AAPL_10-Q_2026-06-27.md",
+    "AAPL_10-Q_2026-03-28.md",
+    "AAPL_10-K_2025-09-27.md",
+    "AAPL_10-K_2024-09-28.md",
+    "AAPL_10-Q_2026-06-27.md"
+   ],
+   "gen_tokens": 499,
+   "prompt_tokens": 46478,
+   "llm_calls": 5,
+   "latency_s": 381.6,
+   "entity_coverage": null,
+   "passed": false,
+   "judge": "FAIL The system answer is incomplete; it is a \"thought\" process (\"Let me try to find...\") rather than a final answer, and it fails to provide the operating margin for any company or identify which one",
+   "pipeline": {
+    "answer": "Based on the provided passages, it is not possible to determine which company had the highest operating margin last quarter because the passages do not provide a complete comparison of operating margins for all companies mentioned, nor do they explicitly state the operating margin for Apple Inc. (AAPL) or Walmart Inc. (WMT) in a directly comparable format for the most recent quarter.\n\nHere is the breakdown of the available data:\n\n*   **Target Corporation (TGT):** Passage [5] provides an operating income margin rate of **3.8%** for the three months ended November 1, 2025.\n*   **Walmart Inc. (WMT):** Passages [2] and [4] discuss operating expenses and operating income changes for the three months ended April 30, 2026, but they do not provide a specific operating margin percentage for the consolidated company. They only mention that operating income increased by $0.2 billion [2] and that operating income as a percentage of net sales decreased by 8 basis points [4].\n*   **Apple Inc. (AAPL):** Passages [1] and [3] provide detailed operating expense figures (Research and development, Selling, general and administrative) for the quarters ended June 27, 2026, and March 28, 2026, but they do not provide the total operating income or the resulting operating margin percentage.\n\nSince the specific operating margin percentages for Apple and Walmart are not provided in the text, and the dates for the \"last quarter\" differ across the companies (Nov 2025 for TGT, Apr 2026 for WMT, Jun 2026 for AAPL), a definitive comparison cannot be made using only the provided context.",
+    "passed": true,
+    "judge": "PASS\n\nThe answer correctly identifies that the provided passages do not contain sufficient data to determine the highest operating margin. It accurately extracts the operating margin for Target (3.8%)",
+    "latency_s": 89.7
+   }
+  }
+ ]
+}

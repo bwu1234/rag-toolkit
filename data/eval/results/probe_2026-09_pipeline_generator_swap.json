@@ -1,0 +1,453 @@
+{
+ "qwen3.5:9b-mlx": {
+  "answerable": {
+   "passed": 36,
+   "n": 40,
+   "unparseable": 0,
+   "pass_rate": 0.9,
+   "elapsed_s": 674,
+   "per_sample": [
+    {
+     "id": "AAPL_10-K_2024-09-28.md::chunk12",
+     "passed": true,
+     "answer": "As of September 28, 2024, Apple Inc.'s fixed lease payment obligations were **$15.6 billion** [1][3]. Additionally, **$2.0 billion** of this amount was payable within 12 months [1][3].",
+     "judge": "PASS"
+    },
+    {
+     "id": "AAPL_10-Q_2026-03-28.md::chunk23",
+     "passed": false,
+     "answer": "Based on the provided passages, there is no information regarding Apple Inc.'s common stock repurchases for the **second quarter of 2026**.\n\nPassage [5] mentions that during the **first quarter of 2026**, Apple Inc. repurchased $25.0 billion of its common stock [5]. However, it does not contain data for the second quarter of 2026. The other passages discuss share repurchases for different companie",
+     "judge": "FAIL The system answer claims the information is missing, but the reference answer provides a specific value ($11.0 billion)."
+    },
+    {
+     "id": "COST_10-K_2024-09-01.md::chunk140",
+     "passed": true,
+     "answer": "Between September 25, 2023, and October 31, 2023, **five** class action suits were filed against Costco Wholesale Corp alleging privacy law violations stemming from pixel trackers on Costco.com [1][2][3].",
+     "judge": "PASS The system answer matches the reference answer."
+    },
+    {
+     "id": "COST_10-Q_2025-11-23.md::chunk24",
+     "passed": false,
+     "answer": "Based on the provided passages, there is no information regarding **Costco Wholesale Corp**. The documents contain data for:\n\n*   **UAL** (United Airlines): Net cash provided by operating activities was **$4,799 million** for the three months ended March 31, 2026 [2].\n*   **WMT** (Walmart): Net cash provided by operating activities was **$4.7 billion** for the three months ended April 30, 2026 [4]",
+     "judge": "FAIL The system answer claims the information is missing, while the reference answer provides a specific value."
+    },
+    {
+     "id": "COST_10-Q_2026-02-15.md::chunk34",
+     "passed": true,
+     "answer": "Costco Wholesale Corp's total borrowing capacity under bank credit facilities as of February 15, 2026, was **$1,447**.\n\nThis information is found in Passage [1], which states: \"At February 15, 2026, we had borrowing capacity under these facilities of $1,447.\"",
+     "judge": "PASS"
+    },
+    {
+     "id": "CVX_10-K_2024-12-31.md::chunk23",
+     "passed": true,
+     "answer": "Chevron's average net daily oil-equivalent production in California during 2024 was **71,000 barrels**. This figure is explicitly stated in Passage [1], which notes that \"In 2024, Chevron's California average net daily oil-equivalent production was 71,000 barrels.\"\n\n(Note: Passage [2] mentions a different figure of 63,000 barrels, but specifies this was for the year **2025**.)",
+     "judge": "PASS"
+    },
+    {
+     "id": "CVX_10-K_2025-12-31.md::chunk47",
+     "passed": true,
+     "answer": "In 2025, Chevron secured a **90 percent working interest** in frontier exploration Blocks 5B (Carapau) and 6B (Becuda) offshore Guinea-Bissau [1].",
+     "judge": "PASS"
+    },
+    {
+     "id": "DAL_10-K_2024-12-31.md::chunk18",
+     "passed": true,
+     "answer": "The one-time payment made to Delta pilots upon ratification of their new agreement in the March 2023 quarter was **$735 million**. This amount is mentioned in Passage [1] and Passage [2], which both state that the agreement includes a provision for this specific payment made upon ratification in the March 2023 quarter.",
+     "judge": "PASS"
+    },
+    {
+     "id": "DAL_10-K_2024-12-31.md::chunk55",
+     "passed": true,
+     "answer": "Delta Air Lines' aggregate air traffic liability balance as of December 31, 2024, was **$7.1 billion**. This figure is explicitly stated in Passage [1], which notes that the company estimates ticket breakage based on historical experience and contract terms, resulting in this specific liability balance at year-end [1].",
+     "judge": "PASS"
+    },
+    {
+     "id": "DAL_10-Q_2025-09-30.md::chunk35",
+     "passed": true,
+     "answer": "Based on Passage [1], fuel expense represented approximately **17%** of Delta Air Lines, Inc.'s total operating expense for the nine months ended September 30, 2025 [1].",
+     "judge": "PASS"
+    },
+    {
+     "id": "DAL_10-Q_2026-03-31.md::chunk16",
+     "passed": true,
+     "answer": "Delta Air Lines' refinery operating loss for the period ended March 2026 was **$39 million**.\n\nThis figure is explicitly stated in Passage [1], which notes that \"The refinery generated an operating loss of $39 million in the March 2026 quarter.\" This amount is further confirmed in the table within Passage [2] under the row \"Operating loss\" for the column \"2026,\" which lists the value as $(39) mill",
+     "judge": "PASS"
+    },
+    {
+     "id": "DAL_10-Q_2026-06-30.md::chunk32",
+     "passed": true,
+     "answer": "Delta Air Lines' revenue from American Express for the six months ended June 30, 2026 was $4.5 billion [2].",
+     "judge": "PASS"
+    },
+    {
+     "id": "JNJ_10-K_2024-12-29.md::chunk45",
+     "passed": true,
+     "answer": "Based on Passage [1], Johnson & Johnson recorded a loss of approximately **$0.4 billion** in Other (income) expense for the fiscal third quarter of 2023 due to the Debt-for-Equity Exchange. This loss resulted from the exchange of its remaining Kenvue Common Stock shares for outstanding Commercial Paper, which satisfied and discharged the commercial paper [1].\n\nPassage [3] further confirms this fig",
+     "judge": "PASS The system answer correctly identifies the loss as approximately $0.4 billion."
+    },
+    {
+     "id": "JNJ_10-K_2025-12-28.md::chunk50",
+     "passed": true,
+     "answer": "Based on the provided passages, Johnson & Johnson's net debt at the end of 2025 was **$27.8 billion**, compared to **$12.1 billion** in 2024 [1][3]. This increase was primarily due to the issuance of senior unsecured notes for approximately $9.2 billion in the first quarter of 2025, with net proceeds used to fund the Intra-Cellular Therapies, Inc. acquisition and general corporate purposes [1][3][",
+     "judge": "PASS The system answer accurately reflects the figures provided in the reference answer."
+    },
+    {
+     "id": "JNJ_10-Q_2026-06-28.md::chunk5",
+     "passed": true,
+     "answer": "Johnson & Johnson's Innovative Medicine segment sales for the fiscal six months ended June 28, 2026, were **$31.8 billion** [1][3]. This represents an increase of 9.4% compared to the same period a year ago [3].",
+     "judge": "PASS"
+    },
+    {
+     "id": "LUV_10-K_2025-12-31.md::chunk81",
+     "passed": true,
+     "answer": "As of December 31, 2025, Southwest Airlines Co. expects that its breakage estimates for flight credits are materially accurate and does not anticipate future material adjustments associated with these flight credits [1]. This expectation is based on actual redemptions and redemption patterns exhibited by customers thus far [1].\n\nHowever, the company notes that assumptions about customer behavior c",
+     "judge": "PASS The system answer explicitly states the company does not anticipate future material adjustments, which matches the reference answer."
+    },
+    {
+     "id": "LUV_10-Q_2025-09-30.md::chunk68",
+     "passed": true,
+     "answer": "Southwest Airlines Co.'s GAAP twelve month rolling tax rate for the period ended September 30, 2024 was (186.0) percent [1]. This negative rate was primarily due to the Company's pre-tax book loss for the twelve months ended September 30, 2024 [1].",
+     "judge": "PASS"
+    },
+    {
+     "id": "LUV_10-Q_2026-03-31.md::chunk33",
+     "passed": false,
+     "answer": "Based on the provided passages, there is no information regarding the net cash provided by operating activities for **Southwest Airlines Co**.\n\nThe passages contain data for the following companies:\n*   **LUV (United Airlines):** Net cash provided by operating activities was **$1.4 billion** [1].\n*   **UAL (United Airlines - likely a duplicate source or typo in filename, but distinct table):** Tot",
+     "judge": "FAIL The system answer claims the information is missing, whereas the reference answer provides a specific value."
+    },
+    {
+     "id": "MRK_10-K_2024-12-31.md::chunk57",
+     "passed": true,
+     "answer": "Based on Passage [2], Sales of the Bravecto line of products were **$1.1 billion** in 2024, representing an increase of 6% compared with 2023 [2]. This figure is consistent with the data provided in Passage [3], which also states that Sales of the Bravecto line of products were $1.1 billion in 2025, an increase of 1% compared with 2024 [3].",
+     "judge": "PASS The system answer correctly identifies the sales as $1.1 billion."
+    },
+    {
+     "id": "MRK_10-K_2025-12-31.md::chunk114",
+     "passed": true,
+     "answer": "As of December 31, 2025, Merck & Co., Inc.'s remaining share repurchase authorization was $7.3 billion [2][4].",
+     "judge": "PASS"
+    },
+    {
+     "id": "MRK_10-Q_2026-03-31.md::chunk68",
+     "passed": true,
+     "answer": "Based on the provided passages, there is no information regarding Merck & Co., Inc.'s \"certain other items\" specifically for the **first quarter of 2026**.\n\nPassage [1] defines what \"Non-GAAP\" items exclude (including \"certain other items\"), but it only provides financial data for the fiscal year ended **December 31, 2023**, and does not break down these specific items by quarter or provide any da",
+     "judge": "PASS The system answer correctly identifies that the information is not available, which is consistent with the reference answer \"no such items\"."
+    },
+    {
+     "id": "MRK_10-Q_2026-06-30.md::chunk70",
+     "passed": true,
+     "answer": "Merck & Co., Inc.'s net other income or expense for the six months ended June 30, 2026, was an expense of **$237 million**.\n\nThis figure is explicitly stated in Passage [1], which reports that \"Other (income) expense, net, was $237 million of expense in the first six months of 2026.\" The passage further notes that this represents a change from $43 million of income in the same period of 2025, prim",
+     "judge": "PASS"
+    },
+    {
+     "id": "MSFT_10-Q_2025-12-31.md::chunk5",
+     "passed": true,
+     "answer": "Microsoft signed a new definitive agreement with OpenAI to extend their partnership in **October 2025** [1][3]. Additionally, the partnership was extended again in **April 2026** [2][3].",
+     "judge": "PASS The system answer correctly identifies October 2025 as the date."
+    },
+    {
+     "id": "NVDA_10-K_2025-01-26.md::chunk15",
+     "passed": true,
+     "answer": "NVIDIA CORP's total revenue for the fiscal year ended January 26, 2025, was **$130.5 billion**. This figure is explicitly stated in Passage [3], which notes that \"Revenue for fiscal year 2025 was $130.5 billion, up 114% from a year ago.\"",
+     "judge": "PASS"
+    },
+    {
+     "id": "NVDA_10-K_2026-01-25.md::chunk27",
+     "passed": true,
+     "answer": "NVIDIA's gross margin percentage for fiscal year 2026 (ended January 25, 2026) was **71.1%**.\n\nThis figure is found in Passage [1], which presents a table of Consolidated Statements of Income expressed as a percentage of revenue for the period ended Jan 25, 2026, listing \"Gross profit\" (gross margin) at 71.1%.",
+     "judge": "PASS"
+    },
+    {
+     "id": "NVDA_10-K_2026-01-25.md::chunk40",
+     "passed": true,
+     "answer": "NVIDIA's capital expenditures for fiscal year 2026 were **$6.1 billion** [1].",
+     "judge": "PASS"
+    },
+    {
+     "id": "NVDA_10-Q_2025-10-26.md::chunk23",
+     "passed": true,
+     "answer": "NVIDIA Corp's gross margin percentage for the third quarter of fiscal year 2026 was **73.4%** [2]. This represents a decrease from 74.6% in the third quarter of fiscal year 2025, as the company's business model transitioned [2].",
+     "judge": "PASS"
+    },
+    {
+     "id": "PFE_10-Q_2026-06-28.md::chunk14",
+     "passed": true,
+     "answer": "No, Pfizer Inc did not experience significant supply chain disruptions during the first six months of 2026. According to Passage [1], the company stated it \"has not seen a significant disruption of our supply chain in the first six months of 2026 and through the date of filing of this Form 10-Q.\" This is further confirmed in Passage [3], which notes that during the same period, \"all of our manufac",
+     "judge": "PASS The system answer is factually consistent with and covers the reference answer."
+    },
+    {
+     "id": "TGT_10-K_2025-02-01.md::chunk37",
+     "passed": true,
+     "answer": "Based on Passage [1] and Passage [2], TARGET CORP's vendor income receivable was **$542 million** according to the January 31, 2026 filing [1], while the February 1, 2025 figure is listed as **$543 million** in both Passage [1] and Passage [2] [2].",
+     "judge": "PASS The system answer correctly identifies the figure as $543 million."
+    },
+    {
+     "id": "TGT_10-Q_2025-08-02.md::chunk12",
+     "passed": true,
+     "answer": "Target Corp's gross margin rate for the three months ended August 2, 2025, was **29.0 percent** [1][3].",
+     "judge": "PASS"
+    },
+    {
+     "id": "TGT_10-Q_2026-05-02.md::chunk14",
+     "passed": true,
+     "answer": "TARGET CORPORATION's gross margin rate for the quarter ended May 2, 2026 was **29.0 percent** [1]. This represents an increase from the 28.2 percent rate recorded in the comparable prior-year period [1][3].",
+     "judge": "PASS"
+    },
+    {
+     "id": "TGT_10-Q_2026-05-02.md::chunk3",
+     "passed": true,
+     "answer": "As of May 2, 2026, Target Corp had not received any IEEPA tariff refunds and had recorded no receivable for these amounts [1]. Although the U.S. Supreme Court ruled on February 20, 2026, that tariffs imposed under IEEPA were not authorized by the statute, this ruling did not establish a refund process at that time [3]. However, following a subsequent order from the U.S. Court of International Trad",
+     "judge": "PASS The system answer accurately reflects that no refunds were received and no receivable was recorded."
+    },
+    {
+     "id": "UAL_10-Q_2025-09-30.md::chunk28",
+     "passed": true,
+     "answer": "Based on Passage [1] and Passage [3], United Airlines Holdings, Inc.'s distribution expenses decreased by **8.4%** in the first nine months of 2025 compared to the year-ago period [1][3].",
+     "judge": "PASS"
+    },
+    {
+     "id": "UAL_10-Q_2026-06-30.md::chunk11",
+     "passed": false,
+     "answer": "Based on Passage [2], Aircraft fuel and related taxes expense for United Airlines (LUV) in the second quarter of 2026 increased by **67.0 percent** compared with the second quarter of 2025. This increase was primarily attributable to increased jet fuel prices due to recent market disruptions and worldwide geopolitical events [2].\n\n(Note: Passage [1] provides data for United Airlines Holdings, Inc.",
+     "judge": "FAIL The system answer provides the wrong percentage (67.0% instead of 84.1%) and incorrectly identifies the ticker for United Airlines Holdings, Inc. as LUV (which is Southwest Airlines)."
+    },
+    {
+     "id": "WMT_10-K_2025-01-31.md::chunk20",
+     "passed": true,
+     "answer": "Walmart Inc.'s return on investment (ROI) for the fiscal year ended January 31, 2025, was **15.5%** [5]. This figure is explicitly stated in Passage [5], which notes that the increase in ROI compared to the previous year was driven by improvements in business performance, partially offset by higher purchases of property and equipment [5].",
+     "judge": "PASS The system answer matches the reference answer exactly."
+    },
+    {
+     "id": "WMT_10-K_2025-01-31.md::chunk37",
+     "passed": true,
+     "answer": "Based on Passage [1], Walmart Inc.'s gross profit rate increased by **47** basis points for fiscal 2025 when compared to the previous fiscal year.\n\n(Note: Passage [2] mentions an increase of 40 basis points, but this appears to be a discrepancy in the text or refers to a specific subset not clarified as the primary figure in Passage [1], which explicitly states \"increased 47 and 20 basis points fo",
+     "judge": "PASS The system answer correctly identifies the increase as 47 basis points."
+    },
+    {
+     "id": "WMT_10-K_2026-01-31.md::chunk48",
+     "passed": true,
+     "answer": "Based on the provided passages, Walmart Inc.'s working capital deficits were:\n\n*   **$22.6 billion** as of January 31, 2026 [1][2].\n*   **$17.1 billion** as of January 31, 2025 [1][2][4].",
+     "judge": "PASS"
+    },
+    {
+     "id": "WMT_10-Q_2025-07-31.md::chunk7",
+     "passed": true,
+     "answer": "Sam's Club U.S. eCommerce net sales positively contributed approximately **3.4%** to comparable sales for the three months ended July 31, 2025 [1][2][3].",
+     "judge": "PASS"
+    },
+    {
+     "id": "WMT_10-Q_2026-04-30.md::chunk25",
+     "passed": true,
+     "answer": "Walmart Inc.'s effective income tax rate for the three months ended April 30, 2026 was **23.2%** [2].",
+     "judge": "PASS"
+    },
+    {
+     "id": "XOM_10-Q_2026-06-30.md::chunk23",
+     "passed": true,
+     "answer": "Based on the provided passages, there is no specific line item for \"Advantaged Volume Growth\" within the **Energy Products** section for the six months ended June 30, 2026. The available data for Energy Products in that period only lists increases from \"growing advantaged capacity and optimizing assets and products\" totaling **$410 million**, but does not explicitly label this as \"Advantaged Volum",
+     "judge": "PASS The system answer correctly identifies the $1,940 million figure from the reference answer."
+    }
+   ]
+  },
+  "refusals": {
+   "passed": 14,
+   "n": 15,
+   "unparseable": 0,
+   "pass_rate": 0.933,
+   "elapsed_s": 300,
+   "per_sample": [
+    {
+     "id": "neg-entity-tesla-margin",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Tesla's automotive gross margin for the quarter ended June 2026. The documents include financial data for Apple (AAPL) [1][5] and Costco (COST) [2][4], but no data is presented for Tesla.",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    },
+    {
+     "id": "neg-entity-lilly-pipeline",
+     "passed": true,
+     "answer": "The provided passages do not contain any information regarding Eli Lilly or its incretin manufacturing capacity expansion. Passage [1] discusses J&J's oncology and pulmonary hypertension products, while Passages [2] through [5] discuss Pfizer and Apple, respectively. Therefore, the question cannot be answered using the given context.",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    },
+    {
+     "id": "neg-entity-goldman-trading",
+     "passed": true,
+     "answer": "The provided passages do not contain any information regarding Goldman Sachs or its trading revenue. The documents exclusively discuss Delta Air Lines (DAL) and its operating revenue, passenger revenue, cargo revenue, and TRASM metrics. Therefore, it is not possible to answer the question using only the provided context.",
+     "judge": "PASS The system correctly stated it could not find the information."
+    },
+    {
+     "id": "neg-entity-coke-pricing",
+     "passed": true,
+     "answer": "The provided passages do not contain information about **Coca-Cola**. Instead, they describe the business practices of a different company (likely Costco Wholesale Corporation, based on terms like \"members,\" \"private-label items,\" and \"pricing authority\").\n\nThe passages state that for this unnamed company:\n*   Net sales growth and gross margins are impacted by competition from wholesalers and reta",
+     "judge": "PASS The system explicitly stated it cannot answer the question about Coca-Cola."
+    },
+    {
+     "id": "neg-entity-ford-ev",
+     "passed": true,
+     "answer": "The provided passages do not contain any information regarding Ford Motor's electric vehicle unit sales. The documents include financial data and sales reports for Chevron Corporation [1][2] and Walmart Inc. [3][4][5], but none mention Ford Motor or its specific EV sales figures.",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    },
+    {
+     "id": "neg-entity-netflix-subs",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Netflix or its paid net subscriber additions. Passage [3] mentions \"Membership fees\" and \"Total paid members\" for a company (likely Costco based on the context of membership fees and cardholders) but does not mention Netflix. Passages [1], [2], [4], and [5] refer to LUV, COST, NVDA, and MSFT respectively, none of which are Netflix. Therefo",
+     "judge": "PASS The system correctly stated the information was not available in the provided passages."
+    },
+    {
+     "id": "neg-period-aapl-2015",
+     "passed": true,
+     "answer": "The provided passages do not contain information about Apple's total net sales for fiscal year 2015. The documents include data for fiscal years 2024, 2025, and parts of 2026 [2][3][4][5], but no data is available for 2015.",
+     "judge": "PASS The system correctly stated the information was not available."
+    },
+    {
+     "id": "neg-period-msft-2018",
+     "passed": true,
+     "answer": "The provided passages do not contain information about Microsoft's research and development spending for fiscal year 2018. The documents reference data from periods such as the nine months ended March 31, 2026, and December 31, 2025 [1][2][4][5], but do not include historical data for fiscal 2018. Therefore, I cannot answer this question using only the provided passages.",
+     "judge": "PASS"
+    },
+    {
+     "id": "neg-period-wmt-2030",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Walmart's comparable sales for fiscal year 2030. The documents only include data up to fiscal year 2026 [5]. Therefore, it is not possible to answer this question using the given context.",
+     "judge": "PASS The system correctly stated the information was not available."
+    },
+    {
+     "id": "neg-scope-wmt-board",
+     "passed": true,
+     "answer": "Based on the provided passages, there is no information regarding Walmart's board of directors. The documents contain details about the boards of **LUV (Las Vegas Sands/Lufthansa context implied by airport codes and names like Rakesh Gangwal/Pierre Breber)** and **COST (Costco)**, but do not mention Walmart.\n\nTherefore, it is not possible to answer who serves on Walmart's board of directors using ",
+     "judge": "PASS The system correctly stated it could not find the information."
+    },
+    {
+     "id": "neg-scope-nvda-ceo-pay",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding NVIDIA's CEO total compensation. While Passage [1] mentions that the year-over-year increase in \"All Other operating loss\" was due to an increase in stock-based compensation expense reflecting employee growth and compensation increases, it does not specify individual compensation details for the CEO [1]. The other passages discuss revenue ",
+     "judge": "PASS The system correctly stated the information was not available."
+    },
+    {
+     "id": "neg-scope-dal-risk-factors",
+     "passed": true,
+     "answer": "Based on the provided passages, it is not possible to list the full risk factors for Delta Air Lines. The documents contain information regarding **United Airlines** (UAL) and **Costco Wholesale Corporation** (COST), but do not include any reports or risk factor disclosures for Delta Air Lines.\n\n*   Passages [1] and [4] discuss United Airlines' operations, mentioning that future results may be imp",
+     "judge": "PASS The system correctly stated it was not possible to list the risk factors."
+    },
+    {
+     "id": "neg-unanswerable-comparison",
+     "passed": false,
+     "answer": "Based on the provided passages, **Target (TGT)** had the highest operating margin last quarter.\n\nAccording to Passage [5], for Target's three months ended November 1, 2025, the **Operating income margin rate** was **3.8%** [5].\n\nIn comparison:\n*   **Walmart (WMT):** For the three months ended April 30, 2026, Passage [4] states that \"Operating income as a percentage of net sales **decreased 8 basis",
+     "judge": "FAIL The system asserted a specific answer (Target) instead of declining."
+    },
+    {
+     "id": "neg-cross-corpus-acs-auth",
+     "passed": true,
+     "answer": "The provided passages do not contain information about HTTP headers for authenticating an ACS API request. The documents discuss financial reports, merger agreements, litigation contingencies, and revenue trends for companies like Costco, Chevron, Walmart, Microsoft, and Southwest Airlines, but none mention technical details regarding ACS API authentication. Therefore, I cannot answer the question",
+     "judge": "PASS The system correctly stated it could not answer the question using the provided passages."
+    },
+    {
+     "id": "neg-cross-corpus-retention",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding how long deleted objects are retained before permanent removal. The documents discuss financial assets, debt ratings, tax provisions, and impairment of long-lived assets, but they do not address data retention policies for deleted objects [1][2][3][4][5].",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    }
+   ]
+  }
+ },
+ "qwen3.8:27b-mlx": {
+  "refusals": {
+   "passed": 15,
+   "n": 15,
+   "unparseable": 0,
+   "pass_rate": 1.0,
+   "elapsed_s": 628,
+   "per_sample": [
+    {
+     "id": "neg-entity-tesla-margin",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Tesla's automotive gross margin. The available data covers Apple (AAPL) [1][5], Costco (COST) [2][4], and NVIDIA (NVDA) [3], but does not include any financial data for Tesla.",
+     "judge": "PASS The system correctly stated the information was not available."
+    },
+    {
+     "id": "neg-entity-lilly-pipeline",
+     "passed": true,
+     "answer": "Based on the provided passages, there is no information regarding Eli Lilly or its incretin manufacturing capacity expansion.\n\nThe passages provided discuss:\n*   J&J's oncology and pulmonary hypertension product sales [1].\n*   Pfizer's PC1 segment results and cost reduction programs [2][3].\n*   Apple's discussion of U.S. tariffs and semiconductor investigations [4][5].\n\nNone of the passages mentio",
+     "judge": "PASS The system correctly stated there was no information regarding Eli Lilly."
+    },
+    {
+     "id": "neg-entity-goldman-trading",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Goldman Sachs' trading revenue. The documents are from Delta Air Lines (DAL) and discuss its operating revenue, TRASM (Total Revenue per Available Seat Mile), and factors such as fuel costs, demand for premium products, and refinery sales [1][2][3][4][5]. Therefore, I cannot answer the question using only the provided context.",
+     "judge": "PASS The system correctly stated it could not find the information."
+    },
+    {
+     "id": "neg-entity-coke-pricing",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Coca-Cola. Instead, they describe the pricing and merchandise mix strategies of a company that serves \"members\" and emphasizes \"private-label items\" and \"pricing authority,\" which is characteristic of Costco (as indicated by the source filenames \"COST_10-K\" and \"COST_10-Q\").\n\nAccording to these passages, the company's philosophy is to prov",
+     "judge": "PASS The system explicitly stated the information was not available and correctly identified that the corpus did not contain Coca-Cola."
+    },
+    {
+     "id": "neg-entity-ford-ev",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Ford Motor's electric vehicle unit sales. The passages focus on Chevron Corporation's upstream and downstream production and sales data [1][2] and Walmart's comparable sales and revenue performance [3][4][5].",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    },
+    {
+     "id": "neg-entity-netflix-subs",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Netflix's paid net subscriber additions. The passages discuss financial data for LUV (Southwest Airlines) [1], COST (Costco) [2][3], NVDA (NVIDIA) [4], and MSFT (Microsoft) [5], but do not mention Netflix.",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    },
+    {
+     "id": "neg-period-aapl-2015",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Apple's total net sales for fiscal year 2015. The documents only provide data for fiscal years 2023, 2024, and 2025 (e.g., [2][3] show total net sales of $383,285 million for 2023, $391,035 million for 2024, and $416,161 million for 2025), as well as quarterly data for 2025 and 2026 [1][4][5].",
+     "judge": "PASS The system correctly stated the information was not available in the provided passages."
+    },
+    {
+     "id": "neg-period-msft-2018",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Microsoft's research and development spending in fiscal 2018. The documents focus on financial results for the nine months ended March 31, 2026, and December 31, 2025, discussing general increases in operating expenses driven by investments in AI infrastructure and talent, but they do not provide specific historical figures for fiscal 2018",
+     "judge": "PASS The system correctly stated the information was not available."
+    },
+    {
+     "id": "neg-period-wmt-2030",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Walmart's comparable sales for fiscal year 2030. The available data covers fiscal years 2023 through 2026 [3][5] and specific quarters in 2024 and 2025 [1][4], but does not extend to fiscal year 2030.",
+     "judge": "PASS The system correctly stated the information was not available."
+    },
+    {
+     "id": "neg-scope-wmt-board",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding Walmart's board of directors. The passages discuss the boards of directors for Southwest Airlines (LUV) [1][3][5] and Costco (COST) [2][4], but do not mention Walmart.",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    },
+    {
+     "id": "neg-scope-nvda-ceo-pay",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding NVIDIA's CEO total compensation. The excerpts focus on revenue drivers, operating segments (Compute & Networking and Graphics), forward-looking statements, and general corporate history, but they do not include executive compensation details [1][2][3][4][5].",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    },
+    {
+     "id": "neg-scope-dal-risk-factors",
+     "passed": true,
+     "answer": "The provided passages do not contain the full list of risk factors for Delta Air Lines (UAL). Instead, they indicate that the detailed risk factors are located in a separate document. Specifically, Passage [1] and Passage [4] state that readers should refer to \"Part I, Item 1A. Risk Factors, of the 2024 Form 10-K\" for the comprehensive discussion of risk factors [1][4].\n\nWhile the passages mention",
+     "judge": "PASS The system explicitly stated the full list cannot be answered using the provided context."
+    },
+    {
+     "id": "neg-unanswerable-comparison",
+     "passed": true,
+     "answer": "Based on the provided passages, it is not possible to determine which company had the highest operating margin last quarter because the passages do not provide a complete comparison of operating margins for all companies for the same specific \"last quarter\" period, nor do they explicitly state the operating margin percentage for Apple Inc. (AAPL) or Walmart Inc. (WMT) in a directly comparable form",
+     "judge": "PASS The system correctly stated it was not possible to determine the answer."
+    },
+    {
+     "id": "neg-cross-corpus-acs-auth",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding HTTP headers or how to authenticate an ACS API request. The documents focus on corporate filings, financial reports, and legal matters for companies such as Costco, Chevron, Walmart, Microsoft, and Southwest Airlines [1][2][3][4][5].",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    },
+    {
+     "id": "neg-cross-corpus-retention",
+     "passed": true,
+     "answer": "The provided passages do not contain information regarding how long deleted objects are retained before permanent removal. The texts discuss topics such as property and equipment capitalization [1], income tax adjustments and special items [2], debt facilities [3], ticket breakage estimates [4], and international tax legislation [5], but none address data retention policies for deleted objects.",
+     "judge": "PASS The system correctly stated the information was not in the provided passages."
+    }
+   ]
+  }
+ }
+}
