@@ -1,18 +1,14 @@
 # RAG Toolkit
 
-A local-first Retrieval-Augmented Generation (RAG) system built from scratch in Python.
+A local-first Retrieval-Augmented Generation (RAG) system in Python.
 
 This project implements the full RAG loop from document ingestion to answer generation: ingest → clean → chunk → embed → index → retrieve → rerank → generate. It is designed to be modular, testable, and easy to swap out piece by piece without rewriting the whole pipeline.
 
-The project is intentionally built as both a practical system and a portfolio piece: it shows end-to-end engineering across data loading, vector search, prompt construction, API design, UI wiring, and evaluation.
+## Design goals
 
-## Why this project is worth showing
-
-- End-to-end architecture: the repo covers the complete RAG stack, not just one isolated component.
-- Production-minded structure: pluggable interfaces, typed config, and a clear separation of concerns.
+- End-to-end: the repo covers the complete RAG stack, from ingestion through evaluation, not one isolated component.
+- Swappable components: pluggable interfaces, typed config, and a clear separation of concerns.
 - Local-first defaults: Ollama handles embeddings and generation; Chroma provides local vector storage.
-- Strong engineering hygiene: a real test suite, CI workflow, and typed Python code.
-- Portfolio-friendly story: it is easy to explain as “I built a working retrieval system from first principles and containerized the experience around it.”
 
 ## What it does
 
@@ -198,11 +194,9 @@ This repository includes:
 
 ## Roadmap ideas
 
-If you want to push this project further as a portfolio piece, good next steps are:
+Possible next steps:
 
 - add Docker support for one-command startup
 - add a richer sample corpus and demo data
 - export turn records to OpenTelemetry (the `TurnSink` interface is the seam)
 - add deployment notes for cloud hosting or container deployment
-
-This repository is a strong example of building a real AI system end to end: the core ideas are grounded, the structure is deliberate, and the implementation is more than a single notebook or toy script.
