@@ -1,6 +1,7 @@
 # Backlog
 
-Planned work, roughly in dependency order. Nothing here is started. The
+Planned work, roughly in dependency order. Shipped milestones are marked
+*(shipped)*; the first unmarked one is next. The
 existing pipeline is feature-rich on the *retrieval/generation* axis and thin
 on everything that surrounds it — measurement, operations, and input quality —
 which is what this list is.
@@ -18,7 +19,7 @@ building is a different thing entirely — the model calling search itself —
 which is Milestone 19, and it subsumes routing rather than adding it as a
 stage.
 
-### Milestone 11 — Measure Milestones 9 & 10
+### Milestone 11 — Measure Milestones 9 & 10 *(shipped)*
 
 First, because it gates the value of everything else. Contextual chunking and
 CRAG both shipped functionally verified and numerically unmeasured, and the eval
@@ -359,3 +360,107 @@ RAG-triad-style metrics don't need one:
 - MAP (mean average precision) is a smaller, cheaper addition to
   `rag/eval/metrics.py` alongside the existing NDCG@k — worth adding in the
   same pass since both are pure functions over gains.
+
+### Milestone 23 — Eval regression gate in CI
+
+CI runs `ruff`, `mypy` and `pytest`, all hermetic, so nothing stops a change
+that makes answers or retrieval worse from merging. The eval harness exists
+and the noise floor is measured; nothing runs it automatically. It depends on
+nothing else in this list and is worth pulling ahead of it.
+
+- **Retrieval, gated on every PR.** `retrieval_eval` on the EDGAR eval set,
+  failing the build when hit rate or NDCG drops by more than the measured noise
+  floor (SE ≈ 2.5pp at n=174, see `docs/measured-results.md`) against a
+  committed baseline result. A threshold tighter than the noise floor fails
+  on chance; a looser one lets real regressions through.
+- **The index is the hard part.** A GitHub runner has no Ollama, no EDGAR
+  documents (gitignored and deliberately not redistributed), and no GPU. Build
+  it once from `manifest.json` in a CI job and store it with `actions/cache`,
+  keyed on the manifest, the `FINGERPRINTED` chunking settings and the
+  embedding model, so it rebuilds only when one of those changes. Commit the
+  174 eval queries' embeddings (derived from our own questions, not the
+  corpus) so the per-PR run needs no embedding server at all.
+- **Check the reranker fits the time budget.** `bge-reranker-v2-m3` took
+  ~1.1s/query on Apple Silicon; a CPU runner will be slower. If the full set is
+  too slow per PR, gate on a fixed stratified subset and run all 174 nightly.
+  Report the subset's own noise floor; it is wider than the full set's.
+- **Answer quality, nightly or on demand, not per PR.** `answer_eval` needs a
+  generator and a judge (both local LLMs), and run-to-run variance is already
+  ±2 samples at n=40. A nightly job on a self-hosted runner with Ollama can
+  track it and flag a regression; making it block merges would mostly block
+  on noise.
+- **The quick alternative, and why it isn't enough:** gating on the committed
+  `baseline` corpus with a small embedder is cheap and fully hermetic, but it
+  gates a 31-chunk toy corpus that none of the measured results come from.
+  Worth having as a smoke test alongside, not instead.
+- The baseline result file gets updated deliberately, in the same PR as a
+  change that intends to move the numbers, never automatically, or the gate
+  ratchets toward whatever the last merge scored.
+
+### Milestone 24 — Latency percentiles and cost per query
+
+The measured results report total wall-clock seconds per eval run. That hides
+the tail: a mean can look fine while one query in twenty takes 10x longer.
+Every turn already records per-stage timings (`TurnRecord.stage_ms`), and
+`answer_eval` times each sample, but nothing summarizes either.
+
+- p50/p95 (and max) per stage and end to end, reported by `retrieval_eval`,
+  `answer_eval` and `run_matrix.py` next to the quality metrics, and by
+  `python -m rag.cli turns` over logged traffic. `retrieval_eval` needs
+  per-query timing added first; it doesn't time samples today.
+- Add latency columns to the tables in `docs/measured-results.md`, starting
+  with the reranker comparison, where the tradeoff (v2-m3: +10.4pp hit for
+  ~4x latency) is currently stated as a mean.
+- Cost per 1,000 queries: tokens are already metered (`UsageMeter`); price
+  them per model from config. With local Ollama the dollar figure is $0 and
+  the meaningful number is tokens and seconds per query. It becomes a real
+  cost once Milestone 18's hosted adapters land, so price the hosted models
+  in config rather than hardcoding a $0.
+- Use the same percentile code for evals and logged turns, so an eval latency
+  and a production latency are measured the same way.
+
+### Milestone 25 — Chunk size and overlap sweep
+
+`chunking.chunk_size` and `chunk_overlap` are in `run_matrix.py`'s fingerprint
+but have never been varied. The matrix excludes them because each value needs
+its own index build, not a config flip. The shipped values were never tuned
+on EDGAR.
+
+- A small grid (e.g. size 500 / 1000 / 2000 × overlap 0 / 150 / 300), each
+  built into its own `index_dir` the way the contextual comparison did it
+  (`data/eval/config_contextual.yaml`), since the collection name is derived
+  from the corpus selection alone and would otherwise be overwritten.
+- **Chunk size changes what a hit means.** The eval set matches answer spans,
+  and a larger chunk contains more spans by construction, so hit rate goes up
+  with size even if the reranker gets no better. Report NDCG, and the
+  prompt-token cost of `rerank_top_k` chunks of that size, alongside hit rate.
+- Record chunk-boundary failures: samples whose answer span is split across
+  two chunks at one size and whole at another. This is the concrete
+  before/after for the failure-analysis section, and it tells Milestone 15
+  (semantic chunking) whether boundaries are actually the problem.
+- Run after Milestone 23 if possible, so the chosen defaults become the CI
+  baseline. Check at least one size against a second reranker rather than
+  assuming the best size is independent of it: the MiniLM-vs-BGE pool-size
+  reversal in `docs/measured-results.md` is the precedent.
+
+### Milestone 26 — OpenTelemetry trace export
+
+The turn log is local JSONL, read by `python -m rag.cli turns`. That is
+deliberate (Milestone 12), and the sink sits behind an interface so an
+exporter can be another adapter (`rag/observability/sink.py`). What the JSONL
+can't give: a trace view of the stages as spans, search over many turns, and
+comparing latency across deployments.
+
+- An OpenTelemetry exporter behind the existing sink interface, one span per
+  pipeline stage (the `stage_ms` keys), LLM calls as child spans carrying
+  token counts, and the turn's retrieved/cited chunk ids as attributes.
+- Point it at a self-hosted Arize Phoenix or Langfuse via config. Both accept
+  OTLP, so the adapter is written against OTel and not either vendor's SDK.
+  That keeps it one dependency (the OTel SDK) and swappable between them.
+- JSONL stays the default. The OTel sink is off unless configured, and the
+  eval runners still log nothing.
+- Justify the OTel SDK against the minimal-dependencies rule. It is the
+  standard, and hand-writing OTLP would be worse, but it is a new dependency.
+- Most useful after Milestone 18, when there is a deployment to trace, and
+  after Milestone 19, when a turn becomes 1–N tool calls a flat record reads
+  poorly.
