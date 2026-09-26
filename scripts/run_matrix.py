@@ -322,7 +322,8 @@ def render_table(results: list[dict[str, Any]]) -> str:
     lines += [
         "",
         "Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval "
-        "that excludes zero; `W/L` counts the questions the variant gained / lost. "
+        "that excludes zero; `W/L` counts the questions the variant gained / lost and "
+        "`p` is McNemar's exact test on them -- trust it over the CI when W+L is small. "
         "`(no CI)` rows predate per-sample scores and need a re-run to be tested.",
     ]
     return "\n".join(lines)

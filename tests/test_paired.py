@@ -127,8 +127,10 @@ def test_compare_by_id_refuses_different_sample_sets() -> None:
 
 def test_format_difference_marks_significance_and_counts_only_for_binary() -> None:
     diff = paired_difference([0.0] * 10, [1.0] * 10)
-    assert format_difference(diff, binary=True) == "+1.000 [+1.000, +1.000]* 10W/0L"
+    # 10 wins, 0 losses: p = 2 * (1/2)**10.
+    assert format_difference(diff, binary=True) == "+1.000 [+1.000, +1.000]* 10W/0L p=0.002"
     assert "W/" not in format_difference(diff)
+    assert "p=" not in format_difference(diff), "no direction-only p-value on graded metrics"
 
 
 # ---------------------------------------------------------------------------
@@ -156,7 +158,7 @@ def test_retrieval_table_shows_a_paired_interval_against_baseline() -> None:
 
     table = run_matrix.render_table([base, variant])
 
-    assert "1W/0L" in table
+    assert "1W/0L p=1" in table, "the McNemar p-value is rendered, not just computed"
     assert "Δ hit [95% CI]" in table
 
 

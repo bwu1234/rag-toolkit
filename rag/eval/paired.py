@@ -127,14 +127,17 @@ def compare_by_id(
 
 
 def format_difference(diff: PairedDifference, *, binary: bool = False) -> str:
-    """Compact table cell: ``+0.104 [+0.061, +0.147]*``, plus ``21W/3L`` when binary.
+    """Compact table cell: ``+0.104 [+0.061, +0.147]*``, plus ``21W/3L p=0.0002`` when binary.
 
-    The ``*`` marks an interval that excludes zero. The win/loss count is shown
-    only for binary metrics, where it is the discordant-pair count; on NDCG
-    almost every sample differs slightly and the count says little.
+    The ``*`` marks an interval that excludes zero. The win/loss count and the
+    p-value are shown only for binary metrics, where the counts are the
+    discordant pairs and the p-value is McNemar's exact test -- the number to
+    trust over the interval when few samples differ. On NDCG almost every sample
+    differs slightly, and a direction-only test can disagree with the interval
+    for reasons that are not a finding, so neither is shown.
     """
     marker = "*" if diff.excludes_zero else ""
     cell = f"{diff.mean_diff:+.3f} [{diff.ci_low:+.3f}, {diff.ci_high:+.3f}]{marker}"
     if binary:
-        cell += f" {diff.wins}W/{diff.losses}L"
+        cell += f" {diff.wins}W/{diff.losses}L p={diff.p_value:.2g}"
     return cell

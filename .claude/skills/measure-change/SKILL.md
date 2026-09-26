@@ -68,7 +68,7 @@ hours, so run it only after the cheap retrieval measurements are in.
 Metrics: `hit_rate`, `recall`, `precision`, `mrr`, `ndcg`, plus `recall_by_k`.
 The rendered table shows Δ hit and Δ NDCG against `baseline`, **paired by
 sample**, with a 95% CI (`*` when it excludes zero) and, for hit, the win/loss
-count of questions that flipped. The answer matrix does the same for pass rate
+count of questions that flipped and McNemar's exact p on them. The answer matrix does the same for pass rate
 against its first variant, and splits failures into retrieval (gold span never
 reached the prompt) and generation (it did; the answer still failed).
 
