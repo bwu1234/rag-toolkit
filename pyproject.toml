@@ -1,7 +1,7 @@
 [project]
 name = "rag"
 version = "0.1.0"
-description = "Production-style RAG system built from scratch"
+description = "Local-first RAG pipeline with swappable components"
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.6",
