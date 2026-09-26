@@ -18,6 +18,7 @@ from rag.config.settings import RagConfig
 from rag.embedding.factory import get_embedder
 from rag.generation.factory import get_llm_client
 from rag.generation.llm import LLMClient
+from rag.index_manifest import check_queryable, index_manifest_path
 from rag.retrieval.factory import get_query_expander, get_reranker
 from rag.retrieval.retriever import Retriever
 from rag.retrieval.sparse import BM25Index, bm25_index_path
@@ -45,6 +46,9 @@ def build_retriever(
     """
 
     selection = config.corpus_selection(corpora)
+    # Fail at construction, not first query: an index embedded by another model
+    # doesn't error on search, it just ranks wrongly.
+    check_queryable(index_manifest_path(selection.index_dir, selection.slug), config)
     embedder = get_embedder(config.embedding)
     vector_store = get_vector_store(
         config.vector_store, selection.index_dir, collection_name=selection.collection_name

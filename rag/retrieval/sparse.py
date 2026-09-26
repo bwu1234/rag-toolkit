@@ -89,6 +89,16 @@ class SparseIndex(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def ids(self) -> set[str]:
+        """Every chunk id currently indexed -- mirrors `VectorStore.ids`."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, ids: list[str]) -> None:
+        """Remove the chunks with these ids; ids not present are ignored."""
+        raise NotImplementedError
+
+    @abstractmethod
     def reset(self) -> None:
         """Delete all indexed chunks."""
         raise NotImplementedError
@@ -189,6 +199,16 @@ class BM25Index(SparseIndex):
 
     def has_chunk(self, chunk_id: str) -> bool:
         return chunk_id in self._records
+
+    def ids(self) -> set[str]:
+        return set(self._records)
+
+    def delete(self, ids: list[str]) -> None:
+        removed = sum(self._records.pop(chunk_id, None) is not None for chunk_id in ids)
+        if removed:
+            # Same lazy rebuild as `upsert`; persisted on the next `flush`.
+            self._dirty = True
+            logger.info("Deleted %d chunk(s) from BM25 index (%d left)", removed, len(self._records))
 
     def reset(self) -> None:
         self._records.clear()

@@ -101,6 +101,20 @@ class VectorStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def ids(self) -> set[str]:
+        """Every chunk id currently stored.
+
+        The indexer diffs this against the ids the corpus produces now, to find
+        chunks whose document was deleted or shortened.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, ids: list[str]) -> None:
+        """Remove the chunks with these ids; ids not present are ignored."""
+        raise NotImplementedError
+
+    @abstractmethod
     def reset(self) -> None:
         """Delete all stored chunks, leaving an empty collection.
 

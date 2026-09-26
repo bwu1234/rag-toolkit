@@ -65,7 +65,8 @@ chunking:
   # Costs one LLM call PER CHUNK during `python -m rag.cli index` -- by far the
   # most expensive thing here, but paid per index rather than per query.
   # `chunk.text` is never modified, so citations still quote the source
-  # verbatim. Re-index with `--reset` after changing any of these.
+  # verbatim. Re-index with `--reset` after changing any of these (`index`
+  # refuses to run until you do).
   contextual:
     enabled: false
     max_document_chars: 8000

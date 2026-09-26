@@ -39,12 +39,11 @@
   ~4h per *fresh* contextual config is still an overnight-scale job. Higher
   parallelism than a local Ollama offers — or a hosted provider — is the next
   lever, not more client threads.
-- The index's content hash still covers `chunk.text` only, so toggling
-  `chunking.contextual.enabled` does not by itself invalidate an existing index —
-  `--reset` remains the remedy, and it's a convention rather than an enforced
-  one. The narrower hazard it used to carry (changing a `contextual` value or the
-  context prompt leaving *stale blurbs* undetected) is now closed by the context
-  cache's fingerprint, which covers every input to the call.
+- Changing anything under `chunking.contextual` still needs a full `--reset`
+  (enforced by the index manifest) rather than re-contextualizing
+  incrementally, because the per-chunk content hash covers `chunk.text` only.
+  The context cache keeps that rebuild from re-paying for blurbs whose inputs
+  didn't change.
 - Chunking is character-based fixed-size with overlap; token-aware and
   structure-aware/semantic chunking are deferred until the end-to-end
   pipeline is proven (both fit behind the existing `Chunker` interface).
@@ -93,21 +92,20 @@
   default in `config.yaml`); switch to `cross_encoder` to enable it. A
   pure-LLM reranker (reusing the existing `LLMClient`/Ollama setup) remains
   a possible lighter-weight alternative behind the same `Reranker` interface.
-- Indexing skips unchanged chunks via a content hash (`rag/cli.py`), but
-  there's no matching path for *deletions* — neither `VectorStore` nor
-  `SparseIndex` exposes a `delete(ids)` method, so a document removed from a
-  corpus leaves its vectors and BM25 records orphaned in both indexes
-  permanently. See `docs/backlog.md` Milestone 20.
+- Stale-chunk removal trusts the corpus as loaded. A file whose loader raises
+  (e.g. a corrupt PDF, logged and skipped) produces no chunks that run, so its
+  existing chunks are removed along with genuinely deleted documents, and come
+  back only once it loads again. An *empty* load aborts the run before
+  anything is removed.
+- The index manifest cannot vouch for indexes built before it existed: the
+  first run on one adopts the current config with a warning, so an index
+  already mixing two embedders stays mixed until `--reset`.
 - `build_rag_prompt` has no defense against prompt injection — retrieved
   passage text or a user's raw query containing something like "ignore
   previous instructions" is concatenated straight into the prompt with no
   delimiter distinguishing untrusted content from the system instructions.
   Wrapping passages and the query in explicit delimiter tags is a cheap first
   step; nothing is done today.
-- Embedding dimensionality is discovered lazily and cached per `OllamaEmbedder`
-  instance, not persisted — switching embedding models still requires
-  `index --reset` to avoid mixing incompatible vectors in one collection (the
-  adapter doesn't currently detect this for you).
 - **The turn log grows without bound and is not rotated.** `data/logs/turns.jsonl`
   gets one line of several KB per turn, since every event, attempt and answer
   is inlined. It's gitignored local data, but nothing prunes it. It also stores

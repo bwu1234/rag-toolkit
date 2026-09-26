@@ -122,6 +122,18 @@ class ChromaVectorStore(VectorStore):
     def count(self) -> int:
         return self._collection.count()
 
+    def ids(self) -> set[str]:
+        # `include=[]` fetches ids alone, not every stored document and metadata.
+        return set(self._collection.get(include=[])["ids"])
+
+    def delete(self, ids: list[str]) -> None:
+        # Chroma caps how many records one call may touch; batch to stay under it.
+        batch_size = self._client.get_max_batch_size()
+        for start in range(0, len(ids), batch_size):
+            self._collection.delete(ids=ids[start : start + batch_size])
+        if ids:
+            logger.info("Deleted %d chunk(s) from collection %r", len(ids), self._collection_name)
+
     def reset(self) -> None:
         self._client.delete_collection(name=self._collection_name)
         self._collection = self._client.get_or_create_collection(

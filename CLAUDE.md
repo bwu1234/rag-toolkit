@@ -61,8 +61,11 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   `mypy --ignore-missing-imports rag` (mypy is scoped to `rag/` on purpose —
   tests use structural fakes that nominal typing flags falsely).
 - Whole pipeline end to end: `scripts/demo.sh` (takes `--corpus`, `--question "..."`)
-- Build the index: `python -m rag.cli index`. Add `--reset` to rebuild; it's
-  **required** after changing anything under `chunking.contextual`. Generated
+- Build the index: `python -m rag.cli index`. Incremental: unchanged chunks
+  are skipped, and chunks of deleted/shortened documents are removed. Add
+  `--reset` to rebuild; it's **required** after changing the embedder or
+  anything under `chunking.contextual`, and the index manifest
+  (`rag/index_manifest.py`) refuses the run until you do. Generated
   contexts survive `--reset` on purpose (so rebuilds don't re-pay for them);
   `--clear-context-cache` forces regeneration.
 - API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`, `/health`)

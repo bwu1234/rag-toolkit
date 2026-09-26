@@ -154,9 +154,11 @@ class ContextualChunkingConfig(BaseModel):
     tuning can't -- a chunk that never names its own subject (see
     `rag.chunking.contextualizer`).
 
-    Changing any of these values changes what gets embedded, so re-index with
-    `--reset` afterwards rather than relying on the incremental skip, which
-    keys off chunk text alone.
+    Changing any of these values (other than `concurrency` and `cache`) changes
+    what gets embedded, which the incremental skip -- keyed off chunk text
+    alone -- can't see. The index manifest (`rag.index_manifest`) records them
+    and refuses to extend an index built with different values until
+    `index --reset`.
     """
 
     enabled: bool = False
