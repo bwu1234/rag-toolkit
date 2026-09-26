@@ -369,10 +369,12 @@ and the noise floor is measured; nothing runs it automatically. It depends on
 nothing else in this list and is worth pulling ahead of it.
 
 - **Retrieval, gated on every PR.** `retrieval_eval` on the EDGAR eval set,
-  failing the build when hit rate or NDCG drops by more than the measured noise
-  floor (SE ≈ 2.5pp at n=174, see `docs/measured-results.md`) against a
-  committed baseline result. A threshold tighter than the noise floor fails
-  on chance; a looser one lets real regressions through.
+  failing the build when the **paired** 95% CI on Δ hit rate or Δ NDCG against
+  a committed baseline result (with per-sample scores) lies entirely below
+  zero — `rag/eval/paired.py`, as `run_matrix.py` reports it. Not a fixed
+  threshold of "SE ≈ 2.5pp": that is the unpaired error of one rate, not of a
+  difference between two runs on the same questions. A threshold tighter than
+  the real noise fails on chance; a looser one lets real regressions through.
 - **The index is the hard part.** A GitHub runner has no Ollama, no EDGAR
   documents (gitignored and deliberately not redistributed), and no GPU. Build
   it once from `manifest.json` in a CI job and store it with `actions/cache`,

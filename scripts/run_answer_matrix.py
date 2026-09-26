@@ -43,6 +43,14 @@ generator (every result recorded before Milestone 19), and
 `answer_<corpus>__judge-<model>.json` otherwise, so rows graded by different
 judges never merge into one table.
 
+Reading the table
+-----------------
+Answerable pass rate is shown with a paired 95% interval against the first
+variant (`crag=off`) and the win/loss count of questions that flipped -- see
+:mod:`rag.eval.paired`. Failures are split into **retrieval** (the gold span
+never reached the prompt) and **generation** (it did, and the answer still
+failed), because the two need different fixes.
+
 The multi-hop set
 -----------------
 `edgar_multihop_set.json` asks about several companies or periods per
@@ -79,6 +87,7 @@ from rag.eval.answer_eval import (  # noqa: E402
 )
 from rag.eval.dataset import EvalDataset  # noqa: E402
 from rag.eval.multihop_eval import run_multihop_eval  # noqa: E402
+from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.generation.builder import build_chat_service  # noqa: E402
 from rag.generation.chat_service import ChatService  # noqa: E402
 from rag.generation.factory import get_llm_client  # noqa: E402
@@ -163,7 +172,36 @@ def run_one(
         "mean_latency_s": round(report.mean_latency_s, 1),
         "elapsed_s": round(elapsed, 1),
         "failed_ids": [r.sample_id for r in report.sample_results if r.passed is not True],
+        # Failures split by stage. Samples without gold spans (refusals, the
+        # doc-matched baseline set) cannot be attributed and are counted apart.
+        "failed_retrieval": report.evidence_missed.num_failed,
+        "failed_generation": report.evidence_retrieved.num_failed,
+        "failed_unattributed": (
+            report.num_evaluated - report.num_passed
+            - report.evidence_missed.num_failed - report.evidence_retrieved.num_failed
+        ),
+        # Per-sample detail, for paired comparison across variants.
+        "samples": [
+            {"id": r.sample_id, "passed": r.passed, "evidence_retrieved": r.evidence_retrieved}
+            for r in report.sample_results
+        ],
     }
+
+
+def paired_pass_delta(result: dict[str, Any], baseline: dict[str, Any]) -> str:
+    """Pass-rate difference vs `baseline`, paired by sample id; unparseable counts as a fail."""
+    delta = result["pass_rate"] - baseline["pass_rate"]
+    if "samples" not in result or "samples" not in baseline:
+        return f"{delta:+.3f} (no CI)"
+
+    def scores(run: dict[str, Any]) -> dict[str, float]:
+        return {s["id"]: 1.0 if s["passed"] is True else 0.0 for s in run["samples"]}
+
+    try:
+        diff = compare_by_id(scores(baseline), scores(result))
+    except ValueError:
+        return f"{delta:+.3f} (unpaired)"
+    return format_difference(diff, binary=True)
 
 
 def run_multihop(chat_service: ChatService, judge: LLMClient, dataset: EvalDataset) -> dict[str, Any]:
@@ -207,13 +245,29 @@ def judge_suffix(judge: LLMConfig, generator: LLMConfig) -> str:
 
 
 def render_table(results: list[dict[str, Any]]) -> str:
+    reference = next((r for r in results if r.get("answerable")), None)
+    ref_name = f"`{reference['variant']}`" if reference else "first"
     lines = [
-        "| variant | answerable pass | n | s | refusal pass | n | s |",
-        "|---|---|---|---|---|---|---|",
+        f"| variant | answerable pass | Δ vs {ref_name} [95% CI] | fails: retrieval / generation "
+        "| n | s | refusal pass | n | s |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for r in results:
         a, f = r.get("answerable"), r.get("refusals")
-        a_cell = f"{a['pass_rate']:.3f} | {a['num_evaluated']} | {a['elapsed_s']:.0f}" if a else "— | — | —"
+        if a:
+            delta = (
+                paired_pass_delta(a, reference["answerable"])
+                if reference and r is not reference else "—"
+            )
+            split = "—"
+            if "failed_retrieval" in a:
+                split = f"{a['failed_retrieval']} / {a['failed_generation']}"
+                if a["failed_unattributed"]:
+                    split += f" (+{a['failed_unattributed']} n/a)"
+            a_cell = (f"{a['pass_rate']:.3f} | {delta} | {split} | {a['num_evaluated']} "
+                      f"| {a['elapsed_s']:.0f}")
+        else:
+            a_cell = "— | — | — | — | —"
         f_cell = f"{f['pass_rate']:.3f} | {f['num_evaluated']} | {f['elapsed_s']:.0f}" if f else "— | — | —"
         lines.append(f"| `{r['variant']}` | {a_cell} | {f_cell} |")
 

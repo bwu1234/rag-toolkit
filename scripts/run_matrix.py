@@ -18,6 +18,12 @@ runs on only after the main effects are known.
 index.  Answer eval and contextual index builds cost hours and belong in a
 second pass; serializing the cheap measurements behind them wastes a night.
 
+**Every result carries its per-sample scores**, so a variant is compared with
+the baseline question by question (:mod:`rag.eval.paired`) rather than by
+eyeballing two means.  The table shows Δ hit and Δ NDCG with a 95% interval on
+the *paired* difference, and the hit column's win/loss count -- the questions
+the two runs disagree on, which is all a comparison can learn from.
+
 **Every result carries its config.**  A metric with no config attached is
 unreproducible, so each record stores the corpus, the eval set, the resolved
 overrides, and a fingerprint over the settings that actually affect retrieval.
@@ -46,6 +52,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rag.config.settings import RagConfig, load_config  # noqa: E402
 from rag.eval.dataset import EvalDataset  # noqa: E402
+from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.eval.retrieval_eval import run_retrieval_eval  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
 from rag.retrieval.builder import build_retriever  # noqa: E402
@@ -253,32 +260,72 @@ def run_variant(
             "ndcg": round(summary.mean_ndcg, 4),
         },
         "recall_by_k": {str(k): round(v, 4) for k, v in sorted(summary.recall_by_k.items())},
+        # Per-sample scores, keyed by sample id, for paired comparison. Without
+        # them a later reader can compare means but never test a difference.
+        # Keys match `metrics`, whose values are the means of these.
+        "samples": {
+            r.sample_id: {
+                "hit_rate": r.hit,
+                "recall": round(r.recall, 4),
+                "mrr": round(r.rr, 4),
+                "ndcg": round(r.ndcg, 4),
+            }
+            for r in report.sample_results
+        },
     }
 
 
+def paired_delta(
+    result: dict[str, Any], baseline: dict[str, Any], metric: str, *, binary: bool = False
+) -> str:
+    """Table cell for `metric`, candidate minus baseline, paired by sample id.
+
+    Rows recorded before per-sample scores were stored get the bare difference
+    of means, marked so it is not read as tested.
+    """
+    delta = result["metrics"][metric] - baseline["metrics"][metric]
+    if "samples" not in result or "samples" not in baseline:
+        return f"{delta:+.3f} (no CI)"
+    try:
+        diff = compare_by_id(
+            {sid: s[metric] for sid, s in baseline["samples"].items()},
+            {sid: s[metric] for sid, s in result["samples"].items()},
+        )
+    except ValueError:
+        return f"{delta:+.3f} (unpaired)"
+    return format_difference(diff, binary=binary)
+
+
 def render_table(results: list[dict[str, Any]]) -> str:
-    """Markdown table, grouped by axis, with deltas against the baseline."""
+    """Markdown table, grouped by axis, with paired deltas against the baseline."""
     baseline = next((r for r in results if r["variant"] == "baseline"), None)
     lines = [
-        "| variant | hit | recall | prec | MRR | NDCG | Δ NDCG | s |",
-        "|---|---|---|---|---|---|---|---|",
+        "| variant | hit | recall | prec | MRR | NDCG | Δ hit [95% CI] | Δ NDCG [95% CI] | s |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     last_axis = None
     for result in results:
         if last_axis is not None and result["axis"] != last_axis:
-            lines.append("| | | | | | | | |")
+            lines.append("| | | | | | | | | |")
         last_axis = result["axis"]
         m = result["metrics"]
         if baseline and result["variant"] != "baseline":
-            delta = m["ndcg"] - baseline["metrics"]["ndcg"]
-            delta_str = f"{delta:+.3f}"
+            hit_str = paired_delta(result, baseline, "hit_rate", binary=True)
+            ndcg_str = paired_delta(result, baseline, "ndcg")
         else:
-            delta_str = "—"
+            hit_str = ndcg_str = "—"
         lines.append(
             f"| `{result['variant']}` | {m['hit_rate']:.3f} | {m['recall']:.3f} | "
-            f"{m['precision']:.3f} | {m['mrr']:.3f} | {m['ndcg']:.3f} | {delta_str} | "
-            f"{result['elapsed_s']:.0f} |"
+            f"{m['precision']:.3f} | {m['mrr']:.3f} | {m['ndcg']:.3f} | {hit_str} | "
+            f"{ndcg_str} | {result['elapsed_s']:.0f} |"
         )
+    lines += [
+        "",
+        "Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval "
+        "that excludes zero; `W/L` counts the questions the variant gained / lost and "
+        "`p` is McNemar's exact test on them -- trust it over the CI when W+L is small. "
+        "`(no CI)` rows predate per-sample scores and need a re-run to be tested.",
+    ]
     return "\n".join(lines)
 
 

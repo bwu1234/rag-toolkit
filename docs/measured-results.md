@@ -102,6 +102,39 @@ threshold luck.
   dedicated adapter reproducing the official generative scoring, which is real
   work, not a config change.
 
+### Reranker models, paired re-test
+
+**Setup.** Same corpus, index and 174 samples as above, re-run on 2026-09-26
+with per-sample scores stored so each model can be compared to the shipped
+config question by question (`rag/eval/paired.py`). `baseline` is the shipped
+`bge-reranker-v2-m3`, `min_score 0.0`. Raw rows:
+`data/eval/results/retrieval_edgar_edgar_eval_set.json`.
+
+| comparison | Δ hit [95% CI] | W/L | McNemar p | Δ NDCG [95% CI] |
+|---|---|---|---|---|
+| `minilm-L6` vs shipped | −0.103 [−0.154, −0.053] | 2/20 | 0.0001 | −0.138 [−0.181, −0.094] |
+| `bge-base` vs shipped | −0.046 [−0.081, −0.011] | 1/9 | 0.021 | −0.054 [−0.098, −0.009] |
+| `bge-v2-m3` vs shipped | 0.000 [0.000, 0.000] | 0/0 | 1.0 | 0.000 |
+| `minilm-L6` → `bge-base` | +0.057 [+0.008, +0.107] | 15/5 | 0.041 | — |
+
+- **The earlier numbers reproduce exactly.** Every aggregate matches the table
+  above to three decimals. `rr=bge-v2-m3` and `baseline` share a fingerprint
+  and differ on no sample, which confirms that retrieval is deterministic and
+  that the pairing is sound.
+- **Both steps up the reranker ladder are real.** Going from `bge-base` to
+  `bge-v2-m3` gains +4.6pp: 9 questions gained, 1 lost. Judged against the
+  unpaired standard error (≈3.8pp for a difference of two independent rates,
+  so a 95% interval of about ±7.5pp), that gain would have read as noise.
+  Paired, it is clearly outside the noise. The default was right, and now it has a test behind it.
+- **The sign test and the NDCG interval can disagree, and that is expected.**
+  `bge-base`'s Δ NDCG interval excludes zero, but its sign-test p is 0.24
+  (30 gains, 41 losses). The sign test only counts direction; the interval also
+  weighs how far each question moved. `bge-base` loses by larger margins than it
+  wins by. For binary hit rate the two tests agree.
+- **Still untested:** the `pool=100` rows (+3.4pp hit for `bge-v2-m3`, the open
+  `retrieval.top_k` question under "Not yet measured") and the Qwen rows, which
+  are a verdict on a broken integration either way.
+
 ### Reading these numbers safely
 
 - **Precision is not comparable across different `rerank_top_k`.** With ~1
@@ -118,6 +151,14 @@ threshold luck.
   about the system's accuracy in the wild.
 - At n=174, small differences are not reliable. The ±0.000 rows are exact ties
   (identical retrieved sets), not rounding.
+- **Every result above was read against an unpaired noise floor**, the
+  standard error of one hit rate (≈2.5pp at n=174). That is the wrong yardstick
+  for two configs run on the same questions: the right one is the paired
+  difference, which depends only on the questions the two runs disagree on and
+  can be tighter or wider. None of these results stored per-sample scores, so
+  none can be re-tested without a re-run. `run_matrix.py` and
+  `run_answer_matrix.py` now store per-sample scores and print a paired 95% CI
+  and the win/loss count (`rag/eval/paired.py`); use those for new results.
 
 ### CRAG (Milestone 10), measured
 
@@ -195,7 +236,9 @@ index being compared against.
   problem at index time and query time respectively.
 - **+1.7pp on the shipped hybrid config is inside the noise floor** (SE ≈ 2.5pp
   at n=174). The dense +6.4pp is more likely real. Do not read the hybrid number
-  as a gain.
+  as a gain. *Caveat added later:* that SE is unpaired (see "Reading these
+  numbers safely"), so this verdict is untested rather than negative. A paired
+  re-run would settle it.
 - **Cost: ~4 hours of index build** (4,236 chunks, one LLM call each) for a
   difference hybrid retrieval cannot reliably distinguish from zero. It stays
   **off by default**. Worth reconsidering for a dense-only deployment, or a
