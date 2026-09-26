@@ -21,6 +21,21 @@ preserved in :attr:`AnswerSampleResult.judge_output` for debugging.
 
 Samples without an ``expected_answer`` are skipped and counted as ``n/a`` --
 they can participate in retrieval eval but not answer eval.
+
+Retrieval miss or generation error?
+-----------------------------------
+A FAIL alone does not say which stage to fix. For every sample carrying
+``expected_spans``, the runner also checks whether those spans were among the
+passages the generator was shown (``ChatAnswer.citations``, which is every
+passage in the prompt), under the same normalization as the retrieval eval.
+The pass rate is then reported separately for **evidence retrieved** -- where a
+FAIL is a generation (or judge) error -- and **evidence missed**, where a FAIL
+is a retrieval miss no generator can fix in one pass. A PASS without the
+evidence is possible too: the fact may sit in a passage the span label did not
+anticipate, or the model may have answered from memory.
+
+Samples with no spans (refusals, the document-matched baseline set) are left
+out of both buckets rather than guessed at.
 """
 
 from __future__ import annotations
@@ -30,11 +45,12 @@ import logging
 import sys
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from rag.config.settings import LLMConfig, RagConfig, load_config
 from rag.eval.dataset import EvalDataset, EvalSample
+from rag.eval.relevance import unmatched_spans
 from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatService
 from rag.generation.factory import get_llm_client
@@ -161,6 +177,34 @@ class AnswerSampleResult:
     latency_s: float = 0.0
     #: Times retrieval ran for the turn (more than one only when CRAG retried).
     retrieval_rounds: int = 1
+    #: Gold spans the sample declares; 0 when it has none (refusals, doc-matched sets).
+    evidence_total: int = 0
+    #: Gold spans in none of the passages the generator was shown.
+    missing_spans: list[str] = field(default_factory=list)
+
+    @property
+    def evidence_retrieved(self) -> bool | None:
+        """Whether every gold span was in the prompt; None when there are no spans."""
+        if self.evidence_total == 0:
+            return None
+        return not self.missing_spans
+
+
+@dataclass
+class EvidenceBucket:
+    """Pass counts for the samples whose evidence was (or was not) retrieved."""
+
+    num_evaluated: int = 0
+    num_passed: int = 0
+
+    @property
+    def pass_rate(self) -> float:
+        return self.num_passed / self.num_evaluated if self.num_evaluated else 0.0
+
+    @property
+    def num_failed(self) -> int:
+        """Includes unparseable verdicts, which are not passes either."""
+        return self.num_evaluated - self.num_passed
 
 
 @dataclass
@@ -176,6 +220,10 @@ class AnswerEvalReport:
     sample_results: list[AnswerSampleResult]
     num_empty: int = 0       # turns that produced no answer text
     mean_latency_s: float = 0.0
+    #: Samples whose gold spans were all in the prompt: a FAIL here is generation.
+    evidence_retrieved: EvidenceBucket = field(default_factory=EvidenceBucket)
+    #: Samples missing a gold span from the prompt: a FAIL here is retrieval.
+    evidence_missed: EvidenceBucket = field(default_factory=EvidenceBucket)
 
 
 def run_answer_eval(
@@ -201,6 +249,7 @@ def run_answer_eval(
             system=judge_system,
         )
         verdict = _parse_verdict(judge_out)
+        passages = [citation.text for citation in chat_answer.citations]
 
         results.append(
             AnswerSampleResult(
@@ -213,6 +262,8 @@ def run_answer_eval(
                 num_citations=len(chat_answer.citations),
                 latency_s=latency,
                 retrieval_rounds=chat_answer.retrieval_attempts,
+                evidence_total=len(sample.expected_spans),
+                missing_spans=unmatched_spans(sample.expected_spans, passages),
             )
         )
 
@@ -231,6 +282,15 @@ def run_answer_eval(
         sample_results=results,
         num_empty=sum(1 for r in results if not r.actual_answer.strip()),
         mean_latency_s=sum(r.latency_s for r in results) / n if n > 0 else 0.0,
+        evidence_retrieved=_bucket([r for r in results if r.evidence_retrieved is True]),
+        evidence_missed=_bucket([r for r in results if r.evidence_retrieved is False]),
+    )
+
+
+def _bucket(results: list[AnswerSampleResult]) -> EvidenceBucket:
+    return EvidenceBucket(
+        num_evaluated=len(results),
+        num_passed=sum(1 for r in results if r.passed is True),
     )
 
 
@@ -245,13 +305,23 @@ def print_report(report: AnswerEvalReport, *, verbose: bool = False) -> None:
     if report.num_empty:
         print(f"  Empty answers: {report.num_empty}")
     print(f"  Mean latency  {report.mean_latency_s:.1f}s per turn (generation only)")
+    found, missed = report.evidence_retrieved, report.evidence_missed
+    if found.num_evaluated or missed.num_evaluated:
+        print(f"{'-' * 60}")
+        print("  By whether the gold span reached the prompt:")
+        print(f"    evidence retrieved  {found.num_passed}/{found.num_evaluated} passed"
+              f"  -> {found.num_failed} generation/judge failure(s)")
+        print(f"    evidence missed     {missed.num_passed}/{missed.num_evaluated} passed"
+              f"  -> {missed.num_failed} retrieval failure(s)")
     print(f"{'=' * 60}")
 
     if verbose:
         print()
         for r in report.sample_results:
             verdict_str = "PASS" if r.passed else ("FAIL" if r.passed is False else "????")
-            print(f"[{verdict_str}] {r.sample_id!r}  citations={r.num_citations}")
+            evidence = {True: "retrieved", False: "MISSED", None: "n/a"}[r.evidence_retrieved]
+            print(f"[{verdict_str}] {r.sample_id!r}  citations={r.num_citations}  "
+                  f"evidence={evidence}")
             print(f"  query:    {r.query!r}")
             print(f"  judge:    {r.judge_output!r}")
             answer_preview = r.actual_answer[:200].replace("\n", " ")

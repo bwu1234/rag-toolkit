@@ -29,6 +29,7 @@ from rag.eval.answer_eval import (
     judge_for,
     run_answer_eval,
 )
+from rag.eval.answer_eval import print_report as answer_print_report
 from rag.generation.chat_service import ChatAnswer, ChatService, Citation
 from rag.retrieval.retriever import RetrievalResult, Retriever
 from rag.vectorstore.base import ScoredChunk
@@ -555,3 +556,77 @@ def test_refusal_rubric_does_not_penalise_refusing() -> None:
 
     assert "refuses to answer" in answerable_system
     assert "refuses to answer" not in refusal_system
+
+
+# ---------------------------------------------------------------------------
+# Evidence attribution: retrieval miss vs generation error
+# ---------------------------------------------------------------------------
+
+
+def _citation(text: str) -> Citation:
+    return Citation(chunk_id="c", document_id="d", text=text, score=1.0)
+
+
+def test_answer_eval_attributes_a_fail_with_the_evidence_to_generation() -> None:
+    dataset = EvalDataset.from_dicts([
+        {"id": "q1", "query": "Revenue?", "expected_answer": "$5B",
+         "expected_spans": ["revenue was $5 billion"]},
+    ])
+    chat = _FakeChatService("It was $6B.", [_citation("Total revenue was  $5 billion in 2024.")])
+
+    report = run_answer_eval(dataset, chat, _FakeLLMClient("FAIL wrong figure"))
+
+    assert report.sample_results[0].evidence_retrieved is True
+    assert (report.evidence_retrieved.num_evaluated, report.evidence_retrieved.num_failed) == (1, 1)
+    assert report.evidence_missed.num_evaluated == 0
+
+
+def test_answer_eval_attributes_a_fail_without_the_evidence_to_retrieval() -> None:
+    dataset = EvalDataset.from_dicts([
+        {"id": "q1", "query": "Revenue?", "expected_answer": "$5B",
+         "expected_spans": ["revenue was $5 billion"]},
+    ])
+    chat = _FakeChatService("Not in the passages.", [_citation("Unrelated boilerplate.")])
+
+    report = run_answer_eval(dataset, chat, _FakeLLMClient("FAIL"))
+
+    result = report.sample_results[0]
+    assert result.evidence_retrieved is False
+    assert result.missing_spans == ["revenue was $5 billion"]
+    assert (report.evidence_missed.num_evaluated, report.evidence_missed.num_failed) == (1, 1)
+
+
+def test_answer_eval_requires_every_span_for_evidence_to_count_as_retrieved() -> None:
+    dataset = EvalDataset.from_dicts([
+        {"id": "q1", "query": "q", "expected_answer": "a",
+         "expected_spans": ["first fact", "second fact"]},
+    ])
+    chat = _FakeChatService("a", [_citation("only the first fact is here")])
+
+    report = run_answer_eval(dataset, chat, _FakeLLMClient("PASS"))
+
+    assert report.sample_results[0].evidence_retrieved is False
+    assert report.evidence_missed.num_passed == 1
+
+
+def test_answer_eval_leaves_samples_without_spans_out_of_both_buckets() -> None:
+    """Refusals and the doc-matched baseline set carry no spans to check."""
+    report = run_answer_eval(_make_answer_dataset(), _FakeChatService("X"), _FakeLLMClient("FAIL"))
+
+    assert all(r.evidence_retrieved is None for r in report.sample_results)
+    assert report.evidence_retrieved.num_evaluated == 0
+    assert report.evidence_missed.num_evaluated == 0
+
+
+def test_answer_report_prints_the_evidence_split(capsys) -> None:
+    dataset = EvalDataset.from_dicts([
+        {"id": "q1", "query": "q", "expected_answer": "a", "expected_spans": ["fact"]},
+    ])
+    report = run_answer_eval(dataset, _FakeChatService("a", [_citation("fact")]),
+                             _FakeLLMClient("PASS"))
+
+    answer_print_report(report, verbose=True)
+
+    out = capsys.readouterr().out
+    assert "evidence retrieved  1/1 passed" in out
+    assert "evidence=retrieved" in out

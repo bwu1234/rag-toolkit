@@ -66,11 +66,20 @@ hours, so run it only after the cheap retrieval measurements are in.
 ## Reading the results
 
 Metrics: `hit_rate`, `recall`, `precision`, `mrr`, `ndcg`, plus `recall_by_k`.
-The rendered table shows Δ NDCG against baseline.
+The rendered table shows Δ hit and Δ NDCG against `baseline`, **paired by
+sample**, with a 95% CI (`*` when it excludes zero) and, for hit, the win/loss
+count of questions that flipped. The answer matrix does the same for pass rate
+against its first variant, and splits failures into retrieval (gold span never
+reached the prompt) and generation (it did; the answer still failed).
 
-- **A few tenths of a point is noise.** On 174 samples, treat a small Δ NDCG as
-  "no effect" unless it is consistent across related variants. State that plainly
-  rather than reporting it as a win.
+- **Read the paired CI, not the unpaired SE.** Both runs answer the same
+  questions, so the noise is in the questions they disagree on. Don't judge a
+  difference against `sqrt(p(1-p)/n)`. With few discordant pairs, trust the
+  sign-test p-value (McNemar's, for hit) over the interval. Report the CI and
+  the W/L alongside the delta.
+- **A CI that includes zero means "not shown", not "no effect".** State that
+  plainly rather than reporting it as a win or as proof of no effect.
+- Rows marked `(no CI)` predate per-sample storage; re-run them to test them.
 - **Byte-identical rows mean the knob is inert**, not that it is safe. `min_score`
   0.0 / 0.1 / 0.3 gave identical results — the floor was doing nothing at all.
 - **Expansion is non-deterministic.** One run is a data point, not a result.
