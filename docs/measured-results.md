@@ -409,3 +409,11 @@ retrieval round), and arrive with phase 3.
   isolated) — the registry supports it, no numbers taken.
 - Anything on the `baseline` corpus, which is retained as a control and has not
   been re-measured since the reranker change.
+- **Paired re-tests of older verdicts.** These rows predate per-sample scores
+  and show `(no CI)`:
+  - `rr=bge-v2-m3 pool=100` (+3.4pp hit, unpaired). This is the open `top_k`
+    question above; ~15 min.
+  - contextual vs. non-contextual on hybrid (+1.7pp, called noise against the
+    unpaired SE). Needs the contextual index in `data/index_ctx`.
+  - the answer matrix (`crag=off` at least, `--limit 0`), to get the new
+    retrieval/generation failure split on the full 174 samples.

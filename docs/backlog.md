@@ -470,3 +470,79 @@ comparing latency across deployments.
 - Most useful after Milestone 18, when there is a deployment to trace, and
   after Milestone 19, when a turn becomes 1–N tool calls a flat record reads
   poorly.
+
+### Milestone 27 — Eval coverage and judge reliability
+
+PR #15 fixed how differences are *tested* (paired CIs) and made answer failures
+attributable to retrieval or generation. What remains is what the eval sets
+*measure* and how far the judge can be trusted. Several "measured-off" verdicts
+hold only for the kind of question the eval set contains, so this matters as
+much as any new feature. The cheap parts (judge calibration, near-miss
+negatives, eval-time determinism) need no new component and can be pulled ahead
+of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
+
+- **A question tier that doesn't name its own entities.** In
+  `edgar_eval_set.json`, all 174 questions name company and period (by
+  construction of the generator). 128 start with "What was/were", 124 spans
+  contain a figure, and a median 58% of a question's content words appear in
+  its answer span. That is the case BM25 handles best, and it is why
+  contextual chunking and query expansion measured as noise: both exist for
+  questions that *don't* name what they're about ("which airline's fuel costs
+  rose most", "how exposed is Apple to China"). Add a separate,
+  hand-reviewed tier of underspecified and paraphrased questions. Report it
+  apart from the generated set, and re-measure contextual chunking and
+  expansion on it before treating either verdict as general.
+- **Turn log → eval candidates.** Milestone 12 called logged queries with
+  feedback "the cheapest source of new eval samples", but nothing converts
+  them. Add a `rag.cli turns --export-candidates` path that writes thumbs-down
+  and uncited turns as draft samples (query, retrieved chunk ids, answer) for
+  a human to add spans and a reference answer to. Never auto-label: a silently
+  wrong label is worse than a smaller set, the rule `generate_eval_set.py`
+  already follows. This is also the natural source for the tier above.
+- **Judge calibration set.** The judge's accuracy has been spot-checked once
+  (15 complete multi-hop answers read by hand, one false pass), never
+  measured. Hand-label ~60 answers once: single-hop pass and fail, refusals,
+  and multi-hop parts, including the known false-pass shape (a figure
+  attached to the wrong period). Commit them as a fixture, and add a runner
+  that reports the judge's agreement with them and its false-pass and
+  false-fail rates. Re-run it whenever `eval.judge` or a judge prompt changes.
+  Without it, a pass-rate change can't be separated from judge drift.
+- **Reference answers that are answers.** 61 of 174 `expected_answer`s are the
+  expected span copied verbatim, a sentence fragment rather than an answer.
+  Regenerate them as one-sentence answers (a human reviews the diff) so the
+  judge compares like with like.
+- **Near-miss negatives in the refusal set.** 15 samples, and every CRAG
+  variant scored 14–15/15: a set everything aces can't catch a regression.
+  The realistic hard case here is the right company in a period the corpus
+  doesn't hold (the 27b's Apple FY2015 parametric leak). Generate
+  period-shifted negatives from answerable samples, and verify programmatically
+  that the answer is absent from the corpus before keeping one. That check is
+  what the two removed Costco negatives lacked. The cross-company superlative
+  is already covered by the Milestone 19 plan's open question.
+- **Deterministic generation at eval time, or repeats.** The generator runs at
+  `llm.temperature: 0.2` during evals, which is where the measured ±2-sample
+  run-to-run noise on answer eval comes from. Either add an `eval.generator`
+  override (temperature 0) so a variant's answers are reproducible, or have
+  `run_answer_matrix.py --repeats k` report the mean and spread. The paired CI
+  covers which questions were sampled, not a single run's sampling luck.
+  With paired CIs the full 174-sample set (~45 min per variant at the phase-0
+  latency) is also worth making the default over `--limit 40`.
+- **Missing labels.** Spans are checked to be unique across filings, but not
+  checked for *other* chunks stating the same fact in different words (a
+  table next to prose). Judge the top-5 chunks of every retrieval miss with
+  the LLM once, to estimate how often a "miss" retrieved a correct answer. If
+  it is more than a few percent, add the alternates as extra spans.
+- **Metrics that duplicate each other.** Every generated sample has one
+  grade-1 span, so hit rate equals recall and NDCG reduces to a rank discount.
+  Graded relevance is supported but unused. Either have the generator also
+  label a grade-2 span (the sentence stating the figure versus one discussing
+  the topic), or stop reporting the duplicates for single-span sets.
+- **Per-citation support.** Milestone 21 marks which passages an answer cited;
+  Milestone 22 scores faithfulness for the whole answer. Neither checks that
+  a cited passage `[n]` supports the claim attached to it. An eval-only metric
+  (judge each claim–citation pair) fits alongside Milestone 22's faithfulness.
+- **Smaller harness fixes.** `recall_by_k` averages only over samples that
+  returned at least k results, so the denominators differ when `min_score`
+  prunes lists. Pad to k instead. The `baseline` corpus's `eval_set.json` is
+  document-matched only and hasn't been measured since the reranker change:
+  add spans or retire it as a control.
