@@ -211,11 +211,13 @@ land.
   - Keep an in-app daily counter that refuses at a margin below the quota, so
     one caller can't use up everyone's day. Milestone 28's per-key rate limit
     covers bursts, not this.
-  - **No evals and no load tests against the Gemini key.** One `answer_eval`
-    over the 174-sample EDGAR set is generation plus a judge call per sample,
-    which is most of a day's quota. Load-test the deployed service with a
-    fake `LLMClient` behind a test-only config instead: what's under test is
-    Cloud Run, the reranker and the index, not Google's latency.
+  - **No unbounded evals and no load tests against the Gemini key.** The one
+    or two bounded quality runs described below are the sole permitted Gemini
+    evals. Do not run `answer_eval` over the 174-sample EDGAR set: generation
+    plus a judge call per sample is most of a day's quota. Load-test the
+    deployed service with a fake `LLMClient` behind a test-only config instead:
+    what's under test is Cloud Run, the reranker and the index, not Google's
+    latency.
 - **Measure Gemini as a generator before calling it the deployed default.**
   Every answer-quality number in `docs/measured-results.md` is from the local
   qwen model. Run `answer_eval --limit 40` once with Gemini as the generator
