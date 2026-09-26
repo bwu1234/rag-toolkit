@@ -108,3 +108,16 @@
   instance, not persisted — switching embedding models still requires
   `index --reset` to avoid mixing incompatible vectors in one collection (the
   adapter doesn't currently detect this for you).
+- **The turn log grows without bound and is not rotated.** `data/logs/turns.jsonl`
+  gets one line of several KB per turn, since every event, attempt and answer
+  is inlined. It's gitignored local data, but nothing prunes it. It also stores
+  queries and answers verbatim, which matters if a deployment ever stops being
+  single-user and local.
+- `llm_calls` and token counts cover only calls made through the
+  `MeteredLLMClient` that `build_chat_service` installs, and only on the thread
+  running the turn. Nothing on the query path spawns threads today. A future
+  concurrent grader would need to propagate the context
+  (`contextvars.copy_context`) or its calls would go uncounted.
+- `cited_chunk_ids` trusts the model's `[n]` markers. A small model that cites
+  `[1]` by habit, or that forgets to cite at all, yields a misleading or empty
+  implicit judgment. Read those in aggregate, not per turn.

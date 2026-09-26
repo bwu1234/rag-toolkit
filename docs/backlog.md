@@ -39,7 +39,15 @@ harness to fix that already exists.
 Expect a defaults change to fall out of this, and possibly a retune of
 `retrieval.min_score`.
 
-### Milestone 12 — Observability
+### Milestone 12 — Observability *(shipped)*
+
+Shipped as planned, with one correction to the premise below: `ChatService`
+did **not** already know which passages were cited — `citations` was every
+passage shown. It now parses the `[n]` markers (`parse_cited_passages`) and
+reports `cited_chunk_ids` separately. What shipped and why:
+[milestone notes](milestone-notes.md#observability-notes-milestone-12).
+Not done here: stage-1 (pre-rerank) candidate ids aren't recorded, since
+`Retriever` doesn't return them, and no OpenTelemetry adapter exists yet.
 
 Today a turn's reasoning is visible only live, via `PipelineEvent` in the UI
 trace; nothing is persisted, and no turn reports what it cost or how long it

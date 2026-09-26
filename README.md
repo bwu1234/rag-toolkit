@@ -26,6 +26,7 @@ The system takes a corpus of documents, turns them into searchable chunks, store
 - a FastAPI web API
 - a Streamlit UI
 - evaluation scripts for retrieval and answer quality
+- per-turn observability: every chat turn logged with its retrieved and cited passages, CRAG verdicts, per-stage latency and LLM token counts, plus thumbs up/down feedback (`python -m rag.cli turns`)
 
 ## Architecture at a glance
 
@@ -150,6 +151,7 @@ rag/
   embedding/    embedding adapters
   eval/         retrieval and answer evaluation
   generation/   generation and prompt logic
+  observability/ turn records, LLM usage metering, feedback sink
   ingestion/    document loaders and cleaners
   retrieval/    retrievers and rerankers
   ui/           Streamlit UI
@@ -173,7 +175,7 @@ If you want to push this project further as a portfolio piece, good next steps a
 
 - add Docker support for one-command startup
 - add a richer sample corpus and demo data
-- improve observability and tracing around retrieval quality
+- export turn records to OpenTelemetry (the `TurnSink` interface is the seam)
 - add deployment notes for cloud hosting or container deployment
 
 This repository is a strong example of building a real AI system end to end: the core ideas are grounded, the structure is deliberate, and the implementation is more than a single notebook or toy script.

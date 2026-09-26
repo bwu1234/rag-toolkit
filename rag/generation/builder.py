@@ -15,17 +15,32 @@ from rag.generation.chat_service import ChatService
 from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryRewriter
 from rag.generation.factory import get_llm_client
 from rag.generation.query_rewriter import QueryCondenser
+from rag.observability.factory import config_fingerprint
+from rag.observability.sink import TurnSink
+from rag.observability.usage import MeteredLLMClient
 from rag.retrieval.builder import build_retriever
 
 
-def build_chat_service(config: RagConfig, corpora: Sequence[str] | None = None) -> ChatService:
+def build_chat_service(
+    config: RagConfig,
+    corpora: Sequence[str] | None = None,
+    *,
+    turn_sink: TurnSink | None = None,
+) -> ChatService:
     """Construct a `ChatService` with all components selected per `config`.
 
     `corpora` overrides `config.corpora.active`, selecting which index the
     retriever reads -- see `build_retriever`.
+
+    `turn_sink`, if given, receives a `TurnRecord` for every turn. It's a
+    parameter rather than read from `config.observability` here so that only
+    the entrypoints people talk to opt in (see `get_turn_sink`); the eval
+    runners call this without one and their traffic stays out of the log.
     """
 
-    llm_client = get_llm_client(config.llm)
+    # Wrapped once, before it's shared, so every component's calls -- not just
+    # generation's -- are counted into the turn's `llm_calls` and tokens.
+    llm_client = MeteredLLMClient(get_llm_client(config.llm))
     # Share the one client: query expansion (HyDE / multi-query) generates
     # text too, and it should talk to the same daemon over the same connection
     # rather than opening a parallel one.
@@ -59,4 +74,11 @@ def build_chat_service(config: RagConfig, corpora: Sequence[str] | None = None) 
         groundedness_checker=groundedness_checker,
         max_retries=crag.max_retries if crag.enabled else 0,
         max_regenerations=crag.max_regenerations if crag.enabled else 0,
+        turn_sink=turn_sink,
+        turn_metadata={
+            "corpus": config.corpus_selection(corpora).slug,
+            "llm": f"{config.llm.provider}:{config.llm.model}",
+            "reranker": f"{config.reranker.provider}:{config.reranker.model}",
+            "config_fingerprint": config_fingerprint(config),
+        },
     )

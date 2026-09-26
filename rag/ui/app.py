@@ -16,6 +16,11 @@ Layout
   with collapsible citation cards below each answer.
 * **Input bar** — a text input pinned to the bottom (``st.chat_input``).
 
+Every answer gets a thumbs up/down widget. Ratings go to the same turn log the
+chat service writes each turn's record to (``observability.turn_log``), keyed
+by the turn's id -- so logged questions with feedback can be mined for new eval
+samples later.
+
 Pure helper functions (citation formatting, config summary) live in
 ``rag/ui/helpers.py`` so they can be tested without a running Streamlit server.
 """
@@ -31,12 +36,17 @@ from rag.events import PipelineEvent
 from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.logging_config import configure_logging
+from rag.observability.factory import get_turn_sink
+from rag.observability.records import FeedbackRecord
+from rag.observability.sink import TurnSink
 from rag.ui.helpers import (
     format_answer_notices,
     format_citation_label,
     format_citation_preview,
     format_event_line,
+    format_turn_metrics,
     history_from_messages,
+    rating_from_feedback_widget,
     sidebar_config_summary,
 )
 
@@ -59,10 +69,11 @@ st.set_page_config(
 
 
 @st.cache_resource(show_spinner="Loading config and building chat service…")
-def _load_chat_service() -> tuple[ChatService, RagConfig]:
+def _load_chat_service() -> tuple[ChatService, RagConfig, TurnSink | None]:
     config = load_config()
-    service = build_chat_service(config)
-    return service, config
+    sink = get_turn_sink(config.observability.turn_log)
+    service = build_chat_service(config, turn_sink=sink)
+    return service, config, sink
 
 
 # ---------------------------------------------------------------------------
@@ -127,6 +138,46 @@ def _render_search_queries(answer: ChatAnswer) -> None:
             st.markdown(f"**{rank}.** {search_query}")
 
 
+def _render_metrics(answer: ChatAnswer) -> None:
+    """Render the turn's wall time, LLM calls and tokens as a caption."""
+    metrics = format_turn_metrics(answer)
+    if metrics:
+        st.caption(metrics)
+
+
+def _record_feedback(turn_id: str, sink: TurnSink) -> None:
+    """`st.feedback` callback: append the new rating to the turn log.
+
+    Every click is appended (the latest per turn wins when read back) rather
+    than updated in place -- the log is append-only. Clearing a rating isn't
+    recorded; there's no rating to store.
+    """
+    rating = rating_from_feedback_widget(st.session_state.get(_feedback_key(turn_id)))
+    if rating is None:
+        return
+    try:
+        sink.record_feedback(FeedbackRecord(turn_id=turn_id, rating=rating))
+    except Exception:  # noqa: BLE001
+        logger.exception("Failed to record feedback for turn %s", turn_id)
+        st.toast("⚠️ Couldn't save that rating — see the server log.")
+
+
+def _feedback_key(turn_id: str) -> str:
+    return f"feedback_{turn_id}"
+
+
+def _render_feedback(answer: ChatAnswer, sink: TurnSink | None) -> None:
+    """Render thumbs up/down for a logged turn. Hidden when turn logging is off."""
+    if sink is None or answer.turn_id is None:
+        return
+    st.feedback(
+        "thumbs",
+        key=_feedback_key(answer.turn_id),
+        on_change=_record_feedback,
+        args=(answer.turn_id, sink),
+    )
+
+
 def _render_citations(answer: ChatAnswer) -> None:
     """Render collapsible citation cards under an assistant message."""
     if not answer.citations:
@@ -141,7 +192,7 @@ def _render_citations(answer: ChatAnswer) -> None:
                 st.divider()
 
 
-def _render_history() -> None:
+def _render_history(sink: TurnSink | None) -> None:
     """Re-render all messages from session state."""
     for msg in st.session_state["messages"]:
         with st.chat_message(msg["role"]):
@@ -152,9 +203,11 @@ def _render_history() -> None:
                     _render_notices(msg["answer"])
                     _render_search_queries(msg["answer"])
                     _render_citations(msg["answer"])
+                    _render_metrics(msg["answer"])
+                    _render_feedback(msg["answer"], sink)
 
 
-def _handle_query(query: str, chat_service: ChatService) -> None:
+def _handle_query(query: str, chat_service: ChatService, sink: TurnSink | None) -> None:
     """Add the user message, run the pipeline, and append the assistant reply."""
     # Snapshot the conversation *before* appending the current question -- the
     # condenser wants the turns preceding the query, not the query itself.
@@ -200,6 +253,8 @@ def _handle_query(query: str, chat_service: ChatService) -> None:
         _render_notices(answer)
         _render_search_queries(answer)
         _render_citations(answer)
+        _render_metrics(answer)
+        _render_feedback(answer, sink)
 
     st.session_state["messages"].append(
         {"role": "assistant", "content": answer.answer, "answer": answer, "events": events}
@@ -216,7 +271,7 @@ def main() -> None:
 
     # Build (or retrieve cached) chat service.
     try:
-        chat_service, config = _load_chat_service()
+        chat_service, config, sink = _load_chat_service()
     except Exception as exc:  # noqa: BLE001
         st.error(
             f"Failed to build chat service: {exc}\n\n"
@@ -246,11 +301,11 @@ def main() -> None:
     )
 
     # Render existing history.
-    _render_history()
+    _render_history(sink)
 
     # Chat input (pinned to bottom by Streamlit).
     if query := st.chat_input("Ask a question about your documents…"):
-        _handle_query(query, chat_service)
+        _handle_query(query, chat_service, sink)
 
 
 main()

@@ -396,6 +396,25 @@ class EvalConfig(BaseModel):
     judge: LLMConfig | None = None
 
 
+class TurnLogConfig(BaseModel):
+    """Where per-turn records and user feedback are persisted (Milestone 12).
+
+    Only entrypoints a person talks to -- the API, the UI, `cli chat` -- pass a
+    sink to `build_chat_service`; the eval runners don't, so evaluation traffic
+    never lands in the log that is meant to become new eval samples.
+    """
+
+    provider: Literal["jsonl", "none"] = "jsonl"
+    path: Path = Field(
+        default=Path("data/logs/turns.jsonl"),
+        description="JSONL file for the `jsonl` provider; relative paths resolve against the repo root",
+    )
+
+
+class ObservabilityConfig(BaseModel):
+    turn_log: TurnLogConfig = TurnLogConfig()
+
+
 class RagConfig(BaseModel):
     """Top-level config object — the single source of truth for component selection."""
 
@@ -410,6 +429,7 @@ class RagConfig(BaseModel):
     chat: ChatConfig = ChatConfig()
     crag: CragConfig = CragConfig()
     eval: EvalConfig = EvalConfig()
+    observability: ObservabilityConfig = ObservabilityConfig()
 
     #: Name used when no registry is configured -- see `corpus_selection`.
     IMPLICIT_CORPUS_NAME: ClassVar[str] = "default"

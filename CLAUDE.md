@@ -6,8 +6,8 @@ milestone. Local-first by default: Ollama serves both embeddings
 
 ## Status
 
-Milestones 1–11 and the MCP server are shipped; next is Milestone 12
-(Observability). Full list and ordering in [Backlog](docs/backlog.md).
+Milestones 1–12 and the MCP server are shipped; next is Milestone 13
+(Query result caching). Full list and ordering in [Backlog](docs/backlog.md).
 
 - **Measured-off features stay off.** Contextual chunking, CRAG, query
   expansion and `retrieval.min_score` all measured as no better than noise on
@@ -68,6 +68,9 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.
   Serves MCP 2026-07-28 only and needs `mcp >= 2.0` — see [MCP server](docs/mcp-server.md).
 - UI: `streamlit run rag/ui/app.py`
+- Logged turns and feedback: `python -m rag.cli turns` (`--feedback down` for
+  the thumbs-down ones). The API, UI and `cli chat` append every turn to
+  `data/logs/turns.jsonl`; the eval runners never do.
 - Retrieval eval: `python -m rag.eval.retrieval_eval` (`-v` for per-sample;
   `--eval-set data/eval/edgar_eval_set.json --corpus edgar` for EDGAR)
 - Answer eval (LLM-as-judge): `python -m rag.eval.answer_eval`. The judge is

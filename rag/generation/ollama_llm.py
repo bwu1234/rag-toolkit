@@ -13,7 +13,7 @@ import logging
 
 import httpx
 
-from rag.generation.llm import LLMClient
+from rag.generation.llm import LLMClient, LLMUsage
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,9 @@ class OllamaLLMClient(LLMClient):
         self._client = httpx.Client(base_url=self.base_url, timeout=timeout, trust_env=False)
 
     def generate(self, prompt: str, *, system: str | None = None) -> str:
+        return self.generate_with_usage(prompt, system=system)[0]
+
+    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
         messages: list[dict[str, str]] = []
         if system is not None:
             messages.append({"role": "system", "content": system})
@@ -80,7 +83,14 @@ class OllamaLLMClient(LLMClient):
                 f"Unexpected response shape from Ollama /api/chat: expected a "
                 f"{{'message': {{'content': str}}}} object, got {payload!r}"
             )
-        return message["content"]
+        # Ollama reports prompt/output token counts on every non-streaming
+        # response (`prompt_eval_count`, `eval_count`). Read defensively: a
+        # missing count is recorded as unknown rather than as zero tokens.
+        usage = LLMUsage(
+            prompt_tokens=_optional_int(payload.get("prompt_eval_count")),
+            completion_tokens=_optional_int(payload.get("eval_count")),
+        )
+        return message["content"], usage
 
     def close(self) -> None:
         self._client.close()
@@ -90,3 +100,7 @@ class OllamaLLMClient(LLMClient):
 
     def __exit__(self, *exc_info: object) -> None:
         self.close()
+
+
+def _optional_int(value: object) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) else None

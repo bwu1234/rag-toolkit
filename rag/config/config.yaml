@@ -166,6 +166,17 @@ crag:
   check_groundedness: true
   max_regenerations: 1
 
+# Milestone 12 -- persist every chat turn (queries, retrieved/kept/cited chunk
+# ids, CRAG verdicts, per-stage latency, LLM calls and tokens, the answer) and
+# the thumbs up/down given to it. Written by the API, the UI and `cli chat`;
+# never by the eval runners. Inspect with `python -m rag.cli turns`.
+#   jsonl -- append to a local file (gitignored under data/logs/)
+#   none  -- record nothing; the API's /feedback then answers 503
+observability:
+  turn_log:
+    provider: jsonl
+    path: data/logs/turns.jsonl
+
 # Settings read only by the eval runners.
 eval:
   # The LLM-as-judge for answer_eval, multihop_eval and run_answer_matrix.py.

@@ -8,6 +8,8 @@ trivially testable.
 
 from __future__ import annotations
 
+import re
+
 from rag.vectorstore.base import ScoredChunk
 
 SYSTEM_PROMPT = (
@@ -71,3 +73,26 @@ def build_rag_prompt(query: str, chunks: list[ScoredChunk]) -> str:
         "Answer the question using only the passages above, citing them by "
         "number as you go."
     )
+
+
+# `[1]`, `[2][3]`, and the comma-list form small models drift into despite the
+# instruction (`[1, 3]`). Ranges (`[1-3]`) are deliberately not expanded: a
+# model that writes one hasn't said which passages in between it relied on.
+_CITATION_MARKER = re.compile(r"\[(\d+(?:\s*,\s*\d+)*)\]")
+
+
+def parse_cited_passages(answer: str, passage_count: int) -> list[int]:
+    """Return the 1-based passage numbers `answer` cites, in first-cited order.
+
+    The inverse of `build_rag_prompt`'s numbering. Numbers outside
+    `1..passage_count` are dropped -- a model citing `[7]` over five passages
+    cited nothing real, and mapping it anywhere would invent a judgment.
+    """
+
+    cited: list[int] = []
+    for match in _CITATION_MARKER.finditer(answer):
+        for part in match.group(1).split(","):
+            number = int(part)
+            if 1 <= number <= passage_count and number not in cited:
+                cited.append(number)
+    return cited

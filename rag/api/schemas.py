@@ -123,3 +123,45 @@ class ChatResponse(BaseModel):
             "presented as a normal answer."
         ),
     )
+    cited_chunk_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Ids of the `citations` the answer actually cites with `[n]` markers, in "
+            "first-cited order. `citations` lists every passage the model was shown; "
+            "this is the subset it relied on."
+        ),
+    )
+    turn_id: str | None = Field(
+        default=None,
+        description="Id of this turn's log record. Pass it to `POST /feedback` to rate the answer.",
+    )
+    stage_ms: dict[str, float] = Field(
+        default_factory=dict,
+        description=(
+            "Milliseconds spent per pipeline stage (embed, vector_search, rerank, generate, ...), "
+            "summed when a stage ran more than once."
+        ),
+    )
+    total_ms: float | None = Field(default=None, description="Wall-clock milliseconds for the whole turn.")
+    llm_calls: int = Field(
+        default=0,
+        description="LLM calls this turn made -- expansion, condensing, CRAG checks and generation together.",
+    )
+    prompt_tokens: int | None = Field(
+        default=None, description="Prompt tokens across those calls; null when the provider doesn't report them."
+    )
+    completion_tokens: int | None = Field(
+        default=None, description="Generated tokens across those calls; null when the provider doesn't report them."
+    )
+
+
+class FeedbackRequest(BaseModel):
+    """Body of a `POST /feedback` request: a thumbs up/down on one earlier turn."""
+
+    turn_id: str = Field(..., min_length=1, description="The `turn_id` from the `ChatResponse` being rated.")
+    rating: Literal["up", "down"] = Field(description="Thumbs up or down.")
+    comment: str | None = Field(default=None, description="Optional free-text note on what was right or wrong.")
+
+
+class FeedbackResponse(BaseModel):
+    feedback_id: str = Field(description="Id of the stored feedback record.")

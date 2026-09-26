@@ -1,4 +1,4 @@
-# Milestone notes (2–11)
+# Milestone notes (2–12)
 
 Design rationale for each shipped milestone: why things are built the way
 they are, not just what they do. Split out of `CLAUDE.md` to keep that file
@@ -601,3 +601,75 @@ Moved here from `CLAUDE.md`, which keeps only the operational rules.
 - **What's committed.** `baseline` is committed despite the general
   `data/corpora/*/documents/` ignore rule (see the exemption in `.gitignore`);
   other corpora are fetched and reproduced from their `manifest.json`.
+
+## Observability notes (Milestone 12)
+
+Code: `rag/observability/` (records, sink, metering), wired through
+`ChatService.ask` and `build_chat_service`.
+
+- **Latency comes from the events that already existed.** `ask` tees every
+  `PipelineEvent` into a private per-turn trace as well as the caller's
+  `on_event`. The events already carried per-stage timing, so `stage_ms` is a
+  sum over them rather than a second set of timers that could disagree with
+  the UI's trace. Repeated stages (a CRAG retry reruns `rerank`, `embed`, ...)
+  are summed, and `total_ms` is measured separately; the difference is time no
+  stage reports.
+- **LLM calls are counted at the client, not the call sites.** One turn can
+  call the LLM from five places (expansion, condenser, grader, retry
+  rewriter, groundedness checker) plus generation, and all share one client.
+  `MeteredLLMClient` wraps it once in the builder, so no component's API
+  changed. It records into a meter held in a `ContextVar` rather than on
+  itself because the API runs sync routes in a thread pool against one shared
+  `ChatService`; a counter on the instance would mix concurrent turns.
+- **Tokens need a provider that reports them.** `LLMClient.generate_with_usage`
+  is a concrete method whose default reports `None`, so existing adapters and
+  test fakes needed no change. Ollama returns `prompt_eval_count` /
+  `eval_count` on every non-streaming `/api/chat` response. A missing count
+  is kept as `None`, never 0, because unknown is not the same as free.
+- **"Cited" means the model wrote `[n]`.** `citations` is still every passage
+  shown, in prompt order, because that's the numbering the markers refer to.
+  `cited_chunk_ids` is the subset the answer actually marks.
+  `parse_cited_passages` lives beside `build_rag_prompt` because the two must
+  agree. It accepts `[1]`, `[2][3]` and `[1, 3]`, drops out-of-range numbers,
+  and does not expand ranges (`[1-3]`), since a range doesn't say which of the
+  passages in between were used.
+- **`(query, shown_chunk_ids, cited_chunk_ids)` is logged on every turn.**
+  That triple is an implicit relevance judgment, and unlike a thumbs click it
+  costs the user nothing. It's weak and model-biased: a small model can cite
+  lazily, or cite `[1]` because it was first. It becomes useful in aggregate,
+  as training data for a learning-to-rank `Reranker` one day, not as ground
+  truth per turn.
+- **One record per turn, including failures.** Blank queries, the three
+  no-context endings, and exceptions (`outcome: "error"`, recorded, then
+  re-raised) are all logged. A turn that failed is the one you most want to
+  find afterwards. Each record also holds every retrieval attempt's passages
+  before grading, alongside the ids the grader kept, so the grader's verdicts
+  can be inspected. It holds every groundedness verdict too, not just the
+  final one.
+- **Logging never costs the user their answer.** A failed sink write is logged
+  as a warning and swallowed. `POST /feedback` is the opposite case: storing
+  the rating is the request's whole purpose. So when logging is off it
+  returns 503, and a failed write surfaces as an error; neither is a quiet
+  success.
+- **Only human-facing entrypoints log.** The sink is a `build_chat_service`
+  parameter rather than something the builder reads from config, so the API,
+  the UI and `cli chat` opt in and the eval runners don't. The log is meant to
+  become new eval samples, and filling it with the eval set's own questions
+  would make that circular.
+- **One append-only JSONL store, joined at read time.** Feedback arrives later
+  than its turn, from a different request, so it's appended as its own
+  `kind: "feedback"` line rather than written into the turn's line. When a
+  turn has several ratings, the latest one wins (`turns_with_feedback`). The
+  file is reopened in append mode for every write because the API and the UI
+  can share one log. The turn id in `/feedback` isn't validated, since that
+  would mean scanning the file on every click; a rating for an unknown id
+  simply never joins to a turn.
+- **Each record carries its config.** `metadata` holds the corpus slug, the
+  generator model, the reranker model, and `config_fingerprint`: a hash of
+  every config section except `observability` and `eval`, the two that can't
+  change an answer. Turns from different configs are different experiments.
+  The same fingerprint is what Milestone 13's cache key needs.
+- **The sink is an interface.** `TurnSink` is write-only (record a turn,
+  record feedback). Reading back is a property of the JSONL store
+  (`read_turn_log`), not of the interface, because an OpenTelemetry exporter,
+  the planned later adapter, can't be read back.
