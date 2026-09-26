@@ -671,9 +671,16 @@ rate limiting are what cover that case.
   instructions" text) to a separate eval tier, and report how often they
   work. Delimiters reduce injection; they don't prevent it. Record the rate
   rather than claiming a fix.
-- **Failure behaviour.** A `/ready` check that pings Ollama and Chroma,
-  separate from `/health` (liveness). An upstream failure maps to a fast
-  503 with a clear message instead of a 500. A hung Ollama currently holds a
+- **Failure behaviour.** A `/ready` check, separate from `/health`
+  (liveness), that asks the configured components rather than a fixed list,
+  so each deployment checks only what it runs. Locally that is Ollama and
+  Chroma. On the GCP plan (Milestone 18) it is the loaded index and the
+  in-process embedder and reranker. Do not call a hosted API from `/ready`:
+  probes run every few seconds, and a `generateContent` probe would spend the
+  Gemini free quota. A hosted-API outage would also mark every replica
+  unready at once, when it should show up as per-request 503s and an alert.
+  An upstream failure maps to a fast 503 with a clear message instead of a
+  500. A hung Ollama currently holds a
   thread-pool worker for up to `llm.timeout_s` (120s), and Starlette's
   default pool is 40 threads. Add a test per dependency-down case.
 - **Production container.** A non-editable install, a non-root user, no
@@ -681,8 +688,17 @@ rate limiting are what cover that case.
   Keep the dev compose file as it is and add a production one alongside it.
   Use persistent in-process Chroma for this deployment; it pins the API to one
   replica.
-- **Log hygiene and retention.** Log `turn_id` and query length at INFO, not
-  the query text. Add a retention/rotation setting to
+- **Log hygiene and retention.** Query text reaches the application log from
+  15 call sites, not just `/chat`: the condenser (`query_rewriter.py`), CRAG's
+  retry and groundedness paths (`crag.py`), HyDE and multi-query expansion
+  (`expansion.py`), `chat_service.py`, and web search (`websearch.py`).
+  Several of those are at WARNING, which production keeps. Move raw query,
+  rewrite and passage text to DEBUG at every site. At INFO and WARNING, log
+  the `turn_id`, lengths and counts instead. The turn log is then the only
+  place query text is stored, and the retention setting below governs it.
+  Add a test that runs a turn at INFO with every query path enabled and
+  asserts the query string never appears in captured logs, so a new call
+  site can't reintroduce it. Add a retention/rotation setting to
   `observability.turn_log`. `JsonlTurnSink`'s lock covers threads, not
   processes, so either run one worker per log file or verify multi-worker
   appends of multi-KB records don't interleave.
