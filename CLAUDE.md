@@ -114,5 +114,9 @@ Design rationale, history, and planning live in `docs/`, read on demand:
   shipped, worth checking before recommending a feature that's off by default.
 - **`docs/milestone-19-plan.md`** — phased plan for agentic retrieval, with the
   9b-vs-27b agent probe that shaped it. Read before starting Milestone 19.
+- **`docs/chunking-indexing-plan.md`** — production chunking/indexing
+  methodology, the measured gaps against it, and the phased plan (covers
+  Milestones 14, 15 and 25 and part of 20). Read before changing the chunker,
+  loaders, or index text.
 - **`docs/mcp-server.md`** — the MCP tool contract, both transports, how to
   point an external agent at it, and why indexing is not exposed as a tool.
