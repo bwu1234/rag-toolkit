@@ -150,10 +150,12 @@ contract, and why indexing isn't exposed are in
 
 ### Logged turns
 
-The API, UI, and `cli chat` append every turn to `data/logs/turns.jsonl`
-(gitignored); the eval runners never do. Set
-`observability.turn_log.provider: none` to turn logging off — `POST /feedback`
-then returns 503, since there is no turn record to attach the rating to.
+With the default `jsonl` provider, the API, UI, and `cli chat` append every
+turn to `observability.turn_log.path` — `data/logs/turns.jsonl` unless you
+change it (gitignored there); the eval runners never do. `cli turns` reads back
+from the same configured path. Set `observability.turn_log.provider: none` to
+turn logging off — `POST /feedback` then returns 503, since there is no turn
+record to attach the rating to.
 
 ```bash
 python -m rag.cli turns --show 20 --feedback down
