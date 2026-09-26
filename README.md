@@ -85,7 +85,7 @@ re-run `python -m rag.cli index`. Add `--reset` to rebuild from scratch.
 
 ## Supported document formats
 
-Ingestion dispatches on file extension. Files with any other extension are skipped (at `DEBUG` log level — check the `N file(s) skipped` count in the ingest summary if a document seems missing):
+Ingestion dispatches on file extension. Files with any other extension are skipped (at `DEBUG` log level — check the `N file(s) skipped` count in the ingest summary if a document seems missing). That count also includes files whose loader raised (e.g. a corrupt PDF), which are logged at `ERROR` with a traceback rather than failing the run:
 
 | Extension | Loader | Granularity |
 |---|---|---|
@@ -107,7 +107,7 @@ Some limits worth knowing before pointing the pipeline at a corpus:
 The loader interface is the extension point — everything downstream operates on `Document.text` uniformly, so no other pipeline code changes:
 
 1. Subclass `Loader` ([rag/ingestion/models.py](rag/ingestion/models.py)), set `extensions`, and implement `load()`, building ids with `make_document_id`.
-2. Register an instance in the `_LOADERS` table in [rag/ingestion/loaders.py](rag/ingestion/loaders.py).
+2. Add an instance to the loader tuple that builds the `_LOADERS` extension table in [rag/ingestion/loaders.py](rag/ingestion/loaders.py).
 3. Add the parsing dependency to [pyproject.toml](pyproject.toml).
 
 ## Interfaces
