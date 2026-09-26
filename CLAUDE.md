@@ -67,8 +67,9 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   `--clear-context-cache` forces regeneration.
 - API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`, `/health`)
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.
-  Needs the `mcp` extra and serves exactly one protocol revision — see
-  [MCP server](docs/mcp-server.md).
+  The `mcp` extra is required only for the streamable HTTP transport; stdio
+  uses the fallback implementation without it. The MCP server serves exactly
+  one protocol revision — see [MCP server](docs/mcp-server.md).
 - Logged turns and feedback: `python -m rag.cli turns` (`--feedback down` for
   the thumbs-down ones). With the `jsonl` provider, the API, UI and `cli chat`
   append every turn to `observability.turn_log.path` (default
