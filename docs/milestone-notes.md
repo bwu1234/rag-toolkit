@@ -104,7 +104,7 @@ the docs fit together.
 - Adding `sentence-transformers` (and its `torch` dependency, ~2GB) was a
   deliberate tradeoff for accurate local cross-encoder reranking over a
   lighter-weight option (e.g. an LLM-based reranker via the existing Ollama
-  client) — the user chose accuracy and a proven, purpose-built model over
+  client) — accuracy and a proven, purpose-built model were chosen over
   minimizing dependencies for this component.
 - `retrieval.min_score` is a relevance floor applied to the *final* results,
   after reranking, inside `Retriever` — not inside any one reranker. A vector
