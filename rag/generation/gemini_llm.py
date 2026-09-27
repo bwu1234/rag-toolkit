@@ -1,0 +1,272 @@
+"""Gemini API-backed `LLMClient` adapter.
+
+Talks to the Gemini API's REST `generateContent` endpoint over `httpx` (already
+a dependency) rather than the `google-genai` SDK -- one POST doesn't justify a
+second HTTP stack. The same endpoint serves Gemini and hosted Gemma models
+(`gemma-4-31b-it`), which is what makes it usable as the eval judge: the fixed
+judge is Gemma 4 31B, and running it here frees the local GPU.
+
+Two things a naive client gets wrong against the free tier:
+
+- **The binding limit is tokens per minute, not requests.** Gemma 4 31B allows
+  30 requests/min but 16k tokens/min, and one judge prompt carrying five
+  passages is ~2-3k tokens. So the client paces itself before sending, keeping
+  a rolling 60s window of tokens spent, instead of firing and eating 429s.
+- **A 429 means two different things.** A per-minute 429 clears in seconds; a
+  per-day 429 doesn't clear until the quota resets. Both carry a
+  `RetryInfo.retryDelay` of a few seconds, so trusting that alone retries a
+  spent day forever. Only the `QuotaFailure` violation's `quotaId` tells them
+  apart (`GenerateRequestsPerDayPerProjectPerModel-FreeTier` vs
+  `...PerMinute...`) -- the same test Google's gemini-cli uses. A per-day 429
+  raises `GeminiDailyQuotaExhausted`, and nothing else is reported as one.
+
+The API key is read from the environment (`api_key_env`), never from config.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+import re
+import time
+from collections import deque
+from collections.abc import Callable
+
+import httpx
+
+from rag.generation.llm import LLMClient, LLMUsage
+
+logger = logging.getLogger(__name__)
+
+#: Rough chars-per-token for pacing before the provider has counted anything.
+#: Deliberately low (so the estimate runs high): underestimating is what causes
+#: a 429. The window is corrected to the reported count after each call.
+_CHARS_PER_TOKEN = 3.5
+
+_WINDOW_S = 60.0
+
+#: Status codes worth retrying: per-minute rate limiting and transient server
+#: trouble (500, 503 "model overloaded", 504).
+_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+
+
+class GeminiDailyQuotaExhausted(RuntimeError):
+    """The API reported this model's per-day quota as spent. Retrying won't help until it resets."""
+
+
+class GeminiLLMClient(LLMClient):
+    """Generates responses via the Gemini API's `models/{model}:generateContent` endpoint.
+
+    `requests_per_minute` / `tokens_per_minute` are the project's free-tier
+    limits for `model`, read from AI Studio; `None` disables that half of the
+    pacing. `max_retries` bounds retries of per-minute 429s and 5xx errors.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        base_url: str,
+        *,
+        api_key: str,
+        temperature: float = 0.2,
+        max_tokens: int = 1024,
+        timeout: float = 120.0,
+        requests_per_minute: int | None = None,
+        tokens_per_minute: int | None = None,
+        max_retries: int = 5,
+    ) -> None:
+        if not api_key:
+            raise ValueError("GeminiLLMClient needs a non-empty api_key")
+        self.model = model
+        self.base_url = base_url.rstrip("/")
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.requests_per_minute = requests_per_minute
+        self.tokens_per_minute = tokens_per_minute
+        self.max_retries = max_retries
+        # The key goes in a header, not the `?key=` query string, so it can't
+        # end up in a logged URL or an httpx error message.
+        self._client = httpx.Client(
+            base_url=self.base_url, timeout=timeout, headers={"x-goog-api-key": api_key}
+        )
+        # (timestamp, tokens) per request sent in the last `_WINDOW_S`.
+        self._window: deque[tuple[float, int]] = deque()
+        # Injectable so tests can drive the pacing without real waits.
+        self._clock: Callable[[], float] = time.monotonic
+        self._sleep: Callable[[float], None] = time.sleep
+
+    def generate(self, prompt: str, *, system: str | None = None) -> str:
+        return self.generate_with_usage(prompt, system=system)[0]
+
+    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+        body: dict[str, object] = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": self.temperature,
+                "maxOutputTokens": self.max_tokens,
+            },
+        }
+        if system is not None:
+            body["systemInstruction"] = {"parts": [{"text": system}]}
+
+        estimate = int(len(prompt + (system or "")) / _CHARS_PER_TOKEN) + 1
+        payload = self._post_with_retries(body, estimate)
+
+        usage_meta = payload.get("usageMetadata")
+        usage_meta = usage_meta if isinstance(usage_meta, dict) else {}
+        usage = LLMUsage(
+            prompt_tokens=_optional_int(usage_meta.get("promptTokenCount")),
+            completion_tokens=_optional_int(usage_meta.get("candidatesTokenCount")),
+        )
+        # Replace the estimate with what the API counted, so pacing tracks reality.
+        reported = _optional_int(usage_meta.get("totalTokenCount"))
+        if reported is not None and self._window:
+            stamp, _ = self._window.pop()
+            self._window.append((stamp, reported))
+        return _response_text(payload), usage
+
+    def _post_with_retries(self, body: dict[str, object], estimate: int) -> dict[str, object]:
+        path = f"/v1beta/models/{self.model}:generateContent"
+        attempt = 0
+        while True:
+            self._wait_for_capacity(estimate)
+            self._window.append((self._clock(), estimate))
+            try:
+                response = self._client.post(path, json=body)
+            except httpx.HTTPError as exc:
+                raise RuntimeError(
+                    f"Failed to reach the Gemini API at {self.base_url} (model={self.model!r}): {exc}"
+                ) from exc
+
+            if response.status_code == 200:
+                payload = response.json()
+                if not isinstance(payload, dict):
+                    raise RuntimeError(f"Unexpected response shape from Gemini generateContent: {payload!r}")
+                return payload
+
+            if response.status_code == 429 and _is_daily_quota(response):
+                raise GeminiDailyQuotaExhausted(
+                    f"Gemini daily quota for {self.model!r} is spent; it resets daily "
+                    f"(midnight Pacific). Details: {_error_message(response)}"
+                )
+            if response.status_code not in _RETRYABLE_STATUS or attempt >= self.max_retries:
+                raise RuntimeError(
+                    f"Gemini generateContent failed with HTTP {response.status_code} "
+                    f"(model={self.model!r}) after {attempt + 1} attempt(s): {_error_message(response)}"
+                )
+            delay = _retry_delay(response) or min(2.0**attempt, 30.0)
+            logger.warning(
+                "Gemini HTTP %d for %s; retrying in %.1fs (attempt %d/%d)",
+                response.status_code, self.model, delay, attempt + 1, self.max_retries,
+            )
+            self._sleep(delay)
+            attempt += 1
+
+    def _wait_for_capacity(self, tokens: int) -> None:
+        """Block until sending `tokens` more stays inside both per-minute limits."""
+        if self.tokens_per_minute is not None and tokens > self.tokens_per_minute:
+            raise RuntimeError(
+                f"Prompt is ~{tokens} tokens, over the {self.tokens_per_minute}/min limit for "
+                f"{self.model!r}; it can never be sent under this quota"
+            )
+        while True:
+            now = self._clock()
+            while self._window and now - self._window[0][0] >= _WINDOW_S:
+                self._window.popleft()
+            over_requests = (
+                self.requests_per_minute is not None and len(self._window) >= self.requests_per_minute
+            )
+            over_tokens = (
+                self.tokens_per_minute is not None
+                and sum(t for _, t in self._window) + tokens > self.tokens_per_minute
+            )
+            if not (over_requests or over_tokens):
+                return
+            # Wait for the oldest entry to age out, then re-check.
+            wait = _WINDOW_S - (now - self._window[0][0])
+            logger.debug("Pacing %s under its per-minute quota: waiting %.1fs", self.model, wait)
+            self._sleep(max(wait, 0.01))
+
+    def close(self) -> None:
+        self._client.close()
+
+    def __enter__(self) -> "GeminiLLMClient":
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.close()
+
+
+def api_key_from_env(var: str) -> str:
+    """Read the API key from `var`, failing with the fix if it's unset."""
+    key = os.environ.get(var, "").strip()
+    if not key:
+        raise ValueError(
+            f"The gemini LLM provider reads its API key from ${var}, which is unset. "
+            f"Export it (the key comes from AI Studio); it never goes in config.yaml."
+        )
+    return key
+
+
+def _response_text(payload: dict[str, object]) -> str:
+    """The answer text of the first candidate, skipping any thought-summary parts."""
+    candidates = payload.get("candidates")
+    if not isinstance(candidates, list) or not candidates:
+        feedback = payload.get("promptFeedback")
+        raise RuntimeError(f"Gemini returned no candidates (promptFeedback={feedback!r})")
+    candidate = candidates[0]
+    content = candidate.get("content") if isinstance(candidate, dict) else None
+    parts = content.get("parts") if isinstance(content, dict) else None
+    if not isinstance(parts, list):
+        reason = candidate.get("finishReason") if isinstance(candidate, dict) else None
+        raise RuntimeError(f"Gemini candidate has no content (finishReason={reason!r}): {candidate!r}")
+    return "".join(
+        part["text"]
+        for part in parts
+        if isinstance(part, dict) and isinstance(part.get("text"), str) and not part.get("thought")
+    )
+
+
+def _error_details(response: httpx.Response) -> list[dict[str, object]]:
+    try:
+        error = response.json().get("error", {})
+    except (ValueError, AttributeError):
+        return []
+    details = error.get("details") if isinstance(error, dict) else None
+    return [d for d in details if isinstance(d, dict)] if isinstance(details, list) else []
+
+
+def _is_daily_quota(response: httpx.Response) -> bool:
+    """True only when a QuotaFailure violation names a per-day quota."""
+    for detail in _error_details(response):
+        if not str(detail.get("@type", "")).endswith("google.rpc.QuotaFailure"):
+            continue
+        violations = detail.get("violations")
+        for violation in violations if isinstance(violations, list) else []:
+            quota_id = str(violation.get("quotaId", "")) if isinstance(violation, dict) else ""
+            if "PerDay" in quota_id or "Daily" in quota_id:
+                return True
+    return False
+
+
+def _retry_delay(response: httpx.Response) -> float | None:
+    """Seconds from a RetryInfo detail's `retryDelay` ("34s"), else the Retry-After header."""
+    for detail in _error_details(response):
+        if str(detail.get("@type", "")).endswith("google.rpc.RetryInfo"):
+            match = re.fullmatch(r"(\d+(?:\.\d+)?)s", str(detail.get("retryDelay", "")))
+            if match:
+                return float(match.group(1))
+    header = response.headers.get("retry-after", "")
+    return float(header) if header.replace(".", "", 1).isdigit() else None
+
+
+def _error_message(response: httpx.Response) -> str:
+    try:
+        error = response.json().get("error", {})
+        return str(error.get("message") or error)
+    except (ValueError, AttributeError):
+        return response.text[:500]
+
+
+def _optional_int(value: object) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) else None

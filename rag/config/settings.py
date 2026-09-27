@@ -123,14 +123,20 @@ class EmbeddingConfig(BaseModel):
     dimensions: int | None = None
 
 
+#: Where `provider: gemini` points when `base_url` isn't set explicitly.
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com"
+
+
 class LLMConfig(BaseModel):
     """Which chat/generation model to use and how to reach it.
 
     Default: Ollama-served `qwen3.5:9b-mlx`.
     """
 
-    provider: Literal["ollama", "anthropic", "openai"] = "ollama"
+    provider: Literal["ollama", "gemini", "anthropic", "openai"] = "ollama"
     model: str = "qwen3.5:9b-mlx"
+    # Defaults to Ollama's; with `provider: gemini` and no explicit value it
+    # becomes the Gemini API's (see `_provider_base_url`).
     base_url: str = "http://localhost:11434"
     temperature: float = 0.2
     max_tokens: int = 1024
@@ -142,6 +148,21 @@ class LLMConfig(BaseModel):
     # a judge grading a long multi-hop answer on a shared GPU needs far more
     # (the 9b-vs-27b probe needed 900s for an 11k-token grading prompt).
     timeout_s: float = Field(default=120.0, gt=0, description="Per-request timeout in seconds")
+    # Hosted providers only (ignored by ollama). The key is read from this
+    # environment variable, never from a config file.
+    api_key_env: str = "GEMINI_API_KEY"
+    # The project's per-model free-tier limits, from AI Studio. The client paces
+    # itself under both rather than firing and eating 429s. None = don't pace.
+    requests_per_minute: int | None = Field(default=None, gt=0)
+    tokens_per_minute: int | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def _provider_base_url(self) -> "LLMConfig":
+        # The Ollama default URL is meaningless for a hosted provider, and making
+        # every gemini stanza restate the endpoint invites a stale copy.
+        if self.provider == "gemini" and "base_url" not in self.model_fields_set:
+            self.base_url = GEMINI_BASE_URL
+        return self
 
 
 class ContextualChunkingConfig(BaseModel):

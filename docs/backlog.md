@@ -212,6 +212,11 @@ land.
   (Secret Manager on Cloud Run), never from `config.yaml` or a committed file.
   Distinguish daily-quota exhaustion from transient rate limiting using provider error details and/or `Retry-After`; only report the daily budget as spent when that condition is confirmed.
   Hermetic tests against a mocked transport, like the Ollama adapter's.
+  **Shipped early** (`rag/generation/gemini_llm.py`) to run the Gemma 4 31B
+  judge off the local GPU. It paces itself under `requests_per_minute` /
+  `tokens_per_minute` and raises `GeminiDailyQuotaExhausted` only when the
+  429's `QuotaFailure.quotaId` names a per-day quota. The in-app daily
+  counter below is still open.
 - **The free tier is the budget guard.** A project's actual limits are shown in
   AI Studio. Third-party sources disagree (500 vs. 1,000 requests/day, about
   15/min), so read the numbers from there and put them in config. One

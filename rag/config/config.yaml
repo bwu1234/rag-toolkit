@@ -200,4 +200,21 @@ eval:
   #     base_url: http://localhost:11434
   #     temperature: 0.0
   #     timeout_s: 900
+  #
+  # The same model hosted on the Gemini API, which frees the local GPU:
+  #
+  #   judge:
+  #     provider: gemini
+  #     model: gemma-4-31b-it
+  #     temperature: 0.0
+  #     api_key_env: GEMINI_API_KEY   # read from the environment, never put here
+  #     requests_per_minute: 30       # free-tier limits from AI Studio
+  #     tokens_per_minute: 16000
+  #
+  # Tokens/min is the binding limit: a judge prompt is ~2-3k tokens, so expect
+  # ~5-7 calls a minute and ~25 min for the phase-0 set. It's not the same
+  # build as the MLX one, so its verdicts are filed separately
+  # (`__judge-gemma-4-31b-it`) and are not comparable with the local judge's
+  # until an agreement run shows they are. Free-tier prompts may be read by
+  # Google; fine for public filings, not for a private corpus.
   judge: null
