@@ -15,7 +15,7 @@
       "AAPL_10-K_2025-09-27.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Macroeconomic conditions, including inflation, interest rates and currency fluctuations, have directly and indirectly impacted, and could in the future materially impact, the Company's results of operations and financial condition.",
       "restatement_candidates": [],
@@ -42,7 +42,7 @@
       "AAPL_10-K_2025-09-27.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The Company is subject to income taxes in the U.S. and numerous foreign jurisdictions. The evaluation of the Company's uncertain tax positions involves significant judgment in the interpretation and application of GAAP and complex domestic and international tax laws, including the TCJA and the allocation of international taxation rights between countries. Although management believes the Company's reserves are reasonable, no assurance can be given that the final outcome of these uncertainties will not be different from that reflected in the Company's reserves. Reserves are adjusted considering changing facts and circumstances, such as the closing of a tax examination. Resolution of these uncertainties in a manner inconsistent with management's expectations could have a material impact on the Company's financial condition and operating results.",
       "restatement_candidates": [],
@@ -69,8 +69,8 @@
       "AAPL_10-K_2025-09-27.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "The preparation of financial statements and related disclosures in conformity with U.S. generally accepted accounting principles (\"GAAP\") and the Company's discussion and analysis of its financial condition and operating results require the Company's management to make judgments, assumptions and estimates that affect the amounts reported. Note 1, \"Summary of Significant Accounting Policies\" of the Notes to Consolidated Financial Statements in Part II, Item 8 of this Form 10-K describes the significant accounting policies and methods used in the preparation of the Company's consolidated financial statements. Management bases its estimates on historical experience and on various other assumptions it believes to be reasonable under the circumstances, the results of which form the basis for making judgments about the carrying values of assets and liabilities.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -97,8 +97,8 @@
       "AAPL_10-Q_2026-03-28.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "The Company periodically provides certain information for investors on its corporate website, www.apple.com, and its investor relations website, investor.apple.com. This includes press releases and other information about financial performance, information on corporate governance, and details related to the Company's annual meeting of shareholders. The information contained on the websites referenced in this Form 10-Q is not incorporated by reference into this filing. Further, the Company's references to website URLs are intended to be inactive textual references only.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -125,8 +125,8 @@
       "AAPL_10-Q_2026-03-28.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "This Item and other sections of this Quarterly Report on Form 10-Q (\"Form 10-Q\") contain forward-looking statements, within the meaning of the Private Securities Litigation Reform Act of 1995, that involve risks and uncertainties. Forward-looking statements provide current expectations of future events based on certain assumptions and include any statement that does not directly relate to any historical or current fact. For example, statements in this Form 10-Q regarding the potential future impact of macroeconomic conditions and tariffs and other measures on the Company's business and results of operations are forward-looking statements. Forward-looking statements can also be identified by words such as \"future,\" \"anticipates,\" \"believes,\" \"estimates,\" \"expects,\" \"intends,\" \"plans,\" \"predicts,\" \"will,\" \"would,\" \"could,\" \"can,\" \"may,\" and similar terms. Forward-looking statements are not guarantees of future performance and the Company's actual results may differ significantly from the results discussed in the forward-looking statements. Factors that might cause such differences include, but are not limited to, those discussed in Part I, Item 1A of the 2025 Form 10-K and Part II, Item 1A of this Form 10-Q, in each case under the heading \"Risk Factors.\" The Company assumes no obligation to revise or update any forward-looking statements for any reason, except as required by law.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -152,7 +152,7 @@
       "COST_10-K_2025-08-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The Company accounts for certain assets and liabilities at fair value. The carrying value of the Company's financial instruments, including cash and cash equivalents, receivables and accounts payable, approximate fair value due to their short-term nature or variable interest rates. See Notes 2, 3, and 4 for the carrying value and fair value of the Company's investments, derivative instruments, and fixed-rate debt.",
       "restatement_candidates": [],
@@ -179,7 +179,7 @@
       "COST_10-K_2025-08-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The Company is subject to multiple examinations for value added, sales-based, payroll, product, import or other non-income taxes in various jurisdictions. In certain cases, the Company has received assessments from the authorities. Possible losses or range of possible losses associated with these matters are either immaterial or an estimate of the possible loss or range of loss cannot be made at this time. If certain matters or a group of matters were to be decided adversely to the Company, it could result in a charge that might be material to the results of an individual fiscal quarter or year.",
       "restatement_candidates": [],
@@ -208,7 +208,7 @@
       "COST_10-Q_2026-05-10.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Government actions in various countries relating to tariffs affect the costs of some of our merchandise. The degree of our exposure is dependent on (among other things) the type of goods, rates imposed, and timing of the tariffs. Higher tariffs are more likely to adversely impact rather than improve our results.",
       "restatement_candidates": [],
@@ -235,7 +235,7 @@
       "COST_10-K_2024-09-01.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Stock-based compensation expense is predominantly included in SG&A expenses in the consolidated statements of income. Certain stock-based compensation costs are capitalized or included in the cost of merchandise. See Note 7 for additional information.",
       "restatement_candidates": [],
@@ -265,7 +265,7 @@
       "COST_10-Q_2026-05-10.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Material contractual obligations arising in the normal course of business primarily consist of purchase obligations, long-term debt and related interest payments, leases, and construction and land purchase obligations. Purchase obligations consist of contracts primarily related to merchandise, equipment, and third-party services, the majority of which are due in the next 12 months. Construction and land-purchase obligations consist of contracts primarily related to the development and opening of new and relocated warehouses, the majority of which (other than leases) are due in the next 12 months.",
       "restatement_candidates": [],
@@ -295,7 +295,7 @@
       "COST_10-Q_2026-05-10.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The membership format is integral to our business and profitability. This format is designed to reinforce member loyalty and provide continuing fee revenue. The extent to which we achieve growth in our membership base, increase the penetration of Executive memberships, and sustain high renewal rates materially influences our profitability. Our renewal rate, which excludes affiliates of Business members, is a trailing calculation that captures renewals during the period seven to eighteen months prior to the reporting date. Our paid-membership growth rate may be adversely impacted when warehouse openings occur in existing markets as compared to new markets. Our worldwide renewal rate is adversely impacted by membership growth in newer international markets and a higher penetration of memberships sold online, including through digital membership promotions, which renew at a slightly lower rate on average.",
       "restatement_candidates": [],
@@ -325,7 +325,7 @@
       "COST_10-Q_2026-05-10.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "We believe that the most important driver of our profitability is increasing net sales, particularly comparable sales. Net sales includes our core merchandise categories (foods and sundries, non-foods, and fresh foods), warehouse ancillary (gasoline, pharmacy, optical, food court, hearing aids, and tire",
       "restatement_candidates": [],
@@ -352,7 +352,7 @@
       "CVX_10-K_2025-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Legislative or regulatory changes in tax laws may expose Chevron to additional tax liabilities Changes in tax laws and regulations around the world are regularly enacted due to political or economic factors beyond the company's control. Chevron's taxes in the jurisdictions where the company conducts business activities have been and may be adversely affected by changes in tax laws or regulations, including but not limited to, substantive changes in, reductions in, or the repeal or expiration of, tax incentives. Furthermore, Chevron's tax returns are subject to audit by taxing authorities around the world. There is no assurance that taxing authorities or courts will agree with the positions that Chevron has reflected on the company's tax returns, in which case interest and penalties could be imposed that may have a material adverse effect on the company's results of operations or financial condition.",
       "restatement_candidates": [],
@@ -379,7 +379,7 @@
       "CVX_10-K_2025-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The Board provides oversight of Chevron's cybersecurity program, receives reports from management on cybersecurity risks in connection with Chevron's operations and projects, and also reviews cybersecurity risks as part of the company's broader annual ERM process. In support of the Board's oversight of the company's policies and processes with respect to risk management and the company's major financial risk exposures, including cybersecurity, the Audit Committee meets with Chevron's CISO and CIO at least twice a year to review cybersecurity risks and implications, including the results of independent third-party assessments. The CISO and CIO present cybersecurity matters to the Board of Directors at least annually. The CISO and CIO also provide new Board members with a cybersecurity briefing as part of the onboarding process.",
       "restatement_candidates": [],
@@ -406,7 +406,7 @@
       "CVX_10-K_2025-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Chevron holds interests in two processing facilities located in Punta Europa. These include a 28 percent nonoperated interest in the Alba LPG Plant and a 45 percent nonoperated interest in the Atlantic Methanol Production Company.",
       "restatement_candidates": [],
@@ -433,7 +433,7 @@
       "CVX_10-K_2024-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Chevron's business and proprietary information, information technology (IT) and operational technology (OT) networks are essential to its success. The company's cybersecurity program is designed to protect its information assets and operations from external and internal cyber threats by identifying and appropriately managing and mitigating risks while ensuring business resiliency. This program is integrated within the company's Enterprise Risk Management (ERM) process, which is the company's systematic approach to identifying, managing and assessing major risks and safeguards, including cybersecurity risks. Chevron uses a risk-based information security process aligned with the National Institute of Standards and Technology (NIST) Cybersecurity Framework to identify, prioritize and mitigate cyber risks.",
       "restatement_candidates": [],
@@ -460,8 +460,8 @@
       "CVX_10-K_2024-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Checked chunk47: its 45 percent is Atlantic Methanol, not Alen. No alternative.",
       "paragraph": "Equatorial Guinea Chevron has a 38 percent-owned and operated interest in the Aseng Field and the Yolanda Field in Block I and a 45 percent-owned and operated interest in the Alen Field in Block O. The Yolanda field is a discovered natural gas field that straddles the Equatorial Guinea and Cameroon maritime border, for which development options are being reviewed with both governments.",
       "restatement_candidates": [
         "CVX_10-K_2025-12-31.md::chunk47"
@@ -492,7 +492,7 @@
       "DAL_10-Q_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "•Aircraft fuel and related taxes. The volatility in fuel prices impacts the comparability of year-over-year financial performance. The adjustment for aircraft fuel and related taxes allows investors to better understand and analyze our non-fuel costs and year-over-year financial performance.",
       "restatement_candidates": [],
@@ -520,7 +520,7 @@
       "DAL_10-Q_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Seasonality of Advance Ticket Sales. We sell tickets for air travel in advance of the customer's travel date. When we receive a cash payment at the time of sale, we record the cash received on advance sales as deferred revenue in air traffic liability. The air traffic liability typically increases during the winter and spring months as advance ticket sales grow prior to the summer peak travel season and decreases during the summer and fall months.",
       "restatement_candidates": [],
@@ -547,7 +547,7 @@
       "DAL_10-Q_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "In January 2026, we entered into a $1.25 billion term loan issued by a group of lenders due December 2026. The proceeds of the term loan were used to repay $957 million of Payroll Support Program loans due 2031 and for general corporate purposes.",
       "restatement_candidates": [],
@@ -577,7 +577,7 @@
       "DAL_10-Q_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The following table shows a reconciliation of net cash provided by operating and used in investing activities (GAAP measures) to free cash flow (a non-GAAP financial measure). We present free cash flow because management believes this metric is helpful to investors to evaluate the company's ability to generate cash that is available for use for debt service or general corporate initiatives. Adjustments include:",
       "restatement_candidates": [],
@@ -607,7 +607,7 @@
       "DAL_10-Q_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "•Third-party refinery sales. Refinery sales to third parties, and related expenses, are not related to our airline segment. Excluding these sales therefore provides a more meaningful comparison of our airline operations to the rest of the airline industry.",
       "restatement_candidates": [],
@@ -634,7 +634,7 @@
       "DAL_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Miscellaneous, net. Miscellaneous, net primarily includes employee benefit plans net periodic benefit/(cost), charitable contributions, our share of our equity method investments' results, dividends received from our equity investees and foreign exchange gains/(losses).",
       "restatement_candidates": [],
@@ -662,7 +662,7 @@
       "DAL_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "•Strategic investments and related. Certain cash flows related to our investments in and related transactions with other airlines and associated companies are included in our GAAP investing activities. We adjust for this activity because it provides a more meaningful comparison to our airline industry peers.\n| Free cash flow reconciliation",
       "restatement_candidates": [],
@@ -692,7 +692,7 @@
       "JNJ_10-Q_2026-06-28.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The Company also operates in an environment increasingly hostile to intellectual property rights. Firms have filed Abbreviated New Drug Applications or Biosimilar Biological Product Applications with the U.S. FDA or otherwise challenged the coverage and/or validity of the Company's patents, seeking to market generic or biosimilar forms of many of the Company's key pharmaceutical products prior to expiration of the applicable patents covering those products. In the event the Company is not successful in defending the patent claims challenged in the resulting lawsuits, generic or biosimilar versions of the products at issue will be introduced to the market, resulting in the potential for substantial market share and revenue losses for those products, and which may result in a non-cash impairment charge in any associated intangible asset. There is also a risk that one or more competitors could launch a generic or biosimilar version of the product at issue following regulatory approval even though one or more valid patents are in place.",
       "restatement_candidates": [],
@@ -719,8 +719,8 @@
       "JNJ_10-Q_2026-03-29.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Checked chunks 12-13: '100%' there is a table footnote. No alternative.",
       "paragraph": "The Company operates in certain countries where the economic conditions continue to present significant challenges. The Company continues to monitor these situations and take appropriate actions. Inflation rates and currency exchange rates continue to have an effect on worldwide economies and, consequently, on the way the Company operates. The Company has accounted for operations in Venezuela, Argentina, Turkey and Egypt as highly inflationary, as the prior three-year cumulative inflation rate surpassed 100%. In the face of increasing costs, the Company strives to maintain its profit margins through cost reduction programs, productivity improvements and periodic price increases.",
       "restatement_candidates": [
         "JNJ_10-Q_2026-06-28.md::chunk12",
@@ -749,8 +749,8 @@
       "LUV_10-K_2025-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "The Company's Consolidated Financial Statements have been prepared in accordance with GAAP. The Company's significant accounting policies are described in Note 1 to the Consolidated Financial Statements. The preparation of financial statements in accordance with GAAP requires the Company's management to make estimates and assumptions that affect the amounts reported in the Consolidated Financial Statements and accompanying footnotes. The Company's estimates and assumptions are based on historical experience and changes in the business environment. However, actual results may differ from estimates under different conditions, sometimes materially. Critical accounting policies and estimates are defined as those that both (i) are most important to the portrayal of the Company's financial condition and results and (ii) require management's most subjective judgments. The Company's critical accounting policies and estimates are described below.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -777,8 +777,8 @@
       "LUV_10-Q_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "This Form 10-Q contains \"forward-looking statements\" within the meaning of Section 27A of the Securities Act of 1933 and Section 21E of the Securities Exchange Act of 1934 (\"Exchange Act\"). Forward-looking statements are based on, and include statements about, the Company's estimates, expectations, beliefs, intentions, and strategies for the future, and the assumptions underlying these forward-looking statements. Specific forward-looking statements can be identified by the fact that they do not relate strictly to historical or current facts and include, without limitation, statements related to the following:",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -804,8 +804,8 @@
       "LUV_10-Q_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Drawn from the forward-looking-statements list; Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "•the Company's plans and expectations with respect to the Company's delivery of WiFi and Starlink-equipped aircraft, airline partnerships, cabin design and seating, and the Company's Co-brand Agreement with Chase;",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -831,7 +831,7 @@
       "LUV_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "(i)Calculated as operating expenses divided by available seat miles. Also referred to as \"unit costs\" or \"cost per available seat mile\" or \"CASM,\" this is the average cost to fly an aircraft seat (empty or full) one mile, which is a measure of cost efficiency.",
       "restatement_candidates": [],
@@ -859,8 +859,8 @@
       "LUV_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "Caution should be taken not to place undue reliance on the Company's forward-looking statements, which represent the Company's views only as of the date this report is filed. The Company undertakes no obligation to update publicly or revise any forward-looking statement, whether as a result of new information, future events or otherwise.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -886,7 +886,7 @@
       "MRK_10-Q_2025-09-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Pharmaceutical segment profits are comprised of segment sales less standard costs, as well as SG&A expenses directly incurred by the segment. Animal Health segment profits are comprised of segment sales, less all cost of sales, as well as SG&A and R&D expenses directly incurred by the segment. For internal management reporting presented to the chief operating decision maker, Merck does not allocate the remaining cost of sales not included in segment profits as described above, R&D expenses incurred by MRL, or general and administrative expenses not directly incurred by the segments, nor the cost of financing these activities. Separate divisions maintain responsibility for monitoring and managing these costs, including depreciation related to fixed assets utilized by these divisions and, therefore, they are not included in segment profits. Also excluded from the determination of segment profits are costs related to restructuring activities and acquisition- and divestiture-related costs, including the amortization of intangible assets and amortization of purchase accounting adjustments, intangible asset impairment charges, and expense or income related to changes in the estimated fair value measurement of liabilities for contingent consideration. Additionally, segment profits do not reflect other expenses from corporate and manufacturing cost centers and other miscellaneous income or expense. These unallocated items are reflected in \"Non-segment activity\" in the above table. Also included in \"Non-segment activity\" are miscellaneous corporate profits (losses), as well as operating profits (losses) related to third-party manufacturing arrangements.",
       "restatement_candidates": [],
@@ -914,7 +914,7 @@
       "MRK_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "In September 2025, the ACIP voted to recommend that children under the age of four years receive protection from chickenpox (varicella) as a standalone immunization rather than in combination with measles, mumps, and rubella (MMR) vaccination, eliminating a previous shared clinical decision-making recommendation that allowed parents to choose combined MMR and varicella vaccine first-dose administration. The ACIP also voted to align the VFC program with this change. The acting CDC Director adopted the recommendation in October 2025. These ACIP recommendations are subject to the federal district court's March 16, 2026 preliminary injunction, as described above. MMR and varicella vaccines remain recommended and funded through the VFC program for both the first and second doses. The Company is the only manufacturer in the U.S. of MMRV vaccine (ProQuad) and varicella vaccine (Varivax). The Company anticipates that any negative effect of these recommendations on sales of ProQuad will not be material.",
       "restatement_candidates": [],
@@ -944,7 +944,7 @@
       "MSFT_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Our industry is dynamic and highly competitive, with frequent changes in both technologies and business models. Each industry shift is an opportunity to conceive new products, new technologies, or new ideas that can further transform the industry and our business. At Microsoft, we push the boundaries of what is possible through a broad range of research and development activities that seek to identify and address the changing demands of customers and users, industry trends, and competitive forces.",
       "restatement_candidates": [],
@@ -971,7 +971,7 @@
       "MSFT_10-K_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The Board of Directors, through its Audit Committee, consisting solely of independent directors of the Company, meets periodically with management, internal auditors, and our independent registered public accounting firm to ensure that each is meeting its responsibilities and to discuss matters concerning internal controls and financial reporting. Deloitte & Touche LLP and the internal auditors each have full and free access to the Audit Committee.\nSatya Nadella\nChief Executive Officer\nAmy E. Hood\nExecutive Vice President and Chief Financial Officer\nAlice L. Jolla\nCorporate Vice President and Chief Accounting Officer",
       "restatement_candidates": [],
@@ -1001,7 +1001,7 @@
       "MSFT_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "We are subject to income tax in many jurisdictions outside the U.S., some of which are currently under audit by local tax authorities. The resolution of these audits is not expected to be material to our consolidated financial statements. Our operations in Ireland remain subject to examination for tax years 2020 and thereafter.",
       "restatement_candidates": [],
@@ -1031,7 +1031,7 @@
       "MSFT_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "We use metrics in assessing the performance of our business and to make informed decisions regarding the allocation of resources. We disclose metrics to enable investors to evaluate progress against our ambitions, provide transparency into performance trends, and reflect the continued evolution of our products and services. Our commercial and other business metrics are fundamentally connected based on how customers use our products and services. The metrics are disclosed in the MD&A or the Notes to Financial Statements (Part II, Item 8 of this Form 10-K). Financial metrics are calculated based on financial results prepared in accordance with accounting principles generally accepted in the United States of America (\"GAAP\"), and growth comparisons relate to the corresponding period of last fiscal year.",
       "restatement_candidates": [],
@@ -1061,7 +1061,7 @@
       "MSFT_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Application of the goodwill impairment test requires judgment, including the identification of reporting units, assignment of assets and liabilities to reporting units, assignment of goodwill to reporting units, and determination of the fair value of each reporting unit. The fair value of each reporting unit is estimated primarily through the use of a discounted cash flow methodology. This analysis requires significant judgments, including estimation of future cash flows, which is dependent on internal forecasts, estimation of the long-term rate of growth for our business, estimation of the useful life over which cash flows will occur, and determination of our weighted average cost of capital.",
       "restatement_candidates": [],
@@ -1091,7 +1091,7 @@
       "MSFT_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Unearned revenue comprises mainly unearned revenue related to volume licensing programs, which may include cloud services and Software Assurance (\"SA\"). Unearned revenue is generally invoiced annually at the beginning of each contract period for multi-year agreements and recognized ratably over the coverage period. Unearned revenue also includes payments for other offerings for which we have been paid in advance and earn the revenue when we transfer control of the product or service. Refer to Note 1 - Accounting Policies of the Notes to Financial Statements (Part II, Item 8 of this Form 10-K).",
       "restatement_candidates": [],
@@ -1119,8 +1119,8 @@
       "MSFT_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "The following Management's Discussion and Analysis of Financial Condition and Results of Operations (\"MD&A\") is intended to help the reader understand the results of operations and financial condition of Microsoft Corporation. MD&A is provided as a supplement to, and should be read in conjunction with, our Annual Report on Form 10-K for the year ended June 30, 2025, and our consolidated financial statements and the accompanying Notes to Financial Statements (Part I, Item 1 of this Form 10-Q).",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -1149,7 +1149,7 @@
       "MSFT_10-Q_2025-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Unearned revenue comprises mainly unearned revenue related to volume licensing programs, which may include cloud services and Software Assurance (\"SA\"). Unearned revenue is generally invoiced annually at the beginning of each contract period for multi-year agreements and recognized ratably over the coverage period. Unearned revenue also includes payments for other offerings for which we have been paid in advance and earn the revenue when we transfer control of the product or service.",
       "restatement_candidates": [],
@@ -1176,8 +1176,8 @@
       "NVDA_10-K_2026-01-25.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "Refer to Note 1 of the Notes to the Consolidated Financial Statements in Part IV, Item 15 of this Annual Report on Form 10-K for a discussion of adoption of new and recently issued accounting pronouncements.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -1203,7 +1203,7 @@
       "NVDA_10-K_2026-01-25.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "We are subject to income taxes in the U.S. and foreign jurisdictions. Our calculation of deferred tax assets and liabilities is based on certain estimates and judgments and involves dealing with uncertainties in the application of complex tax laws. Our estimates of deferred tax assets and liabilities may change based, in part, on added certainty or finality to an anticipated outcome, changes in accounting standards or tax laws in the U.S. or foreign jurisdictions where we operate, or changes in other facts or circumstances. In addition, we recognize liabilities for potential U.S. and foreign income tax contingencies based on our estimate of whether, and the extent to which, additional taxes may be due. If we determine that payment of these amounts is unnecessary or if the recorded tax liability is less than our current assessment, we may be required to recognize an income tax benefit or additional income tax expense in our financial statements accordingly.",
       "restatement_candidates": [],
@@ -1230,7 +1230,7 @@
       "NVDA_10-K_2026-01-25.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "We recognize the benefit from a tax position only if it is more-likely-than-not that the position would be sustained upon audit based solely on the technical merits of the tax position. Our policy is to include interest and penalties related to unrecognized tax benefits as a component of income tax expense.",
       "restatement_candidates": [],
@@ -1260,7 +1260,7 @@
       "NVDA_10-Q_2026-04-26.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Macroeconomic factors, including tariffs, inflation, interest rate changes, capital market volatility, global supply chain constraints, and global economic and geopolitical developments, have direct and indirect impacts on our results of operations, particularly demand for our products. While difficult to isolate and quantify, these macroeconomic factors impact our supply chain and manufacturing costs, employee wages, costs for capital equipment and value of our investments. Our product and solution pricing generally does not fluctuate with short-term changes in our costs. Within our supply chain, we continuously manage product availability and costs with our vendors.",
       "restatement_candidates": [],
@@ -1288,8 +1288,8 @@
       "NVDA_10-Q_2026-04-26.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "Refer to Part II, Item 7, \"Critical Accounting Policies and Estimates\" of our Annual Report on Form 10-K for the fiscal year ended January 26, 2025. There have been no material changes to our Critical Accounting Policies and Estimates.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -1315,7 +1315,7 @@
       "NVDA_10-K_2026-01-25.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The recent rise in high-quality open-source foundation models is making advanced AI capabilities broadly accessible. Open-source AI is dependent on developer adoption and if deployed on our competitors' platforms, it could reduce demand for our products and services.",
       "restatement_candidates": [],
@@ -1342,8 +1342,8 @@
       "PFE_10-Q_2026-06-28.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "10-Q. We undertake no obligation to update forward-looking statements, whether as a result of new information, future events or otherwise, except as required by applicable securities law. You are advised, however, to consult any further disclosures we make on related subjects.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -1369,7 +1369,7 @@
       "PFE_10-Q_2026-06-28.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "•the risk and impact of tariffs on our business, which is subject to a number of factors including, but not limited to, restrictions on trade, the effective date and duration of such tariffs, countries included in the scope of tariffs, changes to amounts of tariffs, and potential retaliatory tariffs or other retaliatory actions imposed by other countries;",
       "restatement_candidates": [],
@@ -1398,7 +1398,7 @@
       "TGT_10-Q_2026-05-02.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Note: Merchandise Sales fulfilled by stores include in-store purchases and digitally originated sales fulfilled by shipping merchandise from stores to guests, Order Pickup, Drive Up, and Same Day Delivery.\n| TARGET CORPORATION |",
       "restatement_candidates": [],
@@ -1428,8 +1428,8 @@
       "TGT_10-Q_2026-05-02.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "All such forward-looking statements are intended to enjoy the protection of the safe harbor for forward-looking statements contained in the Private Securities Litigation Reform Act of 1995, as amended. Although we believe there is a reasonable basis for the forward-looking statements, our actual results could be materially different. The most important factors which could cause our actual results to differ from our forward-looking statements are set forth in our description of risk factors included in Part I, Item 1A, Risk Factors to this Form 10-K, which should be read in conjunction with the forward-looking statements in this report. Forward-looking statements speak only as of the date they are made, and we do not undertake any obligation to update any forward-looking statement.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -1458,7 +1458,7 @@
       "TGT_10-Q_2026-05-02.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "We have also disclosed after-tax ROIC, which is a ratio based on GAAP information, with the exception of the add-back of operating lease interest to operating income. We believe this metric is useful in assessing the effectiveness of our capital allocation over time. Other companies may calculate ROIC differently, limiting the usefulness of the measure for comparisons with other companies.\n| After-Tax Return on Invested Capital | |",
       "restatement_candidates": [],
@@ -1485,7 +1485,7 @@
       "TGT_10-K_2026-01-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Based on our experience, we use a graduated compensation growth schedule that assumes higher compensation growth for younger, shorter-service pension-eligible team members than it does for older, longer-service pension-eligible team members.",
       "restatement_candidates": [],
@@ -1512,7 +1512,7 @@
       "TGT_10-K_2025-02-01.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Pension accounting: We maintain a funded qualified defined benefit pension plan, as well as nonqualified and international pension plans that are generally unfunded, for certain current and former team members. The costs for these plans are determined based on actuarial calculations using the assumptions described in the following paragraphs. Eligibility and the level of benefits vary depending on each team member's full-time or part-time status, date of hire, age, length of service, and/or compensation. The benefit obligation and related expense for these plans are determined based on actuarial calculations using assumptions about the expected long-term rate of return, the discount rate, compensation growth rates, mortality, and retirement age. These assumptions, with adjustments made for any significant plan or participant changes, are used to determine the period-end benefit obligation and establish expense for the next year.",
       "restatement_candidates": [],
@@ -1542,7 +1542,7 @@
       "TGT_10-Q_2026-05-02.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "If our credit ratings were lowered, our ability to access the debt markets, our cost of funds, and other terms for new debt issuances could be adversely impacted. Each of the credit rating agencies reviews its rating periodically, and there is no guarantee our current credit ratings will remain the same as described above.",
       "restatement_candidates": [],
@@ -1570,7 +1570,7 @@
       "TGT_10-Q_2026-05-02.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Note 2 to the Financial Statements provides additional product category sales information. The collective interaction of a broad array of macroeconomic, competitive, and consumer behavioral factors, as well as sales mix and the transfer of sales to new stores, makes further analysis of sales metrics infeasible.",
       "restatement_candidates": [],
@@ -1597,8 +1597,8 @@
       "TGT_10-Q_2025-08-02.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Checked chunks 16 and 18: other percentage-point effects, no restatement of this change. No alternative.",
       "paragraph": "Note: Gross margin (GM) is calculated as Net Sales less Cost of Sales. All rates are calculated by dividing the applicable amount by Net Sales. We updated the prior period gross margin rate to conform to the current year calculation, which resulted in an approximate 1 percentage point increase in our gross margin rate for the 2024 periods presented.",
       "restatement_candidates": [
         "TGT_10-Q_2025-11-01.md::chunk16",
@@ -1627,8 +1627,8 @@
       "UAL_10-K_2025-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Span is a table fragment ('| Note 8'); tables get their own tier after Phase 4.",
       "paragraph": "Below is a summary of additional liquidity matters. See the indicated notes to our consolidated financial statements included in Part II, Item 8 of this report for additional details related to these and other matters affecting our liquidity and commitments.\n| Pension and other postretirement plans | Note 8",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -1654,7 +1654,7 @@
       "UAL_10-K_2024-12-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The Company's business is capital intensive, requiring significant amounts of capital to fund the acquisition of assets, particularly aircraft. In the past, the Company has funded the acquisition of aircraft with cash, by using EETC financing, by entering into finance or operating leases, or through other financings. The Company also often enters into long-term lease commitments with airports to ensure access to terminal, cargo, maintenance and other required facilities.",
       "restatement_candidates": [],
@@ -1682,7 +1682,7 @@
       "UAL_10-Q_2026-06-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "| (a) United also has options and purchase rights for additional aircraft.\n(b) Expected aircraft deliveries reflect adjustments communicated by Boeing and Airbus or estimated by United. However, aircraft deliveries are subject to a number of variables, as further described in Part I, Item 1A. Risk Factors of the 2025 Form 10-K, and we cannot guarantee delivery of any particular aircraft at any specific time notwithstanding firm purchase commitments.",
       "restatement_candidates": [],
@@ -1712,8 +1712,8 @@
       "UAL_10-Q_2026-03-31.md"
     ],
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Boilerplate a user wouldn't ask about; its wording is near-identical across companies, so it tests little.",
       "paragraph": "Additionally, forward-looking statements include conditional statements and statements that identify uncertainties or trends, discuss the possible future effects of known trends or uncertainties, or that indicate that the future effects of known trends or uncertainties cannot be predicted, guaranteed or assured. All forward-looking statements in this report are based upon information available to us on the date of this report. We undertake no obligation to publicly update or revise any forward-looking statement, whether as a result of new information, future events, changed circumstances or otherwise, except as required by applicable law or regulation.",
       "restatement_candidates": [],
       "suggestion": "reject",
@@ -1740,7 +1740,7 @@
       "WMT_10-Q_2026-04-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Our strategy includes allocating the majority of our capital to higher-return areas focused on automation such as eCommerce, supply chain and store and club investments. The following table provides additional detail regarding our capital expenditures:\n| (Amounts in millions) | | Fiscal Years Ended January 31,",
       "restatement_candidates": [],
@@ -1770,7 +1770,7 @@
       "WMT_10-Q_2026-04-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "The following table sets forth a reconciliation of free cash flow, a non-GAAP financial measure, to net cash provided by operating activities, which we believe to be the GAAP financial measure most directly comparable to free cash flow, as well as information regarding net cash used in investing activities and net cash used in financing activities.\n| | | Fiscal Years Ended January 31,",
       "restatement_candidates": [],
@@ -1798,7 +1798,7 @@
       "WMT_10-Q_2026-04-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Our calculation of ROI is considered a non-GAAP financial measure because it uses financial measures that differ from those used in ROA, the most directly comparable GAAP financial measure. ROA is consolidated net income for the period divided by average total assets for the period. We define ROI as operating income plus interest income, depreciation and amortization, and rent expense for the trailing 12 months divided by average invested capital during the period. We consider average invested capital to be the average of our beginning and ending total assets, plus average accumulated depreciation and amortization, less average accounts payable and average accrued liabilities for that period. Although ROI is a standard financial measure, numerous methods exist for calculating a company's ROI. As a result, the method used by management to calculate our ROI may differ from the methods used by other companies to calculate their ROI.",
       "restatement_candidates": [],
@@ -1828,7 +1828,7 @@
       "WMT_10-Q_2026-04-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "We regularly review share repurchase activity and consider several factors in determining when to execute share repurchases, including, among other things, current cash needs, capacity for leverage, cost of borrowings, our results of operations and the market price of our common stock. We anticipate that a majority of the ongoing share repurchase program will be funded through the Company's free cash flow.",
       "restatement_candidates": [],
@@ -1858,7 +1858,7 @@
       "WMT_10-Q_2026-04-30.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Credit rating agencies review their ratings periodically and, therefore, the credit ratings assigned to us by each agency may be subject to revision at any time. Accordingly, we are not able to predict whether our current credit ratings will remain consistent over time. Factors that could affect our credit ratings include changes in our operating performance, the general economic environment, conditions in the retail industry, our financial position, including our total debt and capitalization, and changes in our business strategy. Any downgrade of our credit ratings by a credit rating agency could increase our future borrowing costs or impair our ability to access capital and credit markets on terms commercially acceptable to us. In addition, any downgrade of our current short-term credit ratings could impair our ability to access the commercial paper markets with the same flexibility that we have experienced historically, potentially requiring us to rely more heavily on more expensive types of debt financing. The credit rating agency ratings are not recommendations to buy, sell or hold our commercial paper or debt securities. Each rating may be subject to revision or withdrawal at any time by the assigning rating organization and should be evaluated independently of any other rating. Moreover, each credit rating is specific to the security to which it applies.",
       "restatement_candidates": [],
@@ -1886,7 +1886,7 @@
       "WMT_10-Q_2025-10-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Effective February 20, 2025, the Company approved the fiscal 2026 annual dividend of $0.94 per share, a 13% increase over the fiscal 2025 annual dividend of $0.83 per share. For fiscal 2026, the annual dividend was or will be paid in four quarterly installments of $0.235 per share, according to the following record and payable dates:\n| Record Date | | Payable Date",
       "restatement_candidates": [],
@@ -1913,7 +1913,7 @@
       "WMT_10-Q_2025-07-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "We include Return on Assets (\"ROA\") and Return on Investment (\"ROI\") as metrics to assess our return on capital. ROA is the most directly comparable measure based on our financial statements presented in accordance with generally accepted accounting principles in the U.S. (\"GAAP\") while ROI is considered a non-GAAP financial measure. Management believes ROI is a meaningful metric to share with investors because it helps investors assess how effectively Walmart deploys its assets. Trends in ROI can fluctuate over time as management balances long-term strategic initiatives with possible short-term impacts.",
       "restatement_candidates": [],
@@ -1940,7 +1940,7 @@
       "WMT_10-Q_2025-07-31.md"
     ],
     "review": {
-      "verdict": "pending",
+      "verdict": "accept",
       "note": "",
       "paragraph": "Comparable sales is a metric that indicates the performance of our existing stores and clubs by measuring the change in sales for such stores and clubs, including eCommerce sales, for a particular period over the corresponding period in the previous year. The retail industry generally reports comparable sales using the retail calendar (also known as the 4-5-4 calendar). To be consistent with the retail industry, we provide comparable sales using the retail calendar in our quarterly earnings releases. However, when we discuss our comparable sales below, we are referring to our calendar comparable sales calculated using our fiscal calendar, which may result in differences when compared to comparable sales using the retail calendar. We focus on comparable sales in the U.S. as we believe it is a meaningful metric within the context of the U.S. retail market where there is a single currency, one inflationary market and generally consistent store and club formats from year to year.",
       "restatement_candidates": [],

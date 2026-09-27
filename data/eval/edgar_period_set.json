@@ -1,0 +1,1061 @@
+[
+  {
+    "id": "period::AAPL_10-K_2024-09-28.md::para139",
+    "query": "What macroeconomic factors does Apple Inc. identify as having directly and indirectly impacted its results of operations and financial condition in the fiscal year ended September 28, 2024?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2024-09-28.md"
+    ],
+    "expected_spans": [
+      "Macroeconomic conditions, including inflation, interest rates and currency fluctuations, have directly and indirectly impacted, and could in the future materially impact, the Company's results of operations and financial condition."
+    ],
+    "expected_answer": "Apple Inc. identifies inflation, interest rates, and currency fluctuations as macroeconomic factors that have directly and indirectly impacted its results of operations and financial condition.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "AAPL_10-K_2025-09-27.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::AAPL_10-K_2024-09-28.md::para257",
+    "query": "What potential impact could arise for Apple Inc. in its fiscal year ended September 28, 2024 if uncertain tax positions are resolved contrary to management's expectations?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2024-09-28.md"
+    ],
+    "expected_spans": [
+      "Resolution of these uncertainties in a manner inconsistent with management's expectations could have a material impact on the Company's financial condition and operating results."
+    ],
+    "expected_answer": "It could have a material impact on the company's financial condition and operating results.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "AAPL_10-K_2025-09-27.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::COST_10-K_2024-09-01.md::para232",
+    "query": "For Costco Wholesale Corp's fiscal year ended September 1, 2024, why do the carrying values of financial instruments like receivables approximate fair value?",
+    "expected_doc_ids": [
+      "COST_10-K_2024-09-01.md"
+    ],
+    "expected_spans": [
+      "The carrying value of the Company's financial instruments, including cash and cash equivalents, receivables and accounts payable, approximate fair value due to their short-term nature or variable interest rates."
+    ],
+    "expected_answer": "They approximate fair value because of their short-term nature or variable interest rates.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::COST_10-K_2024-09-01.md::para258",
+    "query": "What is Costco Wholesale Corp's assessment regarding the materiality of potential losses from tax examinations for the fiscal year ended September 1, 2024?",
+    "expected_doc_ids": [
+      "COST_10-K_2024-09-01.md"
+    ],
+    "expected_spans": [
+      "Possible losses or range of possible losses associated with these matters are either immaterial or an estimate of the possible loss or range of loss cannot be made at this time."
+    ],
+    "expected_answer": "The potential losses are either immaterial or cannot be estimated.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::COST_10-K_2025-08-31.md::para101",
+    "query": "How does Costco Wholesale Corp assess the likely impact of higher tariffs on its results for the fiscal year ended August 31, 2025?",
+    "expected_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "expected_spans": [
+      "Higher tariffs are more likely to adversely impact rather than improve our results."
+    ],
+    "expected_answer": "Costco states that higher tariffs are more likely to have an adverse impact on its results rather than improving them.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "COST_10-Q_2025-11-23.md",
+      "COST_10-Q_2026-02-15.md",
+      "COST_10-Q_2026-05-10.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::COST_10-K_2025-08-31.md::para227",
+    "query": "In Costco Wholesale Corp's Form 10-K for the fiscal year ended August 31, 2025, where is stock-based compensation expense predominantly included?",
+    "expected_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "expected_spans": [
+      "Stock-based compensation expense is predominantly included in SG&A expenses in the consolidated statements of income."
+    ],
+    "expected_answer": "It is predominantly included in SG&A expenses.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "COST_10-K_2024-09-01.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::COST_10-Q_2025-11-23.md::para148",
+    "query": "What types of contracts primarily constitute Costco Wholesale Corp's construction and land-purchase obligations as of November 23, 2025?",
+    "expected_doc_ids": [
+      "COST_10-Q_2025-11-23.md"
+    ],
+    "expected_spans": [
+      "Construction and land-purchase obligations consist of contracts primarily related to the development and opening of new and relocated warehouses"
+    ],
+    "expected_answer": "They are contracts primarily related to the development and opening of new and relocated warehouses.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "COST_10-K_2024-09-01.md",
+      "COST_10-K_2025-08-31.md",
+      "COST_10-Q_2026-02-15.md",
+      "COST_10-Q_2026-05-10.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::COST_10-Q_2026-02-15.md::para313",
+    "query": "How does Costco Wholesale Corp define its renewal rate calculation for the quarter ended February 15, 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-02-15.md"
+    ],
+    "expected_spans": [
+      "Our renewal rate, which excludes affiliates of Business members, is a trailing calculation that captures renewals during the period seven to eighteen months prior to the reporting date."
+    ],
+    "expected_answer": "It is a trailing calculation capturing renewals from seven to eighteen months before the reporting date, excluding Business member affiliates.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "COST_10-K_2024-09-01.md",
+      "COST_10-K_2025-08-31.md",
+      "COST_10-Q_2025-11-23.md",
+      "COST_10-Q_2026-05-10.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::COST_10-Q_2026-02-15.md::para362",
+    "query": "What does Costco Wholesale Corp identify as the most important driver of its profitability in its Form 10-Q for the quarter ended February 15, 2026?",
+    "expected_doc_ids": [
+      "COST_10-Q_2026-02-15.md"
+    ],
+    "expected_spans": [
+      "We believe that the most important driver of our profitability is increasing net sales, particularly comparable sales."
+    ],
+    "expected_answer": "Costco identifies increasing net sales, particularly comparable sales, as the most important driver of its profitability.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "COST_10-K_2024-09-01.md",
+      "COST_10-K_2025-08-31.md",
+      "COST_10-Q_2025-11-23.md",
+      "COST_10-Q_2026-05-10.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::CVX_10-K_2024-12-31.md::para137",
+    "query": "What specific financial consequences does Chevron Corp identify as potential outcomes if taxing authorities disagree with its tax return positions in its Form 10-K for the fiscal year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "interest and penalties could be imposed that may have a material adverse effect on the company's results of operations or financial condition"
+    ],
+    "expected_answer": "Chevron notes that interest and penalties could be imposed, potentially having a material adverse effect on its results of operations or financial condition.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::CVX_10-K_2024-12-31.md::para231",
+    "query": "How frequently does Chevron Corp's Audit Committee meet with the CISO and CIO to review cybersecurity risks in its Form 10-K for the fiscal year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "the Audit Committee meets with Chevron's CISO and CIO at least twice a year to review cybersecurity risks and implications"
+    ],
+    "expected_answer": "The Audit Committee meets with the CISO and CIO at least twice a year.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::CVX_10-K_2024-12-31.md::para59",
+    "query": "What are Chevron's specific ownership percentages in the Alba LPG Plant and the Atlantic Methanol Production Company as reported in its Form 10-K for the fiscal year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "These include a 28 percent nonoperated interest in the Alba LPG Plant and a 45 percent nonoperated interest in the Atlantic Methanol Production Company."
+    ],
+    "expected_answer": "Chevron holds a 28 percent nonoperated interest in the Alba LPG Plant and a 45 percent nonoperated interest in the Atlantic Methanol Production Company.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::CVX_10-K_2025-12-31.md::para66",
+    "query": "What framework does Chevron Corp use to identify, prioritize, and mitigate cyber risks in its Form 10-K for the fiscal year ended December 31, 2025?",
+    "expected_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "Chevron uses a risk-based information security process aligned with the National Institute of Standards and Technology (NIST) Cybersecurity Framework to identify, prioritize and mitigate cyber risks."
+    ],
+    "expected_answer": "Chevron uses a risk-based information security process aligned with the NIST Cybersecurity Framework.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::CVX_10-K_2025-12-31.md::para86",
+    "query": "In its Form 10-K for the fiscal year ended December 31, 2025, what percentage interest does Chevron Corp own and operate in the Alen Field in Block O?",
+    "expected_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "a 45 percent-owned and operated interest in the Alen Field in Block O"
+    ],
+    "expected_answer": "Chevron owns and operates a 45 percent interest in the Alen Field.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::DAL_10-K_2024-12-31.md::para399",
+    "query": "Why does Delta Air Lines, Inc. adjust for aircraft fuel and related taxes in its financial reporting for the fiscal year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "The adjustment for aircraft fuel and related taxes allows investors to better understand and analyze our non-fuel costs and year-over-year financial performance."
+    ],
+    "expected_answer": "It allows investors to better understand and analyze non-fuel costs and year-over-year financial performance.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "DAL_10-K_2025-12-31.md",
+      "DAL_10-Q_2025-09-30.md",
+      "DAL_10-Q_2026-03-31.md",
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::DAL_10-Q_2025-09-30.md::para219",
+    "query": "How does Delta Air Lines, Inc.'s air traffic liability typically fluctuate throughout the year according to its Form 10-Q for the quarter ended September 30, 2025?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "The air traffic liability typically increases during the winter and spring months as advance ticket sales grow prior to the summer peak travel season and decreases during the summer and fall months."
+    ],
+    "expected_answer": "It increases in winter and spring before the summer peak and decreases in summer and fall.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "DAL_10-Q_2026-03-31.md",
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::DAL_10-Q_2026-03-31.md::para110",
+    "query": "How did Delta Air Lines, Inc. utilize the proceeds from its January 2026 term loan as reported in the Form 10-Q for the quarter ended March 31, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "The proceeds of the term loan were used to repay $957 million of Payroll Support Program loans due 2031 and for general corporate purposes."
+    ],
+    "expected_answer": "The proceeds were used to repay $957 million of Payroll Support Program loans due 2031 and for general corporate purposes.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::DAL_10-Q_2026-03-31.md::para306",
+    "query": "Why does Delta Air Lines, Inc. present free cash flow in its Form 10-Q for the quarter ended March 31, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "We present free cash flow because management believes this metric is helpful to investors to evaluate the company's ability to generate cash that is available for use for debt service or general corporate initiatives."
+    ],
+    "expected_answer": "Management presents it to help investors evaluate the company's ability to generate cash available for debt service or general corporate initiatives.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "DAL_10-K_2024-12-31.md",
+      "DAL_10-K_2025-12-31.md",
+      "DAL_10-Q_2025-09-30.md",
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::DAL_10-Q_2026-03-31.md::para411",
+    "query": "Why does Delta Air Lines, Inc. exclude third-party refinery sales from its airline segment analysis in the Form 10-Q for the quarter ended March 31, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Excluding these sales therefore provides a more meaningful comparison of our airline operations to the rest of the airline industry."
+    ],
+    "expected_answer": "Delta excludes third-party refinery sales to provide a more meaningful comparison of its airline operations to the rest of the airline industry.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "DAL_10-K_2024-12-31.md",
+      "DAL_10-K_2025-12-31.md",
+      "DAL_10-Q_2025-09-30.md",
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::DAL_10-Q_2026-06-30.md::para156",
+    "query": "What components primarily comprise Delta Air Lines, Inc.'s miscellaneous, net item in its Form 10-Q for the quarter ended June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Miscellaneous, net primarily includes employee benefit plans net periodic benefit/(cost), charitable contributions, our share of our equity method investments' results, dividends received from our equity investees and foreign exchange gains/(losses)."
+    ],
+    "expected_answer": "The item primarily includes employee benefit plan costs, charitable contributions, equity method investment results, dividends, and foreign exchange gains or losses.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::DAL_10-Q_2026-06-30.md::para410",
+    "query": "Why does Delta Air Lines, Inc. adjust for certain cash flows related to investments in other airlines in its free cash flow reconciliation for the quarter ended June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "We adjust for this activity because it provides a more meaningful comparison to our airline industry peers."
+    ],
+    "expected_answer": "The adjustment is made to provide a more meaningful comparison to airline industry peers.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "DAL_10-K_2025-12-31.md",
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::JNJ_10-K_2025-12-28.md::para233",
+    "query": "What financial consequence does Johnson & Johnson identify for its intangible assets if it fails to defend patent claims in lawsuits related to generic or biosimilar challenges as of December 28, 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2025-12-28.md"
+    ],
+    "expected_spans": [
+      "which may result in a non-cash impairment charge in any associated intangible asset"
+    ],
+    "expected_answer": "It may result in a non-cash impairment charge in any associated intangible asset.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "JNJ_10-K_2024-12-29.md",
+      "JNJ_10-Q_2025-09-28.md",
+      "JNJ_10-Q_2026-03-29.md",
+      "JNJ_10-Q_2026-06-28.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::JNJ_10-Q_2026-06-28.md::para265",
+    "query": "In its Form 10-Q for the quarter ended June 28, 2026, how does Johnson & Johnson characterize the accounting treatment for operations in Venezuela, Argentina, Turkey, and Egypt?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "The Company has accounted for operations in Venezuela, Argentina, Turkey and Egypt as highly inflationary, as the prior three-year cumulative inflation rate surpassed 100%."
+    ],
+    "expected_answer": "Johnson & Johnson accounts for operations in these countries as highly inflationary because the prior three-year cumulative inflation rate exceeded 100%.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "JNJ_10-Q_2026-03-29.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::LUV_10-Q_2026-06-30.md::para21",
+    "query": "How does Southwest Airlines Co define CASM in its Form 10-Q for the quarter ended June 30, 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "this is the average cost to fly an aircraft seat (empty or full) one mile, which is a measure of cost efficiency."
+    ],
+    "expected_answer": "CASM is defined as the average cost to fly an aircraft seat, whether empty or full, for one mile.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MRK_10-K_2024-12-31.md::para198",
+    "query": "How does Merck & Co., Inc. define Animal Health segment profits in its Form 10-K for the fiscal year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "MRK_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "Animal Health segment profits are comprised of segment sales, less all cost of sales, as well as SG&A and R&D expenses directly incurred by the segment."
+    ],
+    "expected_answer": "Animal Health segment profits consist of segment sales minus all cost of sales, along with SG&A and R&D expenses directly incurred by the segment.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MRK_10-Q_2025-09-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MRK_10-Q_2026-06-30.md::para116",
+    "query": "What is Merck & Co., Inc.'s outlook on the materiality of sales impact for ProQuad following the ACIP's September 2025 recommendation, as reported in the Form 10-Q for the quarter ended June 30, 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "The Company anticipates that any negative effect of these recommendations on sales of ProQuad will not be material."
+    ],
+    "expected_answer": "Merck expects that any negative impact on ProQuad sales resulting from the ACIP recommendations will not be material.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MRK_10-K_2025-12-31.md",
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MSFT_10-K_2025-06-30.md::para181",
+    "query": "How does Microsoft Corp describe its approach to R&D in response to industry shifts in its Form 10-K for the fiscal year ended June 30, 2025?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md"
+    ],
+    "expected_spans": [
+      "At Microsoft, we push the boundaries of what is possible through a broad range of research and development activities that seek to identify and address the changing demands of customers and users, industry trends, and competitive forces."
+    ],
+    "expected_answer": "Microsoft pushes the boundaries of what is possible through R&D activities that address changing customer demands, industry trends, and competitive forces.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MSFT_10-K_2026-06-30.md",
+      "MSFT_10-Q_2025-09-30.md",
+      "MSFT_10-Q_2025-12-31.md",
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MSFT_10-K_2025-06-30.md::para230",
+    "query": "In Microsoft Corp's Form 10-K for the fiscal year ended June 30, 2025, which independent registered public accounting firm has full and free access to the Audit Committee?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md"
+    ],
+    "expected_spans": [
+      "Deloitte & Touche LLP and the internal auditors each have full and free access to the Audit Committee."
+    ],
+    "expected_answer": "Deloitte & Touche LLP has full and free access to the Audit Committee.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MSFT_10-K_2026-06-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MSFT_10-K_2025-06-30.md::para355",
+    "query": "In Microsoft Corp's Form 10-K for the fiscal year ended June 30, 2025, what is the company's expectation regarding the materiality of resolving ongoing international tax audits?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md"
+    ],
+    "expected_spans": [
+      "The resolution of these audits is not expected to be material to our consolidated financial statements."
+    ],
+    "expected_answer": "Microsoft expects that the resolution of these audits will not have a material impact on its consolidated financial statements.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MSFT_10-K_2026-06-30.md",
+      "MSFT_10-Q_2025-09-30.md",
+      "MSFT_10-Q_2025-12-31.md",
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MSFT_10-K_2025-06-30.md::para387",
+    "query": "How does Microsoft Corp define the basis for its financial metrics and growth comparisons in its Form 10-K for the fiscal year ended June 30, 2025?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md"
+    ],
+    "expected_spans": [
+      "Financial metrics are calculated based on financial results prepared in accordance with accounting principles generally accepted in the United States of America (\"GAAP\"), and growth comparisons relate to the corresponding period of last fiscal year."
+    ],
+    "expected_answer": "Microsoft Corp calculates financial metrics based on GAAP and compares growth to the corresponding period of the prior fiscal year.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MSFT_10-K_2026-06-30.md",
+      "MSFT_10-Q_2025-09-30.md",
+      "MSFT_10-Q_2025-12-31.md",
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MSFT_10-K_2025-06-30.md::para40",
+    "query": "In Microsoft Corp's Form 10-K for the fiscal year ended June 30, 2025, what methodology is primarily used to estimate the fair value of each reporting unit?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md"
+    ],
+    "expected_spans": [
+      "The fair value of each reporting unit is estimated primarily through the use of a discounted cash flow methodology."
+    ],
+    "expected_answer": "A discounted cash flow methodology is primarily used.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MSFT_10-K_2026-06-30.md",
+      "MSFT_10-Q_2025-09-30.md",
+      "MSFT_10-Q_2025-12-31.md",
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MSFT_10-K_2026-06-30.md::para345",
+    "query": "How does Microsoft Corp recognize unearned revenue for multi-year agreements in its Form 10-K for the fiscal year ended June 30, 2026?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Unearned revenue is generally invoiced annually at the beginning of each contract period for multi-year agreements and recognized ratably over the coverage period."
+    ],
+    "expected_answer": "It is invoiced annually at the start of the contract and recognized ratably over the coverage period.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MSFT_10-K_2025-06-30.md",
+      "MSFT_10-Q_2025-09-30.md",
+      "MSFT_10-Q_2025-12-31.md",
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::MSFT_10-Q_2026-03-31.md::para344",
+    "query": "How does Microsoft Corp recognize unearned revenue for multi-year agreements in its Form 10-Q for the quarter ended March 31, 2026?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Unearned revenue is generally invoiced annually at the beginning of each contract period for multi-year agreements and recognized ratably over the coverage period."
+    ],
+    "expected_answer": "It is invoiced annually at the start of the contract and recognized ratably over the coverage period.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "MSFT_10-K_2025-06-30.md",
+      "MSFT_10-K_2026-06-30.md",
+      "MSFT_10-Q_2025-09-30.md",
+      "MSFT_10-Q_2025-12-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::NVDA_10-K_2025-01-26.md::para357",
+    "query": "How does Nvidia Corp account for potential U.S. and foreign income tax contingencies in its fiscal year ended January 26, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "we recognize liabilities for potential U.S. and foreign income tax contingencies based on our estimate of whether, and the extent to which, additional taxes may be due."
+    ],
+    "expected_answer": "Nvidia recognizes liabilities for these contingencies based on its estimates of whether and to what extent additional taxes are owed.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::NVDA_10-K_2025-01-26.md::para378",
+    "query": "How does Nvidia Corp account for interest and penalties related to unrecognized tax benefits in its Form 10-K for the fiscal year ended January 26, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "Our policy is to include interest and penalties related to unrecognized tax benefits as a component of income tax expense."
+    ],
+    "expected_answer": "Nvidia includes interest and penalties related to unrecognized tax benefits as a component of income tax expense.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::NVDA_10-Q_2025-10-26.md::para141",
+    "query": "How does Nvidia Corp manage its product pricing in response to short-term cost fluctuations as reported in the Form 10-Q for the quarter ended October 26, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-10-26.md"
+    ],
+    "expected_spans": [
+      "Our product and solution pricing generally does not fluctuate with short-term changes in our costs."
+    ],
+    "expected_answer": "Nvidia's product and solution pricing generally remains stable and does not change in response to short-term cost variations.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "NVDA_10-K_2025-01-26.md",
+      "NVDA_10-K_2026-01-25.md",
+      "NVDA_10-Q_2025-07-27.md",
+      "NVDA_10-Q_2026-04-26.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::NVDA_10-Q_2025-10-26.md::para323",
+    "query": "What competitive risk does Nvidia Corp identify in its Form 10-Q for the quarter ended October 26, 2025 regarding open-source AI models deployed on competitors' platforms?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-10-26.md"
+    ],
+    "expected_spans": [
+      "Open-source AI is dependent on developer adoption and if deployed on our competitors' platforms, it could reduce demand for our products and services."
+    ],
+    "expected_answer": "Nvidia Corp states that if open-source AI is deployed on competitors' platforms, it could reduce demand for its products and services.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::PFE_10-Q_2025-09-28.md::para432",
+    "query": "What specific factors does Pfizer Inc identify as influencing the risk and impact of tariffs on its business in its Form 10-Q for the quarter ended September 28, 2025?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "restrictions on trade, the effective date and duration of such tariffs, countries included in the scope of tariffs, changes to amounts of tariffs, and potential retaliatory tariffs or other retaliatory actions imposed by other countries"
+    ],
+    "expected_answer": "The risk is influenced by trade restrictions, tariff timing and scope, amount changes, and potential retaliatory actions.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "PFE_10-Q_2026-06-28.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::TGT_10-K_2025-02-01.md::para168",
+    "query": "In Target Corp's Form 10-K for the fiscal year ended February 1, 2025, how does the company define merchandise sales fulfilled by stores?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "Merchandise Sales fulfilled by stores include in-store purchases and digitally originated sales fulfilled by shipping merchandise from stores to guests, Order Pickup, Drive Up, and Same Day Delivery."
+    ],
+    "expected_answer": "It includes in-store purchases and digitally originated sales fulfilled by shipping merchandise from stores to guests, Order Pickup, Drive Up, and Same Day Delivery.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "TGT_10-Q_2025-08-02.md",
+      "TGT_10-Q_2025-11-01.md",
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::TGT_10-K_2025-02-01.md::para372",
+    "query": "How does Target Corp define after-tax ROIC in its Form 10-K for the fiscal year ended February 1, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "We have also disclosed after-tax ROIC, which is a ratio based on GAAP information, with the exception of the add-back of operating lease interest to operating income."
+    ],
+    "expected_answer": "It is a ratio based on GAAP information, except for the add-back of operating lease interest to operating income.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "TGT_10-K_2026-01-31.md",
+      "TGT_10-Q_2025-08-02.md",
+      "TGT_10-Q_2025-11-01.md",
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::TGT_10-K_2025-02-01.md::para44",
+    "query": "In its Form 10-K for the fiscal year ended February 1, 2025, how does Target Corp structure compensation growth assumptions within its pension plan?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "we use a graduated compensation growth schedule that assumes higher compensation growth for younger, shorter-service pension-eligible team members than it does for older, longer-service pension-eligible team members."
+    ],
+    "expected_answer": "Target uses a graduated schedule assuming higher growth for younger, shorter-service members.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "TGT_10-K_2026-01-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::TGT_10-K_2026-01-31.md::para197",
+    "query": "In Target Corp's Form 10-K for the fiscal year ended January 31, 2026, how are the benefit obligation and related expense for its pension plans determined?",
+    "expected_doc_ids": [
+      "TGT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "The benefit obligation and related expense for these plans are determined based on actuarial calculations using assumptions about the expected long-term rate of return, the discount rate, compensation growth rates, mortality, and retirement age."
+    ],
+    "expected_answer": "They are determined based on actuarial calculations using assumptions about the expected long-term rate of return, the discount rate, compensation growth rates, mortality, and retirement age.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::TGT_10-Q_2025-08-02.md::para104",
+    "query": "In Target Corp's Form 10-Q for the quarter ended August 2, 2025, what specific financial capabilities does the company state could be adversely impacted if its credit ratings were lowered?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-08-02.md"
+    ],
+    "expected_spans": [
+      "our ability to access the debt markets, our cost of funds, and other terms for new debt issuances could be adversely impacted"
+    ],
+    "expected_answer": "The company states that its ability to access debt markets, cost of funds, and terms for new debt issuances could be adversely impacted.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "TGT_10-K_2025-02-01.md",
+      "TGT_10-K_2026-01-31.md",
+      "TGT_10-Q_2025-11-01.md",
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::TGT_10-Q_2025-11-01.md::para166",
+    "query": "In Target Corp's Form 10-Q for the quarter ended November 1, 2025, why does the company state that further analysis of sales metrics is infeasible?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-11-01.md"
+    ],
+    "expected_spans": [
+      "The collective interaction of a broad array of macroeconomic, competitive, and consumer behavioral factors, as well as sales mix and the transfer of sales to new stores, makes further analysis of sales metrics infeasible."
+    ],
+    "expected_answer": "Further analysis is infeasible due to the complex interaction of macroeconomic, competitive, and consumer behavioral factors, along with sales mix and store transfers.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "TGT_10-Q_2025-08-02.md",
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::TGT_10-Q_2025-11-01.md::para167",
+    "query": "How did Target Corp's restatement of prior period gross margin rates for the quarter ended November 1, 2025, affect the reported gross margin rate for the 2024 periods?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-11-01.md"
+    ],
+    "expected_spans": [
+      "We updated the prior period gross margin rate to conform to the current year calculation, which resulted in an approximate 1 percentage point increase in our gross margin rate for the 2024 periods presented."
+    ],
+    "expected_answer": "The restatement resulted in an approximate 1 percentage point increase in the gross margin rate for the 2024 periods.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "TGT_10-Q_2025-08-02.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::UAL_10-K_2025-12-31.md::para275",
+    "query": "In its Form 10-K for the fiscal year ended December 31, 2025, how does United Airlines Holdings, Inc. describe the capital requirements of its business?",
+    "expected_doc_ids": [
+      "UAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "The Company's business is capital intensive, requiring significant amounts of capital to fund the acquisition of assets, particularly aircraft."
+    ],
+    "expected_answer": "United Airlines describes its business as capital intensive, requiring significant capital to fund asset acquisitions, particularly aircraft.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "UAL_10-K_2024-12-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::UAL_10-Q_2026-03-31.md::para395",
+    "query": "In its Form 10-Q for the quarter ended March 31, 2026, what does United Airlines state regarding its ability to guarantee specific aircraft delivery dates despite firm purchase commitments?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "we cannot guarantee delivery of any particular aircraft at any specific time notwithstanding firm purchase commitments."
+    ],
+    "expected_answer": "United states that it cannot guarantee the delivery of any particular aircraft at any specific time, even though it has firm purchase commitments.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "UAL_10-Q_2025-09-30.md",
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::WMT_10-K_2025-01-31.md::para192",
+    "query": "What areas does Walmart Inc. prioritize for capital allocation in its fiscal year ended January 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "Our strategy includes allocating the majority of our capital to higher-return areas focused on automation such as eCommerce, supply chain and store and club investments."
+    ],
+    "expected_answer": "Walmart prioritizes capital allocation toward higher-return areas focused on automation, including eCommerce, supply chain, and store and club investments.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "WMT_10-K_2026-01-31.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::WMT_10-K_2025-01-31.md::para304",
+    "query": "In its Form 10-K for the fiscal year ended January 31, 2025, how does Walmart Inc. define the GAAP financial measure most directly comparable to free cash flow?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "net cash provided by operating activities, which we believe to be the GAAP financial measure most directly comparable to free cash flow"
+    ],
+    "expected_answer": "Walmart defines net cash provided by operating activities as the GAAP financial measure most directly comparable to free cash flow.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "WMT_10-K_2026-01-31.md",
+      "WMT_10-Q_2025-07-31.md",
+      "WMT_10-Q_2025-10-31.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::WMT_10-K_2026-01-31.md::para171",
+    "query": "How does Walmart Inc. define ROI in its Form 10-K for the fiscal year ended January 31, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "We define ROI as operating income plus interest income, depreciation and amortization, and rent expense for the trailing 12 months divided by average invested capital during the period."
+    ],
+    "expected_answer": "Walmart defines ROI as operating income plus interest income, depreciation and amortization, and rent expense for the trailing 12 months divided by average invested capital.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "WMT_10-K_2025-01-31.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::WMT_10-K_2026-01-31.md::para380",
+    "query": "How does Walmart Inc. intend to fund the majority of its ongoing share repurchase program in its Form 10-K for the fiscal year ended January 31, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "We anticipate that a majority of the ongoing share repurchase program will be funded through the Company's free cash flow."
+    ],
+    "expected_answer": "Walmart Inc. anticipates funding the majority of its ongoing share repurchase program through the company's free cash flow.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "WMT_10-K_2025-01-31.md",
+      "WMT_10-Q_2025-07-31.md",
+      "WMT_10-Q_2025-10-31.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::WMT_10-Q_2025-07-31.md::para73",
+    "query": "What specific consequence does Walmart Inc. identify for its access to commercial paper markets if its short-term credit ratings are downgraded, as disclosed in its Form 10-Q for the quarter ended July 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "expected_spans": [
+      "any downgrade of our current short-term credit ratings could impair our ability to access the commercial paper markets with the same flexibility that we have experienced historically"
+    ],
+    "expected_answer": "A downgrade would impair Walmart's ability to access commercial paper markets with the same historical flexibility.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "WMT_10-K_2025-01-31.md",
+      "WMT_10-K_2026-01-31.md",
+      "WMT_10-Q_2025-10-31.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::WMT_10-Q_2025-07-31.md::para84",
+    "query": "What was the fiscal 2026 annual dividend per share approved by Walmart Inc. in its Form 10-Q for the quarter ended July 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "expected_spans": [
+      "the Company approved the fiscal 2026 annual dividend of $0.94 per share"
+    ],
+    "expected_answer": "The fiscal 2026 annual dividend was $0.94 per share.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "WMT_10-K_2025-01-31.md",
+      "WMT_10-Q_2025-10-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::WMT_10-Q_2025-10-31.md::para373",
+    "query": "Why does Walmart Inc. management consider Return on Investment (ROI) a meaningful metric to share with investors in its Form 10-Q for the quarter ended October 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-10-31.md"
+    ],
+    "expected_spans": [
+      "Management believes ROI is a meaningful metric to share with investors because it helps investors assess how effectively Walmart deploys its assets."
+    ],
+    "expected_answer": "It helps investors assess how effectively Walmart deploys its assets.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  },
+  {
+    "id": "period::WMT_10-Q_2025-10-31.md::para70",
+    "query": "Why does Walmart Inc. focus on comparable sales in the U.S. for its Form 10-Q for the quarter ended October 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-10-31.md"
+    ],
+    "expected_spans": [
+      "We focus on comparable sales in the U.S. as we believe it is a meaningful metric within the context of the U.S. retail market where there is a single currency, one inflationary market and generally consistent store and club formats from year to year."
+    ],
+    "expected_answer": "Walmart focuses on U.S. comparable sales because the U.S. market has a single currency, one inflationary environment, and consistent store formats.",
+    "matching_mode": "span_and_document",
+    "tier": "period",
+    "competing_doc_ids": [
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "qwen3.6:27b-mlx"
+  }
+]
