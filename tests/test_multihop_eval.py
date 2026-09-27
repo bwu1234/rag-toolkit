@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from rag.config.settings import EvalConfig, LLMConfig, RagConfig
+from rag.config.settings import GEMINI_BASE_URL, EvalConfig, LLMConfig, RagConfig
 from rag.eval.answer_eval import resolve_judge_config, run_answer_eval
 from rag.eval.dataset import EvalDataset, ExpectedSpan
 from rag.eval.multihop_eval import CONCLUSION_LABEL, format_tokens, parts_of, run_multihop_eval
@@ -126,6 +126,58 @@ def test_judge_override_of_the_generator_does_not_mutate_it() -> None:
     resolve_judge_config(config, "judge")
 
     assert config.llm.model == "gen"
+
+
+def test_judge_provider_switch_starts_fresh_but_keeps_neutral_settings() -> None:
+    # A Gemini generator config judged locally: nothing Gemini-specific may leak.
+    config = RagConfig(llm=LLMConfig(
+        provider="gemini", model="gemini-3.5-flash-lite", temperature=0.0, timeout_s=900,
+        requests_per_minute=15, thinking_level="minimal",
+    ))
+
+    judge = resolve_judge_config(config, "gemma4:31b-mlx", "ollama")
+
+    assert (judge.provider, judge.model) == ("ollama", "gemma4:31b-mlx")
+    assert judge.base_url == "http://localhost:11434"
+    assert (judge.temperature, judge.timeout_s) == (0.0, 900)
+    assert judge.requests_per_minute is None and judge.thinking_level is None
+
+
+def test_judge_provider_switch_to_gemini_gets_the_gemini_endpoint() -> None:
+    judge = resolve_judge_config(RagConfig(), "gemma-4-31b-it", "gemini")
+
+    assert judge.base_url == GEMINI_BASE_URL
+
+
+def test_judge_provider_matching_the_base_is_a_plain_model_override() -> None:
+    config = RagConfig(eval=EvalConfig(judge=LLMConfig(model="judge", timeout_s=900)))
+
+    judge = resolve_judge_config(config, "other", "ollama")
+
+    assert (judge.provider, judge.model, judge.timeout_s) == ("ollama", "other", 900)
+
+
+def test_judge_provider_switch_without_a_model_is_refused() -> None:
+    with pytest.raises(ValueError, match="needs a model"):
+        resolve_judge_config(RagConfig(), None, "gemini")
+
+
+def test_ollama_tag_on_a_gemini_judge_is_refused_with_the_fix() -> None:
+    config = RagConfig(llm=LLMConfig(provider="gemini", model="gemini-3.5-flash-lite"))
+
+    with pytest.raises(ValueError, match="--judge-provider ollama"):
+        resolve_judge_config(config, "gemma4:31b-mlx")
+
+
+def test_judge_flags_parse_on_every_runner() -> None:
+    from rag.eval.answer_eval import _build_parser as answer_parser
+    from rag.eval.multihop_eval import _build_parser as multihop_parser
+
+    for parser in (answer_parser(), multihop_parser()):
+        args = parser.parse_args(["--judge-provider", "ollama", "--judge-model", "gemma4:31b-mlx"])
+        assert (args.judge_provider, args.judge_model) == ("ollama", "gemma4:31b-mlx")
+        with pytest.raises(SystemExit):
+            parser.parse_args(["--judge-provider", "nope"])
 
 
 def test_repo_config_leaves_the_judge_unset_for_reproducibility() -> None:

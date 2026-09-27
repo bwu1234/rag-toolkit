@@ -216,7 +216,12 @@ def test_flash_lite_configs_change_only_the_generator(version: str) -> None:
     assert cfg.llm.base_url == GEMINI_BASE_URL
     assert (cfg.llm.requests_per_minute, cfg.llm.tokens_per_minute) == (15, 250_000)
     assert cfg.llm.thinking_level == "minimal"
-    assert cfg.model_dump(exclude={"llm"}) == default.model_dump(exclude={"llm"})
+    # Graded by the fixed local judge, not by Flash-Lite itself.
+    assert cfg.eval.judge is not None
+    assert (cfg.eval.judge.provider, cfg.eval.judge.model, cfg.eval.judge.temperature) == (
+        "ollama", "gemma4:31b-mlx", 0.0,
+    )
+    assert cfg.model_dump(exclude={"llm", "eval"}) == default.model_dump(exclude={"llm", "eval"})
 
 
 def test_flash_lite_configs_differ_only_in_the_model() -> None:

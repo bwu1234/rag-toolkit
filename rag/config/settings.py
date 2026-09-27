@@ -32,6 +32,8 @@ BASE_KEY = "base"
 PromptStyle = Literal["grounded", "plain"]
 #: Reasoning levels `llm.think` accepts besides on/off (Ollama passes them through).
 ThinkLevel = Literal["low", "medium", "high", "xhigh"]
+#: Values `llm.provider` accepts (the factory implements ollama and gemini).
+LLMProvider = Literal["ollama", "gemini", "anthropic", "openai"]
 
 
 class PathsConfig(BaseModel):
@@ -135,7 +137,7 @@ class LLMConfig(BaseModel):
     Default: Ollama-served `qwen3.5:9b-mlx`.
     """
 
-    provider: Literal["ollama", "gemini", "anthropic", "openai"] = "ollama"
+    provider: LLMProvider = "ollama"
     model: str = "qwen3.5:9b-mlx"
     # Defaults to Ollama's; with `provider: gemini` and no explicit value it
     # becomes the Gemini API's (see `_provider_base_url`).
