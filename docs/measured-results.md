@@ -398,8 +398,10 @@ the FY2025 part even though the answer says FY2025 isn't in the passages and
 attaches $24.7B to the wrong period. So the true rate is ~14/34. The failures
 spot-checked were all real errors.
 
-**Not measured in phase 0:** generated and prompt tokens. No production code
-counts them yet; that is Milestone 12's per-stage accounting. Cap-hit rate and
+**Not measured in phase 0:** generated and prompt tokens. This run predates
+Milestone 12's `MeteredLLMClient`. The counting now exists, but
+`multihop_eval` doesn't wrap samples in `metered()` yet, so these numbers
+need a re-run once it does ([plan](milestone-19-plan.md#0--eval-harness-that-can-see-the-difference-before-any-agent-code)). Cap-hit rate and
 searches per turn are defined only for the agent (the pipeline always does one
 retrieval round), and arrive with phase 3.
 
