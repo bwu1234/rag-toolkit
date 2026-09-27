@@ -118,27 +118,24 @@ The parts that shape this plan:
 
 ### 0 — Eval harness that can see the difference (before any agent code)
 
-**Done, with one gap.** The baseline is in
+**Done.** The baseline is in
 [measured results](measured-results.md#pipeline-baseline-under-a-fixed-judge-milestone-19-phase-0):
 15/34 multi-hop questions complete, evidence recall 0.583. The runner is
 `rag.eval.multihop_eval`, also a third set in `run_answer_matrix.py`; there is
-no separate `run_agent_matrix.py`. The gap is token counts, which are not yet
-reported for either mode. The counts already exist per turn: since Milestone
-12, `ChatService.ask()` meters its own calls and returns them on `ChatAnswer`
-(`llm_calls`, `llm_ms`, `prompt_tokens`, `completion_tokens`). What's missing
-is the runner side: `MultihopSampleResult` and `MultihopReport` have no fields
-for them. **Close this before phase 3,** so the pipeline baseline has token
-and LLM-time numbers for the agent's cost to be set against:
+no separate `run_agent_matrix.py`.
 
-- Copy the four `ChatAnswer` fields onto each sample result, and report their
-  means in the summary. Token means cover only samples whose provider reported
-  counts; `None` stays unknown, not zero.
-- Don't wrap samples in `metered()` from the runner. `ask()` opens its own
-  meter, and nested meters are isolated by design (`rag/observability/usage.py`),
-  so an outer meter would record nothing.
-- The judge's calls are eval overhead, not the cost of answering, so they stay
-  out of these numbers. The judge client isn't passed through `ask()`, so this
-  happens without extra code.
+The token gap is closed in the runner. Each `MultihopSampleResult` copies the
+turn's `llm_calls`, `llm_ms`, `prompt_tokens` and `completion_tokens` from
+`ChatAnswer` (`llm_ms` was added to `ChatAnswer` for this; the meter already
+had it). `MultihopReport` reports their means, and the answer matrix adds
+them as columns. Token means cover only samples whose provider reported
+counts, `None` otherwise, and `num_with_tokens` shows how many that was. The
+judge's calls stay out, because `ask()` meters only its own calls and nested
+meters are isolated (`rag/observability/usage.py`). The multi-hop baseline was re-run
+with them: 1.0 LLM call, 9.3 s of LLM time and 1,680 / 184 prompt / generated
+tokens per turn ([measured results](measured-results.md#pipeline-baseline-under-a-fixed-judge-milestone-19-phase-0)).
+The answer matrix now checkpoints each finished sample and resumes a stopped
+run (`rag/eval/checkpoint.py`), which phase 4's hours-long agent runs need.
 
 Search count and cap-hit rate come with the agent in phase 3.
 
