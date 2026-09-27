@@ -243,13 +243,35 @@ it runs only with `RAG_GEMINI_LIVE=1`.
 
 ### 2 — Shared tools
 
-- Move `ToolSpec`/`RagTools` to `rag/tools.py`, then re-export from
-  `rag/mcp/tools.py` so the MCP tests pass unchanged.
-- A `ToolSpec → ToolDefinition` converter (the adapter already turns a
-  `ToolDefinition` into Ollama's format). The schema is already derived via
-  pydantic, so this is a wrapper, not a second schema.
-- **Exit:** `tests/test_mcp.py` green; a new test asserting the agent and MCP
-  advertise the same `rag_search` schema.
+**Done.** What shipped, and where it departs from the original bullets:
+
+- `ToolSpec`, `input_schema_for`, `RagTools`, `build_tool_specs`,
+  `MAX_RESULTS` and `DEFAULT_MAX_CHARS` live in `rag/tools.py`.
+  `rag/mcp/tools.py` keeps only what an MCP client alone sees
+  (`SERVER_NAME`, `SERVER_VERSION`, `PROTOCOL_VERSION`, `INSTRUCTIONS`)
+  and re-exports the rest, so every `rag.mcp` import is unchanged.
+- **The MCP tests did not pass literally unchanged.** Two fixtures patched
+  `rag.mcp.tools.build_retriever`, which now has to be `rag.tools.build_retriever`.
+  Re-exporting `build_retriever` would have made the old patch target resolve,
+  but the patch would then land on a name nothing calls, and the tests would
+  quietly build a real retriever. Both fixtures were retargeted instead.
+- The converter is `ToolSpec.definition -> ToolDefinition`, whose `parameters`
+  are the same `input_schema` MCP's `tools/list` serves.
+- **Added for phase 3:** `RagTools(config=...)`, as an alternative to a
+  config path. The agent's builder already holds a `RagConfig`, including
+  `--config` overlays and the eval matrices' in-memory overrides. Loading it
+  a second time from disk would quietly search with a different config than
+  the rest of the turn uses.
+- **Tests (`tests/test_tools.py`):** the agent's `rag_search` definition
+  equals the fallback's `tools/list` entry (name, description, schema) and
+  the SDK transport's schema, and both adapters (Ollama, Gemini) send that
+  schema to the model unmodified.
+
+Left for phase 3, because it depends on the loop's design: which tools the
+agent is offered (only `rag_search`, or `rag_list_corpora` too), and whether
+the model may pick a `corpus` or the turn's corpus selection is pinned. Eval
+runs select corpora with `--corpus`, and a model free to widen that
+selection would be measuring a different index.
 
 ### 3 — Agent loop
 

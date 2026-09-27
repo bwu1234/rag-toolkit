@@ -103,7 +103,9 @@ there.
 ## Transports
 
 Both serve the identical tool surface, generated from the same `ToolSpec`s in
-`rag/mcp/tools.py`. A client cannot tell which one answered.
+`rag/tools.py`. A client cannot tell which one answered. The in-process agent
+(Milestone 19) advertises the same specs to its own model, so `rag_search`
+means the same thing to an MCP client as it does to our agent.
 
 ### stdio
 

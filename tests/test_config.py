@@ -16,7 +16,7 @@ from rag.config.settings import (
     _deep_merge,
     load_config,
 )
-from rag.mcp.tools import DEFAULT_MAX_CHARS
+from rag.tools import DEFAULT_MAX_CHARS
 
 
 def test_default_config_has_expected_models(default_config: RagConfig) -> None:
@@ -351,7 +351,7 @@ def test_agent_defaults_match_the_prototype() -> None:
 
 
 def test_agent_passage_cap_matches_the_mcp_server() -> None:
-    # One number, two homes until phase 2 moves the tool surface out of rag/mcp.
+    # One number, two homes: settings.py can't import rag.tools (rag.tools imports it).
     assert AgentConfig().max_passage_chars == DEFAULT_MAX_CHARS
 
 
