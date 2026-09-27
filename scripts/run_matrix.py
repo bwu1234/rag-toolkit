@@ -54,6 +54,7 @@ from rag.config.settings import RagConfig, load_config  # noqa: E402
 from rag.eval.dataset import EvalDataset  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.eval.retrieval_eval import run_retrieval_eval  # noqa: E402
+from rag.ingestion.corpora import chunk_selected_corpora  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
 from rag.retrieval.builder import build_retriever  # noqa: E402
 
@@ -238,9 +239,12 @@ def run_variant(
     digest, settings = fingerprint(config)
 
     logger.info("[%s] %s", variant.name, variant.overrides or "(shipped defaults)")
+    # Re-chunked per variant, since a variant may override chunking; it costs
+    # about a second, against minutes for the retrieval itself.
+    _selection, _documents, corpus_chunks = chunk_selected_corpora(config, corpora)
     started = time.monotonic()
     retriever = build_retriever(config, corpora=corpora)
-    report = run_retrieval_eval(dataset, retriever)
+    report = run_retrieval_eval(dataset, retriever, corpus_chunks=corpus_chunks)
     elapsed = time.monotonic() - started
 
     summary = report.overall
@@ -260,6 +264,12 @@ def run_variant(
             "ndcg": round(summary.mean_ndcg, 4),
         },
         "recall_by_k": {str(k): round(v, 4) for k, v in sorted(summary.recall_by_k.items())},
+        # Samples that can't score under this variant's chunking, whatever
+        # retrieval does. Two variants with different counts differ in what
+        # they *could* find, not only in what they did.
+        "unmatchable_spans": [
+            {"sample_id": u.sample_id, "span": u.span} for u in report.unmatchable_spans or []
+        ],
         # Per-sample scores, keyed by sample id, for paired comparison. Without
         # them a later reader can compare means but never test a difference.
         # Keys match `metrics`, whose values are the means of these.
@@ -300,13 +310,13 @@ def render_table(results: list[dict[str, Any]]) -> str:
     """Markdown table, grouped by axis, with paired deltas against the baseline."""
     baseline = next((r for r in results if r["variant"] == "baseline"), None)
     lines = [
-        "| variant | hit | recall | prec | MRR | NDCG | Δ hit [95% CI] | Δ NDCG [95% CI] | s |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| variant | hit | recall | prec | MRR | NDCG | Δ hit [95% CI] | Δ NDCG [95% CI] | unmatch. | s |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     last_axis = None
     for result in results:
         if last_axis is not None and result["axis"] != last_axis:
-            lines.append("| | | | | | | | | |")
+            lines.append("| | | | | | | | | | |")
         last_axis = result["axis"]
         m = result["metrics"]
         if baseline and result["variant"] != "baseline":
@@ -314,17 +324,21 @@ def render_table(results: list[dict[str, Any]]) -> str:
             ndcg_str = paired_delta(result, baseline, "ndcg")
         else:
             hit_str = ndcg_str = "—"
+        unmatchable = result.get("unmatchable_spans")
+        unmatchable_str = "—" if unmatchable is None else str(len(unmatchable))
         lines.append(
             f"| `{result['variant']}` | {m['hit_rate']:.3f} | {m['recall']:.3f} | "
             f"{m['precision']:.3f} | {m['mrr']:.3f} | {m['ndcg']:.3f} | {hit_str} | "
-            f"{ndcg_str} | {result['elapsed_s']:.0f} |"
+            f"{ndcg_str} | {unmatchable_str} | {result['elapsed_s']:.0f} |"
         )
     lines += [
         "",
         "Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval "
         "that excludes zero; `W/L` counts the questions the variant gained / lost and "
         "`p` is McNemar's exact test on them -- trust it over the CI when W+L is small. "
-        "`(no CI)` rows predate per-sample scores and need a re-run to be tested.",
+        "`(no CI)` rows predate per-sample scores and need a re-run to be tested. "
+        "`unmatch.` counts expected spans no chunk contains under that variant's "
+        "chunking (`—` predates the count).",
     ]
     return "\n".join(lines)
 

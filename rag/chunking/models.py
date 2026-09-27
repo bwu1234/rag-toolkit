@@ -8,6 +8,7 @@ back to an exact span of an exact source file.
 
 from __future__ import annotations
 
+import hashlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -61,6 +62,12 @@ class Chunk:
         """
 
         return f"{self.context}\n\n{self.text}" if self.context else self.text
+
+
+def content_hash(text: str) -> str:
+    """The hash stored as a chunk's `content_hash`, which incremental indexing compares."""
+
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def make_chunk_id(document_id: str, index: int) -> str:

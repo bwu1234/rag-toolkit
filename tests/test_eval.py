@@ -22,7 +22,8 @@ from rag.eval.metrics import (
     recall_at_k,
     reciprocal_rank,
 )
-from rag.eval.relevance import judge_ranking, normalize
+from rag.chunking.models import Chunk
+from rag.eval.relevance import UnmatchableSpan, find_unmatchable_spans, judge_ranking, normalize
 from rag.eval.retrieval_eval import print_report, run_retrieval_eval
 from rag.eval.answer_eval import (
     _parse_verdict,
@@ -254,6 +255,96 @@ def test_spans_take_precedence_over_doc_ids_when_both_present() -> None:
     assert judgment.gains == [0]
 
 
+def _period_sample() -> EvalSample:
+    """The same sentence appears in two filings; only the FY25 one is right."""
+    return EvalSample.from_dict({
+        "id": "p1",
+        "query": "What did the FY25 filing say?",
+        "expected_doc_ids": ["fy25.md"],
+        "expected_spans": ["we may repurchase shares"],
+        "matching_mode": "span_and_document",
+    })
+
+
+def test_span_and_document_matching_ignores_the_span_in_another_document() -> None:
+    chunks = [
+        _scored("c0", "fy24.md", text="As before, we may repurchase shares."),
+        _scored("c1", "fy25.md", text="As before, we may repurchase shares."),
+    ]
+    judgment = judge_ranking(_period_sample(), chunks)
+    assert judgment.mode == "span_and_document"
+    assert judgment.gains == [0, 1]
+
+
+def test_span_and_document_matching_misses_when_only_the_wrong_document_has_it() -> None:
+    judgment = judge_ranking(
+        _period_sample(), [_scored("c0", "fy24.md", text="we may repurchase shares")]
+    )
+    assert judgment.gains == [0]
+    assert judgment.unmatched_spans == ["we may repurchase shares"]
+
+
+def test_plain_span_matching_credits_the_wrong_documents_copy() -> None:
+    """What span_and_document exists to prevent."""
+    sample = EvalSample(id="s", query="q", expected_spans=[ExpectedSpan("we may repurchase shares")])
+    assert judge_ranking(sample, [_scored("c0", "fy24.md", text="we may repurchase shares")]).gains == [1]
+
+
+def _restated_span() -> ExpectedSpan:
+    return ExpectedSpan.from_json({
+        "text": "interest income was $1.3 billion in 2024",
+        "alternatives": ["$1.1 billion as compared to $1.3 billion in 2024"],
+    })
+
+
+def test_an_alternative_quote_satisfies_the_span() -> None:
+    sample = EvalSample(id="s", query="q", expected_spans=[_restated_span()])
+    judgment = judge_ranking(sample, [_scored("c0", "fy25.md", text="It was $1.1 billion as compared to $1.3 billion in 2024.")])
+    assert judgment.gains == [1]
+    assert (judgment.covered, judgment.total_expected) == (1, 1)
+
+
+def test_a_fact_found_in_both_quotes_counts_once_toward_recall() -> None:
+    sample = EvalSample(id="s", query="q", expected_spans=[_restated_span()])
+    chunks = [
+        _scored("c0", "fy24.md", text="interest income was $1.3 billion in 2024"),
+        _scored("c1", "fy25.md", text="$1.1 billion as compared to $1.3 billion in 2024"),
+    ]
+    judgment = judge_ranking(sample, chunks)
+    assert judgment.gains == [1, 1]
+    assert judgment.covered == 1
+
+
+def test_alternatives_round_trip_and_bare_spans_stay_strings() -> None:
+    assert ExpectedSpan.from_json(_restated_span().to_json()) == _restated_span()
+    assert ExpectedSpan("plain").to_json() == "plain"
+
+
+def test_an_alternative_that_fits_a_chunk_makes_the_span_matchable() -> None:
+    sample = EvalSample(id="s", query="q", expected_spans=[_restated_span()])
+    corpus = [_chunk("fy25::chunk0", "fy25.md", "$1.1 billion as compared to $1.3 billion in 2024")]
+    assert find_unmatchable_spans(EvalDataset(samples=[sample]), corpus) == []
+
+
+def test_span_and_document_mode_without_doc_ids_is_refused() -> None:
+    with pytest.raises(ValueError, match="expected_doc_ids"):
+        EvalSample.from_dict({
+            "id": "p1", "query": "q", "expected_spans": ["x"], "matching_mode": "span_and_document",
+        })
+
+
+def test_unknown_matching_mode_is_refused() -> None:
+    with pytest.raises(ValueError, match="unknown matching_mode"):
+        EvalSample.from_dict({"id": "p1", "query": "q", "expected_spans": ["x"], "matching_mode": "fuzzy"})
+
+
+def test_explicit_matching_mode_round_trips() -> None:
+    sample = _period_sample()
+    assert sample.to_dict()["matching_mode"] == "span_and_document"
+    assert "matching_mode" not in sample.extra
+    assert EvalSample.from_dict(sample.to_dict()).matching_mode == "span_and_document"
+
+
 def test_document_matching_is_used_when_no_spans_given() -> None:
     sample = EvalSample(id="s1", query="q", expected_doc_ids=["right.md"])
     chunks = [_scored("c0", "wrong.md"), _scored("c1", "right.md")]
@@ -422,6 +513,57 @@ def test_print_report_surfaces_unmatched_spans_in_verbose_mode(capsys) -> None:
 
     print_report(report, verbose=True)
     assert "a quote that is absent" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# Unmatchable spans
+# ---------------------------------------------------------------------------
+
+
+def _chunk(chunk_id: str, document_id: str, text: str) -> Chunk:
+    return Chunk(id=chunk_id, text=text, document_id=document_id, source=Path(document_id), doc_type="markdown")
+
+
+def test_a_span_cut_across_two_chunks_is_unmatchable() -> None:
+    dataset = EvalDataset.from_dicts([
+        {"id": "q1", "query": "q", "expected_spans": ["revenue grew 8% to $5 billion"]},
+    ])
+    chunks = [_chunk("d::chunk0", "d.md", "Last year revenue grew 8%"), _chunk("d::chunk1", "d.md", "to $5 billion overall.")]
+
+    assert find_unmatchable_spans(dataset, chunks) == [
+        UnmatchableSpan(sample_id="q1", span="revenue grew 8% to $5 billion")
+    ]
+
+
+def test_a_span_inside_one_chunk_is_matchable_despite_whitespace() -> None:
+    dataset = EvalDataset.from_dicts([{"id": "q1", "query": "q", "expected_spans": ["revenue grew 8%"]}])
+    assert find_unmatchable_spans(dataset, [_chunk("d::chunk0", "d.md", "Revenue  grew\n8% this year.")]) == []
+
+
+def test_span_and_document_spans_must_be_in_an_expected_document() -> None:
+    dataset = EvalDataset(samples=[_period_sample()])
+    only_wrong_filing = [_chunk("fy24.md::chunk0", "fy24.md", "we may repurchase shares")]
+
+    assert [u.sample_id for u in find_unmatchable_spans(dataset, only_wrong_filing)] == ["p1"]
+
+
+def test_document_matched_samples_have_no_spans_to_check() -> None:
+    assert find_unmatchable_spans(_make_retrieval_dataset(), []) == []
+
+
+def test_run_retrieval_eval_reports_unmatchable_spans_only_when_given_the_corpus(capsys) -> None:
+    dataset = EvalDataset.from_dicts([{"id": "q1", "query": "q", "expected_spans": ["split answer"]}])
+    corpus = [_chunk("d::chunk0", "d.md", "split"), _chunk("d::chunk1", "d.md", "answer")]
+
+    assert run_retrieval_eval(dataset, _FakeRetriever([])).unmatchable_spans is None
+
+    report = run_retrieval_eval(dataset, _FakeRetriever([]), corpus_chunks=corpus)
+    assert report.unmatchable_spans == [UnmatchableSpan(sample_id="q1", span="split answer")]
+
+    print_report(report, verbose=True)
+    out = capsys.readouterr().out
+    assert "Unmatchable spans  1" in out
+    assert "UNMATCHABLE: 'split answer'" in out
 
 
 # ---------------------------------------------------------------------------
@@ -607,6 +749,16 @@ def test_answer_eval_requires_every_span_for_evidence_to_count_as_retrieved() ->
 
     assert report.sample_results[0].evidence_retrieved is False
     assert report.evidence_missed.num_passed == 1
+
+
+def test_answer_eval_span_and_document_evidence_must_come_from_the_expected_document() -> None:
+    dataset = EvalDataset(samples=[_period_sample()])
+    dataset.samples[0].expected_answer = "They may repurchase shares."
+    wrong_filing = Citation(chunk_id="c", document_id="fy24.md", text="we may repurchase shares", score=1.0)
+
+    report = run_answer_eval(dataset, _FakeChatService("a", [wrong_filing]), _FakeLLMClient("PASS"))
+
+    assert report.sample_results[0].evidence_retrieved is False
 
 
 def test_answer_eval_leaves_samples_without_spans_out_of_both_buckets() -> None:
