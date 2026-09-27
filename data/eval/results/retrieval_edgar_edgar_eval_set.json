@@ -1,5 +1,5 @@
 {
-  "label": "paired re-run: baseline + reranker models, per-sample scores",
+  "label": "re-run after 2026-09-26 label fixes (7 samples)",
   "corpus": "edgar (isolated)",
   "collection": "rag_corpus__edgar",
   "eval_set": "data/eval/edgar_eval_set.json",
@@ -28,19 +28,20 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 177.1,
+      "elapsed_s": 199.2,
       "metrics": {
-        "hit_rate": 0.8736,
-        "recall": 0.8736,
-        "precision": 0.1943,
-        "mrr": 0.6979,
-        "ndcg": 0.7957
+        "hit_rate": 0.908,
+        "recall": 0.908,
+        "precision": 0.2011,
+        "mrr": 0.7223,
+        "ndcg": 0.8213
       },
       "recall_by_k": {
-        "1": 0.5747,
-        "3": 0.8333,
-        "5": 0.8736
+        "1": 0.592,
+        "3": 0.8621,
+        "5": 0.908
       },
+      "unmatchable_spans": [],
       "samples": {
         "AAPL_10-K_2024-09-28.md::chunk12": {
           "hit_rate": 1.0,
@@ -349,10 +350,10 @@
           "ndcg": 0.4307
         },
         "JNJ_10-K_2024-12-29.md::chunk28": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.3869
         },
         "JNJ_10-K_2024-12-29.md::chunk45": {
           "hit_rate": 1.0,
@@ -565,10 +566,10 @@
           "ndcg": 0.5
         },
         "MRK_10-Q_2026-03-31.md::chunk68": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
         },
         "MRK_10-Q_2026-03-31.md::chunk84": {
           "hit_rate": 1.0,
@@ -619,10 +620,10 @@
           "ndcg": 1.0
         },
         "MSFT_10-Q_2026-03-31.md::chunk43": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
         },
         "MSFT_10-Q_2026-03-31.md::chunk51": {
           "hit_rate": 1.0,
@@ -853,10 +854,10 @@
           "ndcg": 1.0
         },
         "UAL_10-K_2024-12-31.md::chunk24": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-K_2024-12-31.md::chunk4": {
           "hit_rate": 1.0,
@@ -883,16 +884,16 @@
           "ndcg": 1.0
         },
         "UAL_10-Q_2025-09-30.md::chunk30": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-Q_2025-09-30.md::chunk31": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-Q_2026-03-31.md::chunk11": {
           "hit_rate": 1.0,
@@ -1114,19 +1115,20 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 29.1,
+      "elapsed_s": 32.6,
       "metrics": {
-        "hit_rate": 0.7701,
-        "recall": 0.7701,
-        "precision": 0.1678,
-        "mrr": 0.5764,
-        "ndcg": 0.658
+        "hit_rate": 0.8046,
+        "recall": 0.8046,
+        "precision": 0.1747,
+        "mrr": 0.5994,
+        "ndcg": 0.6828
       },
       "recall_by_k": {
-        "1": 0.4483,
-        "3": 0.7126,
-        "5": 0.7701
+        "1": 0.4655,
+        "3": 0.7471,
+        "5": 0.8046
       },
+      "unmatchable_spans": [],
       "samples": {
         "AAPL_10-K_2024-09-28.md::chunk12": {
           "hit_rate": 1.0,
@@ -1435,10 +1437,10 @@
           "ndcg": 1.0
         },
         "JNJ_10-K_2024-12-29.md::chunk28": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.3066
         },
         "JNJ_10-K_2024-12-29.md::chunk45": {
           "hit_rate": 1.0,
@@ -1651,10 +1653,10 @@
           "ndcg": 1.0
         },
         "MRK_10-Q_2026-03-31.md::chunk68": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "MRK_10-Q_2026-03-31.md::chunk84": {
           "hit_rate": 0.0,
@@ -1705,10 +1707,10 @@
           "ndcg": 1.0
         },
         "MSFT_10-Q_2026-03-31.md::chunk43": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
         },
         "MSFT_10-Q_2026-03-31.md::chunk51": {
           "hit_rate": 1.0,
@@ -1939,10 +1941,10 @@
           "ndcg": 1.0
         },
         "UAL_10-K_2024-12-31.md::chunk24": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
         },
         "UAL_10-K_2024-12-31.md::chunk4": {
           "hit_rate": 1.0,
@@ -1969,16 +1971,16 @@
           "ndcg": 1.0
         },
         "UAL_10-Q_2025-09-30.md::chunk30": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-Q_2025-09-30.md::chunk31": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-Q_2026-03-31.md::chunk11": {
           "hit_rate": 1.0,
@@ -2202,17 +2204,18 @@
       "num_samples": 174,
       "elapsed_s": 65.5,
       "metrics": {
-        "hit_rate": 0.8276,
-        "recall": 0.8276,
-        "precision": 0.1805,
-        "mrr": 0.6587,
-        "ndcg": 0.7419
+        "hit_rate": 0.8621,
+        "recall": 0.8621,
+        "precision": 0.1874,
+        "mrr": 0.6803,
+        "ndcg": 0.7658
       },
       "recall_by_k": {
-        "1": 0.546,
-        "3": 0.7529,
-        "5": 0.8276
+        "1": 0.5575,
+        "3": 0.7816,
+        "5": 0.8621
       },
+      "unmatchable_spans": [],
       "samples": {
         "AAPL_10-K_2024-09-28.md::chunk12": {
           "hit_rate": 1.0,
@@ -2521,10 +2524,10 @@
           "ndcg": 1.0
         },
         "JNJ_10-K_2024-12-29.md::chunk28": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.2641
         },
         "JNJ_10-K_2024-12-29.md::chunk45": {
           "hit_rate": 1.0,
@@ -2737,10 +2740,10 @@
           "ndcg": 0.5
         },
         "MRK_10-Q_2026-03-31.md::chunk68": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
         },
         "MRK_10-Q_2026-03-31.md::chunk84": {
           "hit_rate": 1.0,
@@ -2791,10 +2794,10 @@
           "ndcg": 1.0
         },
         "MSFT_10-Q_2026-03-31.md::chunk43": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
         },
         "MSFT_10-Q_2026-03-31.md::chunk51": {
           "hit_rate": 1.0,
@@ -3025,10 +3028,10 @@
           "ndcg": 1.0
         },
         "UAL_10-K_2024-12-31.md::chunk24": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-K_2024-12-31.md::chunk4": {
           "hit_rate": 1.0,
@@ -3055,16 +3058,16 @@
           "ndcg": 1.0
         },
         "UAL_10-Q_2025-09-30.md::chunk30": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-Q_2025-09-30.md::chunk31": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
         },
         "UAL_10-Q_2026-03-31.md::chunk11": {
           "hit_rate": 1.0,
@@ -3286,19 +3289,20 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 165.8,
+      "elapsed_s": 174.3,
       "metrics": {
-        "hit_rate": 0.8736,
-        "recall": 0.8736,
-        "precision": 0.1943,
-        "mrr": 0.6979,
-        "ndcg": 0.7957
+        "hit_rate": 0.908,
+        "recall": 0.908,
+        "precision": 0.2011,
+        "mrr": 0.7223,
+        "ndcg": 0.8213
       },
       "recall_by_k": {
-        "1": 0.5747,
-        "3": 0.8333,
-        "5": 0.8736
+        "1": 0.592,
+        "3": 0.8621,
+        "5": 0.908
       },
+      "unmatchable_spans": [],
       "samples": {
         "AAPL_10-K_2024-09-28.md::chunk12": {
           "hit_rate": 1.0,
@@ -3607,10 +3611,10 @@
           "ndcg": 0.4307
         },
         "JNJ_10-K_2024-12-29.md::chunk28": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.3869
         },
         "JNJ_10-K_2024-12-29.md::chunk45": {
           "hit_rate": 1.0,
@@ -3823,10 +3827,10 @@
           "ndcg": 0.5
         },
         "MRK_10-Q_2026-03-31.md::chunk68": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
         },
         "MRK_10-Q_2026-03-31.md::chunk84": {
           "hit_rate": 1.0,
@@ -3877,10 +3881,10 @@
           "ndcg": 1.0
         },
         "MSFT_10-Q_2026-03-31.md::chunk43": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
         },
         "MSFT_10-Q_2026-03-31.md::chunk51": {
           "hit_rate": 1.0,
@@ -4111,10 +4115,10 @@
           "ndcg": 1.0
         },
         "UAL_10-K_2024-12-31.md::chunk24": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-K_2024-12-31.md::chunk4": {
           "hit_rate": 1.0,
@@ -4141,16 +4145,16 @@
           "ndcg": 1.0
         },
         "UAL_10-Q_2025-09-30.md::chunk30": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-Q_2025-09-30.md::chunk31": {
-          "hit_rate": 0.0,
-          "recall": 0.0,
-          "mrr": 0.0,
-          "ndcg": 0.0
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
         },
         "UAL_10-Q_2026-03-31.md::chunk11": {
           "hit_rate": 1.0,
@@ -4372,18 +4376,1065 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 419.3,
+      "elapsed_s": 411.6,
       "metrics": {
-        "hit_rate": 0.2759,
-        "recall": 0.2759,
-        "precision": 0.0552,
-        "mrr": 0.1163,
-        "ndcg": 0.1552
+        "hit_rate": 0.2931,
+        "recall": 0.2931,
+        "precision": 0.0586,
+        "mrr": 0.1278,
+        "ndcg": 0.166
       },
       "recall_by_k": {
-        "1": 0.046,
-        "3": 0.1322,
-        "5": 0.2759
+        "1": 0.0517,
+        "3": 0.1494,
+        "5": 0.2931
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "AAPL_10-K_2024-09-28.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "AAPL_10-K_2025-09-27.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk16": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "AAPL_10-Q_2026-03-28.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk22": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk4": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2024-09-01.md::chunk109": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2024-09-01.md::chunk140": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "COST_10-K_2024-09-01.md::chunk29": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2024-09-01.md::chunk98": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2025-08-31.md::chunk46": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "COST_10-K_2025-08-31.md::chunk77": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2025-11-23.md::chunk24": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk16": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "COST_10-Q_2026-02-15.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "COST_10-Q_2026-05-10.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "COST_10-Q_2026-05-10.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "CVX_10-K_2024-12-31.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk25": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "CVX_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "CVX_10-K_2025-12-31.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "CVX_10-Q_2025-09-30.md::chunk63": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "DAL_10-K_2024-12-31.md::chunk16": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "DAL_10-K_2024-12-31.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk55": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2025-12-31.md::chunk12": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2025-12-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-K_2025-12-31.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk34": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk16": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk32": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk41": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk1": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 0.6131
+        },
+        "JNJ_10-K_2024-12-29.md::chunk45": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "JNJ_10-K_2025-12-28.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "JNJ_10-K_2025-12-28.md::chunk50": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-03-29.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk13": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk17": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk5": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2024-12-31.md::chunk119": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk20": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "LUV_10-K_2025-12-31.md::chunk22": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk81": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk50": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk53": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk68": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk93": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "LUV_10-Q_2026-03-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk42": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk8": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "LUV_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-06-30.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk57": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk72": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk79": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk9": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2025-12-31.md::chunk114": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MRK_10-Q_2025-09-30.md::chunk10": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MRK_10-Q_2026-03-31.md::chunk34": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk68": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "MRK_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk52": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk70": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-K_2025-06-30.md::chunk41": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-Q_2025-09-30.md::chunk38": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk51": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk55": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-K_2025-01-26.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "NVDA_10-K_2025-01-26.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "NVDA_10-K_2025-01-26.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "NVDA_10-K_2025-01-26.md::chunk39": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-K_2026-01-25.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk18": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk9": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2026-04-26.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "PFE_10-Q_2025-09-28.md::chunk72": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "PFE_10-Q_2026-06-28.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "PFE_10-Q_2026-06-28.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "TGT_10-K_2025-02-01.md::chunk0": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk38": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk39": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "TGT_10-K_2026-01-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "TGT_10-Q_2025-08-02.md::chunk13": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk29": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2025-11-01.md::chunk26": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "TGT_10-Q_2026-05-02.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk3": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-K_2024-12-31.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-K_2024-12-31.md::chunk4": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-K_2025-12-31.md::chunk29": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk31": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk11": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "UAL_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "WMT_10-K_2025-01-31.md::chunk20": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-K_2025-01-31.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "WMT_10-K_2025-01-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk48": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk58": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2026-01-31.md::chunk48": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2026-01-31.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-Q_2025-07-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk6": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk7": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2025-10-31.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "WMT_10-Q_2025-10-31.md::chunk49": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk2": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk25": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk6": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk17": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk26": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "XOM_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        }
       }
     },
     {
@@ -4414,18 +5465,1065 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 449.1,
+      "elapsed_s": 431.0,
       "metrics": {
-        "hit_rate": 0.3218,
-        "recall": 0.3218,
-        "precision": 0.0667,
-        "mrr": 0.1634,
-        "ndcg": 0.2073
+        "hit_rate": 0.3391,
+        "recall": 0.3391,
+        "precision": 0.0701,
+        "mrr": 0.1739,
+        "ndcg": 0.2173
       },
       "recall_by_k": {
-        "1": 0.0977,
-        "3": 0.1839,
-        "5": 0.3218
+        "1": 0.1034,
+        "3": 0.2011,
+        "5": 0.3391
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "AAPL_10-K_2024-09-28.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "AAPL_10-K_2025-09-27.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk16": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-Q_2026-03-28.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk22": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk4": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2024-09-01.md::chunk109": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2024-09-01.md::chunk140": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "COST_10-K_2024-09-01.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "COST_10-K_2024-09-01.md::chunk98": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2025-08-31.md::chunk46": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2025-08-31.md::chunk77": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2025-11-23.md::chunk24": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk16": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk18": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk34": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk15": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk32": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk25": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "CVX_10-K_2025-12-31.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "CVX_10-Q_2025-09-30.md::chunk63": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "DAL_10-K_2024-12-31.md::chunk16": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "DAL_10-K_2024-12-31.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk55": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2025-12-31.md::chunk12": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2025-12-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "DAL_10-K_2025-12-31.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk34": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk16": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk32": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk41": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "JNJ_10-K_2024-12-29.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 0.6131
+        },
+        "JNJ_10-K_2024-12-29.md::chunk45": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "JNJ_10-K_2024-12-29.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "JNJ_10-K_2025-12-28.md::chunk50": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-03-29.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk13": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk17": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-K_2024-12-31.md::chunk119": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "LUV_10-K_2025-12-31.md::chunk20": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "LUV_10-K_2025-12-31.md::chunk22": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk81": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk50": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk53": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk68": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk93": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "LUV_10-Q_2026-03-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk42": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk8": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "LUV_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-06-30.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk57": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk72": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk79": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk9": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2025-12-31.md::chunk114": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2025-09-30.md::chunk10": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.4307
+        },
+        "MRK_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MRK_10-Q_2026-03-31.md::chunk34": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk68": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "MRK_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk52": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk70": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-K_2025-06-30.md::chunk41": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-Q_2025-09-30.md::chunk38": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk51": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk55": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "NVDA_10-K_2025-01-26.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "NVDA_10-K_2025-01-26.md::chunk2": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk39": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-K_2026-01-25.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk18": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk9": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2026-04-26.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "PFE_10-Q_2025-09-28.md::chunk72": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "PFE_10-Q_2026-06-28.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "PFE_10-Q_2026-06-28.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "TGT_10-K_2025-02-01.md::chunk0": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "TGT_10-K_2025-02-01.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "TGT_10-K_2025-02-01.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk38": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk39": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2026-01-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk13": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk29": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2025-11-01.md::chunk26": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "TGT_10-Q_2026-05-02.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk3": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-K_2024-12-31.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-K_2024-12-31.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "UAL_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-K_2025-12-31.md::chunk29": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "UAL_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk31": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk11": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "UAL_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "WMT_10-K_2025-01-31.md::chunk20": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-K_2025-01-31.md::chunk31": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk48": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk58": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2026-01-31.md::chunk48": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2026-01-31.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-Q_2025-07-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "WMT_10-Q_2025-07-31.md::chunk7": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2025-10-31.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-Q_2025-10-31.md::chunk49": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk2": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "WMT_10-Q_2026-04-30.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk6": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "XOM_10-Q_2026-06-30.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "XOM_10-Q_2026-06-30.md::chunk26": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        }
       }
     },
     {
@@ -4455,18 +6553,1065 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 76.7,
+      "elapsed_s": 69.6,
       "metrics": {
-        "hit_rate": 0.7586,
-        "recall": 0.7586,
-        "precision": 0.1655,
-        "mrr": 0.5655,
-        "ndcg": 0.6468
+        "hit_rate": 0.7874,
+        "recall": 0.7874,
+        "precision": 0.1713,
+        "mrr": 0.5866,
+        "ndcg": 0.6689
       },
       "recall_by_k": {
-        "1": 0.4425,
-        "3": 0.6724,
-        "5": 0.7586
+        "1": 0.4598,
+        "3": 0.7011,
+        "5": 0.7874
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "AAPL_10-K_2024-09-28.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.5
+        },
+        "AAPL_10-Q_2026-03-28.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk22": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "COST_10-K_2024-09-01.md::chunk109": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk140": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "COST_10-K_2024-09-01.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk98": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2025-08-31.md::chunk46": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2025-08-31.md::chunk77": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2025-11-23.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "COST_10-Q_2026-02-15.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "COST_10-Q_2026-02-15.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "COST_10-Q_2026-02-15.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "COST_10-Q_2026-05-10.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "COST_10-Q_2026-05-10.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "CVX_10-K_2024-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "CVX_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.5
+        },
+        "CVX_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "CVX_10-K_2025-12-31.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-Q_2025-09-30.md::chunk63": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "DAL_10-K_2024-12-31.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-K_2024-12-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-K_2024-12-31.md::chunk55": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2025-12-31.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-K_2025-12-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "DAL_10-K_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-Q_2025-09-30.md::chunk34": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "DAL_10-Q_2025-09-30.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.3869
+        },
+        "DAL_10-Q_2025-09-30.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "DAL_10-Q_2026-03-31.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "DAL_10-Q_2026-03-31.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk32": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "JNJ_10-K_2024-12-29.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.2372
+        },
+        "JNJ_10-K_2024-12-29.md::chunk45": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk50": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "JNJ_10-Q_2026-03-29.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk13": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk5": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2024-12-31.md::chunk119": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "LUV_10-K_2025-12-31.md::chunk20": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "LUV_10-K_2025-12-31.md::chunk22": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk50": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk53": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "LUV_10-Q_2025-09-30.md::chunk68": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk93": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "LUV_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "LUV_10-Q_2026-03-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk8": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.3869
+        },
+        "LUV_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "LUV_10-Q_2026-06-30.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk57": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "MRK_10-K_2024-12-31.md::chunk72": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk79": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "MRK_10-K_2024-12-31.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-K_2025-12-31.md::chunk114": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MRK_10-Q_2025-09-30.md::chunk10": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "MRK_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk68": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk84": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MRK_10-Q_2026-06-30.md::chunk52": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-K_2025-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2025-09-30.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk51": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk55": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "NVDA_10-K_2025-01-26.md::chunk15": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.4307
+        },
+        "NVDA_10-K_2025-01-26.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk39": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk37": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk9": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2026-04-26.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "PFE_10-Q_2025-09-28.md::chunk72": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "PFE_10-Q_2026-06-28.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "PFE_10-Q_2026-06-28.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk0": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "TGT_10-K_2025-02-01.md::chunk38": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "TGT_10-K_2025-02-01.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2026-01-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk13": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-11-01.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "TGT_10-Q_2026-05-02.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "TGT_10-Q_2026-05-02.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "TGT_10-Q_2026-05-02.md::chunk3": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-K_2024-12-31.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "UAL_10-K_2024-12-31.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-K_2025-12-31.md::chunk29": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk11": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk18": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk20": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-K_2025-01-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-K_2025-01-31.md::chunk58": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2026-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-K_2026-01-31.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-Q_2025-07-31.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk7": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.5
+        },
+        "WMT_10-Q_2025-10-31.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.3869
+        },
+        "WMT_10-Q_2025-10-31.md::chunk49": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "WMT_10-Q_2026-04-30.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-Q_2026-04-30.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "WMT_10-Q_2026-04-30.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "XOM_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        }
       }
     },
     {
@@ -4496,18 +7641,1065 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 280.2,
+      "elapsed_s": 271.4,
       "metrics": {
-        "hit_rate": 0.8448,
-        "recall": 0.8448,
-        "precision": 0.1805,
-        "mrr": 0.6581,
-        "ndcg": 0.7386
+        "hit_rate": 0.8506,
+        "recall": 0.8506,
+        "precision": 0.1828,
+        "mrr": 0.661,
+        "ndcg": 0.7459
       },
       "recall_by_k": {
         "1": 0.5345,
-        "3": 0.7701,
-        "5": 0.8448
+        "3": 0.7759,
+        "5": 0.8506
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "AAPL_10-K_2024-09-28.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "AAPL_10-K_2025-09-27.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "AAPL_10-Q_2026-03-28.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk22": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk109": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk140": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk98": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2025-08-31.md::chunk46": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2025-08-31.md::chunk77": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2025-11-23.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "COST_10-Q_2026-05-10.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "CVX_10-K_2024-12-31.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "CVX_10-K_2024-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.5
+        },
+        "CVX_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "CVX_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-Q_2025-09-30.md::chunk63": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "DAL_10-K_2024-12-31.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "DAL_10-K_2024-12-31.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-K_2024-12-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk55": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2025-12-31.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "DAL_10-K_2025-12-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-K_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-Q_2025-09-30.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "DAL_10-Q_2025-09-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "DAL_10-Q_2025-09-30.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "DAL_10-Q_2026-03-31.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "DAL_10-Q_2026-03-31.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "DAL_10-Q_2026-06-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "JNJ_10-K_2024-12-29.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk45": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "JNJ_10-K_2025-12-28.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk50": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "JNJ_10-Q_2026-03-29.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk13": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk5": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2024-12-31.md::chunk119": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "LUV_10-K_2025-12-31.md::chunk20": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "LUV_10-K_2025-12-31.md::chunk22": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "LUV_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk50": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk53": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk68": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk93": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "LUV_10-Q_2026-03-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk8": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "LUV_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "LUV_10-Q_2026-06-30.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MRK_10-K_2024-12-31.md::chunk57": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "MRK_10-K_2024-12-31.md::chunk72": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MRK_10-K_2024-12-31.md::chunk79": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "MRK_10-K_2024-12-31.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-K_2025-12-31.md::chunk114": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.4307
+        },
+        "MRK_10-Q_2025-09-30.md::chunk10": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MRK_10-Q_2026-03-31.md::chunk68": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MRK_10-Q_2026-03-31.md::chunk84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MRK_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "MRK_10-Q_2026-06-30.md::chunk52": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk70": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "MSFT_10-K_2025-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "MSFT_10-Q_2025-09-30.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk51": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk55": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "NVDA_10-K_2025-01-26.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-K_2025-01-26.md::chunk15": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-K_2025-01-26.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-K_2026-01-25.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk40": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk9": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2026-04-26.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "PFE_10-Q_2025-09-28.md::chunk72": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "PFE_10-Q_2026-06-28.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "PFE_10-Q_2026-06-28.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk0": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "TGT_10-K_2025-02-01.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2026-01-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk13": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-11-01.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "TGT_10-Q_2026-05-02.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk3": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-K_2024-12-31.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "UAL_10-K_2024-12-31.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-K_2025-12-31.md::chunk29": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk11": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "UAL_10-Q_2026-06-30.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-K_2025-01-31.md::chunk20": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-K_2025-01-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-K_2025-01-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk58": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-K_2026-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2026-01-31.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "WMT_10-Q_2025-07-31.md::chunk7": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "WMT_10-Q_2025-10-31.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2025-10-31.md::chunk49": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-Q_2026-04-30.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk2": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-Q_2026-04-30.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk23": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "XOM_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        }
       }
     },
     {
@@ -4537,18 +8729,1065 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 848.2,
+      "elapsed_s": 973.5,
       "metrics": {
-        "hit_rate": 0.908,
-        "recall": 0.908,
-        "precision": 0.2023,
-        "mrr": 0.7193,
-        "ndcg": 0.823
+        "hit_rate": 0.9195,
+        "recall": 0.9195,
+        "precision": 0.2069,
+        "mrr": 0.7279,
+        "ndcg": 0.8356
       },
       "recall_by_k": {
-        "1": 0.5862,
-        "3": 0.8678,
-        "5": 0.908
+        "1": 0.592,
+        "3": 0.8793,
+        "5": 0.9195
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "AAPL_10-K_2024-09-28.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-K_2025-09-27.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "AAPL_10-Q_2026-03-28.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk22": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "AAPL_10-Q_2026-06-27.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk109": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk140": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-K_2024-09-01.md::chunk98": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "COST_10-K_2025-08-31.md::chunk46": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-K_2025-08-31.md::chunk77": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "COST_10-Q_2025-11-23.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "COST_10-Q_2026-02-15.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-02-15.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "COST_10-Q_2026-05-10.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "COST_10-Q_2026-05-10.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2024-12-31.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "CVX_10-K_2024-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.5
+        },
+        "CVX_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.4307
+        },
+        "CVX_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-K_2025-12-31.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "CVX_10-Q_2025-09-30.md::chunk63": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "DAL_10-K_2024-12-31.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-K_2024-12-31.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2024-12-31.md::chunk55": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-K_2025-12-31.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-K_2025-12-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "DAL_10-K_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk34": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "DAL_10-Q_2025-09-30.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.5
+        },
+        "DAL_10-Q_2026-03-31.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-03-31.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "DAL_10-Q_2026-03-31.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "DAL_10-Q_2026-03-31.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "DAL_10-Q_2026-06-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "DAL_10-Q_2026-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "JNJ_10-K_2024-12-29.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "JNJ_10-K_2024-12-29.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5706
+        },
+        "JNJ_10-K_2024-12-29.md::chunk45": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2024-12-29.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "JNJ_10-K_2025-12-28.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-K_2025-12-28.md::chunk50": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-Q_2026-03-29.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk13": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "JNJ_10-Q_2026-06-28.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "LUV_10-K_2024-12-31.md::chunk119": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk20": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "LUV_10-K_2025-12-31.md::chunk22": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-K_2025-12-31.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "LUV_10-K_2025-12-31.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk50": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk53": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "LUV_10-Q_2025-09-30.md::chunk68": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2025-09-30.md::chunk93": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "LUV_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "LUV_10-Q_2026-03-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "LUV_10-Q_2026-03-31.md::chunk8": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "LUV_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "LUV_10-Q_2026-06-30.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MRK_10-K_2024-12-31.md::chunk57": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MRK_10-K_2024-12-31.md::chunk72": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MRK_10-K_2024-12-31.md::chunk79": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "MRK_10-K_2024-12-31.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-K_2025-12-31.md::chunk114": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.0616
+        },
+        "MRK_10-Q_2025-09-30.md::chunk10": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "MRK_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-03-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MRK_10-Q_2026-03-31.md::chunk68": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "MRK_10-Q_2026-03-31.md::chunk84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "MRK_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk52": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MRK_10-Q_2026-06-30.md::chunk70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-K_2025-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2025-09-30.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MSFT_10-Q_2025-12-31.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk51": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "MSFT_10-Q_2026-03-31.md::chunk55": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-K_2025-01-26.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "NVDA_10-K_2025-01-26.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "NVDA_10-K_2025-01-26.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "NVDA_10-K_2025-01-26.md::chunk39": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-K_2026-01-25.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-K_2026-01-25.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-Q_2025-07-27.md::chunk9": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk14": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "NVDA_10-Q_2025-10-26.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "NVDA_10-Q_2026-04-26.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "PFE_10-Q_2025-09-28.md::chunk72": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "PFE_10-Q_2026-06-28.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "PFE_10-Q_2026-06-28.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.5
+        },
+        "TGT_10-K_2025-02-01.md::chunk0": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "TGT_10-K_2025-02-01.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "TGT_10-K_2025-02-01.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2025-02-01.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "TGT_10-K_2025-02-01.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-K_2026-01-31.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "TGT_10-Q_2025-08-02.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk13": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-08-02.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2025-11-01.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "TGT_10-Q_2026-05-02.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.4307
+        },
+        "TGT_10-Q_2026-05-02.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "TGT_10-Q_2026-05-02.md::chunk3": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-K_2024-12-31.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.5
+        },
+        "UAL_10-K_2024-12-31.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "UAL_10-K_2025-12-31.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "UAL_10-Q_2025-09-30.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2025-09-30.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "UAL_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "UAL_10-Q_2026-06-30.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk20": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-K_2025-01-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2025-01-31.md::chunk58": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2026-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-K_2026-01-31.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2025-07-31.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "WMT_10-Q_2025-07-31.md::chunk7": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "WMT_10-Q_2025-10-31.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 1.1309
+        },
+        "WMT_10-Q_2025-10-31.md::chunk49": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk2": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "WMT_10-Q_2026-04-30.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "WMT_10-Q_2026-04-30.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "WMT_10-Q_2026-04-30.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "XOM_10-Q_2026-06-30.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "XOM_10-Q_2026-06-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "XOM_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        }
       }
     }
   ]

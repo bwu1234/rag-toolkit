@@ -72,15 +72,20 @@ to measure, not results to assume.
 ## Where this repo stands
 
 Measured on the `edgar` corpus on 2026-09-26 (61 filings, 4,236 chunks at the
-shipped `chunk_size: 1000`, `chunk_overlap: 150`) with an ad hoc script.
-Phase 0 turns it into a command.
+shipped `chunk_size: 1000`, `chunk_overlap: 150`) with an ad hoc script, and
+re-measured with `python -m rag.cli index-report --corpus edgar` once Phase 0
+made it a command. The command reproduced every figure except the mid-table
+count. The ad hoc script's 320 came from a definition that wasn't recorded and
+couldn't be reconstructed, so this doc now uses the command's 543: a chunk
+starts mid-table when its first character is inside a table row, or on a row
+whose previous non-blank line is also a row.
 
 | stage | shipped | gap |
 |---|---|---|
 | 1. Parse | `scripts/fetch_edgar.py` flattens HTML to text; tables become pipe rows | Headings are plain lines. A heuristic finds ~54 heading-like lines per filing, but a sample of 25 was only ~60% real headings, with the rest page furniture and table fragments. Structure has to be recovered from the HTML, not guessed from text |
 | 2. Normalize | `clean_documents` | Page furniture ("Table of Contents", "Item 7") stays in the text |
 | 3. Metadata | `title` (company, ticker, form, period) rides on every chunk | Title isn't a typed field, isn't filterable, and isn't in the embedded or BM25 text |
-| 4. Chunk | 1,000-char windows, 150 overlap | **320 chunks (7.6%) start mid-table,** with the header row in the previous chunk. 1,337 chunks (32%) hold table rows; 55 of 61 filings have tables |
+| 4. Chunk | 1,000-char windows, 150 overlap | **543 chunks (12.8%) start mid-table,** with the header row in an earlier chunk: 521 partway through a row, 22 at a later row. 1,337 chunks (32%) hold table rows; 55 of 61 filings have tables |
 | 5. Index text | `Chunk.contextual_text` = LLM context (off) + text | No deterministic header, so a chunk from mid-filing never names its company or period |
 | 6. Embed | `qwen3-embedding:0.6b`, same call for queries and documents | The model card asks for an `Instruct: …\nQuery:` prefix on queries and puts omitting it at a 1–5% loss |
 | 7. Store | Chroma + BM25 over the same ids; content-hash incremental; stale-chunk purge; settings manifest | No filtering: `VectorStore.query` and `SparseIndex.query` take no predicates |
@@ -100,7 +105,9 @@ Two more corpus facts that shape the plan:
   (hybrid, `top_k=20`) finds the right chunk for 88.5% of questions, and the
   reranker keeps 87.4% (`bge-reranker-v2-m3`,
   [measured results](measured-results.md#reranker-models)). So about 20 of
-  the 22 misses never reach the reranker. At `top_k=100`, stage 1 finds
+  the 22 misses never reach the reranker. These figures predate the Phase 0
+  label fixes, which raised the shipped hit rate to 90.8%; the stage-1
+  variants weren't re-run. At `top_k=100`, stage 1 finds
   97.7%: the answers are in the index, ranked 21st to 100th. Index text,
   query embedding and filters are exactly what move a chunk's first-stage
   rank.
@@ -111,12 +118,12 @@ Two more corpus facts that shape the plan:
   questions in `edgar_eval_set.json` name their company and period, which is
   the case BM25 handles best ([Milestone 27](backlog.md#milestone-27--eval-coverage-and-judge-reliability)).
   Contextual chunking measured +6.4pp on dense retrieval and +1.7pp, within
-  noise, on hybrid. Expect the deterministic header (Phase 2) to look similar.
+  noise, on hybrid (+0.6pp, paired p=1, after the label fixes). Expect the deterministic header (Phase 2) to look similar.
   Filtering (Phase 3) is different: it removes the wrong-period and
   wrong-company chunks competing for the top 20, which BM25 can't do.
 - **The generated set can't see two of the defects this plan targets.**
   **None of its 174 spans quotes a table row,** though 32% of chunks hold
-  table rows, so the 320 mid-table chunks never show up as misses. And
+  table rows, so the 543 mid-table chunks never show up as misses. And
   `generate_eval_set.py` drops any span that appears in more than one filing,
   which removes by construction the repeated-across-periods case that
   filtering exists for. Phase 0 adds question sets for both. Until they exist,
@@ -147,7 +154,13 @@ the commit, a set changes only to fix a label error. Record each fix in the
 set's file, and re-run every variant that set has already scored, since old
 and new numbers aren't comparable.
 
-**Step 1 — Harness fixes and a label-quality check.**
+**Step 1 — Harness fixes and a label-quality check.** *Done 2026-09-26.*
+All four items below shipped. The label check found label errors aren't rare
+(7 of 22 misses), so step 2's review adds the checks listed under
+[Label check](measured-results.md#label-check-of-the-generated-edgar-set-chunking-plan-phase-0-step-1).
+The 7 were fixed under the freeze rule and both retrieval matrices re-run:
+the shipped baseline is **0.908 hit / 0.821 NDCG** on the fixed labels. The
+answer-side runs are still on the old labels.
 
 - **Make span matching chunker-agnostic.** `_judge_by_span` requires a span to
   sit inside one chunk. `warn_on_unmatchable_spans` guards that with the
@@ -285,7 +298,8 @@ it's the only fix for the 16.5% of text that is identical across periods.
   `expected_doc_ids` give the correct filing. Hack an eval-only path that
   restricts retrieval to it (the ceiling for perfect filtering) and to the
   right company across all periods (a realistic filter). If the oracle
-  doesn't beat 0.874 by more than noise, stop here and record that.
+  doesn't beat the baseline (0.908 on the fixed labels) by more than noise,
+  stop here and record that.
 - **Interfaces.** A typed `QueryFilter` (equality and set membership on
   strings, ranges on integers) as an optional argument to `VectorStore.query`,
   `SparseIndex.query` and `Retriever.retrieve`. Chroma gets a `where` clause.
@@ -340,7 +354,7 @@ paragraphs) is a small hand-written pass.
   `min_chars` into its next sibling so a heading never becomes a chunk alone.
 - **Tables.** A table that fits is one block. A larger one is split by rows,
   and every piece repeats the header rows. The target is `index-report`
-  showing zero chunks starting mid-table (320 today).
+  showing zero chunks starting mid-table (543 today).
 - **Fallback for oversized prose.** A paragraph over `max_chars` is split
   recursively: sentences, then words. Only here does `chunk_overlap` apply.
 - **Metadata.** `section_path` (e.g. `MD&A > Liquidity and Capital
@@ -437,7 +451,7 @@ for, which is how contextual chunking was recorded as noise.
 Phase 1 is nearly free and needs no reindex. Phases 2–3 target the failure
 this corpus is built to produce: near-identical filings that differ by
 company and period, and their question sets exist after Phase 0. Phases 4–5
-fix a measured defect (320 mid-table chunks) but cost the most, and there is
+fix a measured defect (543 mid-table chunks) but cost the most, and there is
 no way to measure whether that defect costs answers until the `table` set
 exists, after Phase 4. So 1–3 go first by default. If the step-1 label check
 turns up misses that are table-shaped anyway, that is a reason to start 4–5

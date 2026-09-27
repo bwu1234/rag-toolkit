@@ -131,9 +131,11 @@ config question by question (`rag/eval/paired.py`). `baseline` is the shipped
   (30 gains, 41 losses). The sign test only counts direction; the interval also
   weighs how far each question moved. `bge-base` loses by larger margins than it
   wins by. For binary hit rate the two tests agree.
-- **Still untested:** the `pool=100` rows (+3.4pp hit for `bge-v2-m3`, the open
-  `retrieval.top_k` question under "Not yet measured") and the Qwen rows, which
-  are a verdict on a broken integration either way.
+- **Since tested:** the `pool=100` rows were re-run with per-sample scores
+  after the 2026-09-26 label fixes. `bge-v2-m3 pool=100` vs. `pool=20` is
+  noise: +1.1pp [−2.4, +4.7], 6W/4L, p=0.75. See
+  [Label check](#label-check-of-the-generated-edgar-set-chunking-plan-phase-0-step-1).
+  The Qwen rows are a verdict on a broken integration either way.
 
 ### Reading these numbers safely
 
@@ -401,6 +403,77 @@ counts them yet; that is Milestone 12's per-stage accounting. Cap-hit rate and
 searches per turn are defined only for the agent (the pipeline always does one
 retrieval round), and arrive with phase 3.
 
+### Label check of the generated EDGAR set (chunking plan, Phase 0 step 1)
+
+Run on 2026-09-26 at the shipped config
+(`retrieval_eval -v --eval-set data/eval/edgar_eval_set.json --corpus edgar`).
+It reproduces the recorded baseline exactly: hit 0.874, NDCG 0.796,
+22 misses of 174. `unmatchable_spans` is 0, as expected: the set was drafted
+from these same fixed chunks, so every span fits one by construction.
+
+Each miss was read against the top 5 it retrieved, plus a corpus-wide search
+for other chunks stating the span's figures:
+
+| class | n | samples |
+|---|---|---|
+| **Label defect: a retrieved chunk states the asked fact** | 4 | MSFT Q3 FY26 tax rate (rank 2 states "19%", span picked a weaker sentence); JNJ FY24 interest (rank 2, FY25 10-K restates it); UAL FY24 unrealized losses (rank 1, FY25 10-K restates it); UAL Q3 FY25 cash (rank 1 is the adjacent chunk; the span also truncates "unrestricted cash, cash equivalents and short-term investments" to "unrestricted cash") |
+| **Question defect: ambiguous as drafted** | 3 | UAL "period ended Sep 30" (3 or 9 months; rank 1 answers the 3-month reading); WMT "segment operating income" (names no segment; $0.2B is Sam's Club, rank 1 is Walmart U.S.); MRK "certain other items" (source jargon, meaningless without context) |
+| Span split across chunks | 0 | |
+| Genuine: right company, wrong period on top | 4 | AAPL Q3 buyback, COST Q1 cash flow, DAL FY24 capex, LUV FY25 salaries |
+| Genuine: other companies' chunks win | 4 | AAPL Q2 buyback, LUV FY25 interest expense, NVDA FY26 buybacks, NVDA Q3 opex |
+| Genuine: right filing, wrong chunk | 7 | COST impairments, LUV Q3 CASM, NVDA gross margin, NVDA supply chain, TGT impairments, WMT tax rate, WMT tariff refunds |
+
+**Label errors aren't rare: 7 of 22 misses (32%), 4% of the set.** Scoring
+the four label defects as hits would put the shipped hit rate near 0.897. That
+is roughly the size of the effects later phases will be judged on, so the
+drafting process has to change before Phase 0 step 2 writes new tiers:
+
+- The reviewer searches the corpus for every other chunk stating the asked
+  fact. Paraphrased restatements survive `generate_eval_set.py`'s
+  verbatim-duplicate filter, notably a prior year's figure in the next year's
+  filing. Add each one as a span, or reject the question.
+- The span is the sentence that states the asked fact, quoted whole enough not
+  to change its meaning.
+- The question pins the entity (segment, not just company) and the period
+  granularity (three months vs. year to date), and doesn't quote source
+  jargon.
+
+No miss was table-shaped, so this check gives no reason to start Phases 4–5
+early. It classifies the misses the generated set can produce; per the plan it
+doesn't decide what to build.
+
+**The 7 defects were fixed on 2026-09-26** under the freeze rule. Each fixed
+sample carries a `label_fixes` entry in `edgar_eval_set.json` with the old
+values and the reason. Sample ids are unchanged, so paired comparisons still
+line up. The two restated-fact samples (JNJ, UAL FY24) needed span
+`alternatives`: other quotes of the same fact, any one of which satisfies the
+span. A second span wouldn't work, because spans on a sample are conjunctive
+for recall and answer evidence. Their later filing was added to
+`expected_doc_ids`. The other five got a pinned query, a corrected span, or
+both. After the fixes, `unmatchable_spans` is still 0, and every quote occurs
+only in its expected filings.
+
+**Re-run on the fixed labels** (both retrieval matrices, same indexes;
+`index-report` confirmed both in sync first). These supersede the hit and
+NDCG figures in the sections above, which stay as the record of what was
+measured at the time:
+
+| | before | after |
+|---|---|---|
+| shipped baseline (hybrid, `bge-v2-m3`, `top_k 20`) | 0.874 / 0.796 | **0.908 / 0.821** |
+| `rr=bge-v2-m3 pool=100` | 0.908 (no CI) | 0.919, Δ **+0.011 [−0.024, +0.047]**, 6W/4L, p=0.75: noise |
+| contextual index, hybrid | 0.891 | 0.914, Δ vs. plain **+0.006 [−0.032, +0.043]**, 6W/5L, p=1: noise |
+| contextual index, dense | 0.782 | 0.799 |
+
+(hit / NDCG; Δ is a paired hit-rate difference with 95% CI.) Exactly the 7
+fixed samples changed at the baseline, and 6 flipped to hits. 4 flipped
+because of corrected labels, and 2 because their questions became answerable
+as asked (UAL Q3, MRK). WMT still misses with the segment named, so it's a
+genuine retrieval miss. Every reranker verdict holds: the paired deltas
+against the baseline moved by at most 0.02. Raw records:
+`data/eval/results/retrieval_edgar_edgar_eval_set.json` and
+`data/eval/results_contextual/`.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a
@@ -409,11 +482,11 @@ retrieval round), and arrive with phase 3.
   isolated) — the registry supports it, no numbers taken.
 - Anything on the `baseline` corpus, which is retained as a control and has not
   been re-measured since the reranker change.
-- **Paired re-tests of older verdicts.** These rows predate per-sample scores
-  and show `(no CI)`:
-  - `rr=bge-v2-m3 pool=100` (+3.4pp hit, unpaired). This is the open `top_k`
-    question above; ~15 min.
-  - contextual vs. non-contextual on hybrid (+1.7pp, called noise against the
-    unpaired SE). Needs the contextual index in `data/index_ctx`.
-  - the answer matrix (`crag=off` at least, `--limit 0`), to get the new
-    retrieval/generation failure split on the full 174 samples.
+- **Answer-side re-runs after the 2026-09-26 label fixes.** The CRAG answer
+  matrix and the gemma4-31b-judged pipeline baseline were scored on the old
+  labels. Their 40-sample subsample includes one fixed sample (MRK), and the
+  multi-hop set has two rebuilt samples (`mh-ual-unrealized`,
+  `mh-cash-ual-luv`). Re-run them, the answer matrix with `--limit 0` for the
+  full 174, before comparing new answer results against them.
+- `retrieval.top_k` between 20 and 100 with `bge-v2-m3`. 100 measured as noise
+  against 20 (see the label-check re-run); intermediate values untested.

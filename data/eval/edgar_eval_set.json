@@ -666,14 +666,40 @@
     "id": "JNJ_10-K_2024-12-29.md::chunk28",
     "query": "What were Johnson & Johnson's interest income and expense for fiscal year 2024?",
     "expected_doc_ids": [
-      "JNJ_10-K_2024-12-29.md"
+      "JNJ_10-K_2024-12-29.md",
+      "JNJ_10-K_2025-12-28.md"
     ],
     "expected_spans": [
-      "Interest income in the fiscal years 2024 and 2023 was $1.3 billion. Interest expense in the fiscal years 2024 and 2023 was $0.8 billion."
+      {
+        "text": "Interest income in the fiscal years 2024 and 2023 was $1.3 billion",
+        "alternatives": [
+          "Interest income in the fiscal year 2025 was $1.1 billion as compared to $1.3 billion in 2024"
+        ]
+      },
+      {
+        "text": "Interest expense in the fiscal years 2024 and 2023 was $0.8 billion",
+        "alternatives": [
+          "Interest expense in the fiscal year 2025 was $1.0 billion as compared to $0.8 billion in 2024"
+        ]
+      }
     ],
     "expected_answer": "$1.3 billion and $0.8 billion",
     "tier": "generated",
-    "source_chunk": "JNJ_10-K_2024-12-29.md::chunk28"
+    "source_chunk": "JNJ_10-K_2024-12-29.md::chunk28",
+    "label_fixes": [
+      {
+        "date": "2026-09-26",
+        "reason": "The FY2025 10-K restates both FY2024 figures as prior-year comparatives; added as alternative quotes. Split into one span per fact so each can be met by either filing.",
+        "before": {
+          "expected_spans": [
+            "Interest income in the fiscal years 2024 and 2023 was $1.3 billion. Interest expense in the fiscal years 2024 and 2023 was $0.8 billion."
+          ],
+          "expected_doc_ids": [
+            "JNJ_10-K_2024-12-29.md"
+          ]
+        }
+      }
+    ]
   },
   {
     "id": "JNJ_10-K_2024-12-29.md::chunk45",
@@ -1132,16 +1158,26 @@
   },
   {
     "id": "MRK_10-Q_2026-03-31.md::chunk68",
-    "query": "What were Merck & Co., Inc.'s certain other items for the first quarter of 2026?",
+    "query": "Did Merck & Co., Inc. exclude any unusual 'certain other items' from its non-GAAP income for the first quarter of 2026?",
     "expected_doc_ids": [
       "MRK_10-Q_2026-03-31.md"
     ],
     "expected_spans": [
       "There were no such items in either the first quarter of 2026 or 2025."
     ],
-    "expected_answer": "no such items",
+    "expected_answer": "No. There were no such items in the first quarter of 2026 (or 2025).",
     "tier": "generated",
-    "source_chunk": "MRK_10-Q_2026-03-31.md::chunk68"
+    "source_chunk": "MRK_10-Q_2026-03-31.md::chunk68",
+    "label_fixes": [
+      {
+        "date": "2026-09-26",
+        "reason": "Query quoted the filing's term 'certain other items' as if it were a figure; reworded to say what it is.",
+        "before": {
+          "query": "What were Merck & Co., Inc.'s certain other items for the first quarter of 2026?",
+          "expected_answer": "no such items"
+        }
+      }
+    ]
   },
   {
     "id": "MRK_10-Q_2026-03-31.md::chunk84",
@@ -1249,16 +1285,29 @@
   },
   {
     "id": "MSFT_10-Q_2026-03-31.md::chunk43",
-    "query": "What is Microsoft's effective tax rate for the period ended March 31, 2026?",
+    "query": "What was Microsoft's effective tax rate for the three months ended March 31, 2026?",
     "expected_doc_ids": [
       "MSFT_10-Q_2026-03-31.md"
     ],
     "expected_spans": [
-      "Our effective tax rate was lower than the U.S. federal statutory rate for the three and nine months ended March 31, 2026"
+      "Our effective tax rate was 19% and 18% for the three months ended March 31, 2026 and 2025"
     ],
-    "expected_answer": "lower than the U.S. federal statutory rate",
+    "expected_answer": "19% for the three months ended March 31, 2026.",
     "tier": "generated",
-    "source_chunk": "MSFT_10-Q_2026-03-31.md::chunk43"
+    "source_chunk": "MSFT_10-Q_2026-03-31.md::chunk43",
+    "label_fixes": [
+      {
+        "date": "2026-09-26",
+        "reason": "Span was a sentence that doesn't give the rate; the rate is stated in the preceding sentence. Query also pinned to three months (the filing gives three- and nine-month rates).",
+        "before": {
+          "query": "What is Microsoft's effective tax rate for the period ended March 31, 2026?",
+          "expected_spans": [
+            "Our effective tax rate was lower than the U.S. federal statutory rate for the three and nine months ended March 31, 2026"
+          ],
+          "expected_answer": "lower than the U.S. federal statutory rate"
+        }
+      }
+    ]
   },
   {
     "id": "MSFT_10-Q_2026-03-31.md::chunk51",
@@ -1758,14 +1807,34 @@
     "id": "UAL_10-K_2024-12-31.md::chunk24",
     "query": "What was United Airlines Holdings, Inc.'s unrealized losses on investments, net for the period ended 2024-12-31?",
     "expected_doc_ids": [
-      "UAL_10-K_2024-12-31.md"
+      "UAL_10-K_2024-12-31.md",
+      "UAL_10-K_2025-12-31.md"
     ],
     "expected_spans": [
-      "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023"
+      {
+        "text": "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023",
+        "alternatives": [
+          "as compared to $199 million in unrealized losses, net in 2024"
+        ]
+      }
     ],
     "expected_answer": "$199 million",
     "tier": "generated",
-    "source_chunk": "UAL_10-K_2024-12-31.md::chunk24"
+    "source_chunk": "UAL_10-K_2024-12-31.md::chunk24",
+    "label_fixes": [
+      {
+        "date": "2026-09-26",
+        "reason": "The FY2025 10-K restates the FY2024 figure as a prior-year comparative; added as an alternative quote.",
+        "before": {
+          "expected_spans": [
+            "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023"
+          ],
+          "expected_doc_ids": [
+            "UAL_10-K_2024-12-31.md"
+          ]
+        }
+      }
+    ]
   },
   {
     "id": "UAL_10-K_2024-12-31.md::chunk4",
@@ -1821,7 +1890,7 @@
   },
   {
     "id": "UAL_10-Q_2025-09-30.md::chunk30",
-    "query": "What were United Airlines Holdings, Inc.'s unrealized losses on investments, net for the period ended September 30, 2025?",
+    "query": "What were United Airlines Holdings, Inc.'s unrealized losses on investments, net for the first nine months of 2025?",
     "expected_doc_ids": [
       "UAL_10-Q_2025-09-30.md"
     ],
@@ -1830,20 +1899,42 @@
     ],
     "expected_answer": "$8 million",
     "tier": "generated",
-    "source_chunk": "UAL_10-Q_2025-09-30.md::chunk30"
+    "source_chunk": "UAL_10-Q_2025-09-30.md::chunk30",
+    "label_fixes": [
+      {
+        "date": "2026-09-26",
+        "reason": "'Period ended September 30, 2025' fits both the third quarter ($13 million) and the first nine months ($8 million, the labeled answer); query pinned to nine months.",
+        "before": {
+          "query": "What were United Airlines Holdings, Inc.'s unrealized losses on investments, net for the period ended September 30, 2025?"
+        }
+      }
+    ]
   },
   {
     "id": "UAL_10-Q_2025-09-30.md::chunk31",
-    "query": "What was United Airlines Holdings, Inc.'s unrestricted cash as of September 30, 2025?",
+    "query": "What were United Airlines Holdings, Inc.'s unrestricted cash, cash equivalents and short-term investments as of September 30, 2025?",
     "expected_doc_ids": [
       "UAL_10-Q_2025-09-30.md"
     ],
     "expected_spans": [
-      "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash"
+      "had $13.3 billion in unrestricted cash, cash equivalents and short-term investments"
     ],
-    "expected_answer": "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash",
+    "expected_answer": "$13.3 billion in unrestricted cash, cash equivalents and short-term investments.",
     "tier": "generated",
-    "source_chunk": "UAL_10-Q_2025-09-30.md::chunk31"
+    "source_chunk": "UAL_10-Q_2025-09-30.md::chunk31",
+    "label_fixes": [
+      {
+        "date": "2026-09-26",
+        "reason": "Span truncated 'unrestricted cash, cash equivalents and short-term investments' to 'unrestricted cash', changing the fact; its date prefix also fit only one of the two chunks that state it.",
+        "before": {
+          "query": "What was United Airlines Holdings, Inc.'s unrestricted cash as of September 30, 2025?",
+          "expected_spans": [
+            "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash"
+          ],
+          "expected_answer": "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash"
+        }
+      }
+    ]
   },
   {
     "id": "UAL_10-Q_2026-03-31.md::chunk11",
@@ -1990,16 +2081,26 @@
   },
   {
     "id": "WMT_10-K_2025-01-31.md::chunk47",
-    "query": "By how much did Walmart Inc.'s segment operating income increase for fiscal 2025 compared to the previous fiscal year?",
+    "query": "By how much did Walmart Inc.'s Sam's Club U.S. segment operating income increase for fiscal 2025 compared to the previous fiscal year?",
     "expected_doc_ids": [
       "WMT_10-K_2025-01-31.md"
     ],
     "expected_spans": [
       "segment operating income increased $0.2 billion for both fiscal 2025 and 2024, respectively, when compared to the previous fiscal year."
     ],
-    "expected_answer": "segment operating income increased $0.2 billion for both fiscal 2025 and 2024, respectively, when compared to the previous fiscal year.",
+    "expected_answer": "$0.2 billion.",
     "tier": "generated",
-    "source_chunk": "WMT_10-K_2025-01-31.md::chunk47"
+    "source_chunk": "WMT_10-K_2025-01-31.md::chunk47",
+    "label_fixes": [
+      {
+        "date": "2026-09-26",
+        "reason": "Query named no segment; the labeled $0.2 billion is Sam's Club U.S. (Walmart U.S. rose $1.7 billion).",
+        "before": {
+          "query": "By how much did Walmart Inc.'s segment operating income increase for fiscal 2025 compared to the previous fiscal year?",
+          "expected_answer": "segment operating income increased $0.2 billion for both fiscal 2025 and 2024, respectively, when compared to the previous fiscal year."
+        }
+      }
+    ]
   },
   {
     "id": "WMT_10-K_2025-01-31.md::chunk48",

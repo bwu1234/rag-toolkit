@@ -518,10 +518,16 @@
     "query": "What were United Airlines' net unrealized losses on investments for 2024, and for the first nine months of 2025?",
     "expected_doc_ids": [
       "UAL_10-K_2024-12-31.md",
+      "UAL_10-K_2025-12-31.md",
       "UAL_10-Q_2025-09-30.md"
     ],
     "expected_spans": [
-      "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023",
+      {
+        "text": "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023",
+        "alternatives": [
+          "as compared to $199 million in unrealized losses, net in 2024"
+        ]
+      },
       "Unrealized losses on investments, net, were $8 million in the first nine months of 2025 as compared to $160 million in the year-ago period"
     ],
     "expected_answer": "United, 2024: $199 million; United, first nine months of 2025: $8 million",
@@ -532,7 +538,12 @@
         "label": "United, 2024",
         "answer": "$199 million",
         "spans": [
-          "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023"
+          {
+            "text": "Unrealized losses on investments, net was $199 million in 2024 as compared to $27 million in unrealized gains, net in 2023",
+            "alternatives": [
+              "as compared to $199 million in unrealized losses, net in 2024"
+            ]
+          }
         ],
         "source_id": "UAL_10-K_2024-12-31.md::chunk24"
       },
@@ -789,7 +800,7 @@
       "UAL_10-Q_2025-09-30.md"
     ],
     "expected_spans": [
-      "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash",
+      "had $13.3 billion in unrestricted cash, cash equivalents and short-term investments",
       "unrestricted cash of $3.3 billion as of March 31, 2026"
     ],
     "expected_answer": "United, as of September 30, 2025: $13.3 billion; Southwest, as of March 31, 2026: $3.3 billion. Conclusion: United's was larger.",
@@ -800,7 +811,7 @@
         "label": "United, as of September 30, 2025",
         "answer": "$13.3 billion",
         "spans": [
-          "As of September 30, 2025, the Company had $13.3 billion in unrestricted cash"
+          "had $13.3 billion in unrestricted cash, cash equivalents and short-term investments"
         ],
         "source_id": "UAL_10-Q_2025-09-30.md::chunk31"
       },
