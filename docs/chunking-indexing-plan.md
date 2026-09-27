@@ -283,6 +283,73 @@ separately, never averaged into the generated set's numbers:
   tier.
 - Commit both sets before step 3.
 
+*Tooling shipped 2026-09-26; review pending.* `scripts/draft_tier_set.py`
+drafts both tiers, prints them for review, and finalizes the reviewed file:
+
+- **`period`** draws from the repeated paragraphs (440 of at least 200
+  characters, all within one company, less 6 table-shaped), round-robin by
+  company. Each question must name the company and state the target filing's
+  period-end date verbatim ("August 31, 2025"): "fiscal 2025" could mean a
+  10-K or three 10-Qs. Samples use `span_and_document` and list the filings
+  holding the identical copy as `competing_doc_ids`.
+- **`underspecified`** comes in two kinds, reported separately, each drawn
+  from a disjoint random sample of the generated set whose reviewed labels it
+  inherits. Removing company or period outright was rejected, because the
+  question would then have many correct answers and a single-answer label
+  would mark the rest as misses. `paraphrase` keeps company and period, but at
+  most a third of its topic words may appear in the span (the generated set's
+  median is 0.625 by the script's `content_overlap`; 35 of 174 are at or under
+  a third). `implicit` names the company only through a product, brand or
+  description, and keeps the period.
+- `draft` runs the mechanical checks and an LLM verification, and writes
+  `data/eval/drafts/edgar_<tier>_draft.json` with every sample `pending`.
+  `review` prints each sample with its context and the chunks that restate its
+  figures. `finalize` refuses while any verdict is pending, re-runs the
+  checks on accepted samples after the reviewer's edits, and writes
+  `data/eval/edgar_<tier>_set.json`. The draft file, rejects included, is
+  committed as the review record.
+- Spans may be up to 250 characters, not the generator's 150
+  (`chunk_overlap`). That cap bounded the heuristic step 1 replaced; drafts
+  are checked to fit inside one chunk instead.
+
+What the drafting runs showed. `draft` writes every rejected draft to
+`_rejects.jsonl` because two of the three LLM checks turned out to be
+miscalibrated, and only reading their rejects showed it:
+
+- **The generator's verifier fails period drafts by construction.** Its rule
+  "BAD if the passage is about a different period" fires on every one,
+  because the question names a period and the span, identical across
+  periods, can't. It rejected 157 of 220, and 7 of 8 sampled rejects were
+  sound. A period-specific prompt (the passage is from the named filing)
+  rejected 117.
+- **The rewrite check can't judge "same company" for `implicit`.** It
+  rejected "the Atlanta-based airline" for Delta and passed "the maker of
+  Tylenol" for J&J (Tylenol is Kenvue's since 2023). Meaning and
+  identification are now separate calls. The identification call names the
+  company from the rewrite alone, and `qwen3.6:27b` got 4 of 8 probe cases
+  right against `gemma4:31b`'s 6, so checks run on `--check-model
+  gemma4:31b-mlx`. Neither model catches the divested-brand errors (Tylenol,
+  Lipitor): the reviewer has to.
+- The first `implicit` prompt leaked the name in 24 of 60 rewrites, through
+  brands that contain it ("the operator of Costco warehouses"). Spelling out
+  the forbidden words cut that to 3 of 87.
+
+`underspecified`: 128 drafts from all 174 generated questions (63
+`implicit`, 65 `paraphrase`), drafted with `qwen3.6:27b-mlx` and checked
+with `gemma4:31b-mlx`. The gemma checks are far more lenient: yield went
+from 68 to 128, and the false rejections became false passes. A first-pass
+read found 8 `implicit` drafts that name the wrong company or change the
+segment (Elk Hills, Tylenol, Lipitor, Walmart U.S. rewritten as Sam's Club
+U.S.) and 9 across both kinds to check or edit, which would leave about 51
+`implicit` and 60–65 `paraphrase`. Review every `implicit` description
+against current ownership; neither model does.
+
+`period`: 69 drafts from 220 attempts, all 13 companies with repeated
+paragraphs, drafted and verified with `qwen3.6:27b-mlx` (before the separate
+check model existed). A first-pass read suggests rejecting 14 as boilerplate
+or table fragments and checking 3 for restated figures, which would leave
+about 52–55.
+
 **Step 3 — Baseline on every set.**
 
 Run the shipped config on the generated set, `period` and `underspecified`,
