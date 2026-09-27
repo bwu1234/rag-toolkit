@@ -399,9 +399,9 @@ attaches $24.7B to the wrong period. So the true rate is ~14/34. The failures
 spot-checked were all real errors.
 
 **Not measured in phase 0:** generated and prompt tokens. This run predates
-Milestone 12's `MeteredLLMClient`. The counting now exists, but
-`multihop_eval` doesn't wrap samples in `metered()` yet, so these numbers
-need a re-run once it does ([plan](milestone-19-plan.md#0--eval-harness-that-can-see-the-difference-before-any-agent-code)). Cap-hit rate and
+Milestone 12's per-turn metering. `ChatAnswer` now carries the counts, but
+`multihop_eval` doesn't report them yet, so these numbers need a re-run once
+it does ([plan](milestone-19-plan.md#0--eval-harness-that-can-see-the-difference-before-any-agent-code)). Cap-hit rate and
 searches per turn are defined only for the agent (the pipeline always does one
 retrieval round), and arrive with phase 3.
 

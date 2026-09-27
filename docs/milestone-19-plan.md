@@ -66,7 +66,10 @@ The parts that shape this plan:
    `build_chat_service` picks one by `chat.mode`. The API, UI, CLI and both eval
    runners stay untouched. `ChatAnswer.search_queries` already exists and
    carries the agent's queries. Add `tool_calls: int` and
-   `stopped_reason: "answered" | "cap" | "timeout"`.
+   `stopped_reason: "answered" | "cap" | "timeout"`. Like `ChatService.ask()`,
+   `AgentService.ask()` opens its own `metered()` block and fills `llm_calls`,
+   `llm_ms`, `prompt_tokens` and `completion_tokens` from it. The runners then
+   read both modes' cost from the same fields.
 
 5. **A passage ledger owns citation numbering.** Numbers are assigned in first-
    seen order across all calls and deduplicated by `chunk_id`, so a chunk found
@@ -120,12 +123,24 @@ The parts that shape this plan:
 15/34 multi-hop questions complete, evidence recall 0.583. The runner is
 `rag.eval.multihop_eval`, also a third set in `run_answer_matrix.py`; there is
 no separate `run_agent_matrix.py`. The gap is token counts, which are not yet
-reported for either mode. The accounting now exists: Milestone 12 shipped
-`MeteredLLMClient`, `metered()` and `UsageMeter`. `multihop_eval` just
-doesn't wrap each sample in `with metered()` yet. **Close this before phase
-3,** so the pipeline baseline has token and LLM-time numbers for the agent's
-cost to be set against. Search count and cap-hit rate come with the agent in
-phase 3.
+reported for either mode. The counts already exist per turn: since Milestone
+12, `ChatService.ask()` meters its own calls and returns them on `ChatAnswer`
+(`llm_calls`, `llm_ms`, `prompt_tokens`, `completion_tokens`). What's missing
+is the runner side: `MultihopSampleResult` and `MultihopReport` have no fields
+for them. **Close this before phase 3,** so the pipeline baseline has token
+and LLM-time numbers for the agent's cost to be set against:
+
+- Copy the four `ChatAnswer` fields onto each sample result, and report their
+  means in the summary. Token means cover only samples whose provider reported
+  counts; `None` stays unknown, not zero.
+- Don't wrap samples in `metered()` from the runner. `ask()` opens its own
+  meter, and nested meters are isolated by design (`rag/observability/usage.py`),
+  so an outer meter would record nothing.
+- The judge's calls are eval overhead, not the cost of answering, so they stay
+  out of these numbers. The judge client isn't passed through `ask()`, so this
+  happens without extra code.
+
+Search count and cap-hit rate come with the agent in phase 3.
 
 - **Separate judge:** `eval.judge: LLMConfig | None` in config, plus a
   `--judge-model` flag on `answer_eval` and `run_answer_matrix.py`. Default to
