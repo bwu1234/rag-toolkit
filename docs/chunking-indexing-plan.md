@@ -283,7 +283,16 @@ separately, never averaged into the generated set's numbers:
   tier.
 - Commit both sets before step 3.
 
-*Tooling shipped 2026-09-26; review pending.* `scripts/draft_tier_set.py`
+*Done 2026-09-27.* Both sets are reviewed and frozen:
+`edgar_period_set.json` (55 of 69 drafts, 13 companies) and
+`edgar_underspecified_set.json` (118 of 128: 54 `implicit`, 64
+`paraphrase`). The reviewer accepted the first-pass suggestions. "Check"
+drafts were resolved one by one: the three period restatement candidates
+held no alternative quote, seven underspecified questions were edited
+(ambiguous or broken wording, each noted with its original in the draft
+file), and two were rejected. The draft files keep every verdict and note.
+
+`scripts/draft_tier_set.py`
 drafts both tiers, prints them for review, and finalizes the reviewed file:
 
 - **`period`** draws from the repeated paragraphs (440 of at least 200
