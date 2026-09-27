@@ -186,6 +186,10 @@ off local.
   the hosted ones — same interface, no daemon required. `EmbeddingConfig`
   already accepts `provider: sentence_transformers`, but `get_embedder` has
   no branch for it, so selecting it raises today.
+- A contextualized chunk embedding adapter (`voyage-context-4`), wanted by
+  [chunking plan](chunking-indexing-plan.md#phase-2--document-metadata-and-a-deterministic-chunk-header-23-days)
+  Phase 2 as a comparator. It needs `embed_documents` to receive chunks
+  grouped by document, so it's an interface change, not only a provider.
 - A hosted `VectorStore` adapter (Chroma's own server mode is the smallest
   step; Qdrant or similar if a managed tier is wanted).
 - The claim to earn: swapping any of these is a config change, no pipeline
