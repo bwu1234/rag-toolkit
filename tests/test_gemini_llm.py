@@ -140,6 +140,94 @@ def test_generate_raises_on_blocked_prompt() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Thinking models (Gemini 3+ Flash-Lite)
+# ---------------------------------------------------------------------------
+
+
+def test_thinking_level_is_sent_as_the_upper_case_enum() -> None:
+    bodies: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.read()))
+        return _ok()
+
+    client, _ = _client(handler, thinking_level="minimal")
+    client.generate("q")
+
+    assert bodies[0]["generationConfig"]["thinkingConfig"] == {"thinkingLevel": "MINIMAL"}
+
+
+def test_no_thinking_config_is_sent_unless_asked() -> None:
+    # Hosted Gemma rejects thinkingConfig outright, so the default must omit it.
+    bodies: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.read()))
+        return _ok()
+
+    client, _ = _client(handler)
+    client.generate("q")
+
+    assert "thinkingConfig" not in bodies[0]["generationConfig"]
+
+
+def test_thought_tokens_count_as_completion_tokens() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={
+            "candidates": [{"content": {"parts": [{"text": "PASS"}]}, "finishReason": "STOP"}],
+            "usageMetadata": {"promptTokenCount": 100, "candidatesTokenCount": 5,
+                              "thoughtsTokenCount": 40, "totalTokenCount": 145},
+        })
+
+    client, _ = _client(handler)
+
+    _, usage = client.generate_with_usage("q")
+
+    assert usage is not None
+    assert (usage.prompt_tokens, usage.completion_tokens) == (100, 45)
+
+
+def test_missing_output_counts_stay_unknown_rather_than_zero() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={
+            "candidates": [{"content": {"parts": [{"text": "PASS"}]}}],
+            "usageMetadata": {"promptTokenCount": 100},
+        })
+
+    client, _ = _client(handler)
+
+    _, usage = client.generate_with_usage("q")
+
+    assert usage is not None
+    assert usage.completion_tokens is None
+
+
+@pytest.mark.parametrize("candidate", [
+    # Thoughts used the whole cap: the API sends the candidate with no parts.
+    {"content": {"role": "model"}, "finishReason": "MAX_TOKENS"},
+    {"content": {"parts": [{"text": "hmm", "thought": True}]}, "finishReason": "MAX_TOKENS"},
+])
+def test_hitting_max_tokens_with_no_answer_raises_and_names_the_fix(candidate: dict) -> None:
+    client, _ = _client(lambda request: httpx.Response(200, json={"candidates": [candidate]}), max_tokens=64)
+
+    with pytest.raises(RuntimeError, match=r"max_tokens=64.*thinking_level"):
+        client.generate("q")
+
+
+def test_an_answer_cut_short_by_max_tokens_is_still_returned(caplog: pytest.LogCaptureFixture) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"candidates": [
+            {"content": {"parts": [{"text": "Revenue was"}]}, "finishReason": "MAX_TOKENS"}
+        ]})
+
+    client, _ = _client(handler)
+
+    with caplog.at_level("WARNING"):
+        assert client.generate("q") == "Revenue was"
+    assert "truncated" in caplog.text
+
+
+# ---------------------------------------------------------------------------
 # 429s: per-minute retries, per-day stops
 # ---------------------------------------------------------------------------
 
@@ -269,6 +357,20 @@ def test_factory_builds_gemini_client_with_key_from_env(monkeypatch: pytest.Monk
     assert client._client.headers["x-goog-api-key"] == "secret"
     assert (client.requests_per_minute, client.tokens_per_minute) == (30, 16000)
     assert client._client.timeout.read == 300
+
+
+def test_factory_passes_the_thinking_level(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "secret")
+
+    client = get_llm_client(LLMConfig(provider="gemini", model="gemini-3.5-flash-lite", thinking_level="low"))
+
+    assert isinstance(client, GeminiLLMClient)
+    assert client.thinking_level == "low"
+
+
+def test_thinking_level_is_refused_for_a_provider_that_would_ignore_it() -> None:
+    with pytest.raises(ValueError, match="thinking_level is a Gemini setting"):
+        LLMConfig(provider="ollama", thinking_level="low")
 
 
 def test_factory_names_the_env_var_when_the_key_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:

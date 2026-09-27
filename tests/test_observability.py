@@ -6,6 +6,7 @@ Chroma -- in keeping with the rest of the suite.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -15,11 +16,10 @@ from fastapi.testclient import TestClient
 
 from rag.api.main import app
 from rag.api.routes.chat import get_chat_service, get_turn_sink
-from rag.config.settings import RagConfig, TurnLogConfig
+from rag.config.settings import AgentConfig, LLMConfig, RagConfig, TurnLogConfig
 from rag.events import EventSink, PipelineEvent
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
-from rag.config.settings import AgentConfig, LLMConfig
 from rag.generation.builder import build_agent_llm
 from rag.generation.llm import AssistantTurn, ChatMessage, LLMClient, LLMUsage, ToolCallingLLM
 from rag.generation.ollama_llm import OllamaLLMClient
@@ -433,6 +433,23 @@ def test_config_fingerprint_ignores_the_agent_section_while_nothing_reads_it() -
     base = RagConfig()
     other_agent = base.model_copy(update={"agent": AgentConfig(max_tool_calls=3)})
     assert config_fingerprint(base) == config_fingerprint(other_agent)
+
+
+def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None:
+    gemini = LLMConfig(provider="gemini", model="gemini-3.5-flash-lite")
+    unset = RagConfig(llm=gemini)
+    # Neither `llm.thinking_level` nor `agent` existed when the turns already
+    # logged were hashed.
+    as_before = hashlib.sha256(
+        unset.model_dump_json(
+            exclude={"observability": True, "eval": True, "agent": True, "llm": {"thinking_level"}}
+        ).encode()
+    ).hexdigest()[:12]
+    minimal = RagConfig(llm=gemini.model_copy(update={"thinking_level": "minimal"}))
+
+    # Unset hashes as it did before the field existed, so logged turns keep their key.
+    assert config_fingerprint(unset) == as_before
+    assert config_fingerprint(minimal) != config_fingerprint(unset)
 
 
 # ---------------------------------------------------------------------------

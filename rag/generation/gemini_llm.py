@@ -20,6 +20,12 @@ Two things a naive client gets wrong against the free tier:
   `...PerMinute...`) -- the same test Google's gemini-cli uses. A per-day 429
   raises `GeminiDailyQuotaExhausted`, and nothing else is reported as one.
 
+Gemini 3+ Flash-Lite models think, and can't be told not to. Their thought
+tokens are drawn from `maxOutputTokens` and reported apart from the answer's
+(`thoughtsTokenCount`), so this adapter sends `thinking_level` when set, counts
+thoughts as completion tokens (as Ollama's `eval_count` already does for qwen),
+and raises when thinking spent the whole budget instead of returning "".
+
 The API key is read from the environment (`api_key_env`), never from config.
 """
 
@@ -74,6 +80,7 @@ class GeminiLLMClient(LLMClient):
         requests_per_minute: int | None = None,
         tokens_per_minute: int | None = None,
         max_retries: int = 5,
+        thinking_level: str | None = None,
     ) -> None:
         if not api_key:
             raise ValueError("GeminiLLMClient needs a non-empty api_key")
@@ -84,6 +91,7 @@ class GeminiLLMClient(LLMClient):
         self.requests_per_minute = requests_per_minute
         self.tokens_per_minute = tokens_per_minute
         self.max_retries = max_retries
+        self.thinking_level = thinking_level
         # The key goes in a header, not the `?key=` query string, so it can't
         # end up in a logged URL or an httpx error message.
         self._client = httpx.Client(
@@ -99,12 +107,16 @@ class GeminiLLMClient(LLMClient):
         return self.generate_with_usage(prompt, system=system)[0]
 
     def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+        generation_config: dict[str, object] = {
+            "temperature": self.temperature,
+            "maxOutputTokens": self.max_tokens,
+        }
+        if self.thinking_level is not None:
+            # The REST enum is upper case (MINIMAL, LOW, MEDIUM, HIGH).
+            generation_config["thinkingConfig"] = {"thinkingLevel": self.thinking_level.upper()}
         body: dict[str, object] = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "temperature": self.temperature,
-                "maxOutputTokens": self.max_tokens,
-            },
+            "generationConfig": generation_config,
         }
         if system is not None:
             body["systemInstruction"] = {"parts": [{"text": system}]}
@@ -114,16 +126,24 @@ class GeminiLLMClient(LLMClient):
 
         usage_meta = payload.get("usageMetadata")
         usage_meta = usage_meta if isinstance(usage_meta, dict) else {}
+        answer_tokens = _optional_int(usage_meta.get("candidatesTokenCount"))
+        thought_tokens = _optional_int(usage_meta.get("thoughtsTokenCount"))
+        # Thoughts are billed and rate-limited as output; leaving them out
+        # would make a thinking model look cheaper than it is.
+        completion_tokens = (
+            None if answer_tokens is None and thought_tokens is None
+            else (answer_tokens or 0) + (thought_tokens or 0)
+        )
         usage = LLMUsage(
             prompt_tokens=_optional_int(usage_meta.get("promptTokenCount")),
-            completion_tokens=_optional_int(usage_meta.get("candidatesTokenCount")),
+            completion_tokens=completion_tokens,
         )
         # Replace the estimate with what the API counted, so pacing tracks reality.
         reported = _optional_int(usage_meta.get("totalTokenCount"))
         if reported is not None and self._window:
             stamp, _ = self._window.pop()
             self._window.append((stamp, reported))
-        return _response_text(payload), usage
+        return _response_text(payload, max_tokens=self.max_tokens), usage
 
     def _post_with_retries(self, body: dict[str, object], estimate: int) -> dict[str, object]:
         path = f"/v1beta/models/{self.model}:generateContent"
@@ -208,8 +228,14 @@ def api_key_from_env(var: str) -> str:
     return key
 
 
-def _response_text(payload: dict[str, object]) -> str:
-    """The answer text of the first candidate, skipping any thought-summary parts."""
+def _response_text(payload: dict[str, object], *, max_tokens: int) -> str:
+    """The answer text of the first candidate, skipping any thought-summary parts.
+
+    Raises when the token cap left no answer at all -- with a thinking model,
+    usually because thoughts used it up -- since "" would read downstream as a
+    refusal. A cap that cut the answer short only warns: the text is still the
+    best the model produced.
+    """
     candidates = payload.get("candidates")
     if not isinstance(candidates, list) or not candidates:
         feedback = payload.get("promptFeedback")
@@ -217,14 +243,23 @@ def _response_text(payload: dict[str, object]) -> str:
     candidate = candidates[0]
     content = candidate.get("content") if isinstance(candidate, dict) else None
     parts = content.get("parts") if isinstance(content, dict) else None
-    if not isinstance(parts, list):
-        reason = candidate.get("finishReason") if isinstance(candidate, dict) else None
-        raise RuntimeError(f"Gemini candidate has no content (finishReason={reason!r}): {candidate!r}")
-    return "".join(
+    reason = candidate.get("finishReason") if isinstance(candidate, dict) else None
+    text = "".join(
         part["text"]
-        for part in parts
+        for part in (parts if isinstance(parts, list) else [])
         if isinstance(part, dict) and isinstance(part.get("text"), str) and not part.get("thought")
     )
+    if reason == "MAX_TOKENS":
+        # Thoughts can use the whole cap, and then the candidate has no parts at all.
+        if not text.strip():
+            raise RuntimeError(
+                f"Gemini hit max_tokens={max_tokens} before writing any answer. With a thinking model "
+                "the thoughts count toward that cap: raise llm.max_tokens or lower llm.thinking_level."
+            )
+        logger.warning("Gemini answer truncated at max_tokens=%d", max_tokens)
+    elif not isinstance(parts, list):
+        raise RuntimeError(f"Gemini candidate has no content (finishReason={reason!r}): {candidate!r}")
+    return text
 
 
 def _error_details(response: httpx.Response) -> list[dict[str, object]]:

@@ -1,0 +1,31 @@
+# Generation on Gemini 3.1 Flash-Lite (hosted, free tier) instead of local Ollama.
+# Everything else -- index, embedder, retrieval, prompts -- is config.yaml's.
+#
+#   export GEMINI_API_KEY=...   # from AI Studio; never put it in a file
+#   python -m rag.cli --config rag/config/gemini-3.1-flash-lite.yaml chat
+#
+# The budget is the free tier: 500 requests/day, 15/min, 250k tokens/min
+# (AI Studio, 2026-09). One pipeline turn is one request, two with history
+# (the condenser); CRAG and query expansion would add more and stay off. The
+# client paces under the per-minute limits; nothing yet stops a caller from
+# spending the whole day, so don't point an eval at this without a --limit.
+# Prompts and answers on the free tier may be read by Google.
+#
+# gemini-3.5-flash-lite.yaml is the same file with the other model, so the
+# two can be compared on equal terms.
+base: config.yaml
+
+llm:
+  provider: gemini
+  model: gemini-3.1-flash-lite
+  # Must be restated: the inherited Ollama URL would otherwise win over the
+  # gemini default, because an inherited value counts as explicitly set.
+  base_url: https://generativelanguage.googleapis.com
+  api_key_env: GEMINI_API_KEY
+  requests_per_minute: 15
+  tokens_per_minute: 250000
+  # Thinking can't be turned off on these models, and its tokens come out of
+  # max_tokens (1024, inherited). Minimal is the cheapest level; pinned in both
+  # files so a comparison isn't a comparison of model defaults. The client
+  # raises, naming the fix, if thinking ever uses the whole budget.
+  thinking_level: minimal
