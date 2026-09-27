@@ -15,6 +15,7 @@ import pytest
 from rag.config.settings import GEMINI_BASE_URL, LLMConfig
 from rag.generation.factory import get_llm_client
 from rag.generation.gemini_llm import GeminiDailyQuotaExhausted, GeminiLLMClient
+from rag.generation.llm import AssistantTurn, ChatMessage, ToolCall, ToolCallingLLM, ToolDefinition, ToolResult
 
 
 class _FakeClock:
@@ -378,3 +379,162 @@ def test_factory_names_the_env_var_when_the_key_is_missing(monkeypatch: pytest.M
 
     with pytest.raises(ValueError, match=r"\$GEMINI_API_KEY"):
         get_llm_client(LLMConfig(provider="gemini", model="gemma-4-31b-it"))
+
+
+# ---------------------------------------------------------------------------
+# Tool calling (chat)
+# ---------------------------------------------------------------------------
+
+SEARCH = ToolDefinition(
+    name="rag_search",
+    description="Search the filings.",
+    parameters={
+        "type": "object",
+        "properties": {"query": {"type": "string"}, "top_k": {"anyOf": [{"type": "integer"}, {"type": "null"}], "default": None}},
+        "required": ["query"],
+    },
+)
+
+#: Recorded from gemini-3.5-flash-lite (thinking_level minimal): a signed call
+#: with an id, and no text part.
+FLASH_CALL_PARTS = [
+    {
+        "functionCall": {"name": "rag_search", "args": {"query": "Apple total net sales fiscal 2025"}, "id": "call_204087"},
+        "thoughtSignature": "EmAKXgFpFH0T",
+    }
+]
+
+#: Recorded from gemma-4-31b-it: a thought part before the signed call.
+GEMMA_CALL_PARTS = [
+    {"text": "I need to find Apple's total net sales for fiscal 2025.", "thought": True},
+    {
+        "functionCall": {"name": "rag_search", "args": {"query": "Apple total net sales fiscal 2025"}, "id": "call_199867"},
+        "thoughtSignature": "EiYKJGUyNDgz",
+    },
+]
+
+
+def _parts_response(parts: list, finish: str = "STOP") -> httpx.Response:
+    return httpx.Response(200, json={
+        "candidates": [{"content": {"role": "model", "parts": parts}, "finishReason": finish}],
+        "usageMetadata": {"promptTokenCount": 436, "candidatesTokenCount": 25, "totalTokenCount": 461},
+    })
+
+
+def _recording(sent: list[dict], response: httpx.Response):
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.read()))
+        return response
+
+    return handler
+
+
+def test_gemini_client_is_a_tool_calling_llm() -> None:
+    assert isinstance(GeminiLLMClient(model="m", base_url="https://x", api_key="k"), ToolCallingLLM)
+
+
+@pytest.mark.parametrize(("parts", "call_id", "signature"), [
+    (FLASH_CALL_PARTS, "call_204087", "EmAKXgFpFH0T"),
+    (GEMMA_CALL_PARTS, "call_199867", "EiYKJGUyNDgz"),
+])
+def test_chat_parses_signed_function_calls_and_skips_thoughts(parts: list, call_id: str, signature: str) -> None:
+    client, _ = _client(_recording([], _parts_response(parts)))
+
+    turn = client.chat([ChatMessage("user", "Apple net sales?")], [SEARCH])
+
+    assert turn.content == ""  # the thought part is not answer text
+    assert turn.tool_calls == (
+        ToolCall("rag_search", {"query": "Apple total net sales fiscal 2025"}, id=call_id, signature=signature),
+    )
+    assert turn.usage is not None and (turn.usage.prompt_tokens, turn.usage.completion_tokens) == (436, 25)
+
+
+def test_chat_declares_tools_with_json_schema_and_omits_them_when_none() -> None:
+    sent: list[dict] = []
+    client, _ = _client(_recording(sent, _ok("Answer [1].")))
+
+    client.chat([ChatMessage("user", "q")], [SEARCH])
+    client.chat([ChatMessage("user", "q")])
+
+    # `parametersJsonSchema` takes the pydantic schema as-is (`anyOf`,
+    # `default`); the OpenAPI-subset `parameters` field would not.
+    assert sent[0]["tools"] == [{"functionDeclarations": [
+        {"name": "rag_search", "description": "Search the filings.", "parametersJsonSchema": SEARCH.parameters}
+    ]}]
+    assert "tools" not in sent[1]
+
+
+def test_chat_sends_the_signature_back_on_the_call_it_came_with() -> None:
+    # Without it Gemini 3 answers 400 "Function call is missing a thought_signature".
+    sent: list[dict] = []
+    client, _ = _client(_recording(sent, _ok("Answer [1].")))
+    call = ToolCall("rag_search", {"query": "Apple"}, id="call_1", signature="SIG")
+
+    client.chat([
+        ChatMessage("system", "Search first."),
+        ChatMessage("user", "Apple net sales?"),
+        AssistantTurn(content="", tool_calls=(call,)),
+        ToolResult(call, "Passage [1] ..."),
+    ])
+
+    assert sent[0]["systemInstruction"] == {"parts": [{"text": "Search first."}]}
+    assert sent[0]["contents"] == [
+        {"role": "user", "parts": [{"text": "Apple net sales?"}]},
+        {"role": "model", "parts": [
+            {"functionCall": {"name": "rag_search", "args": {"query": "Apple"}, "id": "call_1"}, "thoughtSignature": "SIG"}
+        ]},
+        {"role": "user", "parts": [
+            {"functionResponse": {"name": "rag_search", "response": {"result": "Passage [1] ..."}, "id": "call_1"}}
+        ]},
+    ]
+
+
+def test_parallel_results_go_back_together_after_all_calls() -> None:
+    # Gemini requires FC1, FC2, FR1, FR2; interleaving is a 400.
+    sent: list[dict] = []
+    client, _ = _client(_recording(sent, _ok("Both [1][2].")))
+    first = ToolCall("rag_search", {"query": "Delta"}, id="a", signature="SIG")
+    second = ToolCall("rag_search", {"query": "United"}, id="b")
+
+    client.chat([
+        ChatMessage("user", "Compare Delta and United."),
+        AssistantTurn(content="Searching both.", tool_calls=(first, second)),
+        ToolResult(first, "Delta passage"),
+        ToolResult(second, "United passage"),
+        AssistantTurn(content="One more.", tool_calls=(first,)),
+        ToolResult(first, "Delta again"),
+    ])
+
+    contents = sent[0]["contents"]
+    assert [c["role"] for c in contents] == ["user", "model", "user", "model", "user"]
+    assert contents[1]["parts"][0] == {"text": "Searching both."}
+    assert [p["functionCall"]["id"] for p in contents[1]["parts"][1:]] == ["a", "b"]
+    assert "thoughtSignature" not in contents[1]["parts"][2]  # only the first call is signed
+    assert [p["functionResponse"]["id"] for p in contents[2]["parts"]] == ["a", "b"]
+    assert [p["functionResponse"]["id"] for p in contents[4]["parts"]] == ["a"]  # a new step, a new turn
+
+
+def test_chat_refuses_a_system_message_after_the_conversation_starts() -> None:
+    client, _ = _client(_recording([], _ok()))
+
+    with pytest.raises(ValueError, match="only before the first"):
+        client.chat([ChatMessage("user", "q"), ChatMessage("system", "late")])
+
+
+@pytest.mark.parametrize("reason", ["MALFORMED_FUNCTION_CALL", "UNEXPECTED_TOOL_CALL"])
+def test_chat_raises_when_gemini_rejects_the_models_call(reason: str) -> None:
+    response = httpx.Response(200, json={"candidates": [{"finishReason": reason}]})
+    client, _ = _client(_recording([], response))
+
+    with pytest.raises(RuntimeError, match=reason):
+        client.chat([ChatMessage("user", "q")], [SEARCH])
+
+
+def test_a_call_cut_at_max_tokens_is_still_a_turn() -> None:
+    # MAX_TOKENS with no text raises for `generate`, but a turn that got its
+    # call out has something to act on.
+    client, _ = _client(_recording([], _parts_response(FLASH_CALL_PARTS, finish="MAX_TOKENS")))
+
+    turn = client.chat([ChatMessage("user", "q")], [SEARCH])
+
+    assert len(turn.tool_calls) == 1

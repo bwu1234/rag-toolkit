@@ -181,7 +181,8 @@ Search count and cap-hit rate come with the agent in phase 3.
   `build_chat_service` uses it. `build_agent_llm(config)` in
   `rag/generation/builder.py` builds the agent's metered client from
   `agent.llm or llm`, and raises at build time when the provider has no tool
-  support (Gemini today).
+  support. (That was Gemini until the Gemini adapter gained `chat()`; see
+  the note after this list.)
 - `agent:` in `settings.py` / `config.yaml`: `llm`, `strategy`,
   `max_tool_calls: 8`, `timeout_s: 600`, `max_passage_chars: 1200`,
   `num_ctx: 32768`. It is inert until phase 3, so `config_fingerprint`
@@ -217,6 +218,28 @@ Search count and cap-hit rate come with the agent in phase 3.
   `build_agent_llm` that asserts 2 metered calls and prompt tokens below
   `num_ctx`. The other shows a GGUF model raising `ContextOverflowError`
   instead of truncating.
+
+**Gemini can drive the agent too** (added after phase 1). `GeminiLLMClient`
+implements `chat()`, so `agent.llm` can name `gemini-3.5-flash-lite` or hosted
+`gemma-4-31b-it`. Six probe requests settled what the docs left open:
+
+- Both models return a signed `functionCall`: an `id` plus a
+  `thoughtSignature`, even at `thinking_level: minimal`. It travels back on
+  `ToolCall.signature`. With it stripped, the next request is a 400 ("Function
+  call is missing a thought_signature"), so the round trip is load-bearing.
+- A follow-up request with no tools declared is accepted after function
+  calls. The forced-synthesis turn works as it does on Ollama, without
+  `toolConfig: NONE`.
+- `parametersJsonSchema` accepts the pydantic-derived schema (`anyOf`,
+  `default`, `title`) as-is. The OpenAPI-subset `parameters` field would need
+  a rewrite.
+- Gemma adds a `thought: true` text part before its call. The adapter keeps it
+  out of `content`.
+- A step's results go back as one user turn of `functionResponse` parts,
+  after all of its calls. Interleaving them is a 400.
+
+`tests/test_gemini_live.py` repeats the round trip. It spends 3 requests, so
+it runs only with `RAG_GEMINI_LIVE=1`.
 
 ### 2 — Shared tools
 
@@ -316,9 +339,12 @@ for any default; it is the only agentic variant that runs at 9b speed.
   use? The answer decides whether `timeout_s` is 60 or 600.
 - **Hosted model as a reference point.** Running the phase 4 matrix once with a
   frontier model would separate "the method doesn't help" from "the local
-  model can't drive it". That needs an Anthropic adapter (already a recognised
-  `provider` value) and **spends real API budget**, so it needs explicit
-  sign-off with a cost estimate first.
+  model can't drive it". Gemini Flash-Lite can now drive the agent on the free
+  tier, which costs quota rather than money. An agent turn makes up to 9 calls
+  against the pipeline's 1, though, so a full matrix would take several days of
+  quota; one reference row fits. A frontier model proper still needs an
+  Anthropic adapter and **real API budget**, so explicit sign-off with a cost
+  estimate first.
 - **Does the superlative question belong in the refusal set?** Under the
   pipeline it's unanswerable. An agent with 14 searches could actually answer
   it. It probably moves to the multi-hop set with a real gold answer, which
