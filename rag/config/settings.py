@@ -30,6 +30,8 @@ BASE_KEY = "base"
 # `rag.generation.prompts`. Defined here so the config layer stays a leaf that
 # the generation code imports from, not the other way round.
 PromptStyle = Literal["grounded", "plain"]
+#: Reasoning levels `llm.think` accepts besides on/off (Ollama passes them through).
+ThinkLevel = Literal["low", "medium", "high", "xhigh"]
 
 
 class PathsConfig(BaseModel):
@@ -143,7 +145,9 @@ class LLMConfig(BaseModel):
     # qwen3.5 reasoning models spend `max_tokens` on a hidden "thinking" trace
     # before the real answer; on a long RAG prompt that can exhaust the
     # budget and leave `content` empty. Off by default for reliable answers.
-    think: bool = False
+    # A level string asks a model that supports one for that much reasoning
+    # (the 27b takes low/medium/xhigh); Ollama only.
+    think: bool | ThinkLevel = False
     # Per-request HTTP timeout. The default suits a generation over 5 passages;
     # a judge grading a long multi-hop answer on a shared GPU needs far more
     # (the 9b-vs-27b probe needed 900s for an 11k-token grading prompt).
@@ -453,6 +457,44 @@ class EvalConfig(BaseModel):
     judge: LLMConfig | None = None
 
 
+class AgentConfig(BaseModel):
+    """Agentic retrieval (Milestone 19): the model searches as a tool, as often as it needs.
+
+    Read only when the agent is built, which `chat.mode: agentic` will do once
+    the agent loop lands (Milestone 19 phase 3); until then nothing on the
+    query path uses this section. See `docs/milestone-19-plan.md` for why each
+    guard exists -- every one answers a failure the prototype showed.
+    """
+
+    # The agent's own model; None uses `llm`. The measured split is a 27b for
+    # the loop (it iterates; the 9b stops after one search round) and the 9b
+    # for the condenser, contextualizer and CRAG calls, which gain nothing
+    # from paying 27b latency.
+    llm: LLMConfig | None = None
+    # `react`: the model decides after every result whether to search again.
+    # `planned`: one call plans sub-queries, all run with no model call in
+    # between, then one synthesis call -- built for a model that decomposes
+    # well but won't take a second round on its own.
+    strategy: Literal["react", "planned"] = "react"
+    max_tool_calls: int = Field(
+        default=8,
+        ge=1,
+        description="Searches allowed per turn; at the cap the model gets one tool-free turn to answer",
+    )
+    # A default for measurement, not a decision about interactive use: hard
+    # questions took minutes with the 27b, and a 60 s budget would cut off the
+    # runs phase 4 exists to measure. Whether agentic mode serves the UI (and
+    # so wants ~60 s) is an open question in the plan.
+    timeout_s: float = Field(default=600.0, gt=0, description="Wall-clock budget for one agent turn")
+    # Matches the MCP server's `DEFAULT_MAX_CHARS` (a test holds them equal):
+    # agent prompts grew ~6x over the pipeline's in the prototype.
+    max_passage_chars: int = Field(default=1200, ge=1, description="Per-passage character cap in search results")
+    # Sent on every agent call. Ollama truncates a prompt longer than its
+    # context window silently, and the shipped adapter otherwise sends no
+    # window at all; 32768 is what the prototype ran with.
+    num_ctx: int = Field(default=32768, ge=1024, description="Context window requested for agent calls (Ollama)")
+
+
 class TurnLogConfig(BaseModel):
     """Where per-turn records and user feedback are persisted (Milestone 12).
 
@@ -486,6 +528,7 @@ class RagConfig(BaseModel):
     chat: ChatConfig = ChatConfig()
     crag: CragConfig = CragConfig()
     eval: EvalConfig = EvalConfig()
+    agent: AgentConfig = AgentConfig()
     observability: ObservabilityConfig = ObservabilityConfig()
 
     @model_validator(mode="after")

@@ -36,9 +36,14 @@ def config_fingerprint(config: RagConfig) -> str:
 
     `llm.thinking_level` is excluded only while unset, so adding the field
     didn't re-key every turn already logged; setting it changes the hash.
+
+    `agent` is excluded outright, for now: nothing on the query path reads it
+    until the agent loop lands, so adding the section must not re-key every
+    logged turn either. When `chat.mode: agentic` exists, the agent settings
+    change what a turn does and belong in the hash for that mode.
     """
 
-    exclude: dict[str, Any] = {"observability": True, "eval": True}
+    exclude: dict[str, Any] = {"observability": True, "eval": True, "agent": True}
     if config.llm.thinking_level is None:
         exclude["llm"] = {"thinking_level"}
     payload = config.model_dump_json(exclude=exclude)

@@ -17,8 +17,15 @@ from rag.generation.ollama_llm import OllamaLLMClient
 _KNOWN_BUT_UNIMPLEMENTED = {"anthropic", "openai"}
 
 
-def get_llm_client(config: LLMConfig) -> LLMClient:
-    """Instantiate the `LLMClient` selected by `config.provider`."""
+def get_llm_client(config: LLMConfig, *, num_ctx: int | None = None) -> LLMClient:
+    """Instantiate the `LLMClient` selected by `config.provider`.
+
+    `num_ctx` requests a context window from providers that size it per
+    request (Ollama). It is an argument rather than an `LLMConfig` field
+    because only the agent sets it (`agent.num_ctx`): the pipeline's calls keep
+    the daemon default they were measured with. Hosted providers have a fixed
+    window and ignore it.
+    """
 
     if config.provider == "ollama":
         return OllamaLLMClient(
@@ -27,6 +34,7 @@ def get_llm_client(config: LLMConfig) -> LLMClient:
             temperature=config.temperature,
             max_tokens=config.max_tokens,
             think=config.think,
+            num_ctx=num_ctx,
             timeout=config.timeout_s,
         )
 

@@ -21,12 +21,13 @@ copy the context (`contextvars.copy_context().run`) or its calls go uncounted.
 from __future__ import annotations
 
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
+from typing import overload
 
-from rag.generation.llm import LLMClient, LLMUsage
+from rag.generation.llm import AssistantTurn, LLMClient, LLMUsage, Message, ToolCallingLLM, ToolDefinition
 
 
 @dataclass
@@ -93,3 +94,43 @@ class MeteredLLMClient(LLMClient):
         if meter is not None:
             meter.record(usage, (time.monotonic() - start) * 1000)
         return text, usage
+
+
+class MeteredToolCallingLLM(MeteredLLMClient, ToolCallingLLM):
+    """`MeteredLLMClient` for a client that can also call tools.
+
+    A separate class because the agent checks for `ToolCallingLLM` when it is
+    built: wrapping a tool-calling client in plain `MeteredLLMClient` would hide
+    the capability and fail that check, and leaving it unwrapped would drop the
+    agent's calls from the turn's `llm_calls` and tokens. Each `chat()` call
+    counts as one LLM call, recorded into the same active meter as `generate`.
+    """
+
+    inner: ToolCallingLLM
+
+    def __init__(self, inner: ToolCallingLLM) -> None:
+        super().__init__(inner)
+
+    def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:
+        start = time.monotonic()
+        turn = self.inner.chat(messages, tools)
+        meter = _ACTIVE_METER.get()
+        if meter is not None:
+            meter.record(turn.usage, (time.monotonic() - start) * 1000)
+        return turn
+
+
+@overload
+def metered_client(inner: ToolCallingLLM) -> MeteredToolCallingLLM: ...
+@overload
+def metered_client(inner: LLMClient) -> MeteredLLMClient: ...
+def metered_client(inner: LLMClient) -> MeteredLLMClient:
+    """Wrap `inner` in the metering wrapper that keeps its capabilities.
+
+    Builders call this rather than naming a wrapper, so a tool-calling client
+    stays a `ToolCallingLLM` after metering.
+    """
+
+    if isinstance(inner, ToolCallingLLM):
+        return MeteredToolCallingLLM(inner)
+    return MeteredLLMClient(inner)

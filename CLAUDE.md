@@ -57,7 +57,8 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 
 ## Running things
 
-- Tests: `pytest`. Before finishing, also run what CI runs: `ruff check .` and
+- Tests: `pytest` (`-m "not live"` skips the few that call a local Ollama;
+  they also skip themselves when it isn't running). Before finishing, also run what CI runs: `ruff check .` and
   `mypy --ignore-missing-imports rag` (mypy is scoped to `rag/` on purpose —
   tests use structural fakes that nominal typing flags falsely).
 - Chunk and index health: `python -m rag.cli index-report` (read-only, no

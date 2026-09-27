@@ -9,14 +9,23 @@ error wrapping, response-shape validation) hermetically and fast.
 from __future__ import annotations
 
 import json
+import logging
 
 import httpx
 import pytest
 
 from rag.config.settings import LLMConfig
 from rag.generation.factory import get_llm_client
-from rag.generation.llm import LLMClient
-from rag.generation.ollama_llm import OllamaLLMClient
+from rag.generation.llm import (
+    AssistantTurn,
+    ChatMessage,
+    LLMClient,
+    ToolCall,
+    ToolCallingLLM,
+    ToolDefinition,
+    ToolResult,
+)
+from rag.generation.ollama_llm import ContextOverflowError, OllamaLLMClient
 
 
 def _client_with_handler(handler, **kwargs) -> OllamaLLMClient:
@@ -131,3 +140,218 @@ def test_get_llm_client_factory_passes_the_configured_timeout() -> None:
 
     assert isinstance(client, OllamaLLMClient)
     assert client._client.timeout.read == 900
+
+
+
+def test_get_llm_client_factory_passes_num_ctx_to_ollama_only_when_asked() -> None:
+    default = get_llm_client(LLMConfig(model="m"))
+    assert isinstance(default, OllamaLLMClient) and default.num_ctx is None
+    client = get_llm_client(LLMConfig(model="m"), num_ctx=32768)
+
+    assert isinstance(client, ToolCallingLLM)
+    assert isinstance(client, OllamaLLMClient) and client.num_ctx == 32768
+
+
+# ---------------------------------------------------------------------------
+# OllamaLLMClient.chat (tool calling)
+# ---------------------------------------------------------------------------
+
+SEARCH = ToolDefinition(
+    name="rag_search",
+    description="Search the filings.",
+    parameters={"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]},
+)
+
+#: The shape Ollama 0.34 returned for a real tool call: arguments arrive as an
+#: object, not a JSON string, and the call carries an id.
+TOOL_CALL_RESPONSE = {
+    "model": "test-chat",
+    "message": {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {"id": "call_dt0ma30h", "function": {"index": 0, "name": "rag_search", "arguments": {"query": "Apple revenue 2025"}}}
+        ],
+    },
+    "done": True,
+    "prompt_eval_count": 280,
+    "eval_count": 31,
+}
+
+
+def _recording_handler(sent: list[dict], reply: dict):
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.read()))
+        return httpx.Response(200, json=reply)
+
+    return handler
+
+
+def test_chat_parses_tool_calls_and_usage() -> None:
+    client = _client_with_handler(_recording_handler([], TOOL_CALL_RESPONSE))
+
+    turn = client.chat([ChatMessage("user", "Apple revenue?")], [SEARCH])
+
+    assert turn.content == ""
+    assert turn.tool_calls == (ToolCall(name="rag_search", arguments={"query": "Apple revenue 2025"}, id="call_dt0ma30h"),)
+    assert turn.usage is not None and (turn.usage.prompt_tokens, turn.usage.completion_tokens) == (280, 31)
+    assert turn.thinking is None
+
+
+def test_chat_sends_tools_in_ollama_function_format() -> None:
+    sent: list[dict] = []
+    client = _client_with_handler(_recording_handler(sent, TOOL_CALL_RESPONSE))
+
+    client.chat([ChatMessage("user", "q")], [SEARCH])
+
+    assert sent[0]["tools"] == [
+        {
+            "type": "function",
+            "function": {"name": "rag_search", "description": "Search the filings.", "parameters": SEARCH.parameters},
+        }
+    ]
+
+
+def test_chat_without_tools_omits_the_key_so_the_model_must_answer_in_text() -> None:
+    sent: list[dict] = []
+    client = _client_with_handler(_recording_handler(sent, {"message": {"role": "assistant", "content": "Done."}}))
+
+    turn = client.chat([ChatMessage("user", "q")])
+
+    assert "tools" not in sent[0]
+    assert turn == AssistantTurn(content="Done.", usage=turn.usage)
+    assert turn.tool_calls == ()
+
+
+def test_chat_round_trips_a_tool_conversation_in_ollama_message_format() -> None:
+    sent: list[dict] = []
+    client = _client_with_handler(_recording_handler(sent, {"message": {"role": "assistant", "content": "Answer [1]."}}))
+    call = ToolCall(name="rag_search", arguments={"query": "Apple revenue 2025"}, id="call_1")
+
+    client.chat(
+        [
+            ChatMessage("system", "Search first."),
+            ChatMessage("user", "Apple revenue?"),
+            AssistantTurn(content="", tool_calls=(call,), thinking="I should search."),
+            ToolResult(call=call, content="Passage [1] ..."),
+        ],
+        [SEARCH],
+    )
+
+    assert sent[0]["messages"] == [
+        {"role": "system", "content": "Search first."},
+        {"role": "user", "content": "Apple revenue?"},
+        {
+            "role": "assistant",
+            "content": "",
+            "thinking": "I should search.",
+            "tool_calls": [{"id": "call_1", "function": {"name": "rag_search", "arguments": {"query": "Apple revenue 2025"}}}],
+        },
+        {"role": "tool", "tool_name": "rag_search", "content": "Passage [1] ..."},
+    ]
+
+
+def test_chat_returns_the_reasoning_trace_when_thinking() -> None:
+    reply = {"message": {"role": "assistant", "content": "Answer.", "thinking": "Let me compare."}}
+    sent: list[dict] = []
+    client = _client_with_handler(_recording_handler(sent, reply), think="low")
+
+    turn = client.chat([ChatMessage("user", "q")])
+
+    assert turn.thinking == "Let me compare."
+    assert sent[0]["think"] == "low"
+
+
+def test_chat_sends_num_ctx_and_turns_off_truncation_when_set() -> None:
+    sent: list[dict] = []
+    client = _client_with_handler(_recording_handler(sent, TOOL_CALL_RESPONSE), num_ctx=32768, max_tokens=256)
+
+    client.chat([ChatMessage("user", "q")], [SEARCH])
+
+    assert sent[0]["options"] == {"temperature": 0.2, "num_predict": 256, "num_ctx": 32768}
+    assert sent[0]["truncate"] is False
+
+
+def test_requests_without_num_ctx_are_unchanged() -> None:
+    # The pipeline's measured results were produced with neither key.
+    sent: list[dict] = []
+    client = _client_with_handler(_recording_handler(sent, {"message": {"role": "assistant", "content": "ok"}}))
+
+    client.generate("q")
+    client.chat([ChatMessage("user", "q")])
+
+    for body in sent:
+        assert "num_ctx" not in body["options"] and "truncate" not in body
+
+
+def test_context_overflow_raises_a_distinct_error() -> None:
+    # Ollama's reply with `truncate: false`, verbatim from 0.34.4.
+    overflow = (
+        '{"error":"{\\"error\\":{\\"code\\":400,\\"message\\":\\"request (6921 tokens) exceeds the available '
+        'context size (4096 tokens), try increasing it\\",\\"type\\":\\"exceed_context_size_error\\"}}"}'
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, text=overflow)
+
+    client = _client_with_handler(handler, num_ctx=4096)
+
+    with pytest.raises(ContextOverflowError, match="4096-token context window"):
+        client.chat([ChatMessage("user", "q")])
+
+
+def test_other_bad_requests_stay_generic_errors() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"error": "model 'x' not found"})
+
+    client = _client_with_handler(handler, num_ctx=4096)
+
+    with pytest.raises(RuntimeError, match="Failed to get a chat completion") as info:
+        client.chat([ChatMessage("user", "q")])
+    assert not isinstance(info.value, ContextOverflowError)
+
+
+@pytest.mark.parametrize(
+    "tool_call",
+    [
+        {"function": {"name": "rag_search", "arguments": '{"query": "x"}'}},  # arguments as a string
+        {"function": {"arguments": {"query": "x"}}},  # no name
+        {"name": "rag_search"},  # no function object
+    ],
+)
+def test_chat_rejects_a_malformed_tool_call(tool_call: dict) -> None:
+    reply = {"message": {"role": "assistant", "content": "", "tool_calls": [tool_call]}}
+    client = _client_with_handler(_recording_handler([], reply))
+
+    with pytest.raises(RuntimeError, match="Unexpected tool call shape"):
+        client.chat([ChatMessage("user", "q")], [SEARCH])
+
+
+def test_chat_rejects_a_response_without_content() -> None:
+    client = _client_with_handler(_recording_handler([], {"unexpected": "shape"}))
+
+    with pytest.raises(RuntimeError, match="Unexpected response shape"):
+        client.chat([ChatMessage("user", "q")])
+
+
+@pytest.mark.parametrize(("prompt_tokens", "warns"), [(29_491, False), (29_492, True), (32_768, True)])
+def test_warns_when_a_prompt_nears_num_ctx(prompt_tokens: int, warns: bool, caplog: pytest.LogCaptureFixture) -> None:
+    # An early warning before the conversation's next prompt overflows.
+    # 90% of 32768 is 29491.2.
+    reply = {"message": {"role": "assistant", "content": "ok"}, "prompt_eval_count": prompt_tokens, "eval_count": 1}
+    client = _client_with_handler(_recording_handler([], reply), num_ctx=32768)
+
+    with caplog.at_level(logging.WARNING, logger="rag.generation.ollama_llm"):
+        client.chat([ChatMessage("user", "q")])
+
+    assert ("will raise ContextOverflowError" in caplog.text) is warns
+
+
+def test_no_context_warning_without_num_ctx(caplog: pytest.LogCaptureFixture) -> None:
+    reply = {"message": {"role": "assistant", "content": "ok"}, "prompt_eval_count": 10**6}
+    client = _client_with_handler(_recording_handler([], reply))
+
+    with caplog.at_level(logging.WARNING, logger="rag.generation.ollama_llm"):
+        client.generate("q")
+
+    assert caplog.text == ""

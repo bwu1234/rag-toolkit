@@ -14,10 +14,11 @@ from rag.config.settings import RagConfig
 from rag.generation.chat_service import ChatService
 from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryRewriter
 from rag.generation.factory import get_llm_client
+from rag.generation.llm import ToolCallingLLM
 from rag.generation.query_rewriter import QueryCondenser
 from rag.observability.factory import config_fingerprint
 from rag.observability.sink import TurnSink
-from rag.observability.usage import MeteredLLMClient
+from rag.observability.usage import metered_client
 from rag.retrieval.builder import build_retriever
 
 
@@ -40,7 +41,7 @@ def build_chat_service(
 
     # Wrapped once, before it's shared, so every component's calls -- not just
     # generation's -- are counted into the turn's `llm_calls` and tokens.
-    llm_client = MeteredLLMClient(get_llm_client(config.llm))
+    llm_client = metered_client(get_llm_client(config.llm))
     # Share the one client: query expansion (HyDE / multi-query) generates
     # text too, and it should talk to the same daemon over the same connection
     # rather than opening a parallel one.
@@ -83,3 +84,24 @@ def build_chat_service(
             "config_fingerprint": config_fingerprint(config),
         },
     )
+
+
+def build_agent_llm(config: RagConfig) -> ToolCallingLLM:
+    """The metered, tool-calling client the agent drives: `agent.llm`, else `llm`.
+
+    Its own client even when it falls back to `llm`'s model, because agent
+    calls request `agent.num_ctx` and the pipeline's don't. Raises here, at
+    build time, when the selected provider's adapter can't call tools -- not on
+    the first agent turn.
+    """
+
+    llm_config = config.agent.llm or config.llm
+    client = metered_client(get_llm_client(llm_config, num_ctx=config.agent.num_ctx))
+    if not isinstance(client, ToolCallingLLM):
+        source = "agent.llm" if config.agent.llm is not None else "llm (agent.llm is unset)"
+        raise ValueError(
+            f"The agent needs a model that can call tools, but {source} selects provider "
+            f"{llm_config.provider!r}, whose adapter doesn't implement ToolCallingLLM. "
+            "Set agent.llm to an ollama model."
+        )
+    return client
