@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from rag.config.settings import DEFAULT_CONFIG_PATH, RagConfig, _deep_merge, load_config
+from rag.config.settings import DEFAULT_CONFIG_PATH, GEMINI_BASE_URL, RagConfig, _deep_merge, load_config
 
 
 def test_default_config_has_expected_models(default_config: RagConfig) -> None:
@@ -194,6 +194,27 @@ def test_vanilla_config_inherits_everything_it_does_not_change() -> None:
     }
     expected = RagConfig.model_validate(_deep_merge(default.model_dump(), changed))
     assert vanilla == expected
+
+
+@pytest.mark.parametrize("version", ["3.1", "3.5"])
+def test_flash_lite_configs_change_only_the_generator(version: str) -> None:
+    default = load_config()
+    cfg = load_config(DEFAULT_CONFIG_PATH.parent / f"gemini-{version}-flash-lite.yaml")
+
+    assert cfg.llm.provider == "gemini"
+    assert cfg.llm.model == f"gemini-{version}-flash-lite"
+    # The inherited Ollama URL must not survive the provider switch.
+    assert cfg.llm.base_url == GEMINI_BASE_URL
+    assert (cfg.llm.requests_per_minute, cfg.llm.tokens_per_minute) == (15, 250_000)
+    assert cfg.llm.thinking_level == "minimal"
+    assert cfg.model_dump(exclude={"llm"}) == default.model_dump(exclude={"llm"})
+
+
+def test_flash_lite_configs_differ_only_in_the_model() -> None:
+    old, new = (
+        load_config(DEFAULT_CONFIG_PATH.parent / f"gemini-{v}-flash-lite.yaml") for v in ("3.1", "3.5")
+    )
+    assert old.model_copy(update={"llm": old.llm.model_copy(update={"model": new.llm.model})}) == new
 
 
 # ---------------------------------------------------------------------------

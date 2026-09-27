@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from typing import Any
 
 from rag.config.settings import REPO_ROOT, RagConfig, TurnLogConfig
 from rag.observability.sink import JsonlTurnSink, TurnSink
@@ -32,7 +33,13 @@ def config_fingerprint(config: RagConfig) -> str:
     `observability` and `eval` are excluded: where the log goes and which judge
     the eval runners use don't change a single answer, and including them would
     split identical-behaviour turns into different buckets.
+
+    `llm.thinking_level` is excluded only while unset, so adding the field
+    didn't re-key every turn already logged; setting it changes the hash.
     """
 
-    payload = config.model_dump_json(exclude={"observability", "eval"})
+    exclude: dict[str, Any] = {"observability": True, "eval": True}
+    if config.llm.thinking_level is None:
+        exclude["llm"] = {"thinking_level"}
+    payload = config.model_dump_json(exclude=exclude)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]

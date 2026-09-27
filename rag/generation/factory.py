@@ -40,6 +40,7 @@ def get_llm_client(config: LLMConfig) -> LLMClient:
             timeout=config.timeout_s,
             requests_per_minute=config.requests_per_minute,
             tokens_per_minute=config.tokens_per_minute,
+            thinking_level=config.thinking_level,
         )
 
     if config.provider in _KNOWN_BUT_UNIMPLEMENTED:

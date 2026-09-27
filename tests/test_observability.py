@@ -6,6 +6,7 @@ Chroma -- in keeping with the rest of the suite.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from rag.api.main import app
 from rag.api.routes.chat import get_chat_service, get_turn_sink
-from rag.config.settings import RagConfig, TurnLogConfig
+from rag.config.settings import LLMConfig, RagConfig, TurnLogConfig
 from rag.events import EventSink, PipelineEvent
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
@@ -373,6 +374,19 @@ def test_config_fingerprint_ignores_where_logs_go_but_not_behaviour() -> None:
     other_top_k = base.model_copy(update={"retrieval": base.retrieval.model_copy(update={"top_k": 7})})
     assert config_fingerprint(base) == config_fingerprint(moved_log)
     assert config_fingerprint(base) != config_fingerprint(other_top_k)
+
+
+def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None:
+    gemini = LLMConfig(provider="gemini", model="gemini-3.5-flash-lite")
+    unset = RagConfig(llm=gemini)
+    as_before = hashlib.sha256(
+        unset.model_dump_json(exclude={"observability": True, "eval": True, "llm": {"thinking_level"}}).encode()
+    ).hexdigest()[:12]
+    minimal = RagConfig(llm=gemini.model_copy(update={"thinking_level": "minimal"}))
+
+    # Unset hashes as it did before the field existed, so logged turns keep their key.
+    assert config_fingerprint(unset) == as_before
+    assert config_fingerprint(minimal) != config_fingerprint(unset)
 
 
 # ---------------------------------------------------------------------------
