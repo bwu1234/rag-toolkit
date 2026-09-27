@@ -9,6 +9,8 @@
 # (the condenser); CRAG and query expansion would add more and stay off. The
 # client paces under the per-minute limits; nothing yet stops a caller from
 # spending the whole day, so don't point an eval at this without a --limit.
+# Evals grade with the local judge below, so they spend Gemini requests on
+# generation only.
 # Prompts and answers on the free tier may be read by Google.
 #
 # gemini-3.5-flash-lite.yaml is the same file with the other model, so the
@@ -29,3 +31,16 @@ llm:
   # files so a comparison isn't a comparison of model defaults. The client
   # raises, naming the fix, if thinking ever uses the whole budget.
   thinking_level: minimal
+
+eval:
+  # The fixed Milestone 19 judge, run locally. Without this, config.yaml's
+  # `judge: null` would have Flash-Lite grade its own answers (biased, and a
+  # second Gemini call per sample). Its verdicts compare with every
+  # gemma4:31b-mlx-judged baseline. Per run, --judge-provider/--judge-model
+  # override it.
+  judge:
+    provider: ollama
+    model: gemma4:31b-mlx
+    base_url: http://localhost:11434
+    temperature: 0.0
+    timeout_s: 900

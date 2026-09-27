@@ -222,8 +222,10 @@ eval:
   # null judges with `llm` -- the generator grading itself. That reproduces
   # every result recorded before Milestone 19, but it makes a generator
   # comparison meaningless (swap the generator and the judge swaps too), so the
-  # runners warn while it's null. Override per run with --judge-model. The
-  # fixed judge the Milestone 19 baselines use:
+  # runners warn while it's null. Override per run with --judge-model, and add
+  # --judge-provider when the judge's provider differs from the one it
+  # inherits (a local judge for a Gemini generator). The fixed judge the
+  # Milestone 19 baselines use:
   #
   #   judge:
   #     provider: ollama

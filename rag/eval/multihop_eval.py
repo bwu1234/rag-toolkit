@@ -50,7 +50,7 @@ from pathlib import Path
 from typing import Any
 
 from rag.config.settings import load_config
-from rag.eval.answer_eval import _parse_verdict, build_judge, subsample
+from rag.eval.answer_eval import _parse_verdict, add_judge_arguments, build_judge, subsample
 from rag.eval.dataset import EvalDataset, EvalSample, ExpectedSpan
 from rag.eval.relevance import unmatched_spans
 from rag.generation.builder import build_chat_service
@@ -354,8 +354,7 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="Corpus to evaluate against, overriding corpora.active.")
     parser.add_argument("--limit", type=int, default=0, metavar="N",
                         help="Evaluate an evenly-spaced subset of N samples.")
-    parser.add_argument("--judge-model", default=None, metavar="MODEL",
-                        help="Judge with this model instead of eval.judge / the generator.")
+    add_judge_arguments(parser)
     parser.add_argument("--verbose", "-v", action="store_true")
     return parser
 
@@ -371,8 +370,8 @@ def main(argv: list[str] | None = None) -> int:
     dataset = subsample(EvalDataset.load(eval_path), args.limit)
 
     config = load_config(args.config)
+    judge = build_judge(config, args.judge_model, args.judge_provider)
     chat_service = build_chat_service(config, corpora=args.corpus)
-    judge = build_judge(config, args.judge_model)
 
     logger.info("Running multi-hop eval on %d sample(s)", len(dataset))
     report = run_multihop_eval(dataset, chat_service, judge)

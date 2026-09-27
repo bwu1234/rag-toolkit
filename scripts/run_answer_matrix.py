@@ -90,6 +90,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from rag.config.settings import LLMConfig, RagConfig, load_config  # noqa: E402
 from rag.eval.answer_eval import (  # noqa: E402
     AnswerSampleResult,
+    add_judge_arguments,
     resolve_judge_config,
     run_answer_eval,
     subsample,
@@ -388,9 +389,7 @@ def main() -> int:
     parser.add_argument("--multihop", type=Path, default=DEFAULT_MULTIHOP)
     parser.add_argument("--sets", default=",".join(SETS),
                         help=f"Comma-separated subset of {', '.join(SETS)} to run.")
-    parser.add_argument("--judge-model", default=None, metavar="MODEL",
-                        help="Judge with this model instead of eval.judge / the generator. "
-                             "Fixed across all variants.")
+    add_judge_arguments(parser, note=" Fixed across all variants.")
     parser.add_argument("--limit", type=int, default=40,
                         help="Answerable samples to evaluate (evenly spaced). 0 = all.")
     parser.add_argument("--results-dir", type=Path, default=Path("data/eval/results"))
@@ -416,7 +415,7 @@ def main() -> int:
         parser.error(f"unknown set(s): {', '.join(sorted(unknown))}")
 
     base = load_config(args.config)
-    judge_config = resolve_judge_config(base, args.judge_model)
+    judge_config = resolve_judge_config(base, args.judge_model, args.judge_provider)
     judge = get_llm_client(judge_config)
     datasets = {
         "answerable": subsample(EvalDataset.load(args.answerable), args.limit),

@@ -13,6 +13,7 @@ Usage::
     python -m rag.eval.answer_eval --eval-set path/to/set.json
     python -m rag.eval.answer_eval --config path/to/config.yaml
     python -m rag.eval.answer_eval --judge-model gemma4:31b-mlx
+    python -m rag.eval.answer_eval --judge-provider gemini --judge-model gemma-4-31b-it
 
 The judge prompt is deliberately minimal: it asks the LLM to output exactly
 ``PASS`` or ``FAIL`` (optionally followed by a brief reason on the same line)
@@ -46,10 +47,10 @@ import sys
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, get_args
 from pathlib import Path
 
-from rag.config.settings import LLMConfig, RagConfig, load_config
+from rag.config.settings import LLMConfig, LLMProvider, RagConfig, load_config
 from rag.eval.dataset import EvalDataset, EvalSample
 from rag.eval.relevance import sample_unmatched_spans
 from rag.generation.builder import build_chat_service
@@ -109,8 +110,17 @@ def _refusal_judge_prompt(query: str, criteria: str, actual: str) -> str:
     )
 
 
-def resolve_judge_config(config: RagConfig, model: str | None = None) -> LLMConfig:
-    """The LLM that grades answers: `eval.judge`, else the generator; `model` overrides its name.
+def resolve_judge_config(
+    config: RagConfig, model: str | None = None, provider: LLMProvider | None = None
+) -> LLMConfig:
+    """The LLM that grades answers: `eval.judge`, else the generator; `model` / `provider` override it.
+
+    Overriding only `model` keeps every other judge setting. Overriding
+    `provider` to a different one starts a fresh config instead, keeping only
+    the provider-neutral settings (temperature, token cap, timeout): the old
+    provider's endpoint, rate limits and reasoning knobs mean nothing to the
+    new one. Without that, `--judge-model gemma4:31b-mlx` on a Gemini
+    generator config would send an Ollama tag to the Gemini API.
 
     Warns when the result is the generator. A model judging its own answers is
     the pre-Milestone 19 default, kept so old results reproduce, but it biases
@@ -118,9 +128,29 @@ def resolve_judge_config(config: RagConfig, model: str | None = None) -> LLMConf
     self-judged versus 0.900 under a separate judge on the same 40 samples
     (docs/measured-results.md).
     """
-    judge = (config.eval.judge or config.llm).model_copy()
-    if model:
-        judge.model = model
+    base = config.eval.judge or config.llm
+    if provider is not None and provider != base.provider:
+        if not model:
+            raise ValueError(
+                f"Switching the judge to provider {provider!r} needs a model for it too (--judge-model)"
+            )
+        judge = LLMConfig(
+            provider=provider,
+            model=model,
+            temperature=base.temperature,
+            max_tokens=base.max_tokens,
+            timeout_s=base.timeout_s,
+        )
+    else:
+        judge = base.model_copy(update={"model": model} if model else {})
+    if judge.provider == "gemini" and ":" in judge.model:
+        # A colon can't be in a Gemini model id (it would break the
+        # `models/{model}:generateContent` path); it is how Ollama writes tags.
+        raise ValueError(
+            f"Judge model {judge.model!r} looks like an Ollama tag, but the judge's provider is gemini "
+            f"(inherited from {'eval.judge' if config.eval.judge else 'llm'}). "
+            "Pass --judge-provider ollama, or set eval.judge in the config."
+        )
     if (judge.provider, judge.model) == (config.llm.provider, config.llm.model):
         logger.warning(
             "Judge and generator are the same model (%s:%s): scores are self-graded "
@@ -130,11 +160,22 @@ def resolve_judge_config(config: RagConfig, model: str | None = None) -> LLMConf
     return judge
 
 
-def build_judge(config: RagConfig, model: str | None = None) -> LLMClient:
+def build_judge(config: RagConfig, model: str | None = None, provider: LLMProvider | None = None) -> LLMClient:
     """Instantiate the judge chosen by :func:`resolve_judge_config`."""
-    judge = resolve_judge_config(config, model)
+    judge = resolve_judge_config(config, model, provider)
     logger.info("Judge: %s:%s", judge.provider, judge.model)
     return get_llm_client(judge)
+
+
+def add_judge_arguments(parser: argparse.ArgumentParser, *, note: str = "") -> None:
+    """`--judge-model` / `--judge-provider`, shared by every runner that grades answers."""
+    parser.add_argument("--judge-model", default=None, metavar="MODEL",
+                        help="Judge with this model instead of eval.judge (or the generator, "
+                             "if eval.judge is unset). Other judge settings are kept." + note)
+    parser.add_argument("--judge-provider", default=None, choices=get_args(LLMProvider),
+                        help="The judge's provider, when it differs from eval.judge's (or the "
+                             "generator's) -- e.g. a local judge for a hosted generator. Needs "
+                             "--judge-model; only temperature, max_tokens and timeout carry over.")
 
 
 def judge_for(sample: EvalSample) -> tuple[str, Callable[[str, str, str], str]]:
@@ -368,9 +409,7 @@ def _build_parser() -> argparse.ArgumentParser:
                              "the expensive one (generation + judge per sample, plus one call "
                              "per passage when crag.grade_documents is on), so a subset is "
                              "often the only affordable way to compare configurations.")
-    parser.add_argument("--judge-model", default=None, metavar="MODEL",
-                        help="Judge with this model instead of eval.judge (or the generator, "
-                             "if eval.judge is unset). Other judge settings are kept.")
+    add_judge_arguments(parser)
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Print per-sample results in addition to aggregate metrics")
     return parser
@@ -418,9 +457,9 @@ def main(argv: list[str] | None = None) -> int:
         config.llm.provider,
         config.llm.model,
     )
+    # Before the chat service, so a bad judge fails before anything is loaded.
+    judge_llm = build_judge(config, args.judge_model, args.judge_provider)
     chat_service = build_chat_service(config, corpora=args.corpus)
-
-    judge_llm = build_judge(config, args.judge_model)
 
     logger.info("Running answer eval on %d sample(s)", len(dataset))
     report = run_answer_eval(dataset, chat_service, judge_llm)
