@@ -58,7 +58,7 @@ def fake_retriever(monkeypatch: pytest.MonkeyPatch) -> _FakeRetriever:
     def _build(config, llm_client=None, corpora=None):  # type: ignore[no-untyped-def]
         return retriever
 
-    monkeypatch.setattr("rag.mcp.tools.build_retriever", _build)
+    monkeypatch.setattr("rag.tools.build_retriever", _build)
     return retriever
 
 
@@ -184,7 +184,7 @@ def test_retriever_is_built_once_and_reused(tools: RagTools, monkeypatch: pytest
         calls["n"] += 1
         return retriever
 
-    monkeypatch.setattr("rag.mcp.tools.build_retriever", _build)
+    monkeypatch.setattr("rag.tools.build_retriever", _build)
 
     tools.search("one")
     tools.search("two")
