@@ -50,7 +50,7 @@ from pathlib import Path
 
 from rag.config.settings import LLMConfig, RagConfig, load_config
 from rag.eval.dataset import EvalDataset, EvalSample
-from rag.eval.relevance import unmatched_spans
+from rag.eval.relevance import sample_unmatched_spans
 from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatService
 from rag.generation.factory import get_llm_client
@@ -249,7 +249,7 @@ def run_answer_eval(
             system=judge_system,
         )
         verdict = _parse_verdict(judge_out)
-        passages = [citation.text for citation in chat_answer.citations]
+        passages = [(citation.document_id, citation.text) for citation in chat_answer.citations]
 
         results.append(
             AnswerSampleResult(
@@ -263,7 +263,7 @@ def run_answer_eval(
                 latency_s=latency,
                 retrieval_rounds=chat_answer.retrieval_attempts,
                 evidence_total=len(sample.expected_spans),
-                missing_spans=unmatched_spans(sample.expected_spans, passages),
+                missing_spans=sample_unmatched_spans(sample, passages),
             )
         )
 

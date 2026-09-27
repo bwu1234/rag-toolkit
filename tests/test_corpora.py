@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from rag.cli import _load_selected_corpora
+from rag.ingestion.corpora import load_selected_corpora
 from rag.config.settings import CorporaConfig, CorpusConfig, RagConfig, VectorStoreConfig
 from rag.retrieval.sparse import BM25_INDEX_FILENAME, bm25_index_path
 
@@ -177,7 +177,7 @@ def test_pooling_distinct_documents_loads_all_of_them(tmp_path: Path) -> None:
         beta=_corpus_at(tmp_path, "beta", ["b.md"]),
     )
 
-    selection, documents = _load_selected_corpora(config, ["alpha", "beta"])
+    selection, documents = load_selected_corpora(config, ["alpha", "beta"])
 
     assert selection.is_pooled
     assert sorted(d.id for d in documents) == ["a.md", "b.md"]
@@ -193,7 +193,7 @@ def test_pooling_corpora_that_share_a_filename_raises(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValueError, match="appears in both corpus"):
-        _load_selected_corpora(config, ["alpha", "beta"])
+        load_selected_corpora(config, ["alpha", "beta"])
 
 
 def test_same_filename_is_fine_when_corpora_are_used_in_isolation(tmp_path: Path) -> None:
@@ -203,5 +203,5 @@ def test_same_filename_is_fine_when_corpora_are_used_in_isolation(tmp_path: Path
         beta=_corpus_at(tmp_path, "beta", ["faq.md"]),
     )
 
-    assert len(_load_selected_corpora(config, ["alpha"])[1]) == 1
-    assert len(_load_selected_corpora(config, ["beta"])[1]) == 1
+    assert len(load_selected_corpora(config, ["alpha"])[1]) == 1
+    assert len(load_selected_corpora(config, ["beta"])[1]) == 1

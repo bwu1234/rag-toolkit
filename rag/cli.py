@@ -7,21 +7,28 @@ and reads paths/parameters from the loaded `RagConfig` -- never hardcoded.
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import json
 import logging
 from collections import Counter
 
-from rag.chunking.chunkers import get_chunker
 from rag.chunking.context_cache import ContextCache, context_cache_path
 from rag.chunking.contextualizer import ChunkContextualizer
-from rag.chunking.models import Chunk
+from rag.chunking.models import Chunk, content_hash
 from rag.config.settings import CorpusSelection, RagConfig, load_config
 from rag.embedding.factory import get_embedder
 from rag.generation.builder import build_chat_service
 from rag.generation.factory import get_llm_client
-from rag.index_manifest import IndexManifestMismatch, index_manifest_path, prepare_for_indexing
-from rag.ingestion.cleaners import clean_documents, clean_text
-from rag.ingestion.loaders import load_corpus
-from rag.ingestion.models import Document
+from rag.index_manifest import (
+    IndexManifest,
+    IndexManifestMismatch,
+    index_manifest_path,
+    prepare_for_indexing,
+    read_index_manifest,
+)
+from rag.index_report import IndexState, build_report, format_report
+from rag.ingestion.cleaners import clean_text
+from rag.ingestion.corpora import chunk_selected_corpora, load_selected_corpora
 from rag.logging_config import configure_logging
 from rag.observability.factory import get_turn_sink, turn_log_path
 from rag.observability.sink import read_turn_log, turns_with_feedback
@@ -37,42 +44,6 @@ logger = logging.getLogger(__name__)
 _INDEX_BATCH_SIZE = 64
 
 
-def _load_selected_corpora(
-    config: RagConfig, corpora: list[str] | None
-) -> tuple[CorpusSelection, list[Document]]:
-    """Load every document in the selected corpora, refusing id collisions.
-
-    `Document.id` is a corpus-relative path, so pooling two corpora that each
-    contain `faq.txt` produces two documents with the same id -- and therefore
-    chunks with the same id, which the vector store would silently upsert over
-    one another. The index would come out short by however many documents
-    collided, with nothing reporting it.
-
-    Raising is the right response rather than namespacing ids by corpus:
-    namespacing would change every `document_id` in the corpus, invalidating the
-    `expected_doc_ids` already recorded in the eval sets, to fix a problem the
-    current corpora do not have.
-    """
-
-    selection = config.corpus_selection(corpora)
-    documents: list[Document] = []
-    origin: dict[str, str] = {}
-
-    for name, directory in zip(selection.names, selection.document_dirs):
-        logger.info("Loading corpus %r from %s", name, directory)
-        for document in load_corpus(directory):
-            if document.id in origin:
-                raise ValueError(
-                    f"Document id {document.id!r} appears in both corpus "
-                    f"{origin[document.id]!r} and {name!r}. Pooled corpora must have "
-                    "distinct document ids -- rename the file in one of them."
-                )
-            origin[document.id] = name
-            documents.append(document)
-
-    return selection, documents
-
-
 def _cmd_ingest(args: argparse.Namespace) -> None:
     """Load every supported file in the corpus directory and print summary stats.
 
@@ -83,7 +54,7 @@ def _cmd_ingest(args: argparse.Namespace) -> None:
     """
 
     config = load_config(args.config)
-    selection, documents = _load_selected_corpora(config, args.corpus)
+    selection, documents = load_selected_corpora(config, args.corpus)
 
     if not documents:
         logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
@@ -116,14 +87,10 @@ def _cmd_chunk(args: argparse.Namespace) -> None:
     """
 
     config = load_config(args.config)
-    _selection, documents = _load_selected_corpora(config, args.corpus)
-    documents = clean_documents(documents)
+    _selection, documents, chunks = chunk_selected_corpora(config, args.corpus)
     if not documents:
         logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
         return
-
-    chunker = get_chunker(config.chunking)
-    chunks = chunker.chunk(documents)
     if not chunks:
         logger.warning("No chunks produced -- are the documents empty?")
         return
@@ -160,14 +127,10 @@ def _cmd_index(args: argparse.Namespace) -> None:
     config = load_config(args.config)
     paths = config.paths.resolved()
 
-    selection, documents = _load_selected_corpora(config, args.corpus)
-    documents = clean_documents(documents)
+    selection, documents, chunks = chunk_selected_corpora(config, args.corpus)
     if not documents:
         logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
         return
-
-    chunker = get_chunker(config.chunking)
-    chunks = chunker.chunk(documents)
     if not chunks:
         logger.warning("No chunks produced -- are the documents empty?")
         return
@@ -226,15 +189,13 @@ def _cmd_index(args: argparse.Namespace) -> None:
         if context_cache is not None:
             print(f"Context cache: {len(context_cache)} entry(s) at {context_cache.path.name}")
 
-    import hashlib
-
     for start in range(0, len(chunks), _INDEX_BATCH_SIZE):
         batch = chunks[start : start + _INDEX_BATCH_SIZE]
 
         # Compute a stable content hash per chunk so we can skip re-embedding
         # chunks whose text hasn't changed since the last index run.
         batch_ids = [c.id for c in batch]
-        new_hashes = {c.id: hashlib.sha256(c.text.encode("utf-8")).hexdigest() for c in batch}
+        new_hashes = {c.id: content_hash(c.text) for c in batch}
 
         # Ask the store which ids already exist and what metadata they carry.
         existing = store.get_metadatas(batch_ids)
@@ -307,6 +268,75 @@ def _cmd_index(args: argparse.Namespace) -> None:
     print(
         f"\nIndex now holds {store.count()} vector chunk(s) "
         f"+ {sparse.count()} BM25 chunk(s) (dimensions={embedder.dimensions})"
+    )
+
+
+def _cmd_index_report(args: argparse.Namespace) -> None:
+    """Describe what the configured chunker makes of the corpus, and whether the index matches.
+
+    Read-only, and needs no embedder or LLM: sizes and boundary defects come
+    from chunking the corpus the way `index` would, and the index section only
+    reads ids, stored hashes and the manifest. Run it before and after a
+    chunking change to see what the change did before paying for a reindex.
+    """
+
+    config = load_config(args.config)
+    selection, documents, chunks = chunk_selected_corpora(config, args.corpus)
+    report = build_report(
+        corpus=selection.describe(),
+        chunking={
+            "strategy": config.chunking.strategy,
+            "chunk_size": config.chunking.chunk_size,
+            "chunk_overlap": config.chunking.chunk_overlap,
+        },
+        documents=documents,
+        chunks=chunks,
+        min_chars=args.min_chars,
+        max_chars=args.max_chars or config.chunking.chunk_size,
+        index=_index_state(config, selection, chunks),
+    )
+    if args.json:
+        print(json.dumps(dataclasses.asdict(report), indent=2))
+    else:
+        print(format_report(report))
+
+
+def _index_state(config: RagConfig, selection: CorpusSelection, chunks: list[Chunk]) -> IndexState | None:
+    """Compare the built index for `selection` with `chunks`, or None if it isn't built.
+
+    Keyed on the BM25 file because it is always written alongside the vector
+    collection, and checking it first keeps this command read-only: opening the
+    vector store would create an empty collection where there was none.
+    """
+
+    sparse_path = bm25_index_path(selection.index_dir, selection.slug)
+    if not sparse_path.exists():
+        return None
+    sparse = BM25Index(sparse_path)
+    store = get_vector_store(config.vector_store, selection.index_dir, collection_name=selection.collection_name)
+
+    corpus_ids = {chunk.id for chunk in chunks}
+    vector_ids, sparse_ids = store.ids(), sparse.ids()
+    stored = store.get_metadatas(sorted(corpus_ids & vector_ids))
+    changed = sum(
+        1 for chunk in chunks
+        if chunk.id in stored and stored[chunk.id].get("content_hash") != content_hash(chunk.text)
+    )
+
+    manifest = read_index_manifest(index_manifest_path(selection.index_dir, selection.slug))
+    differences = (
+        manifest.differences(IndexManifest.from_config(config), sections=("embedding", "contextual"))
+        if manifest is not None
+        else []
+    )
+    return IndexState(
+        manifest=dataclasses.asdict(manifest) if manifest is not None else None,
+        manifest_differences=differences,
+        vector_chunks=len(vector_ids),
+        sparse_chunks=len(sparse_ids),
+        missing=len(corpus_ids - (vector_ids & sparse_ids)),
+        stale=len((vector_ids | sparse_ids) - corpus_ids),
+        changed=changed,
     )
 
 
@@ -531,6 +561,22 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     index.set_defaults(func=_cmd_index)
+
+    index_report = subparsers.add_parser(
+        "index-report",
+        help="Chunk-size, table-split and duplicate stats for the corpus, and whether the index matches it",
+        parents=[corpus_args],
+    )
+    index_report.add_argument(
+        "--min-chars", type=int, default=100, metavar="N",
+        help="Count chunks shorter than N characters (default: 100)",
+    )
+    index_report.add_argument(
+        "--max-chars", type=int, default=None, metavar="N",
+        help="Count chunks longer than N characters (default: chunking.chunk_size)",
+    )
+    index_report.add_argument("--json", action="store_true", help="Print the report as JSON")
+    index_report.set_defaults(func=_cmd_index_report)
 
     retrieve = subparsers.add_parser("retrieve", help="Retrieve and rerank chunks for a query against the existing index", parents=[corpus_args])
     retrieve.add_argument("query", help="The question or search query to retrieve chunks for")

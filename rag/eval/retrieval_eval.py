@@ -25,8 +25,13 @@ Metrics reported
   distinguishes "found it at rank 1" from "found it at rank 5", and the only
   one that reads span grades.
 
-Results are grouped by matching mode (span vs document) when a set mixes them,
-because the two are not comparable — see :mod:`rag.eval.relevance`.
+Results are grouped by matching mode (span, span_and_document, document) when a
+set mixes them, because they are not comparable — see :mod:`rag.eval.relevance`.
+
+Every run also reports **unmatchable spans**: expected spans that no chunk the
+configured chunker makes of the corpus contains.  Those samples score as misses
+whatever retrieval does, so a chunker that cuts answers in two is visibly
+penalized rather than silently scoring lower.
 
 All metrics are computed over whatever ``retrieval.rerank_top_k`` results the
 Retriever returns (i.e. after any configured reranking pass).
@@ -40,8 +45,9 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from rag.chunking.models import Chunk
 from rag.config.settings import RagConfig, load_config
-from rag.eval.dataset import MODE_SPAN, EvalDataset
+from rag.eval.dataset import MODE_DOCUMENT, EvalDataset
 from rag.eval.metrics import (
     hit_rate,
     mean,
@@ -50,7 +56,8 @@ from rag.eval.metrics import (
     recall_at_k,
     reciprocal_rank,
 )
-from rag.eval.relevance import judge_ranking
+from rag.eval.relevance import UnmatchableSpan, find_unmatchable_spans, judge_ranking
+from rag.ingestion.corpora import chunk_selected_corpora
 from rag.logging_config import configure_logging
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.retriever import Retriever
@@ -107,6 +114,8 @@ class EvalReport:
     sample_results: list[SampleResult]
     #: Per-matching-mode breakdown, populated only when a set mixes modes.
     by_mode: list[MetricSummary] = field(default_factory=list)
+    #: Spans no corpus chunk contains, or None when the corpus wasn't checked.
+    unmatchable_spans: list[UnmatchableSpan] | None = None
 
     @property
     def num_samples(self) -> int:
@@ -134,8 +143,17 @@ def _summarize(label: str, results: list[SampleResult]) -> MetricSummary:
     )
 
 
-def run_retrieval_eval(dataset: EvalDataset, retriever: Retriever) -> EvalReport:
-    """Run retrieval for every sample and return an :class:`EvalReport`."""
+def run_retrieval_eval(
+    dataset: EvalDataset,
+    retriever: Retriever,
+    *,
+    corpus_chunks: list[Chunk] | None = None,
+) -> EvalReport:
+    """Run retrieval for every sample and return an :class:`EvalReport`.
+
+    Pass ``corpus_chunks`` -- what the configured chunker makes of the evaluated
+    corpus -- to have the report count spans no chunk contains.
+    """
     results: list[SampleResult] = []
 
     for sample in dataset:
@@ -179,6 +197,9 @@ def run_retrieval_eval(dataset: EvalDataset, retriever: Retriever) -> EvalReport
         overall=_summarize(label, results),
         sample_results=results,
         by_mode=by_mode,
+        unmatchable_spans=(
+            find_unmatchable_spans(dataset, corpus_chunks) if corpus_chunks is not None else None
+        ),
     )
 
 
@@ -207,13 +228,24 @@ def print_report(report: EvalReport, *, verbose: bool = False) -> None:
 
     if report.by_mode:
         print(f"{'-' * 62}")
-        print("  Span- and document-matched samples are graded differently and")
-        print("  are NOT comparable; the combined figures above are only a")
+        print("  Samples with different matching modes are graded differently")
+        print("  and are NOT comparable; the combined figures above are only a")
         print("  rough indicator. Read the per-mode breakdown instead:")
         for summary in report.by_mode:
             print(f"\n  [{summary.label}]  ({summary.num_samples} sample(s))")
             _print_summary(summary, indent="    ")
+    if report.unmatchable_spans is not None:
+        print(f"{'-' * 62}")
+        affected = len({u.sample_id for u in report.unmatchable_spans})
+        print(
+            f"  Unmatchable spans  {len(report.unmatchable_spans)} "
+            f"({affected} sample(s) that can't score, whatever retrieval does)"
+        )
     print(f"{'=' * 62}")
+
+    unmatchable_by_sample: dict[str, list[str]] = {}
+    for u in report.unmatchable_spans or []:
+        unmatchable_by_sample.setdefault(u.sample_id, []).append(u.span)
 
     if verbose:
         print()
@@ -229,33 +261,12 @@ def print_report(report: EvalReport, *, verbose: bool = False) -> None:
                 else ""
             )
             print(f"  retrieved: {retrieved_preview}{suffix}")
+            unmatchable = set(unmatchable_by_sample.get(r.sample_id, []))
             for span in r.unmatched_spans:
                 preview = span if len(span) <= 80 else f"{span[:77]}..."
-                print(f"  NOT FOUND: {preview!r}")
+                tag = "UNMATCHABLE" if span in unmatchable else "NOT FOUND"
+                print(f"  {tag}: {preview!r}")
             print()
-
-
-def warn_on_unmatchable_spans(dataset: EvalDataset, config: RagConfig) -> None:
-    """Warn about spans too long to be guaranteed to fit inside a chunk.
-
-    Consecutive chunk windows overlap by ``chunking.chunk_overlap`` characters,
-    so any span at most that long sits entirely within some window.  A longer
-    span can straddle every boundary and match nothing -- scoring 0.0 for a
-    reason that has nothing to do with retrieval quality.  Cheap to check, and
-    silent otherwise, so it costs nothing on a well-authored set.
-    """
-    overlap = config.chunking.chunk_overlap
-    for sample in dataset:
-        for span in sample.expected_spans:
-            if len(span.text) > overlap:
-                logger.warning(
-                    "Sample %r has a %d-char expected span but chunk_overlap is "
-                    "%d -- it may straddle every chunk boundary and never match. "
-                    "Shorten it to a single clause.",
-                    sample.id,
-                    len(span.text),
-                    overlap,
-                )
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -307,9 +318,12 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     config: RagConfig = load_config(args.config)
-    warn_on_unmatchable_spans(dataset, config)
+    # Chunked here rather than read back from the index so the count reflects
+    # the configured chunker even when the index is stale; `rag.cli
+    # index-report` says whether the two agree.
+    _selection, _documents, corpus_chunks = chunk_selected_corpora(config, args.corpus)
 
-    span_samples = sum(1 for s in dataset if s.matching_mode == MODE_SPAN)
+    span_samples = sum(1 for s in dataset if s.matching_mode != MODE_DOCUMENT)
     logger.info(
         "Building retriever (embedding=%s, vector_store=%s, reranker=%s)",
         config.embedding.model,
@@ -324,7 +338,7 @@ def main(argv: list[str] | None = None) -> int:
         span_samples,
         len(dataset) - span_samples,
     )
-    report = run_retrieval_eval(dataset, retriever)
+    report = run_retrieval_eval(dataset, retriever, corpus_chunks=corpus_chunks)
     print_report(report, verbose=args.verbose)
 
     # Exit 1 if every single query was a miss (likely an empty index)
