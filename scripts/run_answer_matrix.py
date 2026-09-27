@@ -30,6 +30,14 @@ Cost
 on a path that otherwise costs one generation plus one judge call. Enabling it
 roughly quadruples the per-sample cost. Use `--limit` on the answerable set.
 
+Stopping and resuming
+---------------------
+Each finished sample is saved to `<results-dir>/.partial/` as it completes, so
+rerunning the same command after a crash or Ctrl-C picks up where it stopped.
+A checkpoint written by a different config, judge, dataset or code is refused
+rather than mixed in; `--fresh` discards it. The results file itself is only
+written when a set finishes.
+
 The judge
 ---------
 Resolved **once**, from the base config (`eval.judge`, else `llm`) plus
@@ -81,12 +89,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rag.config.settings import LLMConfig, RagConfig, load_config  # noqa: E402
 from rag.eval.answer_eval import (  # noqa: E402
+    AnswerSampleResult,
     resolve_judge_config,
     run_answer_eval,
     subsample,
 )
+from rag.eval.checkpoint import (  # noqa: E402
+    CheckpointMismatch,
+    SampleCheckpoint,
+    code_version,
+    digest,
+)
 from rag.eval.dataset import EvalDataset  # noqa: E402
-from rag.eval.multihop_eval import run_multihop_eval  # noqa: E402
+from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.generation.builder import build_chat_service  # noqa: E402
 from rag.generation.chat_service import ChatService  # noqa: E402
@@ -152,11 +167,36 @@ def apply_overrides(config: RagConfig, overrides: dict[str, Any]) -> RagConfig:
     return updated
 
 
+def checkpoint_fingerprint(
+    config: RagConfig, judge: LLMConfig, dataset: EvalDataset, corpus: str, code: str
+) -> dict[str, str]:
+    """What a set's result depends on; a checkpoint is resumed only if all of it matches."""
+    return {
+        "config": digest(config.model_dump(mode="json")),
+        "judge": digest(judge.model_dump(mode="json")),
+        "dataset": digest([s.to_dict() for s in dataset]),
+        "corpus": corpus,
+        "code": code,
+    }
+
+
 def run_one(
-    label: str, chat_service: ChatService, judge: LLMClient, dataset: EvalDataset
+    label: str,
+    chat_service: ChatService,
+    judge: LLMClient,
+    dataset: EvalDataset,
+    checkpoint: SampleCheckpoint | None = None,
 ) -> dict[str, Any]:
+    completed = {
+        sid: AnswerSampleResult.from_dict(r) for sid, r in (checkpoint.load() if checkpoint else {}).items()
+    }
+    if completed:
+        logger.info("  %s: resuming, %d sample(s) from the checkpoint", label, len(completed))
     started = time.monotonic()
-    report = run_answer_eval(dataset, chat_service, judge)
+    report = run_answer_eval(
+        dataset, chat_service, judge, completed=completed,
+        on_result=(lambda r: checkpoint.append(r.to_dict())) if checkpoint else None,
+    )
     elapsed = time.monotonic() - started
     logger.info(
         "  %s: %d/%d passed (%.3f) in %.0fs",
@@ -170,7 +210,9 @@ def run_one(
         "num_empty": report.num_empty,
         "pass_rate": round(report.pass_rate, 4),
         "mean_latency_s": round(report.mean_latency_s, 1),
+        # elapsed_s covers this session only; resumed samples ran in an earlier one.
         "elapsed_s": round(elapsed, 1),
+        "resumed_samples": len(completed),
         "failed_ids": [r.sample_id for r in report.sample_results if r.passed is not True],
         # Failures split by stage. Samples without gold spans (refusals, the
         # doc-matched baseline set) cannot be attributed and are counted apart.
@@ -204,9 +246,22 @@ def paired_pass_delta(result: dict[str, Any], baseline: dict[str, Any]) -> str:
     return format_difference(diff, binary=True)
 
 
-def run_multihop(chat_service: ChatService, judge: LLMClient, dataset: EvalDataset) -> dict[str, Any]:
+def run_multihop(
+    chat_service: ChatService,
+    judge: LLMClient,
+    dataset: EvalDataset,
+    checkpoint: SampleCheckpoint | None = None,
+) -> dict[str, Any]:
+    completed = {
+        sid: MultihopSampleResult.from_dict(r) for sid, r in (checkpoint.load() if checkpoint else {}).items()
+    }
+    if completed:
+        logger.info("  multihop: resuming, %d sample(s) from the checkpoint", len(completed))
     started = time.monotonic()
-    report = run_multihop_eval(dataset, chat_service, judge)
+    report = run_multihop_eval(
+        dataset, chat_service, judge, completed=completed,
+        on_result=(lambda r: checkpoint.append(r.to_dict())) if checkpoint else None,
+    )
     elapsed = time.monotonic() - started
     logger.info(
         "  multihop: %.3f complete, %.3f completeness, %.3f evidence recall in %.0fs",
@@ -222,19 +277,49 @@ def run_multihop(chat_service: ChatService, judge: LLMClient, dataset: EvalDatas
         "num_unparseable": report.num_unparseable,
         "mean_latency_s": round(report.mean_latency_s, 1),
         "mean_retrieval_rounds": round(report.mean_retrieval_rounds, 2),
+        # The answering turn's cost; the judge's calls are not in it.
+        "mean_llm_calls": round(report.mean_llm_calls, 2),
+        "mean_llm_s": round(report.mean_llm_s, 1),
+        "mean_prompt_tokens": _round_or_none(report.mean_prompt_tokens),
+        "mean_completion_tokens": _round_or_none(report.mean_completion_tokens),
+        "num_with_tokens": report.num_with_tokens,
         "elapsed_s": round(elapsed, 1),
+        "resumed_samples": len(completed),
         # Per-sample detail, so a hand check of the judge needs no rerun.
         "samples": [
             {
                 "id": r.sample_id,
                 "complete": r.complete,
                 "parts": {p.label: p.passed for p in r.part_results},
+                # The judge's full reply per part, reason included: what a hand
+                # check of a verdict needs, and what `parts` reduces to a bool.
+                "judge_outputs": {p.label: p.judge_output for p in r.part_results},
                 "evidence_recall": round(r.evidence_recall, 3),
+                "missing_spans": r.missing_spans,
+                "llm_calls": r.llm_calls,
+                "llm_ms": round(r.llm_ms),
+                "prompt_tokens": r.prompt_tokens,
+                "completion_tokens": r.completion_tokens,
                 "answer": r.actual_answer,
             }
             for r in report.sample_results
         ],
     }
+
+
+def _round_or_none(value: float | None) -> float | None:
+    return None if value is None else round(value, 1)
+
+
+def _tokens_cell(m: dict[str, Any]) -> str:
+    """Prompt / generated tokens per turn; "—" when no sample reported them."""
+    if m["num_with_tokens"] == 0:
+        return "—"
+    prompt, gen = m["mean_prompt_tokens"], m["mean_completion_tokens"]
+    cell = f"{'?' if prompt is None else f'{prompt:,.0f}'} / {'?' if gen is None else f'{gen:,.0f}'}"
+    if m["num_with_tokens"] < m["num_evaluated"]:
+        cell += f" ({m['num_with_tokens']} of {m['num_evaluated']})"
+    return cell
 
 
 def judge_suffix(judge: LLMConfig, generator: LLMConfig) -> str:
@@ -275,14 +360,21 @@ def render_table(results: list[dict[str, Any]]) -> str:
     if multihop:
         lines += [
             "",
-            "| variant | multi-hop complete | completeness | evidence recall | n | s/turn |",
-            "|---|---|---|---|---|---|",
+            "| variant | multi-hop complete | completeness | evidence recall | n | s/turn "
+            "| LLM calls/turn | LLM s/turn | prompt / gen tokens/turn |",
+            "|---|---|---|---|---|---|---|---|---|",
         ]
         for r in multihop:
             m = r["multihop"]
+            # Rows recorded before the cost columns existed show "—" for them.
+            cost = (
+                f"{m['mean_llm_calls']:.1f} | {m['mean_llm_s']:.1f} | {_tokens_cell(m)}"
+                if "mean_llm_calls" in m else "— | — | —"
+            )
             lines.append(
                 f"| `{r['variant']}` | {m['complete_rate']:.3f} | {m['mean_completeness']:.3f} "
-                f"| {m['evidence_recall']:.3f} | {m['num_evaluated']} | {m['mean_latency_s']:.1f} |"
+                f"| {m['evidence_recall']:.3f} | {m['num_evaluated']} | {m['mean_latency_s']:.1f} "
+                f"| {cost} |"
             )
     return "\n".join(lines)
 
@@ -302,6 +394,8 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=40,
                         help="Answerable samples to evaluate (evenly spaced). 0 = all.")
     parser.add_argument("--results-dir", type=Path, default=Path("data/eval/results"))
+    parser.add_argument("--fresh", action="store_true",
+                        help="Discard saved per-sample checkpoints instead of resuming from them.")
     parser.add_argument("--variant", action="append", default=None, metavar="NAME")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
@@ -362,10 +456,34 @@ def main() -> int:
         )
         return ordered
 
+    # Each finished sample is appended to a checkpoint under .partial/, so a
+    # stopped run resumes where it left off. Every checkpoint is checked
+    # against its set's fingerprint before anything runs: a mismatch found
+    # after an hour of earlier variants would waste that hour.
+    code = code_version()
+    configs = {v.name: apply_overrides(base, v.overrides) for v in variants}
+    checkpoints: dict[tuple[str, str], SampleCheckpoint] = {}
+    for variant in variants:
+        for name in sets:
+            variant_slug = re.sub(r"[^A-Za-z0-9.]+", "-", variant.name).strip("-")
+            checkpoint = SampleCheckpoint(
+                args.results_dir / ".partial" / f"{stem}__{variant_slug}__{name}.jsonl",
+                checkpoint_fingerprint(configs[variant.name], judge_config, datasets[name],
+                                       selection.slug, code),
+            )
+            if args.fresh:
+                checkpoint.discard()
+            try:
+                checkpoint.load()
+            except CheckpointMismatch as exc:
+                logger.error("%s", exc)
+                return 1
+            checkpoints[variant.name, name] = checkpoint
+
     ordered: list[dict[str, Any]] = []
     for variant in variants:
         logger.info("[%s] %s", variant.name, variant.overrides)
-        config = apply_overrides(base, variant.overrides)
+        config = configs[variant.name]
         chat_service = build_chat_service(config, corpora=args.corpus)
         # Merge into the stored row, so `--sets multihop` adds a column to a
         # variant rather than discarding its answerable/refusal numbers.
@@ -376,14 +494,17 @@ def main() -> int:
             "generator": f"{config.llm.provider}:{config.llm.model}",
         }
         for name in sets:
+            checkpoint = checkpoints[variant.name, name]
             if name == "multihop":
-                record[name] = run_multihop(chat_service, judge, datasets[name])
+                record[name] = run_multihop(chat_service, judge, datasets[name], checkpoint)
             else:
-                record[name] = run_one(name, chat_service, judge, datasets[name])
+                record[name] = run_one(name, chat_service, judge, datasets[name], checkpoint)
             accumulated[variant.name] = record
-            # Checkpoint after every set: these runs are tens of minutes each and
-            # an interruption must not discard the ones already finished.
+            # Write the finished set, then drop its checkpoint: the results file
+            # only ever holds whole sets, and a crash between the two just
+            # resumes into an immediate re-summary.
             ordered = flush()
+            checkpoint.discard()
 
     print(f"\n{render_table(ordered)}\n")
     print(f"Wrote {destination}")

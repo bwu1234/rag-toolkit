@@ -23,6 +23,15 @@ agent may search several times, and a span found by any search counts. It
 separates "never found the evidence" from "found it and answered badly", which
 need different fixes.
 
+Cost
+----
+Each sample carries the turn's own LLM usage from ``ChatAnswer`` -- calls,
+milliseconds inside them, prompt and generated tokens -- so an agent's extra
+searches can be set against the pipeline's cost on the same questions. The
+judge's calls are not in it: ``ask()`` meters only what it makes, and the judge
+is called outside it. Token means cover only the samples whose provider
+reported counts; with none, they are ``None`` (unknown), never zero.
+
 Usage::
 
     python -m rag.eval.multihop_eval --corpus edgar --judge-model gemma4:31b-mlx
@@ -35,8 +44,10 @@ import argparse
 import logging
 import sys
 import time
-from dataclasses import dataclass, field
+from collections.abc import Callable, Mapping
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Any
 
 from rag.config.settings import load_config
 from rag.eval.answer_eval import _parse_verdict, build_judge, subsample
@@ -131,6 +142,10 @@ class MultihopSampleResult:
     missing_spans: list[str]
     latency_s: float
     retrieval_rounds: int
+    llm_calls: int = 0
+    llm_ms: float = 0.0
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
 
     @property
     def completeness(self) -> float:
@@ -147,6 +162,14 @@ class MultihopSampleResult:
             return 1.0
         return (self.evidence_total - len(self.missing_spans)) / self.evidence_total
 
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> MultihopSampleResult:
+        parts = [PartResult(**p) for p in data["part_results"]]
+        return cls(**{**data, "part_results": parts})
+
 
 @dataclass
 class MultihopReport:
@@ -161,6 +184,14 @@ class MultihopReport:
     num_unparseable: int
     mean_latency_s: float
     mean_retrieval_rounds: float
+    #: The answering turn's LLM usage per sample; the judge's calls are excluded.
+    mean_llm_calls: float
+    mean_llm_s: float
+    #: Means over the samples that reported counts only; None when none did.
+    mean_prompt_tokens: float | None
+    mean_completion_tokens: float | None
+    #: How many samples the token means cover, so a partial mean is visible as one.
+    num_with_tokens: int
     #: complete_rate per sample kind (cross_period, cross_company, aggregation).
     complete_rate_by_kind: dict[str, float]
     sample_results: list[MultihopSampleResult]
@@ -170,10 +201,20 @@ def run_multihop_eval(
     dataset: EvalDataset,
     chat_service: ChatService,
     judge: LLMClient,
+    *,
+    completed: Mapping[str, MultihopSampleResult] | None = None,
+    on_result: Callable[[MultihopSampleResult], None] | None = None,
 ) -> MultihopReport:
-    """Answer every sample, judge each of its parts, and measure evidence recall."""
+    """Answer every sample, judge each of its parts, and measure evidence recall.
+
+    ``completed`` and ``on_result`` work as in ``run_answer_eval``: reuse an
+    interrupted run's samples, and hand over each new one as it finishes.
+    """
     results: list[MultihopSampleResult] = []
     for sample in dataset:
+        if completed and sample.id in completed:
+            results.append(completed[sample.id])
+            continue
         parts = parts_of(sample)
 
         started = time.monotonic()
@@ -202,8 +243,14 @@ def run_multihop_eval(
                 missing_spans=unmatched_spans(gold, [c.text for c in answer.citations]),
                 latency_s=latency,
                 retrieval_rounds=answer.retrieval_attempts,
+                llm_calls=answer.llm_calls,
+                llm_ms=answer.llm_ms,
+                prompt_tokens=answer.prompt_tokens,
+                completion_tokens=answer.completion_tokens,
             )
         )
+        if on_result is not None:
+            on_result(results[-1])
 
     return summarize(results)
 
@@ -213,6 +260,10 @@ def summarize(results: list[MultihopSampleResult]) -> MultihopReport:
 
     def avg(values: list[float]) -> float:
         return sum(values) / len(values) if values else 0.0
+
+    def known_avg(values: list[int | None]) -> float | None:
+        known = [v for v in values if v is not None]
+        return sum(known) / len(known) if known else None
 
     by_kind: dict[str, list[MultihopSampleResult]] = {}
     for r in results:
@@ -227,6 +278,13 @@ def summarize(results: list[MultihopSampleResult]) -> MultihopReport:
         num_unparseable=sum(1 for r in results for p in r.part_results if p.passed is None),
         mean_latency_s=avg([r.latency_s for r in results]),
         mean_retrieval_rounds=avg([float(r.retrieval_rounds) for r in results]),
+        mean_llm_calls=avg([float(r.llm_calls) for r in results]),
+        mean_llm_s=avg([r.llm_ms / 1000 for r in results]),
+        mean_prompt_tokens=known_avg([r.prompt_tokens for r in results]),
+        mean_completion_tokens=known_avg([r.completion_tokens for r in results]),
+        num_with_tokens=sum(
+            1 for r in results if r.prompt_tokens is not None or r.completion_tokens is not None
+        ),
         complete_rate_by_kind={
             kind: avg([float(r.complete) for r in rs]) for kind, rs in sorted(by_kind.items())
         },
@@ -249,6 +307,8 @@ def print_report(report: MultihopReport, *, verbose: bool = False) -> None:
         print(f"  Unparseable part verdicts: {report.num_unparseable}")
     print(f"  Mean latency  {report.mean_latency_s:.1f}s per turn, "
           f"{report.mean_retrieval_rounds:.1f} retrieval round(s)")
+    print(f"  LLM per turn  {report.mean_llm_calls:.1f} call(s), {report.mean_llm_s:.1f}s"
+          f"{format_tokens(report)}")
     print(f"{'=' * 60}")
 
     if verbose:
@@ -264,6 +324,22 @@ def print_report(report: MultihopReport, *, verbose: bool = False) -> None:
                 print(f"    missing evidence: {span[:100]!r}")
             print(f"  answer: {r.actual_answer[:300].replace(chr(10), ' ')}")
             print()
+
+
+def format_tokens(report: MultihopReport) -> str:
+    """Mean tokens per turn as a suffix, or "" when no sample reported any."""
+    if report.num_with_tokens == 0:
+        return ""
+
+    def fmt(v: float | None) -> str:
+        return "?" if v is None else f"{v:,.0f}"
+
+    coverage = (
+        f" (from {report.num_with_tokens} of {report.num_samples})"
+        if report.num_with_tokens < report.num_samples else ""
+    )
+    return (f", {fmt(report.mean_prompt_tokens)} prompt / "
+            f"{fmt(report.mean_completion_tokens)} generated tokens{coverage}")
 
 
 def _build_parser() -> argparse.ArgumentParser:

@@ -211,3 +211,19 @@ def test_answer_table_reports_failures_it_cannot_attribute() -> None:
     run["failed_unattributed"] = 2
     table = run_answer_matrix.render_table([{"variant": "crag=off", "answerable": run}])
     assert "0 / 0 (+2 n/a)" in table
+
+
+def test_multihop_table_reports_cost_and_marks_rows_recorded_before_it() -> None:
+    new = {"num_evaluated": 34, "complete_rate": 0.5, "mean_completeness": 0.7,
+           "evidence_recall": 0.6, "mean_latency_s": 12.0, "mean_llm_calls": 1.0,
+           "mean_llm_s": 10.5, "mean_prompt_tokens": 4321.0, "mean_completion_tokens": None,
+           "num_with_tokens": 30}
+    old = {k: new[k] for k in ("num_evaluated", "complete_rate", "mean_completeness",
+                               "evidence_recall", "mean_latency_s")}
+
+    table = run_answer_matrix.render_table(
+        [{"variant": "new", "multihop": new}, {"variant": "old", "multihop": old}]
+    )
+
+    assert "| 1.0 | 10.5 | 4,321 / ? (30 of 34) |" in table
+    assert "| 12.0 | — | — | — |" in table

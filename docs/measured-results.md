@@ -398,12 +398,30 @@ the FY2025 part even though the answer says FY2025 isn't in the passages and
 attaches $24.7B to the wrong period. So the true rate is ~14/34. The failures
 spot-checked were all real errors.
 
-**Not measured in phase 0:** generated and prompt tokens. This run predates
-Milestone 12's per-turn metering. `ChatAnswer` now carries the counts, but
-`multihop_eval` doesn't report them yet, so these numbers need a re-run once
-it does ([plan](milestone-19-plan.md#0--eval-harness-that-can-see-the-difference-before-any-agent-code)). Cap-hit rate and
-searches per turn are defined only for the agent (the pipeline always does one
-retrieval round), and arrive with phase 3.
+**Cost, from a re-run with per-turn metering (2026-09-27).** Same config and
+judge (temperature 0), multi-hop set only, `crag=off`. This is what the agent's
+extra searches will be set against:
+
+| per turn | pipeline |
+|---|---|
+| LLM calls | 1.0 (generation only; the judge's calls are excluded) |
+| LLM time | 9.3 s of 11.2 s wall-clock |
+| prompt / generated tokens | 1,680 / 184 (all 34 turns reported counts) |
+
+The re-run's scores sit inside the noise band above: 14/34 complete (was 15),
+completeness 0.566, evidence recall 0.598. The recall change isn't retrieval
+drift. The label fixes recorded [below](#label-check-of-the-generated-edgar-set-chunking-plan-phase-0-step-1)
+landed after this baseline and gave `mh-ual-unrealized` an alternative span
+for United's 2024 figure (the FY2025 10-K restates it), so a passage the
+pipeline already retrieved now counts as evidence: 0.5 → 1.0 on that sample,
+0.583 → 0.598 overall. Three samples flipped on completeness: `mh-aapl-lease-yoy`
+and `mh-msft-div` to fail, `mh-auth-mrk-wmt` to pass. `mh-msft-div` was the
+known false pass, so 14/34 matches the hand-checked rate. The phase-4
+comparison should use the re-run's row, which is the one in the results file
+now.
+
+Cap-hit rate and searches per turn are defined only for the agent (the
+pipeline always does one retrieval round), and arrive with phase 3.
 
 ### Label check of the generated EDGAR set (chunking plan, Phase 0 step 1)
 

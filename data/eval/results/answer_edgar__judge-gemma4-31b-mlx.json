@@ -44,30 +44,39 @@
       },
       "multihop": {
         "num_evaluated": 34,
-        "complete_rate": 0.4412,
-        "mean_completeness": 0.5882,
-        "evidence_recall": 0.5833,
+        "complete_rate": 0.4118,
+        "mean_completeness": 0.5662,
+        "evidence_recall": 0.598,
         "complete_rate_by_kind": {
           "aggregation": 0.0,
-          "cross_company": 0.25,
-          "cross_period": 0.619
+          "cross_company": 0.375,
+          "cross_period": 0.5238
         },
         "num_empty": 0,
         "num_unparseable": 0,
-        "mean_latency_s": 10.0,
+        "mean_latency_s": 11.2,
         "mean_retrieval_rounds": 1.0,
-        "elapsed_s": 746.7,
+        "mean_llm_calls": 1.0,
+        "mean_llm_s": 9.3,
+        "mean_prompt_tokens": 1679.5,
+        "mean_completion_tokens": 184.3,
+        "num_with_tokens": 34,
+        "elapsed_s": 782.7,
         "samples": [
           {
             "id": "mh-aapl-lease-yoy",
-            "complete": true,
+            "complete": false,
             "parts": {
               "Apple, as of September 28, 2024": true,
               "Apple, as of September 27, 2025": true,
-              "The overall comparison or conclusion the question asks for": true
+              "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 1.0,
-            "answer": "Apple's fixed lease payment obligations decreased from $15.6 billion on September 28, 2024 [2][3] to $16.8 billion on September 27, 2025 [1]. Therefore, the obligations increased by $1.2 billion between these two dates."
+            "llm_calls": 1,
+            "llm_ms": 11210,
+            "prompt_tokens": 1451,
+            "completion_tokens": 97,
+            "answer": "Apple's fixed lease payment obligations decreased from $15.6 billion on September 28, 2024 [2][3] to $16.8 billion on September 27, 2025 [1]. Additionally, the portion of these obligations payable within 12 months increased from $2.0 billion in 2024 [2][3] to $2.6 billion in 2025 [1]."
           },
           {
             "id": "mh-aapl-buyback-q2q3",
@@ -78,7 +87,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.0,
-            "answer": "Based on the provided context passages, there is no information regarding Apple's common stock repurchases for the second or third quarters of fiscal 2026. The passages contain data for other companies:\n\n*   **NVIDIA (NVDA):** Repurchased shares in the second quarter and first half of fiscal 2026 [1].\n*   **Walmart (WMT):** Reports total repurchases for fiscal years ended January 31, including fiscal 2026, but does not break down specific calendar quarters like Q2 or Q3 [2].\n*   **Southwest Airlines (LUV):** Reports repurchase activity for the six months ended June 30, 2026 (which includes Q2 and Q3 of that fiscal year), noting $1.25 billion was expended in the six months ended June 30, 2026 [3], and specifically states no shares were repurchased during the second quarter of 2026 [5].\n*   **Costco (COST):** Reports repurchase activity for the second quarter of 2026 (January\u2013February) totaling 229,000 shares [4].\n\nNone of the provided texts mention Apple. Therefore, it is not possible to answer how much stock Apple repurchased in those specific quarters based on these documents."
+            "llm_calls": 1,
+            "llm_ms": 9038,
+            "prompt_tokens": 1702,
+            "completion_tokens": 207,
+            "answer": "Based on the provided context passages, there is no information regarding Apple's common stock repurchases for the second or third quarters of fiscal 2026. The passages contain data for other companies:\n\n*   **NVIDIA (NVDA):** Repurchased shares in the second quarter and first half of fiscal 2026 [1].\n*   **Walmart (WMT):** Provides data for fiscal years ended January 31, including fiscal 2026, but does not specify quarterly breakdowns for Q2 or Q3 [2].\n*   **Southwest Airlines (LUV):** Reports repurchase activity for the six months ended June 30, 2026 (which includes Q2), and notes that no shares were repurchased in the second quarter of 2026 [3][5].\n\nSince none of the provided texts mention Apple, it is not possible to answer how much common stock Apple repurchased in those specific quarters based solely on these passages."
           },
           {
             "id": "mh-dal-oplease-yoy",
@@ -89,6 +102,10 @@
               "The overall comparison or conclusion the question asks for": true
             },
             "evidence_recall": 1.0,
+            "llm_calls": 1,
+            "llm_ms": 4960,
+            "prompt_tokens": 1448,
+            "completion_tokens": 55,
             "answer": "Delta Air Lines' minimum operating lease obligations decreased from **$8.4 billion** as of December 31, 2024 [3], to **$7.8 billion** as of December 31, 2025 [2]."
           },
           {
@@ -100,7 +117,11 @@
               "The overall comparison or conclusion the question asks for": true
             },
             "evidence_recall": 1.0,
-            "answer": "The principal amount of Delta Air Lines' debt and finance leases decreased from **$16.2 billion** at December 31, 2024 [1] to **$14.1 billion** at December 31, 2025 [2]. This represents a reduction of $2.1 billion over the period.\n\nThis decrease was driven by debt reduction initiatives, including periodic amortization payments, scheduled maturities, and early repayments enabled by refinancings with lower interest rates [5]. Specifically, during 2025, the company reduced its debt and finance lease obligations by approximately $2.0 billion [5], with an additional $1.6 billion in payments made during the March 2026 quarter (though the net change from end of 2024 to end of 2025 is captured in the balance sheet figures provided)."
+            "llm_calls": 1,
+            "llm_ms": 7332,
+            "prompt_tokens": 1719,
+            "completion_tokens": 130,
+            "answer": "The principal amount of Delta Air Lines' debt and finance leases decreased from **$16.2 billion** at December 31, 2024 [1] to **$14.1 billion** at December 31, 2025 [2]. This represents a reduction of $2.1 billion over the year.\n\nThis decrease aligns with the company's statement that during 2025, they reduced their debt and finance lease obligations by approximately $2.0 billion [5], noting that this reduction was partly driven by early repayments enabled by refinancings with lower interest rates."
           },
           {
             "id": "mh-dal-debt-repay",
@@ -110,7 +131,11 @@
               "Delta, three months ended March 31, 2026": true
             },
             "evidence_recall": 1.0,
-            "answer": "Based on the provided passages, Delta Air Lines reported the following cash outflows for repayments of debt and finance lease obligations:\n\n*   **Nine months ended September 30, 2025:** The company had cash outflows of **$3.9 billion** [1][4].\n*   **Three months ended March 31, 2026:** The company had cash outflows of **$1.6 billion** [2][3]."
+            "llm_calls": 1,
+            "llm_ms": 5890,
+            "prompt_tokens": 1589,
+            "completion_tokens": 84,
+            "answer": "Delta Air Lines reported cash outflows of **$3.9 billion** related to repayments of debt and finance lease obligations for the nine months ended September 30, 2025 [1][4]. For the three months ended March 31, 2026, the company reported cash outflows of **$1.6 billion** for the same purpose [2][3]."
           },
           {
             "id": "mh-dal-buyback-2026",
@@ -120,7 +145,11 @@
               "Delta, through June 30, 2026": true
             },
             "evidence_recall": 1.0,
-            "answer": "Based on the provided passages:\n\n*   **As of March 31, 2026:** No shares had been repurchased under the program. Passage [1] states regarding the June 2025 authorization: \"No shares have been repurchased under this program through March 31, 2026.\" [1]\n*   **As of June 30, 2026:** No shares had been repurchased under the program. Passage [2] and Passage [3] both state regarding the same authorization: \"No shares have been repurchased under this program through June 30, 2026.\" [2][3]\n\n(Note: While United Airlines did repurchase shares in Q1 2026 [5], Delta Air Lines had not repurchased any shares under its specific $1.0 billion program by either date.)"
+            "llm_calls": 1,
+            "llm_ms": 8117,
+            "prompt_tokens": 1556,
+            "completion_tokens": 193,
+            "answer": "Based on the provided passages, Delta Air Lines had **not** repurchased any shares under its June 2025 opportunistic share repurchase program as of either March 31, 2026, or June 30, 2026.\n\n*   As of March 31, 2026: Passage [1] states, \"No shares have been repurchased under this program through March 31, 2026.\"\n*   As of June 30, 2026: Passage [2] and Passage [3] both state, \"No shares have been repurchased under this program through June 30, 2026.\"\n\n(Note: While United Airlines did repurchase shares in the first quarter of 2026 according to Passage [5], Delta Air Lines had not yet utilized its authorization by the end of that period.)"
           },
           {
             "id": "mh-cost-credit",
@@ -131,7 +160,11 @@
               "The overall comparison or conclusion the question asks for": true
             },
             "evidence_recall": 1.0,
-            "answer": "Costco's borrowing capacity under its bank credit facilities increased from $1,198 million at September 1, 2024 [1] to $1,447 million at February 15, 2026 [2]. This represents an increase of $249 million over that period."
+            "llm_calls": 1,
+            "llm_ms": 6692,
+            "prompt_tokens": 1441,
+            "completion_tokens": 138,
+            "answer": "Based on the provided passages, Costco's borrowing capacity under its bank credit facilities changed as follows between September 1, 2024, and February 15, 2026:\n\n*   **September 1, 2024:** The company had a borrowing capacity of **$1,198** [1].\n*   **February 15, 2026:** The company had a borrowing capacity of **$1,447** [2].\n\nTherefore, the borrowing capacity increased by **$249** ($1,447 - $1,198) over this period."
           },
           {
             "id": "mh-cost-ocf-q2",
@@ -142,7 +175,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.0,
-            "answer": "Based on the provided passages, here is the information regarding Costco's net cash provided by operating activities:\n\n*   **First Quarter (52 Weeks Ended August 31, 2025):** The document does not contain data for the first quarter of fiscal 2026. Passage [3] provides data for the \"52 Weeks Ended August 31, 2025,\" which represents the full fiscal year ending in August 2025, showing net cash provided by operating activities of **$8,099 million** [3].\n*   **First Half (52 Weeks Ended September 1, 2024):** Similarly, Passage [4] provides data for the \"52 Weeks Ended September 1, 2024,\" representing the fiscal year ending in September 2024, with net cash provided by operating activities of **$7,367 million** [4].\n*   **Second Quarter:** The provided passages do not contain specific financial data for the second quarter of fiscal 2026. Passage [2] details United Airlines' first-quarter results, and Passages [1] and [5] detail Johnson & Johnson's Q2 and Q1 results respectively, but none provide a breakdown for Costco's second quarter of fiscal 2026.\n\nTherefore, the passages **do not contain enough information** to answer what Costco reported for the first quarter and first half of fiscal 2026, nor how much it generated in the second quarter alone. The available data only covers full fiscal years ending in August 2025 and September 2024."
+            "llm_calls": 1,
+            "llm_ms": 15231,
+            "prompt_tokens": 1898,
+            "completion_tokens": 476,
+            "answer": "Based on the provided passages, here is the information regarding Costco's net cash provided by operating activities:\n\n*   **First Quarter (52 Weeks Ended September 1, 2024):** The passage does not contain data for the first quarter of fiscal 2026. Passage [4] reports \"Net income including noncontrolling interests\" of $7,367 million for the 52 weeks ended September 1, 2024, but does not list a separate line item for \"net cash provided by operating activities\" for that specific period in the table structure shown.\n*   **First Half (52 Weeks Ended August 31, 2025):** Passage [3] reports net cash provided by operating activities of **$8,099 million** for the 52 weeks ended August 31, 2025 [3]. Note: This figure represents the full fiscal year ending in August 2025, not the first half of fiscal 2026.\n*   **Second Quarter (53 Weeks Ended September 3, 2023):** Passage [3] lists net cash provided by operating activities of **$6,292 million** for the 53 weeks ended September 3, 2023. This date corresponds to the fiscal year ending in August 2024 (the prior fiscal year), not the second quarter of fiscal 2026.\n\n**Conclusion:**\nThe provided passages **do not contain enough information** to answer your question. The documents include data for Fiscal Year 2025 (ending Aug 31, 2025) and Fiscal Year 2024 (ending Sept 3, 2023), but they do not provide specific cash flow figures for the **first quarter** or **second quarter** of **Fiscal 2026**.\n\nPassage [2] provides Q1 2026 data, but it is for United Airlines (UAL), not Costco [2]. Passage [1] and Passage [5] provide Q2 and Q1 2026 data respectively, but they are for Johnson & Johnson (JNJ), not Costco [1][5]."
           },
           {
             "id": "mh-nvda-cash",
@@ -153,7 +190,11 @@
               "The overall comparison or conclusion the question asks for": true
             },
             "evidence_recall": 0.5,
-            "answer": "Based on the provided passages, NVIDIA's cash, cash equivalents, and marketable securities changed as follows between January 26, 2025, and October 26, 2025:\n\n*   **As of January 26, 2025:** The total amount was **$43,210 million** (or $43.21 billion) [2].\n*   **As of October 26, 2025:** The total amount was **$60,608 million** (or $60.608 billion) [1].\n\nTherefore, the cash, cash equivalents, and marketable securities **increased by $17,398 million** (calculated as $60,608 million - $43,210 million) between these two dates."
+            "llm_calls": 1,
+            "llm_ms": 10555,
+            "prompt_tokens": 1758,
+            "completion_tokens": 160,
+            "answer": "Based on the provided passages, NVIDIA's cash, cash equivalents, and marketable securities changed as follows between January 26, 2025, and October 26, 2025:\n\n*   **As of January 26, 2025:** The total amount was **$43,210 million** [2].\n*   **As of October 26, 2025:** The total amount was **$60,608 million** [1].\n\nTherefore, the cash, cash equivalents, and marketable securities increased by **$17,398 million** ($60,608 million - $43,210 million) between these two dates."
           },
           {
             "id": "mh-nvda-gm",
@@ -163,7 +204,11 @@
               "NVIDIA, fiscal year 2026": false
             },
             "evidence_recall": 0.5,
-            "answer": "Based on the provided passages, here are the answers to your questions:\n\n**Third Quarter of Fiscal 2026:**\nNVIDIA's gross margin for the third quarter of fiscal year 2026 was **73.4%** [3]. This represents a decrease from 74.6% in the third quarter of fiscal year 2025, driven by the company's business model transition [3].\n\n**Full Fiscal Year 2026:**\nThe provided passages do not contain the specific gross margin percentage for the full fiscal year 2026. Passage [2] provides a table comparing fiscal years 2026 and 2025, but it only lists data for the \"Year Ended Jan 25, 2026\" (which corresponds to fiscal 2025) and does not include a row or value for the full fiscal year 2026 [2]. Passage [1] mentions that the net effect on gross margin was an unfavorable impact of 3.7% for the first nine months of fiscal year 2026, but it does not state the total full-year figure [1]."
+            "llm_calls": 1,
+            "llm_ms": 10011,
+            "prompt_tokens": 1880,
+            "completion_tokens": 245,
+            "answer": "Based on the provided passages, here are the answers to your questions:\n\n**Third Quarter of Fiscal Year 2026:**\nNVIDIA's gross margin for the third quarter of fiscal year 2026 was **73.4%** [3]. This represents a decrease from 74.6% in the third quarter of fiscal year 2025, driven by the company's business model transition [3].\n\n**Full Fiscal Year 2026:**\nThe provided passages do not contain the specific gross margin percentage for the full fiscal year 2026. Passage [2] provides a table comparing fiscal years 2026 and 2025, but it only lists the gross profit percentage for the \"Year Ended Jan 25, 2026\" (which corresponds to fiscal year 2025) as **75.0%**; it does not list the corresponding figure for the full fiscal year 2026 [2]. Passage [1] mentions the net impact on gross margin for the first nine months of fiscal year 2026 but does not state the total annual percentage [1]."
           },
           {
             "id": "mh-msft-ocf",
@@ -174,17 +219,25 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.0,
-            "answer": "Based on the provided passages, it is **not possible** to answer this question because the necessary financial data is missing.\n\n*   **For the three months ended September 30, 2025:** None of the provided passages contain cash flow statements for Microsoft (MSFT) covering this period. Passage [1] covers the three months ended March 31, 2026, and Passage [5] covers the three months ended December 31, 2025.\n*   **For the nine months ended March 31, 2026:** None of the provided passages contain a \"nine-month\" cash flow statement for Microsoft. Passage [1] only provides data for the three months ended March 31, 2026. While Passage [5] contains data for the three months ended December 31, 2025, and Passage [1] contains data for the three months ended March 31, 2026, neither passage explicitly states the combined nine-month figure.\n*   **Implication for the six months ended March 31, 2026:** Since the specific cash flow data for the requested periods is absent from the text, no implication can be derived.\n\nNote: Passage [2] provides cash flow data for United Airlines (UAL), not Microsoft. Passage [4] provides revenue data for Delta Air Lines (DAL). Passage [3] provides segment sales data for Apple (AAPL)."
+            "llm_calls": 1,
+            "llm_ms": 12622,
+            "prompt_tokens": 2364,
+            "completion_tokens": 305,
+            "answer": "Based on the provided passages, it is **not possible** to answer this question.\n\nThe available text contains cash flow data for United Airlines (UAL) and Microsoft (MSFT), but the specific periods requested are missing:\n\n*   **United Airlines (UAL):** Passage [2] provides cash flow data for the three months ended March 31, 2026 ($4,799 million) and the year-ago period (three months ended March 31, 2025). It does not contain data for the three months ended September 30, 2025, nor does it provide a nine-month cumulative figure.\n*   **Microsoft (MSFT):** Passage [1] and Passage [5] provide revenue and operating income data, but they do not include any \"cash from operations\" figures. Furthermore, the dates provided are for the three months ended March 31, 2026, and December 31, 2025 (for the prior year comparison). There is no information regarding the three months ended September 30, 2025, or a nine-month period ending March 31, 2026.\n\nAdditionally, Passage [4] (Delta Air Lines) discusses six-month periods ending June 30, which does not match the requested dates. Therefore, the specific cash flow figures and their implications for the requested timeframes cannot be derived from the provided context."
           },
           {
             "id": "mh-msft-div",
-            "complete": true,
+            "complete": false,
             "parts": {
-              "Microsoft, fiscal year 2025": true,
+              "Microsoft, fiscal year 2025": false,
               "Microsoft, nine months ended March 31, 2026": true
             },
             "evidence_recall": 0.5,
-            "answer": "Based on the provided passages, Microsoft's Board of Directors declared dividends totaling **$18.5 billion** for the nine months ended March 31, 2025 [1]. For the nine months ended March 31, 2026, they declared dividends totaling **$20.3 billion** [1].\n\nThe passages do not contain information regarding Microsoft's specific dividend declarations for the full fiscal year 2025; however, Passage [2] notes that for the period covering 2026 and 2025 (likely referring to the full fiscal years ending June 30), the dividends totaled $27.0 billion and $24.7 billion, respectively [2]."
+            "llm_calls": 1,
+            "llm_ms": 10107,
+            "prompt_tokens": 1580,
+            "completion_tokens": 204,
+            "answer": "Based on the provided passages, Microsoft's Board of Directors declared dividends totaling **$18.5 billion** for the nine months ended March 31, 2025 [1]. For the nine months ended March 31, 2026, the declared dividends totaled **$20.3 billion** [1].\n\nThe passages do not contain specific information regarding the total dividend amount declared by Microsoft's Board of Directors for the full fiscal year 2025; however, they do note that for the nine months ended March 31, 2026 (which covers part of fiscal year 2026), the amount was $20.3 billion [1]. Passage [2] mentions dividends totaling $27.0 billion and $24.7 billion but does not explicitly label these figures as \"fiscal year 2025\" totals in the same manner as it distinguishes the nine-month periods in Passage [1]."
           },
           {
             "id": "mh-luv-salaries",
@@ -196,7 +249,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.667,
-            "answer": "Based on the provided passages, here is how the year-over-year growth in **Salaries, wages, and benefits expense** evolved for Southwest Airlines (noted as \"the Company\" in the text):\n\n*   **Full-Year 2025:** The expense increased by **6.4 percent** compared with the first nine months of 2024 [1].\n*   **First Quarter 2026:** The expense increased by **6.3 percent** compared with the first quarter of 2025 [4].\n*   **Second Quarter 2026:** The expense increased by **7.3 percent** compared with the second quarter of 2025 [2].\n\nThe growth rate remained relatively stable between Q1 and full-year 2025 (approx. 6.3%\u20136.4%), then accelerated to 7.3% in the second quarter of 2026."
+            "llm_calls": 1,
+            "llm_ms": 8362,
+            "prompt_tokens": 1545,
+            "completion_tokens": 204,
+            "answer": "Based on the provided passages, here is how the year-over-year growth in **Salaries, wages, and benefits expense** evolved for the specified periods:\n\n*   **Full-year 2025 (First nine months):** The expense increased by **6.4 percent** compared with the first nine months of 2024 [1].\n*   **First quarter of 2026:** The expense increased by **6.3 percent** compared with the first quarter of 2025 [4].\n*   **Second quarter of 2026:** The expense increased by **7.3 percent** compared with the second quarter of 2025 [2].\n\nThe growth rate remained relatively stable between the first nine months of 2025 and the first quarter of 2026 (6.4% vs 6.3%), before accelerating to 7.3% in the second quarter of 2026."
           },
           {
             "id": "mh-luv-casm",
@@ -206,7 +263,11 @@
               "Southwest, first six months of 2026": true
             },
             "evidence_recall": 0.5,
-            "answer": "Southwest Airlines' operating expenses per available seat mile (ASM) changed as follows:\n\n*   **Third Quarter of 2025:** Operating expenses per ASM increased by **4.4 percent** compared with the third quarter of 2024 [3]. This increase was primarily driven by higher Salaries, wages, and benefits expense ($0.30\u00a2$ per ASM) and Landing fees and airport rentals expense, partially offset by a decrease in Fuel and oil expense [3].\n*   **First Six Months of 2026:** Operating expenses per ASM increased by **9.3 percent** compared with the first six months of 2025 [2]. This increase was primarily due to higher Aircraft fuel and related taxes expense, Salaries, wages, and benefits expense, and Landing fees and airport rentals expense [2]. Specifically, the table shows a total increase of $1.44\u00a2$ per ASM [2].\n\nAdditionally, when excluding Aircraft fuel and related taxes expense, profit sharing, and special items (a non-GAAP measure), operating expenses per ASM for the first six months of 2026 increased by **2.9 percent** year-over-year, primarily due to wage rate inflation in Salaries, wages, and benefits expense [2]."
+            "llm_calls": 1,
+            "llm_ms": 12183,
+            "prompt_tokens": 1836,
+            "completion_tokens": 227,
+            "answer": "Based on the provided passages, here is how Southwest Airlines' operating expenses per available seat mile (ASM) changed:\n\n*   **Third Quarter 2025:** Operating expenses per ASM increased by **4.4%** compared to the third quarter of 2024 [3]. This increase was primarily driven by higher Salaries, wages, and benefits expense, partially offset by a decrease in Fuel and oil expense [3].\n*   **First Six Months 2026:** Operating expenses per ASM increased by **9.3%** compared to the first six months of 2025 [2]. This increase was primarily due to higher Aircraft fuel and related taxes expense, Salaries, wages, and benefits expense, and Landing fees and airport rentals expense [1][2].\n\nAdditionally, when excluding Aircraft fuel and related taxes expense, profit sharing, and special items, the operating expenses per ASM for the first six months of 2026 increased by **2.9%** year-over-year, primarily due to wage rate inflation in Salaries, wages, and benefits expense [2]."
           },
           {
             "id": "mh-ual-fuel",
@@ -216,7 +277,11 @@
               "United, second quarter of 2026": true
             },
             "evidence_recall": 1.0,
-            "answer": "Based on the provided passages, here is how United Airlines' aircraft fuel expense changed year over year:\n\n*   **First Quarter of 2026:** Aircraft fuel expense increased **$339 million**, or **12.6%**, compared to the year-ago period [1].\n*   **Second Quarter of 2026:** Aircraft fuel expense increased **$2.3 billion**, or **84.1%**, compared to the year-ago period [4].\n\n(Note: Passage [5] mentions a $2.7 billion increase for the first six months combined, but the specific quarterly figures are found in passages [1] and [4].)"
+            "llm_calls": 1,
+            "llm_ms": 6891,
+            "prompt_tokens": 1499,
+            "completion_tokens": 139,
+            "answer": "Based on the provided passages, here is how United Airlines' aircraft fuel expense changed year over year:\n\n*   **First Quarter of 2026:** Aircraft fuel expense increased **$339 million**, or **12.6%**, compared to the year-ago period [1].\n*   **Second Quarter of 2026:** Aircraft fuel expense increased **$2.3 billion**, or **84.1%**, compared to the year-ago period [4].\n\n(Note: Passage [5] mentions a $2.7 billion increase for the first six months, but does not provide the specific second-quarter year-over-year percentage change.)"
           },
           {
             "id": "mh-ual-unrealized",
@@ -225,8 +290,12 @@
               "United, 2024": true,
               "United, first nine months of 2025": true
             },
-            "evidence_recall": 0.5,
-            "answer": "Based on the provided passages, here are the figures for United Airlines' net unrealized losses on investments:\n\n*   **For the first nine months of 2025:** The net unrealized losses were **$8 million** [1]. This figure is also confirmed in the table within Passage [5], which lists \"Unrealized losses on investments, net\" as $(8) million for 2025 [5].\n*   **For 2024 (Full Year):** The net unrealized losses were **$199 million** [3].\n\nNote: Passage [2] mentions that in the *third quarter* of 2025, these losses were $13 million compared to $90 million in the year-ago period; however, the question specifically asks for the full year 2024 figure, which is found in Passage [3]."
+            "evidence_recall": 1.0,
+            "llm_calls": 1,
+            "llm_ms": 7870,
+            "prompt_tokens": 1634,
+            "completion_tokens": 168,
+            "answer": "Based on the provided passages, United Airlines' net unrealized losses on investments were:\n\n*   **For the first nine months of 2025:** $8 million [1]. This is confirmed in the table within Passage [5], which lists \"Unrealized losses on investments, net\" as $(8) million for 2025 compared to $(160) million in 2024 [5].\n*   **For 2024:** $199 million in unrealized losses [3]. Note that while the first nine months of 2024 figure is listed as $160 million in Passage [1] and Passage [5], the full-year 2024 figure is explicitly stated as $199 million in Passage [3]."
           },
           {
             "id": "mh-wmt-etr",
@@ -237,7 +306,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.5,
-            "answer": "Walmart's effective income tax rate for the three months ended April 30, 2026, was **23.2%** [3]. The provided passages do not contain a specific numerical value for Walmart's effective income tax rate for fiscal year 2025; however, they note that the reconciliation from the U.S. statutory rate to the effective income tax rates for fiscal 2025 is provided in Note 8 of the 10-K [2]."
+            "llm_calls": 1,
+            "llm_ms": 6562,
+            "prompt_tokens": 1692,
+            "completion_tokens": 100,
+            "answer": "Walmart's effective income tax rate for the three months ended April 30, 2026, was **23.2%** [3]. The provided passages do not contain a specific value for Walmart's effective income tax rate for fiscal year 2025; however, they note that the reconciliation from the U.S. statutory rate to the effective income tax rates for fiscal 2025 is provided in Note 8 of the 10-K [2]."
           },
           {
             "id": "mh-wmt-comps",
@@ -247,7 +320,11 @@
               "Walmart U.S., fiscal 2026": true
             },
             "evidence_recall": 1.0,
-            "answer": "Based on the provided passages:\n\n*   For the **three months ended July 31, 2025**, Walmart U.S. comparable sales growth was **4.7%** [1][3][5].\n*   For **full fiscal 2026**, Walmart U.S. comparable sales growth was **4.3%** [4]."
+            "llm_calls": 1,
+            "llm_ms": 6884,
+            "prompt_tokens": 2070,
+            "completion_tokens": 73,
+            "answer": "Based on the provided passages:\n\n*   For the **three months ended July 31, 2025**, Walmart U.S. comparable sales growth was **4.7%** [1][3].\n*   For **full fiscal 2026**, Walmart U.S. comparable sales growth was **4.3%** [4]."
           },
           {
             "id": "mh-tgt-gm",
@@ -258,7 +335,11 @@
               "The overall comparison or conclusion the question asks for": true
             },
             "evidence_recall": 1.0,
-            "answer": "Based on the provided passages, here is the comparison of Target's gross margin rates:\n\n*   **Quarter ended August 2, 2025:** The gross margin rate was **29.0 percent**. This represents a decrease from the comparable prior-year period [3][4].\n*   **Quarter ended May 2, 2026:** The gross margin rate was **29.0 percent**. This represents an increase from the comparable prior-year period of 28.2 percent [2].\n\n**Comparison:**\nTarget's gross margin rate remained identical at **29.0%** for both the quarter ended August 2, 2025, and the quarter ended May 2, 2026. However, the drivers for these rates differed:\n*   In the second quarter of 2025 (ending August 2), the rate decreased due to higher markdown rates, purchase order cancellation costs, changes in sales mix, and lower inventory shrink [3].\n*   In the first quarter of 2026 (ending May 2), the rate increased primarily due to lower markdown rates and growth in advertising revenues, partially offset by higher product costs [2]."
+            "llm_calls": 1,
+            "llm_ms": 6365,
+            "prompt_tokens": 1754,
+            "completion_tokens": 87,
+            "answer": "Based on the provided passages, Target's gross margin rate for the quarter ended August 2, 2025 was **29.0 percent** [3][4]. For the comparable quarter ended May 2, 2026, the gross margin rate was **29.0 percent** [2].\n\nTherefore, the gross margin rates for these two periods were identical at 29.0%."
           },
           {
             "id": "mh-tgt-moodys",
@@ -268,6 +349,10 @@
               "Target, as of May 2, 2026": true
             },
             "evidence_recall": 1.0,
+            "llm_calls": 1,
+            "llm_ms": 4783,
+            "prompt_tokens": 1425,
+            "completion_tokens": 55,
             "answer": "Based on the provided passages, Target's Moody's long-term debt credit rating was **A2** as of February 1, 2025 [3], and it remained **A2** as of May 2, 2026 [2]."
           },
           {
@@ -279,7 +364,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.5,
-            "answer": "Chevron's **Jack and St. Malo fields** have the longer estimated remaining production life compared to the Ballymore field.\n\n*   The Jack and St. Malo fields have an estimated remaining production life of **more than 20 years** [2][5].\n*   The Ballymore Field has an estimated remaining production life of **20 years** [3]."
+            "llm_calls": 1,
+            "llm_ms": 5353,
+            "prompt_tokens": 1402,
+            "completion_tokens": 79,
+            "answer": "Based on the provided passages, Chevron's **Jack and St. Malo fields** have the longer estimated remaining production life.\n\n*   The Jack and St. Malo fields have an estimated remaining production life of **more than 20 years** [2][4].\n*   The Ballymore Field has an estimated remaining production life of **20 years** [3]."
           },
           {
             "id": "mh-lease-aapl-dal",
@@ -290,6 +379,10 @@
               "The overall comparison or conclusion the question asks for": true
             },
             "evidence_recall": 1.0,
+            "llm_calls": 1,
+            "llm_ms": 5303,
+            "prompt_tokens": 1425,
+            "completion_tokens": 74,
             "answer": "Apple's fixed lease payment obligations as of September 27, 2025, were **$16.8 billion** [1]. Delta Air Lines' minimum operating lease obligations as of December 31, 2025, were **$7.8 billion** [3]. Therefore, Apple's fixed lease payment obligations were larger."
           },
           {
@@ -301,7 +394,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.0,
-            "answer": "Based on the provided passages, it is **not possible** to answer this question because the necessary data for one of the companies is missing.\n\n*   **Delta Air Lines:** The text provides capital expenditure figures for Delta Air Lines. For the nine months ended September 30, 2024, capital expenditures were **$3.8 billion** [1]. It also notes an expected full-year 2025 spend of approximately $5.0 billion and a 2026 expectation of approximately $5.5 billion [1][2]. However, there is no specific figure provided for Delta's *full calendar year* 2024 capital expenditures in the text.\n*   **NVIDIA:** The provided passages contain financial data for **Delta Air Lines** and **Walmart** (referred to as \"our Company\" in Passage [4] and [5]). There is no mention of NVIDIA or its capital expenditures in any of the five passages provided [1][2][3][4][5].\n\nTherefore, a comparison between Delta Air Lines' 2024 capital expenditures and NVIDIA's fiscal year 2026 capital expenditures cannot be made using only the provided context."
+            "llm_calls": 1,
+            "llm_ms": 7256,
+            "prompt_tokens": 1449,
+            "completion_tokens": 164,
+            "answer": "Based on the provided passages, it is not possible to answer this question because the documents contain financial data for **Delta Air Lines** and **Walmart**, but no information regarding **NVIDIA**.\n\n*   **Delta Air Lines' capital expenditures for 2024:** Passage [1] states that Delta's capital expenditures were **$3.8 billion** for the nine months ended September 30, 2024 [1].\n*   **NVIDIA's capital expenditures for fiscal year 2026:** The provided passages do not contain any data or mention of NVIDIA or its financial results [2][3][4][5].\n\n(Note: Passage [4] mentions Walmart's projected capital expenditures for fiscal 2026, but this does not apply to NVIDIA.)"
           },
           {
             "id": "mh-cash-ual-luv",
@@ -312,7 +409,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.0,
-            "answer": "Based on the provided passages, here is the comparison:\n\n*   **Southwest Airlines' unrestricted cash** as of March 31, 2026 is not explicitly stated in the text. Passage [1] provides operating statistics (passengers, RPMs, ASMs) for the three months ended March 31, 2026, but does not list the cash balance.\n*   **United Airlines' unrestricted cash** as of September 30, 2025 is also not explicitly stated in the text. Passage [5] discusses United Airlines' financial condition for the period ended December 31, 2025, and mentions that the discussion should be read in conjunction with consolidated financial statements, but it does not provide a specific cash figure for September 30, 2025.\n\n(Note: Passage [3] mentions Southwest Airlines had unrestricted cash of $3.0 billion as of *September 30, 2025*, but this is for the wrong date requested in your question.)\n\nTherefore, the provided passages **do not contain enough information** to compare United Airlines' unrestricted cash as of September 30, 2025 with Southwest Airlines' unrestricted cash as of March 31, 2026."
+            "llm_calls": 1,
+            "llm_ms": 12170,
+            "prompt_tokens": 1850,
+            "completion_tokens": 225,
+            "answer": "Based on the provided passages, here is the comparison:\n\n*   **Southwest Airlines' unrestricted cash:** As of September 30, 2025, Southwest Airlines had unrestricted cash and short-term investments of approximately **$3.0 billion** [3]. The passage for March 31, 2026 does not explicitly state the unrestricted cash balance for that specific date, only providing operating statistics like revenue passengers carried and miles flown [1].\n*   **United Airlines' unrestricted cash:** The provided passages regarding United Airlines (Passage [5]) discuss its financial condition for the period ended December 31, 2025, but they do not contain specific data points for United's unrestricted cash balance as of September 30, 2025.\n\nTherefore, while Passage [3] confirms Southwest had **$3.0 billion** in unrestricted cash and short-term investments as of September 30, 2025, the provided text does not contain information regarding United Airlines' unrestricted cash for that same date to make a direct comparison."
           },
           {
             "id": "mh-ocf-xom-cost",
@@ -323,18 +424,26 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.5,
-            "answer": "Based on the provided passages, **Costco** generated significantly more cash from operating activities in the first half of fiscal 2026 than ExxonMobil.\n\n*   **Costco:** Passage [4] states that \"Net cash provided by operating activities totaled **$7,684** million (or $7.684 billion) in the first half of 2026\" [4].\n*   **ExxonMobil:** Passage [2] reports ExxonMobil's second quarter (Q2) earnings as $14.5 billion but does not explicitly state the total operating cash flow for the first half. However, it notes that the increase in earnings was \"partly offset by higher expenses related to depreciation... and identified items\" [2]. Passage [3] provides a detailed breakdown of operating cash flow for another company (JNJ) totaling $2.5 billion for Q1 2026, but no specific total operating cash flow figure is given for ExxonMobil's first half in the text provided.\n\nSince Costco explicitly reported $7.684 billion for the full first half, and the available data for ExxonMobil only highlights a quarterly earnings figure of $14.5 billion (which includes non-cash items like depreciation that reduce operating cash flow) without a corresponding total operating cash flow number for the six-month period, Costco is the clear answer based on the explicit \"first half\" operating cash flow data point available.\n\n**Answer:** Costco generated more cash from operating activities in the first half of fiscal 2026 ($7,684 million) compared to ExxonMobil, whose specific first-half operating cash flow total is not explicitly stated in the provided text [4]."
+            "llm_calls": 1,
+            "llm_ms": 11906,
+            "prompt_tokens": 1596,
+            "completion_tokens": 242,
+            "answer": "Based on the provided passages, **Costco** generated significantly more cash from operating activities in the first half of fiscal 2026 than ExxonMobil.\n\n*   **Costco:** According to Passage [4], net cash provided by operating activities totaled **$7,684 million** (or $7.684 billion) in the first half of 2026 [4].\n*   **ExxonMobil:** While Passage [1] mentions that ExxonMobil used $19.9 billion for financing activities and generated earnings of $14.5 billion in the second quarter alone, it does not explicitly state the total cash from operating activities for the *first half* (Q1 + Q2) of 2026. Passage [2] discusses the drivers of the Q2 increase but does not provide the specific first-half operating cash flow figure required for this comparison [2].\n\nTherefore, based on the available data, Costco's reported $7.684 billion in operating cash flow for the first half of 2026 is higher than any partial or implied figure for ExxonMobil in the same period provided in these texts."
           },
           {
             "id": "mh-auth-mrk-wmt",
-            "complete": false,
+            "complete": true,
             "parts": {
               "Merck, as of December 31, 2025": true,
               "Walmart, as of July 31, 2025": true,
-              "The overall comparison or conclusion the question asks for": false
+              "The overall comparison or conclusion the question asks for": true
             },
             "evidence_recall": 1.0,
-            "answer": "Based on the provided passages, **Walmart** had the larger remaining share repurchase authorization.\n\n*   As of December 31, 2025, Merck's remaining share repurchase authorization was **$7.3 billion** [4].\n*   As of July 31, 2025, Walmart's remaining share repurchase authorization was **$5.9 billion** [2].\n\nTherefore, Merck's $7.3 billion authorization is larger than Walmart's $5.9 billion authorization."
+            "llm_calls": 1,
+            "llm_ms": 12640,
+            "prompt_tokens": 1441,
+            "completion_tokens": 330,
+            "answer": "Based on the provided passages, **Walmart** had the larger remaining share repurchase authorization.\n\n*   As of December 31, 2025, Merck's remaining share repurchase authorization was **$7.3 billion** [4].\n*   As of July 31, 2025, Walmart's remaining share repurchase authorization was **$5.9 billion** [2].\n\nSince $7.3 billion is greater than $5.9 billion, Merck had the larger authorization amount at those respective dates. However, if the question implies comparing the specific entities mentioned in the text for their *own* reported figures at those specific times, Merck's figure ($7.3B) is larger than Walmart's ($5.9B).\n\nWait, let me re-read the question carefully: \"Which had the larger remaining share repurchase authorization: Merck as of December 31, 2025, or Walmart as of July 31, 2025?\"\n\n*   Merck (Dec 31, 2025): $7.3 billion [4]\n*   Walmart (July 31, 2025): $5.9 billion [2]\n\nComparing the two values: $7.3 billion > $5.9 billion. Therefore, **Merck** had the larger remaining share repurchase authorization in this comparison.\n\n**Answer:** Merck had the larger remaining share repurchase authorization ($7.3 billion) compared to Walmart ($5.9 billion)."
           },
           {
             "id": "mh-buyback-cvx-aapl",
@@ -345,7 +454,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.0,
-            "answer": "Based on the provided context passages, it is **not possible** to answer this question because the documents do not contain information regarding **Chevron** or **Apple**.\n\nThe provided passages discuss financial data for three different companies:\n*   **NVIDIA (NVDA):** Passage [1] mentions share repurchases of 67 million and 193 million shares in the second quarter and first half of fiscal year 2026, respectively. It does not mention Chevron or Apple.\n*   **Walmart (WMT):** Passages [2] and [5] discuss Walmart's share repurchases for the six months ended July 31, 2025, and fiscal years ending January 31, 2026/2025. They do not mention Chevron or Apple.\n*   **United Airlines (LUV):** Passages [3] and [4] discuss United Airlines' share repurchases in the six months ended June 30, 2026, and calendar year 2025. They do not mention Chevron or Apple.\n\nSince none of the passages contain data for Chevron's third quarter of 2025 or Apple's second quarter of fiscal 2026, I cannot determine how much they spent or which amount was larger."
+            "llm_calls": 1,
+            "llm_ms": 12100,
+            "prompt_tokens": 1629,
+            "completion_tokens": 281,
+            "answer": "Based on the provided context passages, it is **not possible** to answer this question because the documents do not contain information regarding **Chevron** or **Apple**.\n\nThe provided passages discuss financial data for three different companies:\n*   **NVIDIA (NVDA):** Passage [1] mentions share repurchases of 67 million shares in the second quarter and 193 million shares in the first half of fiscal year 2026.\n*   **Walmart (WMT):** Passages [2] and [5] discuss Walmart's share repurchases for the six months ended July 31, 2025, and for fiscal years 2024\u20132026, respectively.\n*   **United Airlines (LUV):** Passages [3] and [4] discuss United Airlines' share repurchases, including a $2.0 billion authorization in July 2025 and specific repurchase amounts in early 2026.\n\nNone of the passages mention Chevron or Apple, nor do they provide data for the third quarter of 2025 for any company other than partial first-half data for Walmart and NVIDIA. Therefore, the specific spending by Chevron in Q3 2025 and Apple's repurchases in Q2 fiscal 2026 cannot be determined from these texts."
           },
           {
             "id": "mh-tariff-wmt-tgt",
@@ -355,7 +468,11 @@
               "Target, as of May 2, 2026": true
             },
             "evidence_recall": 1.0,
-            "answer": "Based on the provided passages:\n\n*   **Walmart:** As of the three months ended April 30, 2026, Walmart did not recognize any amounts related to its tariff refund claims. The company stated that because the timing, amounts, and ultimate resolution of these refunds remained uncertain, it \"did not recognize any amounts related to these claims in the three months ended April 30, 2026\" [1].\n*   **Target:** As of May 2, 2026, Target had also not recognized any amounts from its tariff refund claims. The company reported that \"As of May 2, 2026, no refunds had been received and no receivable was recorded,\" although it noted that subsequent to the quarter-end, they began receiving refunds which were not yet material [2].\n\nTherefore, neither company recognized any amounts from their tariff refund claims as of those specific dates."
+            "llm_calls": 1,
+            "llm_ms": 10399,
+            "prompt_tokens": 1584,
+            "completion_tokens": 169,
+            "answer": "Based on the provided passages:\n\n*   **Walmart:** No, Walmart did not recognize any amounts related to its tariff refund claims for the three months ended April 30, 2026. The company stated that because the timing and ultimate resolution of refunds remain uncertain, it \"did not recognize any amounts related to these claims in the three months ended April 30, 2026\" [1].\n*   **Target:** No, Target had not recognized any tariff refund receivables as of May 2, 2026. The company reported that \"As of May 2, 2026, no refunds had been received and no receivable was recorded,\" although it noted that subsequent to the quarter-end, they began receiving refunds which were not yet material [2]."
           },
           {
             "id": "mh-gm-nvda-tgt",
@@ -366,19 +483,27 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.5,
-            "answer": "Based on the provided passages, **Target** had the higher gross margin for the specified periods.\n\n*   For Target Corporation, the gross margin rate for the three months ended August 2, 2025, was **29.0 percent** [1].\n*   For NVIDIA Corporation, the passage notes that the net effect on their gross margin in the third quarter of fiscal year 2026 was an unfavorable impact of **0.1%** [3]. While this indicates a decrease from the prior year, it implies the current rate is lower than the previous period (which was not explicitly stated as being higher than 29.0% in the text), but regardless, a 0.1% impact suggests a significantly lower absolute margin compared to Target's 29.0%.\n\nTherefore, Target's 29.0% gross margin is higher than NVIDIA's reported third-quarter fiscal 2026 gross margin performance."
+            "llm_calls": 1,
+            "llm_ms": 8273,
+            "prompt_tokens": 1843,
+            "completion_tokens": 157,
+            "answer": "Based on the provided passages, **Target** had the higher gross margin for the specified periods.\n\n*   For Target Corporation in the three months ended August 2, 2025, the gross margin rate was **29.0 percent** [1].\n*   For NVIDIA (NVDA) in the third quarter of fiscal year 2026, the passage states there was an \"unfavorable impact\" of **0.1%** on the gross margin but does not provide the absolute gross margin percentage for that period [3].\n\nSince Target's reported rate is explicitly 29.0% and NVIDIA's change is a negative adjustment without a base figure provided in the text, Target's gross margin is higher based on the available data."
           },
           {
             "id": "mh-agg-ocf-q1-2026",
             "complete": false,
             "parts": {
               "Delta, three months ended March 31, 2026": true,
-              "Southwest, three months ended March 31, 2026": true,
+              "Southwest, three months ended March 31, 2026": false,
               "Merck, first three months of 2026": false,
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.333,
-            "answer": "Based on the provided passages, here is the comparison of cash generated from operating activities for the three companies in the three months ended March 31, 2026:\n\n*   **Delta Air Lines:** Generated **$2.4 billion** from operating activities [3].\n*   **Southwest Airlines (LUV):** Generated **$1.4 billion** from operating activities [2].\n*   **Merck:** The provided passages do not contain any information regarding Merck's financial results or cash flow from operating activities.\n\nTherefore, among the companies mentioned in the text, **Delta Air Lines** generated the most cash from operating activities ($2.4 billion vs. $1.4 billion)."
+            "llm_calls": 1,
+            "llm_ms": 14260,
+            "prompt_tokens": 1887,
+            "completion_tokens": 330,
+            "answer": "Based on the provided passages, here is the information regarding cash from operating activities for the three companies:\n\n*   **Delta Air Lines:** Passage [3] states that during the March 2026 quarter, operating activities generated **$2.4 billion**. Additionally, Passage [2] mentions a net cash provided by operating activities of $1.4 billion for the three months ended March 31, 2026 (which appears to be a specific calculation or adjustment noted in that document section). However, the most direct figure for the quarter in Passage [3] is $2.4 billion.\n*   **Southwest Airlines:** The provided text contains no information regarding Southwest Airlines' cash flow from operating activities. Passage [2] discusses \"the Company's\" results but does not explicitly name Southwest Airlines or provide its specific operating cash flow data for comparison.\n*   **Merck:** The provided text contains no information regarding Merck.\n\nTherefore, based strictly on the available passages, only **Delta Air Lines** has a reported figure for cash from operating activities ($2.4 billion [3]), while there is no data provided for Southwest Airlines or Merck to make a comparison. Consequently, it cannot be determined from these texts which of the three generated the *most* cash, as two of the entities are not mentioned in the context of their operating cash flows.\n\n**Answer:** The provided passages do not contain enough information to answer this question because they only report operating cash flow data for Delta Air Lines ($2.4 billion [3]), with no corresponding data for Southwest Airlines or Merck."
           },
           {
             "id": "mh-agg-buybacks",
@@ -390,7 +515,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.333,
-            "answer": "Based on the provided passages, it is not possible to answer this question fully because the necessary information for two of the three companies is missing:\n\n*   **Walmart:** Passage [4] states that Walmart repurchased **$7,008 million** ($7.0 billion) in shares during the nine months ended October 31, 2025 [4].\n*   **NVIDIA:** The provided passages do not contain any financial data or share repurchase information for NVIDIA [1][2][3][4][5].\n*   **Target:** The provided passages do not contain any financial data or share repurchase information for Target [1][2][3][4][5].\n\nTherefore, while Walmart's spending is documented in the text, there is no information regarding NVIDIA or Target to make a comparison."
+            "llm_calls": 1,
+            "llm_ms": 11397,
+            "prompt_tokens": 1897,
+            "completion_tokens": 178,
+            "answer": "Based on the provided passages, only **Walmart** has data available for comparison.\n\n*   **Walmart:** According to Passage [4], Walmart repurchased **$7.0 billion** (specifically $7,008 million) in shares during the nine months ended October 31, 2025.\n*   **NVIDIA:** The provided passages do not contain any information regarding NVIDIA's share repurchases for fiscal year 2026 or any other period.\n*   **Target:** The provided passages do not contain any information regarding Target's share repurchases for the six months ended August 2, 2025, or any other period.\n\nTherefore, based strictly on the available text, Walmart is the only entity with recorded share repurchase data, spending $7.0 billion in the specified nine-month period."
           },
           {
             "id": "mh-agg-etr",
@@ -402,7 +531,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.333,
-            "answer": "Based on the provided passages, it is **not possible** to answer this question because the necessary data for one of the companies is missing.\n\n*   **Walmart:** Passage [4] mentions Walmart's fiscal 2025 effective tax rate but refers readers to \"Note 9\" for the specific reconciliation and rates, which are not included in the provided text. Passage [5] discusses fiscal 2026 data.\n*   **Southwest Airlines (LUV):** Passage [2] states that Southwest's effective tax rate was approximately **24.6%** for the first nine months of 2025.\n*   **Microsoft:** The provided passages do not contain any information regarding Microsoft or its tax rates for the three months ended December 31, 2025. Passage [3] contains data for Apple (AAPL) for periods ending in June 2026 and June 2025, but not Microsoft.\n\nTherefore, a comparison cannot be made as the effective tax rate for Walmart is not explicitly stated in the text, and no data exists for Microsoft in the specified period."
+            "llm_calls": 1,
+            "llm_ms": 15180,
+            "prompt_tokens": 1818,
+            "completion_tokens": 365,
+            "answer": "Based on the provided passages, here is the analysis:\n\n*   **Walmart for fiscal 2025:** Passage [4] states that Walmart reported consolidated net income of $20.2 billion for fiscal 2025 and mentions a reconciliation from the U.S. statutory rate to the effective income tax rates in Note 9. However, the specific numerical value for the effective tax rate is **not provided** in the text [4].\n*   **Southwest Airlines (LUV) for the first nine months of 2025:** Passage [2] explicitly states, \"The Company's effective tax rate was approximately **24.6 percent** for the first nine months of 2025.\"\n*   **Microsoft (AAPL) for the three months ended December 31, 2025:** Passage [3] provides data for Microsoft for the three months ended June 27, 2026 (17.9%) and June 28, 2025 (16.4%). It **does not contain any information** regarding the effective tax rate for the period ending December 31, 2025 [3].\n\nSince the passages do not provide the specific effective tax rates for Walmart or Microsoft for the requested periods, it is impossible to determine which had the highest rate based strictly on the provided text. The only available figure is Southwest Airlines' rate of 24.6%.\n\n**Answer:** The provided passages do not contain enough information to answer this question because they list the effective tax rate for Southwest Airlines (24.6%) [2], but do not state the specific effective tax rates for Walmart or Microsoft for the requested time periods [3][4]."
           },
           {
             "id": "mh-agg-dividend",
@@ -414,7 +547,11 @@
               "The overall comparison or conclusion the question asks for": false
             },
             "evidence_recall": 0.667,
-            "answer": "Based on the provided passages, here is the ranking of the per-share dividends from highest to lowest:\n\n1.  **Target's dividend in the first quarter of 2026:** $1.14 per share [1].\n2.  **Apple's quarterly cash dividend as of September 27, 2025:** $0.26 per share [4].\n3.  **Pfizer's dividend declared in June 2026:** Information regarding Pfizer or its dividends is not contained in the provided passages [1][2][3][4][5].\n\nTherefore, the ranking based on available data is: Target ($1.14) > Apple ($0.26). The position of Pfizer cannot be determined from the text provided."
+            "llm_calls": 1,
+            "llm_ms": 11435,
+            "prompt_tokens": 1721,
+            "completion_tokens": 203,
+            "answer": "Based on the provided passages, here is the ranking of the per-share dividends from highest to lowest:\n\n1.  **Target's dividend in the first quarter of 2026:** Passage [1] states that Target paid dividends totaling \"$1.14 per share\" during the first quarter of 2026.\n2.  **Apple's quarterly cash dividend as of September 27, 2025:** Passage [4] states that as of September 27, 2025, Apple's quarterly cash dividend was \"$0.26 per share.\"\n3.  **Pfizer's dividend declared in June 2026:** The provided passages do not contain any information regarding Pfizer or its dividends in June 2026.\n\nTherefore, the ranking from highest to lowest is: **Target ($1.14)**, **Apple ($0.26)**, and **Pfizer (Information not available in the provided context)**."
           },
           {
             "id": "mh-agg-tariffs",
@@ -425,7 +562,11 @@
               "Merck, period ended September 30, 2025": false
             },
             "evidence_recall": 0.0,
-            "answer": "Based on the provided passages, here is what was reported regarding tariffs:\n\n*   **Walmart:** The company expects continued uncertainty in its business and the global economy due to factors including \"tariffs and trade restrictions, including potential refunds\" [1].\n*   **Target:** The provided passages do not contain any information regarding Target or its reporting on tariffs.\n*   **Merck:** The provided passages do not contain any information regarding Merck or its reporting on tariffs.\n\nThe documents only discuss Walmart's expectations concerning tariffs; there is no data available in the text for Target or Merck."
+            "llm_calls": 1,
+            "llm_ms": 6989,
+            "prompt_tokens": 1721,
+            "completion_tokens": 123,
+            "answer": "Based on the provided passages, here is what was reported regarding tariffs:\n\n*   **Walmart:** The company expects continued uncertainty in its business and the global economy due to factors including \"tariffs and trade restrictions, including potential refunds\" [1].\n*   **Target:** The provided passages do not contain any information regarding Target or its reporting on tariffs.\n*   **Merck:** The provided passages do not contain any information regarding Merck or its reporting on tariffs.\n\nThe documents only discuss Walmart's expectations concerning tariffs; there is no data available for Target or Merck in the text provided."
           }
         ]
       }
