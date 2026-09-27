@@ -217,6 +217,12 @@ land.
   `tokens_per_minute` and raises `GeminiDailyQuotaExhausted` only when the
   429's `QuotaFailure.quotaId` names a per-day quota. The in-app daily
   counter below is still open.
+  **Flash-Lite as generator:** `rag/config/gemini-3.1-flash-lite.yaml` and
+  `gemini-3.5-flash-lite.yaml` overlay `config.yaml` with only the generator
+  changed (15/min, 250k tokens/min, 500/day on the free tier). Both are
+  thinking models, so the adapter sends `llm.thinking_level` (pinned to
+  `minimal` in both), counts thought tokens as completion tokens, and raises
+  when thinking uses up `max_tokens`. Neither is measured yet (see below).
 - **The free tier is the budget guard.** A project's actual limits are shown in
   AI Studio. Third-party sources disagree (500 vs. 1,000 requests/day, about
   15/min), so read the numbers from there and put them in config. One

@@ -155,6 +155,12 @@ class LLMConfig(BaseModel):
     # itself under both rather than firing and eating 429s. None = don't pace.
     requests_per_minute: int | None = Field(default=None, gt=0)
     tokens_per_minute: int | None = Field(default=None, gt=0)
+    # Gemini 3+ thinking models only (Flash-Lite 3.1/3.5). Thinking can't be
+    # switched off there, and its tokens come out of `max_tokens`, so a deep
+    # level on a long RAG prompt can leave no budget for the answer. None sends
+    # no thinkingConfig, which non-thinking models (hosted Gemma) require: the
+    # API rejects the field for them.
+    thinking_level: Literal["minimal", "low", "medium", "high"] | None = None
 
     @model_validator(mode="after")
     def _provider_base_url(self) -> "LLMConfig":
@@ -162,6 +168,17 @@ class LLMConfig(BaseModel):
         # every gemini stanza restate the endpoint invites a stale copy.
         if self.provider == "gemini" and "base_url" not in self.model_fields_set:
             self.base_url = GEMINI_BASE_URL
+        return self
+
+    @model_validator(mode="after")
+    def _thinking_level_is_gemini_only(self) -> "LLMConfig":
+        # Ollama would silently ignore it, and a run that believes it set a
+        # reasoning level but didn't is a meaningless measurement.
+        if self.thinking_level is not None and self.provider != "gemini":
+            raise ValueError(
+                f"thinking_level is a Gemini setting; provider {self.provider!r} ignores it "
+                "(Ollama's reasoning switch is `think`)"
+            )
         return self
 
 
