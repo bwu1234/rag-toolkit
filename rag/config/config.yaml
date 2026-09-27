@@ -181,7 +181,7 @@ crag:
 # prototype showed.
 agent:
   # The agent's own model; null uses `llm`. Must be a provider that can call
-  # tools (ollama today) -- building the agent fails otherwise. The measured
+  # tools (ollama or gemini) -- building the agent fails otherwise. The measured
   # split is the 27b here and the 9b in `llm`:
   #
   #   llm:

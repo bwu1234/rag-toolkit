@@ -21,6 +21,7 @@ from rag.events import EventSink, PipelineEvent
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
 from rag.generation.builder import build_agent_llm
+from rag.generation.gemini_llm import GeminiLLMClient
 from rag.generation.llm import AssistantTurn, ChatMessage, LLMClient, LLMUsage, ToolCallingLLM
 from rag.generation.ollama_llm import OllamaLLMClient
 from rag.generation.prompts import parse_cited_passages
@@ -200,10 +201,19 @@ def test_build_agent_llm_uses_agent_llm_when_set() -> None:
 
 
 def test_build_agent_llm_fails_at_build_time_for_a_provider_without_tools(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    config = RagConfig(agent=AgentConfig(llm=LLMConfig(provider="gemini", model="gemma-4-31b-it")))
-    with pytest.raises(ValueError, match="agent.llm selects provider 'gemini'"):
+    # Every implemented provider can call tools now, so stand in for a future
+    # adapter that can only `generate`.
+    monkeypatch.setattr("rag.generation.builder.get_llm_client", lambda config, num_ctx=None: _UsageLLM())
+    config = RagConfig(agent=AgentConfig(llm=LLMConfig(model="text-only")))
+    with pytest.raises(ValueError, match="agent.llm selects provider 'ollama'"):
         build_agent_llm(config)
+
+
+def test_build_agent_llm_accepts_gemini(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    config = RagConfig(agent=AgentConfig(llm=LLMConfig(provider="gemini", model="gemini-3.5-flash-lite")))
+    client = build_agent_llm(config)
+    assert isinstance(client, MeteredToolCallingLLM) and isinstance(client.inner, GeminiLLMClient)
 
 
 def test_nested_meters_do_not_double_count() -> None:

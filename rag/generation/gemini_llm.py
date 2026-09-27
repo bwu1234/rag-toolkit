@@ -26,21 +26,40 @@ tokens are drawn from `maxOutputTokens` and reported apart from the answer's
 thoughts as completion tokens (as Ollama's `eval_count` already does for qwen),
 and raises when thinking spent the whole budget instead of returning "".
 
+It is also a `ToolCallingLLM`, for the Milestone 19 agent. Gemini's function
+calling has two rules a port of the Ollama adapter would break. A Gemini 3
+model attaches a `thoughtSignature` to a step's first `functionCall`, and the
+next request fails with a 400 unless it goes back unchanged, so it travels
+on `ToolCall.signature`. And all of a step's results go back in one user turn
+of `functionResponse` parts, after all of its calls: interleaving calls and
+responses is also a 400.
+
 The API key is read from the environment (`api_key_env`), never from config.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import httpx
 
-from rag.generation.llm import LLMClient, LLMUsage
+from rag.generation.llm import (
+    AssistantTurn,
+    ChatMessage,
+    LLMUsage,
+    Message,
+    ToolCall,
+    ToolCallingLLM,
+    ToolDefinition,
+    ToolResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +79,7 @@ class GeminiDailyQuotaExhausted(RuntimeError):
     """The API reported this model's per-day quota as spent. Retrying won't help until it resets."""
 
 
-class GeminiLLMClient(LLMClient):
+class GeminiLLMClient(ToolCallingLLM):
     """Generates responses via the Gemini API's `models/{model}:generateContent` endpoint.
 
     `requests_per_minute` / `tokens_per_minute` are the project's free-tier
@@ -107,6 +126,25 @@ class GeminiLLMClient(LLMClient):
         return self.generate_with_usage(prompt, system=system)[0]
 
     def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+        estimate = int(len(prompt + (system or "")) / _CHARS_PER_TOKEN) + 1
+        payload, usage = self._generate([{"role": "user", "parts": [{"text": prompt}]}], system, [], estimate)
+        return _response_parts(payload, max_tokens=self.max_tokens)[0], usage
+
+    def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:
+        system, contents = _to_contents(messages)
+        declarations = [_declaration(t) for t in tools]
+        estimate = int(len(json.dumps(contents) + (system or "") + json.dumps(declarations)) / _CHARS_PER_TOKEN) + 1
+        payload, usage = self._generate(contents, system, declarations, estimate)
+        text, calls = _response_parts(payload, max_tokens=self.max_tokens)
+        return AssistantTurn(content=text, tool_calls=calls, usage=usage)
+
+    def _generate(
+        self,
+        contents: list[dict[str, Any]],
+        system: str | None,
+        declarations: list[dict[str, Any]],
+        estimate: int,
+    ) -> tuple[dict[str, object], LLMUsage]:
         generation_config: dict[str, object] = {
             "temperature": self.temperature,
             "maxOutputTokens": self.max_tokens,
@@ -114,14 +152,14 @@ class GeminiLLMClient(LLMClient):
         if self.thinking_level is not None:
             # The REST enum is upper case (MINIMAL, LOW, MEDIUM, HIGH).
             generation_config["thinkingConfig"] = {"thinkingLevel": self.thinking_level.upper()}
-        body: dict[str, object] = {
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": generation_config,
-        }
+        body: dict[str, object] = {"contents": contents, "generationConfig": generation_config}
         if system is not None:
             body["systemInstruction"] = {"parts": [{"text": system}]}
+        # Omitted when empty, as in the Ollama adapter: a turn offered no tools
+        # must answer in text, which is how the agent forces synthesis.
+        if declarations:
+            body["tools"] = [{"functionDeclarations": declarations}]
 
-        estimate = int(len(prompt + (system or "")) / _CHARS_PER_TOKEN) + 1
         payload = self._post_with_retries(body, estimate)
 
         usage_meta = payload.get("usageMetadata")
@@ -143,7 +181,7 @@ class GeminiLLMClient(LLMClient):
         if reported is not None and self._window:
             stamp, _ = self._window.pop()
             self._window.append((stamp, reported))
-        return _response_text(payload, max_tokens=self.max_tokens), usage
+        return payload, usage
 
     def _post_with_retries(self, body: dict[str, object], estimate: int) -> dict[str, object]:
         path = f"/v1beta/models/{self.model}:generateContent"
@@ -228,13 +266,61 @@ def api_key_from_env(var: str) -> str:
     return key
 
 
-def _response_text(payload: dict[str, object], *, max_tokens: int) -> str:
-    """The answer text of the first candidate, skipping any thought-summary parts.
+def _to_contents(messages: Sequence[Message]) -> tuple[str | None, list[dict[str, Any]]]:
+    """Translate a conversation into Gemini's `systemInstruction` and `contents`.
 
-    Raises when the token cap left no answer at all -- with a thinking model,
-    usually because thoughts used it up -- since "" would read downstream as a
-    refusal. A cap that cut the answer short only warns: the text is still the
-    best the model produced.
+    Consecutive `ToolResult`s share one user turn: Gemini wants a step's
+    responses together, after all of its calls.
+    """
+    system: list[str] = []
+    contents: list[dict[str, Any]] = []
+    for message in messages:
+        if isinstance(message, ChatMessage) and message.role == "system":
+            if contents:
+                # Gemini has one system instruction, outside the turn list, so a
+                # system message partway through would silently move to the top.
+                raise ValueError("Gemini takes system messages only before the first user/assistant turn")
+            system.append(message.content)
+        elif isinstance(message, ChatMessage):
+            contents.append({"role": "user", "parts": [{"text": message.content}]})
+        elif isinstance(message, ToolResult):
+            response: dict[str, Any] = {"name": message.call.name, "response": {"result": message.content}}
+            if message.call.id is not None:
+                response["id"] = message.call.id
+            part = {"functionResponse": response}
+            previous = contents[-1] if contents else None
+            if previous and previous["role"] == "user" and all("functionResponse" in p for p in previous["parts"]):
+                previous["parts"].append(part)
+            else:
+                contents.append({"role": "user", "parts": [part]})
+        else:
+            parts: list[dict[str, Any]] = [{"text": message.content}] if message.content else []
+            for call in message.tool_calls:
+                function_call: dict[str, Any] = {"name": call.name, "args": call.arguments}
+                if call.id is not None:
+                    function_call["id"] = call.id
+                call_part: dict[str, Any] = {"functionCall": function_call}
+                if call.signature is not None:
+                    call_part["thoughtSignature"] = call.signature
+                parts.append(call_part)
+            contents.append({"role": "model", "parts": parts or [{"text": ""}]})
+    return ("\n\n".join(system) if system else None), contents
+
+
+def _declaration(tool: ToolDefinition) -> dict[str, Any]:
+    # `parametersJsonSchema` takes standard JSON Schema, which is what pydantic
+    # derives for our tools; the older `parameters` field takes only an
+    # OpenAPI subset and would need a schema rewrite.
+    return {"name": tool.name, "description": tool.description, "parametersJsonSchema": tool.parameters}
+
+
+def _response_parts(payload: dict[str, object], *, max_tokens: int) -> tuple[str, tuple[ToolCall, ...]]:
+    """The answer text and function calls of the first candidate, skipping thought-summary parts.
+
+    Raises when the token cap left neither an answer nor a call -- with a
+    thinking model, usually because thoughts used it up -- since "" would read
+    downstream as a refusal. A cap that cut the answer short only warns: the
+    text is still the best the model produced.
     """
     candidates = payload.get("candidates")
     if not isinstance(candidates, list) or not candidates:
@@ -244,14 +330,16 @@ def _response_text(payload: dict[str, object], *, max_tokens: int) -> str:
     content = candidate.get("content") if isinstance(candidate, dict) else None
     parts = content.get("parts") if isinstance(content, dict) else None
     reason = candidate.get("finishReason") if isinstance(candidate, dict) else None
+    valid_parts = [p for p in (parts if isinstance(parts, list) else []) if isinstance(p, dict)]
     text = "".join(
-        part["text"]
-        for part in (parts if isinstance(parts, list) else [])
-        if isinstance(part, dict) and isinstance(part.get("text"), str) and not part.get("thought")
+        part["text"] for part in valid_parts if isinstance(part.get("text"), str) and not part.get("thought")
     )
+    calls = tuple(_parse_call(part) for part in valid_parts if "functionCall" in part)
+    if reason in ("MALFORMED_FUNCTION_CALL", "UNEXPECTED_TOOL_CALL"):
+        raise RuntimeError(f"Gemini rejected the model's own function call (finishReason={reason}): {candidate!r}")
     if reason == "MAX_TOKENS":
         # Thoughts can use the whole cap, and then the candidate has no parts at all.
-        if not text.strip():
+        if not text.strip() and not calls:
             raise RuntimeError(
                 f"Gemini hit max_tokens={max_tokens} before writing any answer. With a thinking model "
                 "the thoughts count toward that cap: raise llm.max_tokens or lower llm.thinking_level."
@@ -259,7 +347,23 @@ def _response_text(payload: dict[str, object], *, max_tokens: int) -> str:
         logger.warning("Gemini answer truncated at max_tokens=%d", max_tokens)
     elif not isinstance(parts, list):
         raise RuntimeError(f"Gemini candidate has no content (finishReason={reason!r}): {candidate!r}")
-    return text
+    return text, calls
+
+
+def _parse_call(part: dict[str, Any]) -> ToolCall:
+    function_call = part["functionCall"]
+    name = function_call.get("name") if isinstance(function_call, dict) else None
+    args = function_call.get("args", {}) if isinstance(function_call, dict) else None
+    if not isinstance(name, str) or not isinstance(args, dict):
+        raise RuntimeError(f"Unexpected functionCall shape from Gemini: {part!r}")
+    call_id = function_call.get("id")
+    signature = part.get("thoughtSignature")
+    return ToolCall(
+        name=name,
+        arguments=args,
+        id=call_id if isinstance(call_id, str) else None,
+        signature=signature if isinstance(signature, str) else None,
+    )
 
 
 def _error_details(response: httpx.Response) -> list[dict[str, object]]:

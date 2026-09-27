@@ -87,11 +87,17 @@ class ToolCall:
     `id` is whatever the provider assigned (Ollama and Anthropic both do). It
     is carried back on the matching `ToolResult`, because a provider that pairs
     results with calls by id rejects a result without one.
+
+    `signature` is provider state that must go back on the call, unread and
+    unchanged. Gemini 3 attaches a `thoughtSignature` to a step's first function
+    call and rejects the next request with a 400 if it's missing. Adapters
+    whose provider has no such thing leave it `None` and ignore it.
     """
 
     name: str
     arguments: dict[str, Any]
     id: str | None = None
+    signature: str | None = None
 
 
 @dataclass(frozen=True)

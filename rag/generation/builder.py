@@ -102,6 +102,6 @@ def build_agent_llm(config: RagConfig) -> ToolCallingLLM:
         raise ValueError(
             f"The agent needs a model that can call tools, but {source} selects provider "
             f"{llm_config.provider!r}, whose adapter doesn't implement ToolCallingLLM. "
-            "Set agent.llm to an ollama model."
+            "Set agent.llm to an ollama or gemini model."
         )
     return client
