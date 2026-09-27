@@ -125,11 +125,11 @@ VERIFY_SYSTEM_PROMPT = (
 )
 
 
-def build_verify_prompt(candidate: "Candidate") -> str:
+def build_verify_prompt(question: str, span: str, answer: str) -> str:
     return (
-        f"<question>{candidate.question}</question>\n"
-        f"<passage>{candidate.answer_span}</passage>\n"
-        f"<proposed_answer>{candidate.answer}</proposed_answer>\n\n"
+        f"<question>{question}</question>\n"
+        f"<passage>{span}</passage>\n"
+        f"<proposed_answer>{answer}</proposed_answer>\n\n"
         "GOOD or BAD:"
     )
 
@@ -193,6 +193,25 @@ def generate_candidate(llm_client, chunk: Chunk, max_span_chars: int) -> Candida
 
 
 def verify_candidate(llm_client, candidate: Candidate) -> bool:
+    """Verify a generated candidate -- see :func:`verify_label`."""
+    return verify_label(
+        llm_client,
+        candidate.question,
+        candidate.answer_span,
+        candidate.answer,
+        label=candidate.chunk.id,
+    )
+
+
+def verify_label(
+    llm_client,
+    question: str,
+    span: str,
+    answer: str,
+    *,
+    label: str,
+    system: str = VERIFY_SYSTEM_PROMPT,
+) -> bool:
     """Second-opinion check that the span answers the question and supports the answer.
 
     Deliberately **fails closed**, which is the opposite of every runtime
@@ -209,10 +228,10 @@ def verify_candidate(llm_client, candidate: Candidate) -> bool:
     """
     try:
         reply = llm_client.generate(
-            build_verify_prompt(candidate), system=VERIFY_SYSTEM_PROMPT
+            build_verify_prompt(question, span, answer), system=system
         )
     except Exception:  # noqa: BLE001
-        logger.exception("Verification failed for chunk %r", candidate.chunk.id)
+        logger.exception("Verification failed for %r", label)
         return False
     return reply.strip().upper().startswith("GOOD")
 
