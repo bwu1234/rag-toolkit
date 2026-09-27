@@ -19,16 +19,19 @@ from rag.config.settings import RagConfig, TurnLogConfig
 from rag.events import EventSink, PipelineEvent
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
-from rag.generation.llm import LLMClient, LLMUsage
+from rag.config.settings import AgentConfig, LLMConfig
+from rag.generation.builder import build_agent_llm
+from rag.generation.llm import AssistantTurn, ChatMessage, LLMClient, LLMUsage, ToolCallingLLM
 from rag.generation.ollama_llm import OllamaLLMClient
 from rag.generation.prompts import parse_cited_passages
 from rag.observability.factory import config_fingerprint, get_turn_sink as build_turn_sink
 from rag.observability.records import FeedbackRecord, TurnRecord
 from rag.observability.sink import JsonlTurnSink, TurnSink, read_turn_log, turns_with_feedback
-from rag.observability.usage import MeteredLLMClient, metered
+from rag.observability.usage import MeteredLLMClient, MeteredToolCallingLLM, metered, metered_client
 from rag.retrieval.retriever import RetrievalResult
 from rag.ui.helpers import format_turn_metrics, rating_from_feedback_widget
 from rag.vectorstore.base import ScoredChunk
+from tests.fakes import ScriptedToolLLM
 
 
 def _scored(chunk_id: str, score: float = 0.5) -> ScoredChunk:
@@ -150,6 +153,57 @@ def test_default_generate_with_usage_reports_no_usage() -> None:
             return "hi"
 
     assert _Plain().generate_with_usage("q") == ("hi", None)
+
+
+def test_metered_tool_client_records_chat_usage_into_the_active_meter() -> None:
+    inner = ScriptedToolLLM([AssistantTurn("a", usage=LLMUsage(1000, 50)), AssistantTurn("b", usage=None)])
+    client = metered_client(inner)
+    with metered() as meter:
+        client.chat([ChatMessage("user", "q")])
+        client.chat([ChatMessage("user", "q")])
+    assert meter.calls == 2  # a call with unknown usage still counts as a call
+    assert (meter.prompt_tokens, meter.completion_tokens) == (1000, 50)
+    assert meter.llm_ms >= 0
+
+
+def test_metered_tool_client_meters_generate_too_and_passes_through_outside_a_meter() -> None:
+    client = metered_client(ScriptedToolLLM([AssistantTurn("a")], generate_reply="g"))
+    assert client.chat([ChatMessage("user", "outside")]).content == "a"  # nothing active; must not fail
+    with metered() as meter:
+        assert client.generate("q") == "g"
+    assert meter.calls == 1
+
+
+def test_metered_client_keeps_the_tool_calling_capability() -> None:
+    # Plain `MeteredLLMClient` would hide `chat()` and fail the agent's
+    # build-time check; the helper picks the wrapper that matches the inner type.
+    assert isinstance(metered_client(ScriptedToolLLM([])), MeteredToolCallingLLM)
+    assert isinstance(metered_client(ScriptedToolLLM([])), ToolCallingLLM)
+    plain = metered_client(_UsageLLM())
+    assert type(plain) is MeteredLLMClient and not isinstance(plain, ToolCallingLLM)
+
+
+def test_build_agent_llm_is_metered_tool_calling_with_num_ctx_and_falls_back_to_llm() -> None:
+    config = RagConfig(llm=LLMConfig(model="pipeline-9b"))
+    client = build_agent_llm(config)
+    assert isinstance(client, MeteredToolCallingLLM)
+    assert isinstance(client.inner, OllamaLLMClient)
+    assert client.inner.model == "pipeline-9b"
+    assert client.inner.num_ctx == config.agent.num_ctx
+
+
+def test_build_agent_llm_uses_agent_llm_when_set() -> None:
+    config = RagConfig(agent=AgentConfig(llm=LLMConfig(model="agent-27b"), num_ctx=16384))
+    client = build_agent_llm(config)
+    assert isinstance(client, MeteredToolCallingLLM) and isinstance(client.inner, OllamaLLMClient)
+    assert (client.inner.model, client.inner.num_ctx) == ("agent-27b", 16384)
+
+
+def test_build_agent_llm_fails_at_build_time_for_a_provider_without_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    config = RagConfig(agent=AgentConfig(llm=LLMConfig(provider="gemini", model="gemma-4-31b-it")))
+    with pytest.raises(ValueError, match="agent.llm selects provider 'gemini'"):
+        build_agent_llm(config)
 
 
 def test_nested_meters_do_not_double_count() -> None:
@@ -373,6 +427,12 @@ def test_config_fingerprint_ignores_where_logs_go_but_not_behaviour() -> None:
     other_top_k = base.model_copy(update={"retrieval": base.retrieval.model_copy(update={"top_k": 7})})
     assert config_fingerprint(base) == config_fingerprint(moved_log)
     assert config_fingerprint(base) != config_fingerprint(other_top_k)
+
+
+def test_config_fingerprint_ignores_the_agent_section_while_nothing_reads_it() -> None:
+    base = RagConfig()
+    other_agent = base.model_copy(update={"agent": AgentConfig(max_tool_calls=3)})
+    assert config_fingerprint(base) == config_fingerprint(other_agent)
 
 
 # ---------------------------------------------------------------------------

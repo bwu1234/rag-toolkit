@@ -174,6 +174,37 @@ crag:
   check_groundedness: true
   max_regenerations: 1
 
+# Milestone 19 -- agentic retrieval: the model calls search as a tool, as many
+# times as it needs, instead of the pipeline's single retrieve-then-generate.
+# Nothing reads this until the agent loop lands (phase 3 of
+# docs/milestone-19-plan.md); every guard below answers a failure the
+# prototype showed.
+agent:
+  # The agent's own model; null uses `llm`. Must be a provider that can call
+  # tools (ollama today) -- building the agent fails otherwise. The measured
+  # split is the 27b here and the 9b in `llm`:
+  #
+  #   llm:
+  #     provider: ollama
+  #     model: qwen3.8:27b-mlx
+  #     base_url: http://localhost:11434
+  #     timeout_s: 600
+  llm: null
+  # react   -- the model decides after each result whether to search again
+  # planned -- one call plans all sub-queries, they run back to back, then one
+  #            call answers (for a model that decomposes but won't iterate)
+  strategy: react
+  # Searches per turn; at the cap the model gets one tool-free turn to answer.
+  max_tool_calls: 8
+  # Wall-clock budget per agent turn. Sized for batch measurement; whether the
+  # UI should get ~60 s instead is still open.
+  timeout_s: 600
+  # Per-passage character cap in search results (matches the MCP server).
+  max_passage_chars: 1200
+  # Context window requested on every agent call. Ollama drops the overflow of
+  # a longer prompt silently; the adapter warns at 90% of this.
+  num_ctx: 32768
+
 # Milestone 12 -- persist every chat turn (queries, retrieved/kept/cited chunk
 # ids, CRAG verdicts, per-stage latency, LLM calls and tokens, the answer) and
 # the thumbs up/down given to it. Written by the API, the UI and `cli chat`;

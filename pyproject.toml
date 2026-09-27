@@ -34,6 +34,9 @@ mcp = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Deselect with `-m "not live"`; each live test also skips itself when the
+# daemon or its model is missing, so CI (no Ollama) runs none of them.
+markers = ["live: talks to a real local Ollama daemon"]
 
 [tool.ruff.lint]
 # Pin the rule set explicitly rather than relying on ruff's default selection,

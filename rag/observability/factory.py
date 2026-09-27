@@ -32,7 +32,12 @@ def config_fingerprint(config: RagConfig) -> str:
     `observability` and `eval` are excluded: where the log goes and which judge
     the eval runners use don't change a single answer, and including them would
     split identical-behaviour turns into different buckets.
+
+    `agent` is excluded for the same reason, for now: nothing on the query path
+    reads it until the agent loop lands, so adding the section must not re-key
+    every logged turn. When `chat.mode: agentic` exists, the agent settings
+    change what a turn does and belong in the hash for that mode.
     """
 
-    payload = config.model_dump_json(exclude={"observability", "eval"})
+    payload = config.model_dump_json(exclude={"observability", "eval", "agent"})
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]

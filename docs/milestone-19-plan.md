@@ -163,35 +163,68 @@ Search count and cap-hit rate come with the agent in phase 3.
 
 ### 1 — Interface and adapter
 
-- `ToolCallingLLM`, `AssistantTurn`, `ToolCall` in `rag/generation/llm.py`.
-- `OllamaLLMClient.chat()`: `/api/chat` with `tools`; `tool_name` on tool
-  messages; `think` passed through (bool or level string, since the 27b
-  accepts `low|medium|xhigh`).
-- `MeteredToolCallingLLM` in `rag/observability/usage.py`, and the builder
-  change from decision 1.
-- `agent:` section in `settings.py` / `config.yaml`: `llm` (optional),
-  `strategy` (`react | planned`), `max_tool_calls`, `timeout_s`,
-  `max_passage_chars`, `num_ctx`.
-- **Set `num_ctx` explicitly on agent calls.** When a prompt is longer than
-  the context window, Ollama silently drops tokens instead of raising an
-  error. The shipped adapter sends no `num_ctx`
-  (`rag/generation/ollama_llm.py`); the prototype sent 32768
-  (`scripts/experiments/2026-09-generator-probe/agentic_probe.py`). With agent
-  prompts ~6× the pipeline's, leaving it unset could make the real code quietly
-  worse than the prototype it is meant to reproduce. Default to 32768 to match
-  the prototype.
-- **Exit:** unit tests with a scripted fake `ToolCallingLLM`; a test that
-  `MeteredToolCallingLLM` records `chat()` usage and passes the build-time type
-  check; one live smoke test marked to skip when Ollama is absent. The smoke
-  test asserts that the reported prompt tokens are below `num_ctx`, and the agent
-  logs a warning whenever a turn's prompt reaches 90% of it.
+**Done.** What shipped, and where it departs from the original bullets:
+
+- `ToolCallingLLM(LLMClient)` with `chat(messages, tools) -> AssistantTurn`
+  in `rag/generation/llm.py`, plus provider-neutral `ToolDefinition`,
+  `ToolCall` (with the provider's call `id`), `ChatMessage` and `ToolResult`.
+  The returned `AssistantTurn` is also the assistant message sent back on the
+  next call, so tool calls and any `thinking` trace round-trip unchanged.
+  Tools are a neutral `ToolDefinition`, not an Ollama payload: the adapter owns
+  the wire format, which makes phase 2's converter `ToolSpec → ToolDefinition`.
+- `OllamaLLMClient` implements it on the same `/api/chat` call as
+  `generate()`. Tool results go back with `tool_name`. `llm.think` takes
+  `true | false | low | medium | high | xhigh`. A turn with no tools omits the
+  `tools` key, which is how the forced-synthesis turn will work.
+- `MeteredToolCallingLLM` in `rag/observability/usage.py`, and
+  `metered_client()`, which picks the wrapper that matches the inner client.
+  `build_chat_service` uses it. `build_agent_llm(config)` in
+  `rag/generation/builder.py` builds the agent's metered client from
+  `agent.llm or llm`, and raises at build time when the provider has no tool
+  support (Gemini today).
+- `agent:` in `settings.py` / `config.yaml`: `llm`, `strategy`,
+  `max_tool_calls: 8`, `timeout_s: 600`, `max_passage_chars: 1200`,
+  `num_ctx: 32768`. It is inert until phase 3, so `config_fingerprint`
+  excludes it for now and logged turns keep their fingerprint. **Phase 3 must
+  put it back in the hash when `chat.mode: agentic`.** `timeout_s: 600` is a
+  measurement default. The interactive-latency question below is still open.
+- **`num_ctx` alone doesn't prevent silent truncation, and the 90% warning
+  doesn't detect it.** Measured on Ollama 0.34.4 with a ~6.9k-token prompt:
+
+  | model (engine) | `num_ctx` | prompt tokens reported | answer |
+  |---|---|---|---|
+  | `qwen3.5:9b` (llama.cpp) | 4096 | 2,050 (start of prompt dropped) | wrong |
+  | `qwen3.5:9b` (llama.cpp) | 4096, `truncate: false` | HTTP 400 `exceed_context_size_error` | — |
+  | `qwen3.5:9b-mlx` (MLX) | 4096 | 6,921 (not truncated) | right |
+
+  The llama.cpp engine truncates to about half the window and reports only
+  the tokens it kept, so a truncated prompt looks like a small one, and a
+  "prompt ≥ 90% of `num_ctx`" check never fires. The adapter therefore sends
+  `truncate: false` alongside `num_ctx` and raises `ContextOverflowError` on
+  the 400. The 90% warning stays as an early notice before the next,
+  longer prompt overflows. Requests without `num_ctx`, which means the whole
+  pipeline, are byte-identical to before.
+  The MLX engine, which serves both shipped models (`-mlx`), **ignores
+  per-request `num_ctx`**. `/api/ps` reports 32768 whatever the request asks
+  for, and a 42.9k-token prompt was processed whole. So on MLX `num_ctx` is
+  a no-op, and prompt size is bounded only by `max_tool_calls` ×
+  `max_passage_chars`.
+- **Tests:** a scripted fake `ToolCallingLLM` (`tests/fakes.py`), used for the
+  metering and build-time type-check tests; adapter tests against a mocked
+  transport, using the tool-call shape Ollama actually returned; and two
+  `live`-marked tests (`tests/test_ollama_live.py`) that skip when Ollama or
+  the model is absent. One is a real search-then-answer round trip through
+  `build_agent_llm` that asserts 2 metered calls and prompt tokens below
+  `num_ctx`. The other shows a GGUF model raising `ContextOverflowError`
+  instead of truncating.
 
 ### 2 — Shared tools
 
 - Move `ToolSpec`/`RagTools` to `rag/tools.py`, then re-export from
   `rag/mcp/tools.py` so the MCP tests pass unchanged.
-- A `ToolSpec → Ollama tool definition` converter. The schema is already
-  derived via pydantic, so this is a wrapper, not a second schema.
+- A `ToolSpec → ToolDefinition` converter (the adapter already turns a
+  `ToolDefinition` into Ollama's format). The schema is already derived via
+  pydantic, so this is a wrapper, not a second schema.
 - **Exit:** `tests/test_mcp.py` green; a new test asserting the agent and MCP
   advertise the same `rag_search` schema.
 
@@ -205,7 +238,11 @@ Search count and cap-hit rate come with the agent in phase 3.
   the forced-synthesis turn `react` already needs at the cap. The two share
   the ledger and guards: the duplicate-query refusal dedups the plan,
   `max_tool_calls` truncates it, and `timeout_s` applies unchanged.
-- The builder switches on `chat.mode`, then `agent.strategy`.
+- The builder switches on `chat.mode`, then `agent.strategy`. The agent's
+  model comes from `build_agent_llm`. Add `agent` back into
+  `config_fingerprint` for agentic turns.
+- Catch `ContextOverflowError` like the search cap: stop searching and take
+  the forced-synthesis turn with the passages already in the ledger.
 - **Exit:** tests for each guard (cap leads to a synthesis turn with tools
   removed; a duplicate query spends no search; a timeout returns the best
   answer so far; ledger numbering and dedup); for `planned`, a test that the

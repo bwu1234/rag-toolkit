@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from rag.config.settings import DEFAULT_CONFIG_PATH, RagConfig, _deep_merge, load_config
+from rag.config.settings import DEFAULT_CONFIG_PATH, AgentConfig, LLMConfig, RagConfig, _deep_merge, load_config
+from rag.mcp.tools import DEFAULT_MAX_CHARS
 
 
 def test_default_config_has_expected_models(default_config: RagConfig) -> None:
@@ -301,3 +302,40 @@ def test_plain_prompt_allows_crag_without_regeneration() -> None:
         {"chat": {"prompt": "plain"}, "crag": {"enabled": True, "max_regenerations": 0}}
     )
     assert cfg.crag.check_groundedness
+
+
+
+# ---------------------------------------------------------------------------
+# agent (Milestone 19)
+# ---------------------------------------------------------------------------
+
+
+def test_agent_defaults_match_the_prototype() -> None:
+    agent = RagConfig().agent
+    assert agent.llm is None  # falls back to `llm`
+    assert (agent.strategy, agent.max_tool_calls, agent.num_ctx) == ("react", 8, 32768)
+
+
+def test_agent_passage_cap_matches_the_mcp_server() -> None:
+    # One number, two homes until phase 2 moves the tool surface out of rag/mcp.
+    assert AgentConfig().max_passage_chars == DEFAULT_MAX_CHARS
+
+
+def test_shipped_config_agent_section_matches_the_model_defaults() -> None:
+    assert load_config(DEFAULT_CONFIG_PATH).agent == AgentConfig()
+
+
+@pytest.mark.parametrize("bad", [{"strategy": "tree"}, {"max_tool_calls": 0}, {"timeout_s": 0}, {"num_ctx": 512}])
+def test_agent_rejects_invalid_values(bad: dict) -> None:
+    with pytest.raises(ValidationError):
+        AgentConfig(**bad)
+
+
+@pytest.mark.parametrize("think", [True, False, "low", "medium", "xhigh"])
+def test_llm_think_accepts_on_off_or_a_level(think: bool | str) -> None:
+    assert LLMConfig(think=think).think == think
+
+
+def test_llm_think_rejects_an_unknown_level() -> None:
+    with pytest.raises(ValidationError):
+        LLMConfig(think="extreme")
