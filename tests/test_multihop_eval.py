@@ -18,7 +18,7 @@ import pytest
 from rag.config.settings import EvalConfig, LLMConfig, RagConfig
 from rag.eval.answer_eval import resolve_judge_config, run_answer_eval
 from rag.eval.dataset import EvalDataset, ExpectedSpan
-from rag.eval.multihop_eval import CONCLUSION_LABEL, parts_of, run_multihop_eval
+from rag.eval.multihop_eval import CONCLUSION_LABEL, format_tokens, parts_of, run_multihop_eval
 from rag.eval.relevance import unmatched_spans
 from rag.generation.chat_service import ChatAnswer, ChatService, Citation
 
@@ -26,6 +26,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
 
 from build_multihop_set import OUTPUT, SOURCE, build  # noqa: E402
+import run_answer_matrix  # noqa: E402
 
 
 class _FakeChatService(ChatService):
@@ -35,6 +36,18 @@ class _FakeChatService(ChatService):
 
     def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
         return ChatAnswer(answer=self._answer, citations=self._citations)
+
+
+class _UsageChatService(ChatService):
+    """Returns one answer per call, each carrying the usage given for it."""
+
+    def __init__(self, *usages: tuple[int, float, int | None, int | None]) -> None:
+        self._usages = list(usages)
+
+    def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+        calls, ms, prompt, completion = self._usages.pop(0)
+        return ChatAnswer(answer="x", citations=[], llm_calls=calls, llm_ms=ms,
+                          prompt_tokens=prompt, completion_tokens=completion)
 
 
 class _ScriptedJudge:
@@ -212,6 +225,71 @@ def test_complete_rate_is_reported_per_kind() -> None:
     report = run_multihop_eval(dataset, _FakeChatService("x"), _ScriptedJudge("PASS", "PASS", "PASS", "FAIL"))
 
     assert report.complete_rate_by_kind == {"aggregation": 0.0, "cross_period": 1.0}
+
+
+def _two_samples() -> EvalDataset:
+    a, b = _sample(conclusion=None), _sample(conclusion=None)
+    b["id"] = "mh-2"
+    return EvalDataset.from_dicts([a, b])
+
+
+def test_each_sample_carries_its_turns_llm_usage() -> None:
+    chat = _UsageChatService((3, 1500.0, 900, 40), (1, 500.0, 300, 20))
+
+    report = run_multihop_eval(_two_samples(), chat, _ScriptedJudge(*["PASS"] * 4))
+
+    first = report.sample_results[0]
+    assert (first.llm_calls, first.llm_ms, first.prompt_tokens, first.completion_tokens) == (3, 1500.0, 900, 40)
+    assert report.mean_llm_calls == 2.0
+    assert report.mean_llm_s == pytest.approx(1.0)
+    assert (report.mean_prompt_tokens, report.mean_completion_tokens) == (600.0, 30.0)
+    assert report.num_with_tokens == 2
+
+
+def test_token_means_skip_samples_whose_provider_reported_none() -> None:
+    # Unknown is not zero: averaging a None in as 0 would halve the mean here.
+    chat = _UsageChatService((2, 100.0, 800, 50), (2, 100.0, None, None))
+
+    report = run_multihop_eval(_two_samples(), chat, _ScriptedJudge(*["PASS"] * 4))
+
+    assert (report.mean_prompt_tokens, report.mean_completion_tokens) == (800.0, 50.0)
+    assert report.num_with_tokens == 1
+    assert report.mean_llm_calls == 2.0  # calls are always counted
+    assert format_tokens(report) == ", 800 prompt / 50 generated tokens (from 1 of 2)"
+
+
+def test_token_means_are_unknown_when_no_sample_reported_them() -> None:
+    chat = _UsageChatService((1, 10.0, None, None), (1, 10.0, None, None))
+
+    report = run_multihop_eval(_two_samples(), chat, _ScriptedJudge(*["PASS"] * 4))
+
+    assert report.mean_prompt_tokens is None and report.mean_completion_tokens is None
+    assert report.num_with_tokens == 0
+    assert format_tokens(report) == ""
+
+
+def test_judge_calls_are_not_counted_as_the_turns_cost() -> None:
+    # The judge is called outside ask(), so however many parts it grades, the
+    # sample's usage is only what the answering turn reported.
+    chat = _UsageChatService((1, 10.0, 100, 10))
+    dataset = EvalDataset.from_dicts([_sample()])
+
+    report = run_multihop_eval(dataset, chat, _ScriptedJudge("PASS", "PASS", "PASS"))
+
+    assert report.sample_results[0].llm_calls == 1
+
+
+def test_matrix_saves_each_parts_judge_reply_and_the_missing_evidence() -> None:
+    dataset = EvalDataset.from_dicts([_sample(conclusion=None)])
+    chat = _FakeChatService("A is 10.", [_citation("A reported 10")])
+
+    saved = run_answer_matrix.run_multihop(
+        chat, _ScriptedJudge("PASS matches", "FAIL says not found"), dataset
+    )["samples"][0]
+
+    assert saved["parts"] == {"A": True, "B": False}
+    assert saved["judge_outputs"] == {"A": "PASS matches", "B": "FAIL says not found"}
+    assert saved["missing_spans"] == ["B reported 5"]
 
 
 # ---------------------------------------------------------------------------

@@ -199,6 +199,7 @@ def test_answer_carries_turn_id_latency_usage_and_cited_ids() -> None:
     assert answer.cited_chunk_ids == ["b"]
     assert [c.chunk_id for c in answer.citations] == ["a", "b"]  # every passage shown stays a citation
     assert answer.llm_calls == 1
+    assert answer.llm_ms == sink.turns[0].llm_ms
     assert (answer.prompt_tokens, answer.completion_tokens) == (100, 20)
     assert answer.stage_ms["rerank"] == pytest.approx(10.0)
     assert {"prompt", "generate"} <= answer.stage_ms.keys()

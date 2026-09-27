@@ -27,3 +27,5 @@ data/logs/
 .env
 draft/
 pytest-cache-files-gvcbngex/
+# Per-sample eval checkpoints (rag/eval/checkpoint.py); deleted once a set finishes.
+data/eval/results/.partial/

@@ -138,6 +138,8 @@ class ChatAnswer:
     """Wall-clock milliseconds for the whole turn."""
     llm_calls: int = 0
     """LLM calls this turn made, from every component: expansion, condensing, CRAG, generation."""
+    llm_ms: float = 0.0
+    """Milliseconds spent inside those calls -- the LLM's share of `total_ms`."""
     prompt_tokens: int | None = None
     """Prompt tokens across those calls; None when the provider doesn't report them."""
     completion_tokens: int | None = None
@@ -332,6 +334,7 @@ class ChatService:
             stage_ms=_stage_totals(trace.events),
             total_ms=(time.monotonic() - start) * 1000,
             llm_calls=meter.calls,
+            llm_ms=meter.llm_ms,
             prompt_tokens=meter.prompt_tokens,
             completion_tokens=meter.completion_tokens,
         )

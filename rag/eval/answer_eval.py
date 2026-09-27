@@ -44,8 +44,9 @@ import argparse
 import logging
 import sys
 import time
-from collections.abc import Callable
-from dataclasses import dataclass, field
+from collections.abc import Callable, Mapping
+from dataclasses import asdict, dataclass, field
+from typing import Any
 from pathlib import Path
 
 from rag.config.settings import LLMConfig, RagConfig, load_config
@@ -189,6 +190,13 @@ class AnswerSampleResult:
             return None
         return not self.missing_spans
 
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AnswerSampleResult:
+        return cls(**data)
+
 
 @dataclass
 class EvidenceBucket:
@@ -230,14 +238,26 @@ def run_answer_eval(
     dataset: EvalDataset,
     chat_service: ChatService,
     llm_client: LLMClient,
+    *,
+    completed: Mapping[str, AnswerSampleResult] | None = None,
+    on_result: Callable[[AnswerSampleResult], None] | None = None,
 ) -> AnswerEvalReport:
-    """Run the full pipeline + LLM judge for every sample with an expected answer."""
+    """Run the full pipeline + LLM judge for every sample with an expected answer.
+
+    ``completed`` holds results from an earlier, interrupted run of the same
+    setup: those samples are reused, not re-asked. ``on_result`` is called with
+    each newly computed result as soon as it exists, which is how the answer
+    matrix checkpoints. Report order follows the dataset either way.
+    """
     results: list[AnswerSampleResult] = []
     skipped = 0
 
     for sample in dataset:
         if not sample.expected_answer:
             skipped += 1
+            continue
+        if completed and sample.id in completed:
+            results.append(completed[sample.id])
             continue
 
         started = time.monotonic()
@@ -266,6 +286,8 @@ def run_answer_eval(
                 missing_spans=sample_unmatched_spans(sample, passages),
             )
         )
+        if on_result is not None:
+            on_result(results[-1])
 
     n = len(results)
     passed = sum(1 for r in results if r.passed is True)
