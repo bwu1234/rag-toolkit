@@ -30,8 +30,9 @@ The parts that shape this plan:
 ## Decisions
 
 1. **Keep `generate()`; add tool calling as a capability subclass.**
-   `generate(prompt, *, system)` has 11 call sites (contextualizer, expansion,
-   CRAG, condenser, judge, eval-set generator), and none of them need tools.
+   `generate(prompt, *, system)` has 14 call sites (contextualizer, expansion,
+   CRAG, condenser, generation, both judges, the eval-set and tier-draft
+   scripts), and none of them need tools.
    Add `ToolCallingLLM(LLMClient)` with
    `chat(messages, tools) -> AssistantTurn` (text + tool calls + token counts).
    `OllamaLLMClient` implements both. The agent's constructor takes
@@ -39,6 +40,14 @@ The parts that shape this plan:
    support fails **at build time**, not mid-conversation.
    *Rejected:* widening the one-method ABC. That would force every test fake
    and future adapter to implement tool calling to answer a HyDE prompt.
+
+   **Metering needs a matching wrapper.** Since Milestone 12, `build_chat_service`
+   wraps every client in `MeteredLLMClient`, which subclasses only `LLMClient`.
+   Wrapped that way, the agent's model fails the `ToolCallingLLM` check at
+   build time; left unwrapped, agent turns record no tokens. So add
+   `MeteredToolCallingLLM(ToolCallingLLM)`, whose `chat()` records each call's
+   `AssistantTurn` counts into the same active `UsageMeter`, and have the builder
+   pick the wrapper that matches the inner client's type.
 
 2. **Give the agent its own model: `agent.llm`.** It is optional and falls back
    to `llm`. The measured split is 27b for the agent loop, 9b for everything
@@ -86,6 +95,22 @@ The parts that shape this plan:
    Condensing exists because retrieval was stateless. The agent sees the real
    message list and writes its own standalone queries.
 
+9. **Two loop strategies, `agent.strategy: react | planned`, sharing one
+   ledger, tool surface and set of guards.** `react` is the loop the prototype
+   ran: the model decides after every result whether to search again.
+   `planned` asks the model once for sub-queries, runs each through `rag_search`
+   with no model call between searches, then makes one synthesis call. It
+   targets the 9b's measured profile: it decomposes multi-company questions
+   perfectly but won't take a second round on its own, and `planned` doesn't
+   need it to.
+   An external result supports trying it. A 2026 ablation on a local 7B model
+   ([arXiv 2606.21553](https://arxiv.org/abs/2606.21553), 5,000 HotpotQA
+   questions) used exactly this plan-and-execute shape. It found that two
+   retrieval rounds captured 95% of the gain from five, and that decomposition
+   and reranking each helped significantly. If that transfers, most of the
+   multi-hop gain may be available at 9b latency, which bears directly on the
+   latency open question below.
+
 ## Phases
 
 ### 0 — Eval harness that can see the difference (before any agent code)
@@ -94,10 +119,13 @@ The parts that shape this plan:
 [measured results](measured-results.md#pipeline-baseline-under-a-fixed-judge-milestone-19-phase-0):
 15/34 multi-hop questions complete, evidence recall 0.583. The runner is
 `rag.eval.multihop_eval`, also a third set in `run_answer_matrix.py`; there is
-no separate `run_agent_matrix.py`. The gap is token counts, which need
-per-call accounting in `LLMClient` (Milestone 12's per-stage work) and are
-not yet reported for either mode. Search count and cap-hit rate come with the
-agent in phase 3.
+no separate `run_agent_matrix.py`. The gap is token counts, which are not yet
+reported for either mode. The accounting now exists: Milestone 12 shipped
+`MeteredLLMClient`, `metered()` and `UsageMeter`. `multihop_eval` just
+doesn't wrap each sample in `with metered()` yet. **Close this before phase
+3,** so the pipeline baseline has token and LLM-time numbers for the agent's
+cost to be set against. Search count and cap-hit rate come with the agent in
+phase 3.
 
 - **Separate judge:** `eval.judge: LLMConfig | None` in config, plus a
   `--judge-model` flag on `answer_eval` and `run_answer_matrix.py`. Default to
@@ -127,10 +155,24 @@ agent in phase 3.
 - `OllamaLLMClient.chat()`: `/api/chat` with `tools`; `tool_name` on tool
   messages; `think` passed through (bool or level string, since the 27b
   accepts `low|medium|xhigh`).
+- `MeteredToolCallingLLM` in `rag/observability/usage.py`, and the builder
+  change from decision 1.
 - `agent:` section in `settings.py` / `config.yaml`: `llm` (optional),
-  `max_tool_calls`, `timeout_s`, `max_passage_chars`.
-- **Exit:** unit tests with a scripted fake `ToolCallingLLM`; one live smoke
-  test marked to skip when Ollama is absent.
+  `strategy` (`react | planned`), `max_tool_calls`, `timeout_s`,
+  `max_passage_chars`, `num_ctx`.
+- **Set `num_ctx` explicitly on agent calls.** When a prompt is longer than
+  the context window, Ollama silently drops tokens instead of raising an
+  error. The shipped adapter sends no `num_ctx`
+  (`rag/generation/ollama_llm.py`); the prototype sent 32768
+  (`scripts/experiments/2026-09-generator-probe/agentic_probe.py`). With agent
+  prompts ~6× the pipeline's, leaving it unset could make the real code quietly
+  worse than the prototype it is meant to reproduce. Default to 32768 to match
+  the prototype.
+- **Exit:** unit tests with a scripted fake `ToolCallingLLM`; a test that
+  `MeteredToolCallingLLM` records `chat()` usage and passes the build-time type
+  check; one live smoke test marked to skip when Ollama is absent. The smoke
+  test asserts that the reported prompt tokens are below `num_ctx`, and the agent
+  logs a warning whenever a turn's prompt reaches 90% of it.
 
 ### 2 — Shared tools
 
@@ -146,11 +188,18 @@ agent in phase 3.
 - `rag/generation/agent.py`: `AgentService` with the ledger, the guards from
   decision 6, `PipelineEvent`s per tool call (so the UI's progress view keeps
   working), and history handling.
-- The builder switches on `chat.mode`.
+- Both strategies from decision 9. `planned` is the smaller of the two: a
+  plan call that returns sub-queries as structured output, the searches, then
+  the forced-synthesis turn `react` already needs at the cap. The two share
+  the ledger and guards: the duplicate-query refusal dedups the plan,
+  `max_tool_calls` truncates it, and `timeout_s` applies unchanged.
+- The builder switches on `chat.mode`, then `agent.strategy`.
 - **Exit:** tests for each guard (cap leads to a synthesis turn with tools
   removed; a duplicate query spends no search; a timeout returns the best
-  answer so far; ledger numbering and dedup), plus the prototype's six
-  multi-hop questions reproducing in the real code.
+  answer so far; ledger numbering and dedup); for `planned`, a test that the
+  model is called exactly twice however many sub-queries there are, and that
+  a plan longer than the cap is truncated. Plus the prototype's six multi-hop
+  questions reproducing in the real code under `react`.
 
 ### 4 — Measure (the milestone's actual deliverable)
 
@@ -159,17 +208,33 @@ Matrix, one factor at a time, on all three sets:
 | variant | purpose |
 |---|---|
 | `pipeline / 9b` | baseline |
-| `agentic / 9b` | the loop's effect with the model we ship |
-| `agentic / 27b` | the loop plus an iterating model |
-| `agentic / 27b, think=low` | whether reasoning improves search planning enough to justify its tokens |
-| `agentic / 27b + groundedness` | whether CRAG's checker catches the leakage cases |
+| `oracle / 9b` | the ceiling for generation: gold evidence, no retrieval (diagnostic only) |
+| `agentic react / 9b` | the loop's effect with the model we ship |
+| `agentic planned / 9b` | whether plan-and-execute recovers the multi-hop gain without an iterating model (decision 9) |
+| `agentic react / 27b` | the loop plus an iterating model |
+| `agentic react / 27b, think=low` | whether reasoning improves search planning enough to justify its tokens |
+| `agentic react / 27b + groundedness` | whether CRAG's checker catches the leakage cases |
+
+**The oracle row** feeds the generator the indexed chunks that contain each
+question's gold spans, found by the same `unmatched_spans` matching that
+evidence recall uses, in place of retrieval. It separates two failures that
+evidence recall alone can't: evidence never found (a retrieval problem, which
+the agent can fix) and evidence found but mis-combined (a synthesis problem,
+which it can't). In a 2026 multi-hop study
+([arXiv 2601.19827](https://arxiv.org/abs/2601.19827)), 87% of errors were
+composition failures on evidence that had been retrieved. If `oracle / 9b` is
+not much above `pipeline / 9b` on multi-hop completeness, the headroom is in
+the generator, not in searching. It needs an `--oracle` flag on
+`multihop_eval`. It runs on the multi-hop and single-hop sets only, because
+refusal questions have no gold evidence. It is never a candidate default.
 
 **Default-flip criterion:** agentic beats pipeline on multi-hop
 completeness by more than noise, while holding single-hop and refusal within
 noise. Latency is reported next to it, not traded off silently. If the only
 winning configuration is the 27b at minutes per hard question, the honest
 outcome is **"agentic is an opt-in mode for hard questions"**, not a new
-default.
+default. If `planned / 9b` wins by more than noise, prefer it over the 27b
+for any default; it is the only agentic variant that runs at 9b speed.
 
 ### 5 — Follow-ups (only if phase 4 justifies the agent)
 
