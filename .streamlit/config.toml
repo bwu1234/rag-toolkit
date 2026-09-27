@@ -1,0 +1,9 @@
+[server]
+# Streamlit's dev file watcher walks every module in sys.modules on each
+# rerun, which trips transformers' lazy-import shim (pulled in by the
+# CrossEncoder reranker) into trying to load its zoedepth image processor --
+# an optional torchvision dependency this project doesn't install. That
+# import failure is harmless (caught and logged by the watcher) but reprints
+# on every question. Disabling the watcher avoids it; edits to rag/ui/*.py
+# require a manual rerun instead of auto-reload.
+fileWatcherType = "none"
