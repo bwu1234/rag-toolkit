@@ -258,6 +258,19 @@ for any default; it is the only agentic variant that runs at 9b speed.
   from the filename convention `TICKER_FORM_PERIOD.md`. This overlaps with
   Milestone 20's filter pushdown, so land it there and expose it here.
 - **Streaming the agent's intermediate steps**, which is Milestone 21's SSE work.
+- **A `planned_refine` strategy: a planned turn with one forced gap check.**
+  After the planned searches, make one structured call ("which sub-question is
+  still unanswered? return extra queries, or none"), run those searches, then
+  synthesize. It is not "planned, then `react`": the 9b stops after one round,
+  so an open-ended loop after the plan would mostly behave like `planned`. A
+  single forced decision is something the 9b can make, and two rounds is where
+  the plan-and-execute ablation cited in decision 9 found 95% of the gain.
+  It reuses the ledger and guards, and the refine searches count toward
+  `max_tool_calls`. Add it only if `planned / 9b` falls short on multi-hop
+  and the misses are evidence that the first round's results pointed to but
+  that was never searched for. Build it after the two pure strategies are
+  measured, so that a win can be credited to either the plan or the extra
+  round.
 
 ## Open questions
 
