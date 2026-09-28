@@ -139,6 +139,12 @@ config question by question (`rag/eval/paired.py`). `baseline` is the shipped
 
 ### Reading these numbers safely
 
+- **NDCG recorded before 2026-09-28 is inflated.** Span matching credited
+  every chunk containing an expected span, and adjacent chunks overlap, so
+  one span could count twice and push a sample's NDCG above 1 (up to 1.63).
+  Hit rate, recall, MRR and answer pass were never affected. Rows re-run
+  after the [fix](#ndcg-credits-each-span-once) are correct; older NDCG
+  figures in this file are ordinal at best.
 - **Precision is not comparable across different `rerank_top_k`.** With ~1
   relevant span per query, precision@k is bounded near 1/k, so the ceiling moves
   with k; the apparent collapse from 0.168 to 0.060 is mostly that artifact.
@@ -845,10 +851,75 @@ pair against those rows, not the plain `baseline` rows above, which stay as
 the record of what was measured before. `vanilla.yaml` reads its own
 header-free index.
 
+*NDCG in this section predates the [span-credit fix](#ndcg-credits-each-span-once),
+which lowered every figure somewhat; the corrected deltas all still exclude zero.*
+
 Raw records: the `header=*` variants in
 `data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`,
 and `header=on` / `header=on rerank_header` in
 `data/eval/results_chunking/answer_edgar__judge-gemma4-31b-mlx.json`.
+
+### NDCG credits each span once
+
+**The bug.** `_judge_by_span` gave a gain to every retrieved chunk containing
+an expected span, while the ideal ranking behind NDCG's denominator gives each
+span one rank. With 150 characters of overlap, adjacent chunks often both
+contain a quote, so DCG could exceed the ideal. In the rows recorded through
+Phase 2, 17 of 174 generated-set samples scored above 1 at the plain baseline
+and 21 at the shipped config (max 1.63). Metric consumers other than NDCG use
+the per-chunk gains and never had this problem: a second chunk quoting the
+answer is still a relevant result for precision.
+
+**The fix.** `Judgment.ndcg_gains` credits each span at most once, in rank
+order: a chunk earns the best span no earlier chunk has claimed. DCG then
+can't exceed the ideal. Document-mode judging already allowed one relevant
+chunk per rank and is unchanged.
+
+**Re-run** on 2026-09-28 at the shipped config, `edgar`, all three sets.
+`header=off` is a new pinned variant: the plain pipeline on
+`data/index_vanilla`, the same chunks and embedder without headers. It stands
+in for the old `baseline` row, since `baseline` is now the shipped default.
+Every row's hits reproduced the pre-fix run sample for sample; only NDCG
+moved, and no sample exceeds 1.
+
+| set | variant | NDCG before → after |
+|---|---|---|
+| generated | `header=off` (plain) | 0.821 → **0.768** |
+| generated | `header=on` | 0.865 → **0.804** |
+| generated | `header=on rerank_header` (shipped) | 0.966 → **0.892** |
+| `period` | `header=off` | 0.393 → **0.393** |
+| `period` | `header=on` | 0.492 → **0.472** |
+| `period` | `header=on rerank_header` | 0.803 → **0.761** |
+| `underspecified` | `header=off` | 0.562 → **0.533** |
+| `underspecified` | `header=on` | 0.679 → **0.628** |
+| `underspecified` | `header=on rerank_header` | 0.767 → **0.698** |
+
+Phase 2's NDCG deltas, corrected (paired, 95% CI):
+
+| set | header | reranker sees header | both |
+|---|---|---|---|
+| generated | +0.036 [+0.011, +0.061]\* | +0.088 [+0.053, +0.124]\* | +0.124 [+0.081, +0.168]\* |
+| `period` | +0.079 [+0.012, +0.146]\* | +0.289 [+0.194, +0.384]\* | +0.368 [+0.260, +0.476]\* |
+| `underspecified` | +0.095 [+0.047, +0.143]\* | +0.071 [+0.018, +0.123]\* | +0.165 [+0.093, +0.237]\* |
+
+**Findings**
+
+- **No decision changes.** Every default in this file rests on hit rate or
+  answer pass, which the bug never touched. Every Phase 2 NDCG delta still
+  excludes zero after the fix; the earlier figures overstated them by up to
+  0.04 (`period`, both switches: +0.410 recorded, +0.368 corrected).
+- **The inflation grew with the variant, not uniformly.** The shipped
+  config lost 0.074 on the generated set against 0.053 for the plain one,
+  because the header and reranker surface more same-document neighbours. So
+  pre-fix NDCG *deltas* are biased toward the variant that surfaces more
+  overlapping chunks, not only shifted.
+- **Not re-run:** the other recorded rows (reranker models, stage-1, dense,
+  query instruction, embedder size). Their hit-rate verdicts stand, and their
+  NDCG should be read as inflated. The corrected shipped rows above are what
+  later phases pair against.
+
+Raw records: `header=off`, `header=on` and `header=on rerank_header` in
+`data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`.
 
 ### Not yet measured
 

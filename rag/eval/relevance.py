@@ -84,6 +84,10 @@ class Judgment:
     gains: list[int]
     #: Best achievable grades at these ranks, for NDCG's denominator.
     ideal_gains: list[int]
+    #: `gains` with each expected item credited at most once, for NDCG's
+    #: numerator. The ideal gives every span one rank; crediting a span again in
+    #: an overlapping chunk would let DCG exceed it (NDCG above 1).
+    ndcg_gains: list[int]
     #: How many distinct expected items the ranking covered.
     covered: int
     #: How many distinct expected items the sample declares.
@@ -116,10 +120,22 @@ def _judge_by_span(sample: EvalSample, chunks: list[ScoredChunk]) -> Judgment:
     spans = [(span, _needles(span)) for span in sample.expected_spans]
 
     gains: list[int] = []
+    ndcg_gains: list[int] = []
+    credited: set[int] = set()
     matched: set[str] = set()
     for chunk_text in normalized_chunks:
-        grades = [span.grade for span, needles in spans if _contains(chunk_text, needles)]
-        gains.append(max(grades) if grades else 0)
+        found = [(span.grade, i) for i, (span, needles) in enumerate(spans) if _contains(chunk_text, needles)]
+        gains.append(max(grade for grade, _ in found) if found else 0)
+        # A chunk earns the best span no earlier chunk has claimed. Adjacent
+        # chunks overlap, so the same quote often appears in two of them; the
+        # second copy is redundant for NDCG, not a second relevant result.
+        fresh = [(grade, i) for grade, i in found if i not in credited]
+        if fresh:
+            grade, index = max(fresh)
+            credited.add(index)
+            ndcg_gains.append(grade)
+        else:
+            ndcg_gains.append(0)
 
     for span, needles in spans:
         if any(_contains(chunk_text, needles) for chunk_text in normalized_chunks):
@@ -134,6 +150,7 @@ def _judge_by_span(sample: EvalSample, chunks: list[ScoredChunk]) -> Judgment:
         mode=sample.matching_mode,
         gains=gains,
         ideal_gains=_fit(ideal, len(gains)),
+        ndcg_gains=ndcg_gains,
         covered=len(matched),
         total_expected=len(sample.expected_spans),
         unmatched_spans=[s.text for s in sample.expected_spans if s.text not in matched],
@@ -152,6 +169,9 @@ def _judge_by_document(sample: EvalSample, chunks: list[ScoredChunk]) -> Judgmen
         mode=MODE_DOCUMENT,
         gains=gains,
         ideal_gains=[1] * len(gains),
+        # Every expected-document chunk is its own relevant item here, and the
+        # ideal allows one per rank, so nothing is double-counted.
+        ndcg_gains=gains,
         covered=covered,
         total_expected=len(expected),
     )

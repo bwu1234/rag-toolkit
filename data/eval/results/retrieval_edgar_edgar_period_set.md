@@ -24,9 +24,10 @@
 | `embedder=4b query_instruction=retrieval` | 0.564 | [0.433, 0.686] | 0.564 | 0.116 | 0.334 | 0.403 | -0.018 [-0.080, +0.044] 1W/2L p=1 | +0.010 [-0.048, +0.068] | 0 | 61 |
 | `embedder=4b query_instruction=retrieval mode=dense` | 0.527 | [0.398, 0.653] | 0.527 | 0.113 | 0.326 | 0.395 | -0.055 [-0.161, +0.052] 3W/6L p=0.51 | +0.002 [-0.080, +0.083] | 0 | 56 |
 | | | | | | | | | | | |
-| `header=on` | 0.654 | [0.523, 0.766] | 0.654 | 0.138 | 0.412 | 0.492 | +0.073 [-0.013, +0.159] 5W/1L p=0.22 | +0.098 [+0.020, +0.177]* | 0 | 50 |
+| `header=off` | 0.582 | [0.450, 0.703] | 0.582 | 0.116 | 0.331 | 0.393 | +0.000 [+0.000, +0.000] 0W/0L p=1 | +0.000 [+0.000, +0.000] | 0 | 55 |
+| `header=on` | 0.654 | [0.523, 0.766] | 0.654 | 0.138 | 0.412 | 0.472 | +0.073 [-0.013, +0.159] 5W/1L p=0.22 | +0.079 [+0.012, +0.146]* | 0 | 50 |
 | `header=on stage1_top_k=20` | 0.946 | [0.851, 0.981] | 0.946 | 0.051 | 0.452 | 0.599 | +0.364 [+0.235, +0.492]* 20W/0L p=1.9e-06 | +0.206 [+0.126, +0.285]* | 0 | 50 |
 | `header=on mode=dense` | 0.654 | [0.523, 0.766] | 0.654 | 0.138 | 0.415 | 0.493 | +0.073 [-0.013, +0.159] 5W/1L p=0.22 | +0.100 [+0.026, +0.175]* | 0 | 52 |
-| `header=on rerank_header` | 0.836 | [0.717, 0.911] | 0.836 | 0.182 | 0.735 | 0.803 | +0.255 [+0.128, +0.381]* 15W/1L p=0.00052 | +0.410 [+0.292, +0.528]* | 0 | 52 |
+| `header=on rerank_header` | 0.836 | [0.717, 0.911] | 0.836 | 0.182 | 0.735 | 0.761 | +0.255 [+0.128, +0.381]* 15W/1L p=0.00052 | +0.368 [+0.260, +0.476]* | 0 | 52 |
 
 `hit 95% CI` is a Wilson interval on that rate alone, the noise floor of one run on this many questions. Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval that excludes zero; `W/L` counts the questions the variant gained / lost and `p` is McNemar's exact test on them -- trust it over the CI when W+L is small. `(no CI)` rows predate per-sample scores and need a re-run to be tested. `unmatch.` counts expected spans no chunk contains under that variant's chunking (`—` predates the count).

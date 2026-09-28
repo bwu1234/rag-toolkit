@@ -815,3 +815,44 @@ def test_answer_report_prints_the_evidence_split(capsys) -> None:
     out = capsys.readouterr().out
     assert "evidence retrieved  1/1 passed" in out
     assert "evidence=retrieved" in out
+
+
+def test_a_span_repeated_in_overlapping_chunks_is_credited_once_for_ndcg() -> None:
+    # Chunks overlap, so one quote can sit in two of them. Crediting both let
+    # NDCG exceed 1 (observed up to 1.63 on EDGAR).
+    sample = EvalSample(id="s1", query="q", expected_spans=[ExpectedSpan(text="revenue rose 8%")])
+    chunks = [
+        _scored("c0", "d.md", text="Overall, revenue rose 8% in the year."),
+        _scored("c1", "d.md", text="revenue rose 8% in the year, driven by services."),
+    ]
+
+    judgment = judge_ranking(sample, chunks)
+
+    assert judgment.gains == [1, 1], "both chunks are still relevant results for precision"
+    assert judgment.ndcg_gains == [1, 0]
+    assert ndcg_at_k(judgment.ndcg_gains, judgment.ideal_gains) == pytest.approx(1.0)
+
+
+def test_ndcg_gains_let_a_later_chunk_earn_a_span_the_earlier_one_did_not_claim() -> None:
+    sample = EvalSample(
+        id="s1", query="q", expected_spans=[ExpectedSpan("alpha", grade=1), ExpectedSpan("beta", grade=3)]
+    )
+    chunks = [_scored("c0", "d.md", text="alpha and beta"), _scored("c1", "d.md", text="alpha again")]
+
+    judgment = judge_ranking(sample, chunks)
+
+    assert judgment.ndcg_gains == [3, 1]
+    assert ndcg_at_k(judgment.ndcg_gains, judgment.ideal_gains) == pytest.approx(1.0)
+
+
+def test_retrieval_eval_ndcg_never_exceeds_one_on_duplicated_spans() -> None:
+    sample = EvalSample(id="s1", query="q", expected_spans=[ExpectedSpan(text="margin was 46%")])
+    duplicated = [_scored(f"c{i}", "d.md", text="The margin was 46% this year.") for i in range(3)]
+
+    class _Fixed:
+        def retrieve(self, query: str) -> RetrievalResult:
+            return RetrievalResult(chunks=duplicated)
+
+    report = run_retrieval_eval(EvalDataset([sample]), _Fixed())  # type: ignore[arg-type]
+
+    assert report.sample_results[0].ndcg == pytest.approx(1.0)

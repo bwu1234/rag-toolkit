@@ -192,7 +192,7 @@ def run_retrieval_eval(
                 recall=recall_at_k(judgment.covered, judgment.total_expected),
                 precision=precision_at_k(judgment.gains),
                 rr=reciprocal_rank(judgment.gains),
-                ndcg=ndcg_at_k(judgment.gains, judgment.ideal_gains),
+                ndcg=ndcg_at_k(judgment.ndcg_gains, judgment.ideal_gains),
                 recall_by_k=recall_by_k,
                 unmatched_spans=judgment.unmatched_spans,
                 kind=sample.extra.get("kind"),
