@@ -17,7 +17,10 @@ classifier deciding whether to retrieve would add an LLM call and a failure
 mode to buy back a case that shouldn't arise. The version of that idea worth
 building is a different thing entirely — the model calling search itself —
 which is Milestone 19, and it subsumes routing rather than adding it as a
-stage.
+stage. (`retrieval.document_routing`, from the
+[chunking plan](chunking-indexing-plan.md)'s Phase 3b, is a different thing:
+it picks *which filing* to search, with no LLM call, and never decides
+*whether* to search.)
 
 ### Milestone 11 — Measure Milestones 9 & 10 *(shipped)*
 
@@ -140,18 +143,20 @@ drops below a threshold.
 
 ### Milestone 16 — Async ingestion
 
-`python -m rag.cli index` is synchronous, single-process, and has no
-checkpoint/resume — a contextual re-index of a large corpus is a long job that
-loses everything if interrupted. That's already called out as a limitation.
+`python -m rag.cli index` is synchronous and single-process. Two pieces of
+this already shipped with the Milestone 11 measurements: generated contexts
+are checkpointed to `contextual_cache.jsonl`, so an interrupted contextual run
+resumes, and the contextualizer runs `chunking.contextual.concurrency` calls
+at once. Indexing is also incremental (content-hash skip, stale-chunk purge).
+What's left:
 
-- Checkpoint/resume first: persist per-chunk progress so an interrupted run
-  restarts where it stopped. This is the part that matters at any scale and
-  doesn't require a queue.
+- Checkpoint/resume for embedding itself: an interrupted plain build re-embeds
+  whatever the hash check can't prove is written to both indexes.
 - Then a job/worker split behind an interface, so ingestion can be triggered
   by an API call rather than a terminal. Local default: an in-process or
   file-backed queue — not a hosted queue, which belongs with Milestone 18.
-- Concurrency for the per-chunk LLM/embedding calls (contextualizer, and the
-  CRAG grader on the query side) — currently sequential for parse reliability.
+- Concurrency for the CRAG grader on the query side — still one sequential
+  call per passage, for parse reliability.
 
 ### Milestone 17 — PII detection & redaction
 
@@ -289,8 +294,13 @@ land.
 
 ### Milestone 19 — Agentic retrieval
 
-**Planned:** see [Milestone 19 plan](milestone-19-plan.md) for the phased
-implementation and the pre-work measurements behind it.
+**In progress:** see [Milestone 19 plan](milestone-19-plan.md). Phases 0–3
+shipped: a fixed eval judge and the multi-hop set, `ToolCallingLLM` (Ollama
+and Gemini), one tool surface shared with MCP (`rag/tools.py`), and the agent
+loop behind `chat.mode: agentic` (off by default). Phase 4, the measurement
+that decides whether the agent is worth having, is next. The cost bullets
+below were written before the interface change; `LLMClient` was kept, and
+tool calling was added as a `ToolCallingLLM` subclass instead.
 
 Expose search as a **tool the answering model calls**, rather than a stage that
 always runs before it. Unlike the rest of this list, this one *replaces* shipped
@@ -374,11 +384,16 @@ graph LR
 
 - **Structured `Query` object + filter pushdown**, land first — it touches
   `VectorStore.query`, `SparseIndex.query`, and `Retriever.retrieve`, so
-  everything below is cheaper once it exists. Replace the raw `str` query with
-  `text`/`expansions`/`filters`/`intent`; add `filters: QueryFilter | None` to
-  both index query methods; push predicates into Chroma's `where` clause and a
-  BM25 pre-filter. Parse `type:pdf`, `after:2026-01-01`, `path:handbook/` out
-  of raw query text.
+  everything below is cheaper once it exists. *Filter pushdown shipped* with
+  the [chunking plan](chunking-indexing-plan.md)'s Phase 3: a typed
+  `QueryFilter` (`rag/query_filter.py`) on both index query methods and
+  `Retriever.retrieve`, pushed into Chroma's `where` clause and a BM25
+  pre-filter, and exposed as `filters` on `POST /chat` and MCP `rag_search`.
+  Still open: replacing the raw `str` query with
+  `text`/`expansions`/`filters`/`intent`, and parsing `type:pdf`,
+  `after:2026-01-01`, `path:handbook/` (or "Q3 2025") out of raw query text
+  into a `QueryFilter`. On EDGAR a period filter measured +10.9pp on the
+  `period` tier, so extraction is where that gain reaches ordinary traffic.
 - **Query understanding, distinct from routing.** This is not the retrieve-or-
   not classifier rejected above — it's normalization, spell correction, and
   expansion parsing on a query that's already going to be searched, plus using
@@ -396,8 +411,9 @@ graph LR
   threshold) and apply MMR or a per-document result cap.
 - **Query-independent ranking signals.** Every score today is pure
   query–chunk similarity; nothing says one document is simply *better* than
-  another — recency (file mtime / parsed document date, neither captured
-  today), structural position (title/heading match — `title` already rides in
+  another — recency (EDGAR's `period_end` and `filed` now ride on every chunk
+  via `chunking.carry_metadata`; other corpora capture no date), structural
+  position (title/heading match — `title` already rides in
   `Chunk.metadata`, unused for scoring), and an intra-corpus link-graph
   authority prior for Markdown docs that cross-reference each other.
 - **Snippet generation.** Full chunk text (~1000 chars) goes to both the
@@ -438,12 +454,12 @@ API/UI boundary rather than in retrieval:
   pipeline-trace fields only make sense once generation finishes, so the
   stream is answer-text-only — the existing non-streaming response stays the
   source of truth for citations.
-- **Active citation filtering.** `ChatAnswer.citations` currently returns
-  every retrieved passage, whether or not the model's answer actually cited
-  it, so a UI/API consumer can't tell which passages were load-bearing from
-  which were context the model ignored. Parse `[n]` tags out of the generated
-  text and annotate — not silently drop, an uncited passage is still evidence
-  a user may want — each `Citation` with `cited: bool`.
+- **Active citation filtering.** *Mostly shipped with Milestone 12:*
+  `ChatService` parses the `[n]` markers, and `ChatAnswer`/`ChatResponse`
+  report `cited_chunk_ids` next to the full `citations` list, so a consumer
+  can already tell load-bearing passages from ignored ones. What's left is
+  cosmetic: a `cited: bool` on each `Citation` instead of a separate id list,
+  and having the UI de-emphasize uncited passages rather than drop them.
 
 ### Milestone 22 — Reference-free eval metrics
 
@@ -483,8 +499,9 @@ nothing else in this list and is worth pulling ahead of it.
   documents (gitignored and deliberately not redistributed), and no GPU. Build
   it once from `manifest.json` in a CI job and store it with `actions/cache`,
   keyed on the manifest, the `FINGERPRINTED` chunking settings and the
-  embedding model, so it rebuilds only when one of those changes. Commit the
-  Add a precomputed-vector path to `retrieval_eval` and the retriever: load the
+  embedding model, so it rebuilds only when one of those changes. Then, so
+  the per-PR run needs no Ollama, add a precomputed-vector path to
+  `retrieval_eval` and the retriever: load the
   committed 174 query embeddings and pass each vector directly to retrieval,
   bypassing the configured embedding provider. Validate the vector metadata
   (model, dimension and query ordering) before running the gate; the vectors
@@ -603,7 +620,10 @@ of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
   Phase 0 (2026-09-27): `edgar_underspecified_set.json`, 118 questions,
   retrieval hit 0.833 `implicit` / 0.500 `paraphrase` against 0.908 on the
   generated set. The `period` tier shipped with it; `table` waits for Phase 4.
-  Re-measuring contextual chunking and expansion on it is still open.*
+  Every chunking-plan phase since has been judged on all three sets. Contextual
+  chunking no longer needs re-measuring: Phase 2's deterministic header
+  replaced it (+14.4pp answer pass on this tier). Query expansion and CRAG
+  haven't been re-measured on it.*
 - **Turn log → eval candidates.** Milestone 12 called logged queries with
   feedback "the cheapest source of new eval samples", but nothing converts
   them. Add a `rag.cli turns --export-candidates` path that writes thumbs-down

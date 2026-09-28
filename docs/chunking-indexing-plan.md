@@ -154,6 +154,15 @@ whose previous non-blank line is also a row.
 | 8. Validate | Manifest refuses mixed settings | No build report, no gate |
 | 9. Publish | Rebuild in place | No versioned swap (out of scope in [Milestone 28](backlog.md#milestone-28--production-hardening)) |
 
+*This table is the 2026-09-26 starting point, kept as the "before". Since
+then:* stage 3's gap is closed by Phase 2 (typed front-matter fields via
+`chunking.carry_metadata`) and Phase 3 (they're filterable). Stage 5's is
+closed by Phase 2 (`Chunk.index_text` = header + context + text, on by
+default). Stage 6 was measured in Phases 1 and 1b: the instruction stays off.
+Stage 7's filtering gap is closed by Phase 3 (`QueryFilter`), with Phase 3b's
+routing off by default. Stage 8 has `index-report` but no gate. Stages 1, 2
+and 4 are Phases 4–5, not started.
+
 Two more corpus facts that shape the plan:
 
 - **16.5% of the corpus text is paragraphs repeated verbatim across filings**

@@ -1,7 +1,33 @@
-# Measured results (Milestone 11, pass 1)
+# Measured results
 
-Run with `scripts/run_matrix.py`; raw records in `data/eval/results/`, each row
-carrying a fingerprint over the settings that produced it.
+Run with `scripts/run_matrix.py` (retrieval) and `scripts/run_answer_matrix.py`
+(answers); raw records in `data/eval/results/` and
+`data/eval/results_chunking/`, each row carrying a fingerprint over the
+settings that produced it. Sections are in the order they were run, and each
+states its own setup. The shipped config has changed several times since the
+first one, so read a section's numbers against its setup, not against today's
+defaults.
+
+### Current shipped baseline
+
+What later changes pair against, as of 2026-09-28: `edgar`, header on and
+`reranker.include_header` (chunking plan Phase 2), hybrid, `bge-reranker-v2-m3`,
+`top_k 20`, `rerank_top_k 5`, `min_score 0.0`, no expansion, no routing,
+generator `qwen3.5:9b-mlx`, judge `gemma4:31b-mlx`. NDCG is after the
+[span-credit fix](#ndcg-credits-each-span-once).
+
+| set | n | retrieval hit | NDCG | answer pass |
+|---|---|---|---|---|
+| generated | 174 | 0.977 | 0.892 | 0.943 |
+| `period` | 55 | 0.836 | 0.761 | 0.927 |
+| `underspecified` | 118 | 0.822 | 0.698 | 0.763 |
+
+Sources: [chunk header](#deterministic-chunk-header-chunking-plan-phase-2) and
+[NDCG re-run](#ndcg-credits-each-span-once). The multi-hop baseline and the
+40-sample `crag=off` answer row predate the header (see
+[Not yet measured](#not-yet-measured)).
+
+### Milestone 11, pass 1
 
 **Setup.** Corpus `edgar` (61 SEC filings, 3.59M chars, 4,236 chunks),
 non-contextual index, `data/eval/edgar_eval_set.json` (174 span-matched
@@ -1124,5 +1150,10 @@ Raw records: `baseline`, `routing=top1` and `routing=top2` in
   `data/eval/results/answer_edgar__judge-gemma4-31b-mlx.json`, which
   Milestone 19 phase 4 pairs against. That subsample includes one fixed
   sample (MRK). Re-run them before comparing new answer results against them.
+  Both, and the multi-hop baseline, also predate the chunk header becoming
+  the default, so Milestone 19 phase 4 has to re-run its `pipeline / 9b` row
+  at the current config.
+- Answers with metadata filters or document routing on; both phases measured
+  retrieval only.
 - `retrieval.top_k` between 20 and 100 with `bge-v2-m3`. 100 measured as noise
   against 20 (see the label-check re-run); intermediate values untested.

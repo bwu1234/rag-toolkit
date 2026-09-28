@@ -1,4 +1,7 @@
-# Milestone notes (2–12)
+# Milestone notes
+
+Covers Milestones 2–12 and the components shipped since, including the
+chunking plan's phases; each section names what it covers.
 
 Design rationale for each shipped milestone: why things are built the way
 they are, not just what they do. Split out of `CLAUDE.md` to keep that file
@@ -29,7 +32,9 @@ the docs fit together.
 - Chunks carry forward a small allowlist of document metadata (`title`,
   `page`, `page_count`) plus their own (`chunk_index`, `char_start`,
   `char_end`), so a chunk is self-describing for citations without needing
-  its parent `Document`.
+  its parent `Document`. *(Later: the allowlist became configurable,
+  `chunking.carry_metadata`, and chunks gained a rendered `header`; see the
+  chunking plan's Phase 2.)*
 - Chunking assumes already-cleaned text — run `clean_documents()` first (the
   CLI's `chunk` command does this for you).
 - Character-based (not token-based) chunking is a deliberate simplicity
@@ -42,7 +47,9 @@ the docs fit together.
 - `EmbeddingModel` exposes `embed_documents` / `embed_query` separately (not
   one method) so asymmetric models — ones that need different instruction
   prefixes for indexing vs. querying — can be supported later without
-  changing the interface; `OllamaEmbedder` currently treats them identically.
+  changing the interface. *(Later: `embedding.query_instruction` uses this
+  seam to prefix queries only. It measured as no help and ships `null`, so
+  the two calls are identical by default.)*
 - `OllamaEmbedder` talks to a local Ollama daemon's `/api/embed` endpoint over
   `httpx`, batching client-side (`_DEFAULT_BATCH_SIZE = 32`) so request size
   stays predictable regardless of corpus size. It builds its HTTP client with

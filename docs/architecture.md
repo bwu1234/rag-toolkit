@@ -119,6 +119,7 @@ flowchart TD
         RW[RetryQueryRewriter<br/><i>attempts after the first</i>] --> R
         subgraph R [Retriever.retrieve]
             direction TB
+            DR[DocumentRouter<br/><i>optional, only without<br/>a caller filter</i>] --> X
             X[QueryExpander<br/><i>optional</i>] --> DS[dense search<br/>per query]
             X --> SS[BM25 search<br/>per query, <i>hybrid</i>]
             X --> WS[web search<br/><i>optional</i>]
@@ -141,21 +142,37 @@ flowchart TD
 
 ### `Retriever.retrieve`
 
+0. **Filter or route.** A caller may pass a `QueryFilter`
+   (`rag/query_filter.py`): equality, set membership and integer ranges over
+   `document_id` and the `chunking.carry_metadata` fields. A field chunks don't
+   store raises rather than matching nothing. Without a caller filter, the
+   optional `DocumentRouter` (`retrieval.document_routing`) ranks one record
+   per document by BM25 and dense, and when both put the same document first,
+   builds a filter on it; otherwise retrieval runs unfiltered. A caller's
+   filter always wins, and `RetrievalResult.routed_to` says what routing chose.
 1. **Expand (optional, `retrieval.expansion`).** One query becomes several:
    HyDE passages for the dense side, rephrasings for both sides.
 2. **Stage 1 — candidates.** Every (query, source) pair produces one ranked
    list: dense always; BM25 when `retrieval.mode` is `hybrid`; web search when
-   `retrieval.web_search` is enabled. `top_k` applies per list.
+   `retrieval.web_search` is enabled. `top_k` applies per list. A filter is
+   applied *inside* both indexes before their top-k (Chroma's `where`, BM25
+   scoring only matching chunks), so it narrows what competes rather than
+   trimming what won. Web search is skipped under a filter, since its results
+   carry no corpus metadata.
 3. **Fuse.** Reciprocal Rank Fusion merges the lists by rank, never by score,
    which is what makes lists from different queries and scoring functions
    safely comparable. A single non-empty list skips fusion entirely.
 4. **Stage 2 — rerank.** The `Reranker` scores the fused candidates against the
    question-shaped queries (never a HyDE passage) and keeps `rerank_top_k`.
+   With `reranker.include_header`, it scores each passage with its chunk
+   header in front, which is what separates two periods' identical paragraphs.
 5. **Floor.** Results below `retrieval.min_score` are dropped.
 
 It returns a `RetrievalResult` carrying counts alongside the chunks, so
 callers can tell "the index is empty" from "nothing relevant cleared the floor".
-([Milestone 5 notes](milestone-notes.md#retrieval--reranking-notes-milestone-5))
+([Milestone 5 notes](milestone-notes.md#retrieval--reranking-notes-milestone-5);
+filters and routing: [chunking plan](chunking-indexing-plan.md#phase-3--metadata-filtering-34-days),
+Phases 3 and 3b)
 
 ### `ChatService.ask`
 
@@ -164,7 +181,8 @@ callers can tell "the index is empty" from "nothing relevant cleared the floor".
 2. **Retrieve with correction (`crag.*`).** Retrieval runs in a loop. With a
    grader, each attempt's passages are judged against the **original**
    question; an attempt that leaves nothing triggers a reworded retry. With
-   CRAG off, this is exactly one `retrieve` call.
+   CRAG off, this is exactly one `retrieve` call. A turn's `filters` (from
+   `POST /chat`) apply to every attempt.
 3. **No context → no LLM.** If nothing survives, it returns one of several
    explanatory answers (blank query, empty index, below floor, graded out)
    without generating.
@@ -188,8 +206,9 @@ and groundedness both need to see both sides of the retrieve/generate boundary.
    `planned`: one call's tool calls are the plan, all of them run, then one
    answering call.
 3. **Every search goes through `RagTools.retrieve`**, the path MCP's
-   `rag_search` uses, pinned to the turn's corpus selection, so it is
-   `Retriever.retrieve` as above.
+   `rag_search` uses, so it is `Retriever.retrieve` as above. The turn fixes
+   `corpus`, `top_k`, `max_chars` and `filters`; the model is offered the
+   MCP schema minus those arguments and chooses only the query.
 4. **A passage ledger numbers what the model sees**, in first-seen order and
    deduplicated by chunk id. It becomes `ChatAnswer.citations`, so `[n]`
    means the same thing in both modes.
@@ -220,6 +239,11 @@ get an identically configured stack from the same config:
 | MCP `rag_search` | `build_retriever` | passages | one cached `Retriever` per selection |
 | `rag.eval.retrieval_eval` | `build_retriever` | passages | |
 | `rag.eval.answer_eval` | `build_chat_service` | answer | plus an LLM judge |
+| `rag.eval.multihop_eval` | `build_chat_service` | answer | plus an LLM judge and evidence recall |
+
+`build_chat_service` returns whichever `ChatResponder` `chat.mode` selects, so
+every "answer" row above runs the agent in `agentic` mode. `POST /chat` and MCP
+`rag_search` accept `filters`; the UI and `cli chat` don't expose them.
 
 Two consequences worth knowing:
 

@@ -231,9 +231,9 @@ crag:
 
 # Milestone 19 -- agentic retrieval: the model calls search as a tool, as many
 # times as it needs, instead of the pipeline's single retrieve-then-generate.
-# Nothing reads this until the agent loop lands (phase 3 of
-# docs/milestone-19-plan.md); every guard below answers a failure the
-# prototype showed.
+# Read only when `chat.mode: agentic` (rag/generation/agent.py); unmeasured
+# until phase 4 of docs/milestone-19-plan.md. Every guard below answers a
+# failure the prototype showed.
 agent:
   # The agent's own model; null uses `llm`. Must be a provider that can call
   # tools (ollama or gemini) -- building the agent fails otherwise. The measured
