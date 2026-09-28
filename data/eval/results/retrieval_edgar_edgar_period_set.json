@@ -1,5 +1,5 @@
 {
-  "label": "chunking plan Phase 0 step 3 baseline; query_instruction variants (chunking plan Phase 1)",
+  "label": "chunking plan Phase 1b: embedder size",
   "corpus": "edgar (isolated)",
   "collection": "rag_corpus__edgar",
   "eval_set": "data/eval/edgar_period_set.json",
@@ -28,7 +28,7 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 55,
-      "elapsed_s": 55.4,
+      "elapsed_s": 57.2,
       "metrics": {
         "hit_rate": 0.5818,
         "recall": 0.5818,
@@ -401,7 +401,7 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 55,
-      "elapsed_s": 55.8,
+      "elapsed_s": 52.5,
       "metrics": {
         "hit_rate": 0.5091,
         "recall": 0.5091,
@@ -775,7 +775,7 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 55,
-      "elapsed_s": 51.6,
+      "elapsed_s": 51.3,
       "metrics": {
         "hit_rate": 0.7091,
         "recall": 0.7091,
@@ -2249,6 +2249,3013 @@
           "recall": 0.0,
           "mrr": 0.0,
           "ndcg": 0.0
+        }
+      }
+    },
+    {
+      "variant": "embedder=4b",
+      "axis": "embedder",
+      "overrides": {
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "paths.index_dir": "data/index_emb-4b"
+      },
+      "fingerprint": "f52e827f41a9",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 55,
+      "elapsed_s": 59.4,
+      "metrics": {
+        "hit_rate": 0.6,
+        "recall": 0.6,
+        "precision": 0.12,
+        "mrr": 0.3564,
+        "ndcg": 0.4175
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.2,
+        "3": 0.5091,
+        "5": 0.6
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        }
+      }
+    },
+    {
+      "variant": "embedder=4b stage1_top_k=20",
+      "axis": "embedder",
+      "overrides": {
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "paths.index_dir": "data/index_emb-4b",
+        "retrieval.top_k": 20,
+        "retrieval.rerank_top_k": 20
+      },
+      "fingerprint": "479a3a4f97a1",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "20",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 55,
+      "elapsed_s": 55.7,
+      "metrics": {
+        "hit_rate": 0.7091,
+        "recall": 0.7091,
+        "precision": 0.0364,
+        "mrr": 0.3712,
+        "ndcg": 0.4591
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.2,
+        "3": 0.5091,
+        "5": 0.6,
+        "10": 0.6909,
+        "20": 0.7091
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1667,
+          "ndcg": 0.3562
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1429,
+          "ndcg": 0.3333
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.8333
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.125,
+          "ndcg": 0.3155
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.0909,
+          "ndcg": 0.2789
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.125,
+          "ndcg": 0.3155
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1667,
+          "ndcg": 0.3562
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        }
+      }
+    },
+    {
+      "variant": "embedder=4b mode=dense",
+      "axis": "embedder",
+      "overrides": {
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "paths.index_dir": "data/index_emb-4b",
+        "retrieval.mode": "dense"
+      },
+      "fingerprint": "c1eb10f99e3a",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "retrieval.mode": "dense",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 55,
+      "elapsed_s": 54.3,
+      "metrics": {
+        "hit_rate": 0.5455,
+        "recall": 0.5455,
+        "precision": 0.1091,
+        "mrr": 0.3558,
+        "ndcg": 0.4033
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.2364,
+        "3": 0.4727,
+        "5": 0.5455
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        }
+      }
+    },
+    {
+      "variant": "embedder=8b",
+      "axis": "embedder",
+      "overrides": {
+        "embedding.model": "qwen3-embedding:8b-q8_0",
+        "paths.index_dir": "data/index_emb-8b"
+      },
+      "fingerprint": "cc0ca4112db1",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:8b-q8_0",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 55,
+      "elapsed_s": 63.9,
+      "metrics": {
+        "hit_rate": 0.5818,
+        "recall": 0.5818,
+        "precision": 0.1164,
+        "mrr": 0.3512,
+        "ndcg": 0.4092
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.2,
+        "3": 0.4909,
+        "5": 0.5818
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        }
+      }
+    },
+    {
+      "variant": "embedder=8b stage1_top_k=20",
+      "axis": "embedder",
+      "overrides": {
+        "embedding.model": "qwen3-embedding:8b-q8_0",
+        "paths.index_dir": "data/index_emb-8b",
+        "retrieval.top_k": 20,
+        "retrieval.rerank_top_k": 20
+      },
+      "fingerprint": "ff291215217f",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:8b-q8_0",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "20",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 55,
+      "elapsed_s": 60.7,
+      "metrics": {
+        "hit_rate": 0.7273,
+        "recall": 0.7273,
+        "precision": 0.0373,
+        "mrr": 0.3723,
+        "ndcg": 0.464
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.2,
+        "3": 0.4909,
+        "5": 0.5818,
+        "10": 0.7273,
+        "20": 0.7273
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1667,
+          "ndcg": 0.3562
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.125,
+          "ndcg": 0.3155
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1667,
+          "ndcg": 0.3562
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.8333
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1667,
+          "ndcg": 0.3562
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.125,
+          "ndcg": 0.3155
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1,
+          "ndcg": 0.2891
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1429,
+          "ndcg": 0.3333
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.1667,
+          "ndcg": 0.3562
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        }
+      }
+    },
+    {
+      "variant": "embedder=8b mode=dense",
+      "axis": "embedder",
+      "overrides": {
+        "embedding.model": "qwen3-embedding:8b-q8_0",
+        "paths.index_dir": "data/index_emb-8b",
+        "retrieval.mode": "dense"
+      },
+      "fingerprint": "5fd25ee90256",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:8b-q8_0",
+        "retrieval.mode": "dense",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max"
+      },
+      "num_samples": 55,
+      "elapsed_s": 60.3,
+      "metrics": {
+        "hit_rate": 0.5636,
+        "recall": 0.5636,
+        "precision": 0.1164,
+        "mrr": 0.3382,
+        "ndcg": 0.4016
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.2,
+        "3": 0.4727,
+        "5": 0.5636
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.3869
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        }
+      }
+    },
+    {
+      "variant": "embedder=4b query_instruction=retrieval",
+      "axis": "embedder",
+      "overrides": {
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "paths.index_dir": "data/index_emb-4b",
+        "embedding.query_instruction": "Given a web search query, retrieve relevant passages that answer the query"
+      },
+      "fingerprint": "8815ae84d698",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max",
+        "embedding.query_instruction": "Given a web search query, retrieve relevant passages that answer the query"
+      },
+      "num_samples": 55,
+      "elapsed_s": 60.7,
+      "metrics": {
+        "hit_rate": 0.5636,
+        "recall": 0.5636,
+        "precision": 0.1164,
+        "mrr": 0.3339,
+        "ndcg": 0.4033
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.1818,
+        "3": 0.4727,
+        "5": 0.5636
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        }
+      }
+    },
+    {
+      "variant": "embedder=4b query_instruction=retrieval mode=dense",
+      "axis": "embedder",
+      "overrides": {
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "paths.index_dir": "data/index_emb-4b",
+        "embedding.query_instruction": "Given a web search query, retrieve relevant passages that answer the query",
+        "retrieval.mode": "dense"
+      },
+      "fingerprint": "2017bd302865",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:4b-q8_0",
+        "retrieval.mode": "dense",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max",
+        "embedding.query_instruction": "Given a web search query, retrieve relevant passages that answer the query"
+      },
+      "num_samples": 55,
+      "elapsed_s": 55.9,
+      "metrics": {
+        "hit_rate": 0.5273,
+        "recall": 0.5273,
+        "precision": 0.1127,
+        "mrr": 0.3261,
+        "ndcg": 0.3949
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.2,
+        "3": 0.4364,
+        "5": 0.5273
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.3869
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5
         }
       }
     }

@@ -159,6 +159,32 @@ VARIANTS: list[Variant] = [
             {"embedding.query_instruction": QWEN3_RETRIEVAL_INSTRUCTION,
              "retrieval.mode": "dense"}),
 
+    # Embedder size (chunking plan, Phase 1b), Q8_0 throughout. Each size has its
+    # own index (data/eval/config_embedder_*.yaml builds them), so the variant
+    # points `paths.index_dir` at it as well as naming the model. Same three
+    # pairs as the query instruction: shipped, stage-1 ceiling, dense-only.
+    *[
+        Variant(f"embedder={size}{suffix}", "embedder",
+                {"embedding.model": model, "paths.index_dir": f"data/index_emb-{size}", **extra},
+                requires="index")
+        for size, model in (("4b", "qwen3-embedding:4b-q8_0"), ("8b", "qwen3-embedding:8b-q8_0"))
+        for suffix, extra in (
+            ("", {}),
+            (" stage1_top_k=20", {"retrieval.top_k": 20, "retrieval.rerank_top_k": 20}),
+            (" mode=dense", {"retrieval.mode": "dense"}),
+        )
+    ],
+    # Phase 1's instruction verdict was measured on 0.6b only; a different
+    # checkpoint may respond differently. Pairs with `embedder=4b` and
+    # `embedder=4b mode=dense`, the size that led at the shipped config.
+    Variant("embedder=4b query_instruction=retrieval", "embedder",
+            {"embedding.model": "qwen3-embedding:4b-q8_0", "paths.index_dir": "data/index_emb-4b",
+             "embedding.query_instruction": QWEN3_RETRIEVAL_INSTRUCTION}, requires="index"),
+    Variant("embedder=4b query_instruction=retrieval mode=dense", "embedder",
+            {"embedding.model": "qwen3-embedding:4b-q8_0", "paths.index_dir": "data/index_emb-4b",
+             "embedding.query_instruction": QWEN3_RETRIEVAL_INSTRUCTION,
+             "retrieval.mode": "dense"}, requires="index"),
+
     # The payoff question the stage-1 axis raises: retrieval can surface the
     # right chunk far more often with a bigger candidate pool, but that is only
     # useful if the reranker promotes it into the handful the LLM actually sees.
