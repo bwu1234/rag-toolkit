@@ -538,3 +538,32 @@ def test_a_call_cut_at_max_tokens_is_still_a_turn() -> None:
     turn = client.chat([ChatMessage("user", "q")], [SEARCH])
 
     assert len(turn.tool_calls) == 1
+
+
+def test_a_user_message_after_tool_results_folds_into_the_last_response() -> None:
+    # Gemini 3.x documents inline instructions inside the function response;
+    # the agent's forced-synthesis instruction arrives as a user message.
+    sent: list[dict] = []
+    client, _ = _client(_recording(sent, _ok("Answer [1].")))
+    first = ToolCall("rag_search", {"query": "Delta"}, id="a")
+    second = ToolCall("rag_search", {"query": "United"}, id="b")
+
+    client.chat([
+        ChatMessage("user", "Compare Delta and United."),
+        AssistantTurn(content="", tool_calls=(first, second)),
+        ToolResult(first, "Delta passage"),
+        ToolResult(second, "United passage"),
+        ChatMessage("user", "Answer now."),
+    ])
+
+    contents = sent[0]["contents"]
+    assert [c["role"] for c in contents] == ["user", "model", "user"]
+    responses = [p["functionResponse"]["response"]["result"] for p in contents[2]["parts"]]
+    assert responses == ["Delta passage", "United passage\n\nAnswer now."]
+
+
+def test_a_user_message_after_a_model_turn_stays_its_own_turn() -> None:
+    sent: list[dict] = []
+    client, _ = _client(_recording(sent, _ok("Sure.")))
+    client.chat([ChatMessage("user", "Hi"), AssistantTurn(content="Hello"), ChatMessage("user", "Again")])
+    assert sent[0]["contents"][-1] == {"role": "user", "parts": [{"text": "Again"}]}

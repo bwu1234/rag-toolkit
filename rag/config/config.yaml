@@ -142,6 +142,12 @@ retrieval:
     timeout_s: 10.0
 
 chat:
+  # pipeline -- retrieve once, then generate (the default, and what every
+  #             result in docs/measured-results.md before Milestone 19 used)
+  # agentic  -- the model calls search as a tool, as often as it needs, under
+  #             the guards in `agent:` below. Skips the condenser and CRAG's
+  #             grader/retries; see docs/milestone-19-plan.md
+  mode: pipeline
   # Rewrite follow-up questions into standalone ones (using recent turns)
   # before retrieval. Costs one extra LLM call per turn that has history.
   condense_history: true
@@ -196,7 +202,8 @@ agent:
   strategy: react
   # Searches per turn; at the cap the model gets one tool-free turn to answer.
   max_tool_calls: 8
-  # Wall-clock budget per agent turn. Sized for batch measurement; whether the
+  # Wall-clock budget for an agent turn's searching: checked before each call,
+  # then one tool-free call answers. Sized for batch measurement; whether the
   # UI should get ~60 s instead is still open.
   timeout_s: 600
   # Per-passage character cap in search results (matches the MCP server).

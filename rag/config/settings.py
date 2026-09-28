@@ -375,6 +375,10 @@ class RetrievalConfig(BaseModel):
     web_search: WebSearchConfig = WebSearchConfig()
 
 
+ChatMode = Literal["pipeline", "agentic"]
+AgentStrategy = Literal["react", "planned"]
+
+
 class ChatConfig(BaseModel):
     """Turn-level behaviour of the chat pipeline (as opposed to retrieval tuning).
 
@@ -390,6 +394,12 @@ class ChatConfig(BaseModel):
     pipeline) where there's never any history to condense anyway.
     """
 
+    # `pipeline`: retrieve once, then generate (everything above and in `crag`).
+    # `agentic`: the model searches as a tool, as often as it needs, under the
+    # `agent` section's guards. The condenser and CRAG's grader and retries
+    # don't run in agentic mode: the model sees the conversation and writes
+    # its own queries (Milestone 19).
+    mode: ChatMode = "pipeline"
     condense_history: bool = True
     max_history_turns: int = Field(
         default=6,
@@ -462,10 +472,10 @@ class EvalConfig(BaseModel):
 class AgentConfig(BaseModel):
     """Agentic retrieval (Milestone 19): the model searches as a tool, as often as it needs.
 
-    Read only when the agent is built, which `chat.mode: agentic` will do once
-    the agent loop lands (Milestone 19 phase 3); until then nothing on the
-    query path uses this section. See `docs/milestone-19-plan.md` for why each
-    guard exists -- every one answers a failure the prototype showed.
+    Read only when `chat.mode: agentic` builds the agent
+    (`rag.generation.agent`); the pipeline never reads it. See
+    `docs/milestone-19-plan.md` for why each guard exists -- every one answers
+    a failure the prototype showed.
     """
 
     # The agent's own model; None uses `llm`. The measured split is a 27b for
@@ -477,7 +487,7 @@ class AgentConfig(BaseModel):
     # `planned`: one call plans sub-queries, all run with no model call in
     # between, then one synthesis call -- built for a model that decomposes
     # well but won't take a second round on its own.
-    strategy: Literal["react", "planned"] = "react"
+    strategy: AgentStrategy = "react"
     max_tool_calls: int = Field(
         default=8,
         ge=1,
@@ -487,7 +497,11 @@ class AgentConfig(BaseModel):
     # questions took minutes with the 27b, and a 60 s budget would cut off the
     # runs phase 4 exists to measure. Whether agentic mode serves the UI (and
     # so wants ~60 s) is an open question in the plan.
-    timeout_s: float = Field(default=600.0, gt=0, description="Wall-clock budget for one agent turn")
+    # Checked before every model call and search, so it stops the searching;
+    # an in-flight call isn't interrupted, and the forced-synthesis turn that
+    # follows is one more call. It bounds when the agent stops looking, not
+    # the turn's exact length.
+    timeout_s: float = Field(default=600.0, gt=0, description="Wall-clock budget for one agent turn's searching")
     # Matches the MCP server's `DEFAULT_MAX_CHARS` (a test holds them equal):
     # agent prompts grew ~6x over the pipeline's in the prototype.
     max_passage_chars: int = Field(default=1200, ge=1, description="Per-passage character cap in search results")

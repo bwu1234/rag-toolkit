@@ -45,6 +45,21 @@ def _citation_label(chunk: ScoredChunk) -> str:
     return f"{chunk.document_id} (p.{page})" if page is not None else chunk.document_id
 
 
+def format_passage(number: int, chunk: ScoredChunk) -> str:
+    """One numbered passage block, as both the pipeline prompt and the agent's search results show it.
+
+    Shared so that pipeline and agent differ only in how passages are found,
+    not in how they're presented -- otherwise a phase 4 comparison would
+    measure the formatting along with the loop.
+    """
+
+    return (
+        f"Passage [{number}] (source: {_citation_label(chunk)}):\n"
+        + (f"Context: {chunk.context}\n" if chunk.context else "")
+        + chunk.text
+    )
+
+
 def build_rag_prompt(query: str, chunks: list[ScoredChunk]) -> str:
     """Render the retrieved chunks and question into a single user-turn prompt.
 
@@ -61,12 +76,7 @@ def build_rag_prompt(query: str, chunks: list[ScoredChunk]) -> str:
     though it were -- so the boundary is made explicit rather than implied.
     """
 
-    passages = "\n\n".join(
-        f"Passage [{index}] (source: {_citation_label(chunk)}):\n"
-        + (f"Context: {chunk.context}\n" if chunk.context else "")
-        + chunk.text
-        for index, chunk in enumerate(chunks, start=1)
-    )
+    passages = "\n\n".join(format_passage(index, chunk) for index, chunk in enumerate(chunks, start=1))
 
     return (
         f"Context passages:\n\n{passages}\n\n"
@@ -137,3 +147,80 @@ def parse_cited_passages(answer: str, passage_count: int) -> list[int]:
             if 1 <= number <= passage_count and number not in cited:
                 cited.append(number)
     return cited
+
+
+def strip_citation_markers(text: str) -> str:
+    """Remove `[n]` markers, e.g. from an earlier answer replayed as history.
+
+    An earlier turn's `[3]` meant that turn's third passage. Replayed to the
+    agent, it would read as a citation of *this* turn's third passage, and a
+    model that copied it would cite something it never saw.
+    """
+
+    return re.sub(r"[ \t]*" + _CITATION_MARKER.pattern, "", text)
+
+
+# ---------------------------------------------------------------------------
+# Agentic retrieval (Milestone 19)
+# ---------------------------------------------------------------------------
+
+# Every clause answers a failure the prototype showed or a guard the plan
+# names: standalone queries (search has no memory), one search per entity
+# (multi-hop coverage), no outside knowledge *even as background* (the 27b's
+# "for reference" FY2015 leak), and saying which parts went unanswered (the
+# per-entity completeness rubric).
+AGENT_SYSTEM_PROMPT = (
+    "You answer questions using a search tool, rag_search, over the document "
+    "corpus described below. Search before answering any question the corpus "
+    "might cover; answer without searching only when the question needs no "
+    "documents, such as a greeting.\n\n"
+    "Search results are numbered passages, and the numbers stay the same for "
+    "the whole conversation. Make every query standalone: name the specific "
+    "entity, period, product or topic it is about, because the search sees "
+    "only the query, not this conversation. A question about several entities "
+    "or periods needs a separate search for each. {iterate}\n\n"
+    "Answer only from the passages, citing them inline as [n], e.g. [2] or "
+    "[3][5]. Do not add facts from your own knowledge, not even as background "
+    "or 'for reference'. If the passages don't answer the question, or answer "
+    "only part of it, say which parts they don't cover instead of guessing."
+    "{corpus}"
+)
+
+_REACT_ITERATE = (
+    "After each result, decide whether you have enough; if a passage points "
+    "to something you haven't found yet, search for it."
+)
+
+_PLANNED_ITERATE = (
+    "You get one round of searches: request every search the question needs "
+    "now, all in this turn. You will answer from their results without "
+    "searching again."
+)
+
+
+def agent_system_prompt(strategy: str, corpus_descriptions: list[tuple[str, str | None]]) -> str:
+    """The agent's system prompt for `strategy`, naming the corpora it searches.
+
+    The corpus description is what lets the model decide *whether* to search
+    -- the routing decision the agent replaces a classifier with -- so the
+    registry's descriptions are included when the config has them.
+    """
+
+    described = [f"- {name}: {' '.join(text.split())}" for name, text in corpus_descriptions if text]
+    corpus = "\n\nThe corpus:\n" + "\n".join(described) if described else ""
+    iterate = _PLANNED_ITERATE if strategy == "planned" else _REACT_ITERATE
+    return AGENT_SYSTEM_PROMPT.format(iterate=iterate, corpus=corpus)
+
+
+# Sent as its own user message before the forced tool-free turn. Where it goes
+# was measured: replaying a captured 27b conversation that had hit the cap,
+# this text appended to the last tool result got an empty answer 3/3 times,
+# and as a separate user message a real answer 3/3 (docs/milestone-19-plan.md,
+# phase 3). Gemini documents the opposite placement -- instructions inside
+# the function response -- so its adapter folds this message into the last
+# response itself; the agent stays provider-neutral.
+AGENT_SYNTHESIS_INSTRUCTION = (
+    "No more searches are available for this question. Answer it now from "
+    "the passages above, citing them as [n]. Say plainly which parts of the "
+    "question the passages don't cover."
+)

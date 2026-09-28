@@ -275,25 +275,114 @@ selection would be measuring a different index.
 
 ### 3 — Agent loop
 
-- `rag/generation/agent.py`: `AgentService` with the ledger, the guards from
-  decision 6, `PipelineEvent`s per tool call (so the UI's progress view keeps
-  working), and history handling.
-- Both strategies from decision 9. `planned` is the smaller of the two: a
-  plan call that returns sub-queries as structured output, the searches, then
-  the forced-synthesis turn `react` already needs at the cap. The two share
-  the ledger and guards: the duplicate-query refusal dedups the plan,
-  `max_tool_calls` truncates it, and `timeout_s` applies unchanged.
-- The builder switches on `chat.mode`, then `agent.strategy`. The agent's
-  model comes from `build_agent_llm`. Add `agent` back into
-  `config_fingerprint` for agentic turns.
-- Catch `ContextOverflowError` like the search cap: stop searching and take
-  the forced-synthesis turn with the passages already in the ledger.
-- **Exit:** tests for each guard (cap leads to a synthesis turn with tools
-  removed; a duplicate query spends no search; a timeout returns the best
-  answer so far; ledger numbering and dedup); for `planned`, a test that the
-  model is called exactly twice however many sub-queries there are, and that
-  a plan longer than the cap is truncated. Plus the prototype's six multi-hop
-  questions reproducing in the real code under `react`.
+**Done.** `chat.mode: agentic` builds an `AgentService`
+(`rag/generation/agent.py`), with both strategies, the ledger and every guard
+from decision 6. What shipped, and where it departs from the original bullets:
+
+- **`ChatResponder`, a base class both responders share.** Decision 4 wanted
+  the callers untouched. Their calls are, but their type annotations named
+  `ChatService`. `ask()` (metering, timing, the turn record, recording a turn
+  that raised) moved to a `ChatResponder` base class. `ChatService` and
+  `AgentService` each implement only `_answer()`, and `build_chat_service`
+  returns a `ChatResponder`. The callers changed one annotation each.
+- **The model doesn't choose `corpus`, `top_k` or `max_chars`.** The agent
+  offers `rag_search` as `ToolSpec.definition_without(...)`: the MCP schema
+  with those three properties removed, the rest byte-identical. `corpus` is
+  the turn's selection, because an eval's `--corpus` must be the index
+  measured. `top_k` and `max_chars` are the prompt-size guards; a model
+  asking for 20 full passages per search would undo them. It left the MCP
+  tool description with a sentence pointing at `rag_list_corpora`, a tool
+  the agent doesn't have. That pointer now lives only in the `corpus`
+  argument's description, a small change to the text MCP clients see.
+- **The `planned` strategy's plan is the tool calls of one turn,** not a JSON
+  answer to parse. The 9b never made a malformed tool call in the probe, and
+  tool calls are already structured output. Its planning prompt differs from
+  `react`'s: it gets one round, so it must ask for every search at once.
+- **The forced-synthesis instruction is its own user message, placed by
+  measurement.** The first build appended it to the last tool result, in case
+  Gemini rejected two user turns in a row. In the live run, two of three
+  capped 27b turns still answered "Let me try one more search" or "". Both
+  placements were replayed on the captured superlative conversation, 3
+  samples each:
+
+  | placement at the forced turn | lease | superlative |
+  |---|---|---|
+  | appended to the last tool result | 3/3 answered | **0/3: empty every time** |
+  | separate user message (shipped) | 3/3 | 3/3 |
+  | fresh single-shot grounded prompt | 3/3 | 3/3, but asserts a winner |
+
+  The empty reply had no tool calls and no thinking, so it wasn't a tool call
+  the loop dropped. The fresh prompt also worked, but it drops the
+  conversation, and it named a single winner that the passages it had can't
+  establish. Gemini documents the opposite placement (Gemini 3.x: "inline
+  instructions should be appended directly to the response text"), so its
+  adapter folds the message into the last function response. The agent stays
+  provider-neutral. The Gemini fold follows the docs and is not live-verified.
+- **`stopped_reason` gained `context`:** `answered | cap | timeout | context`.
+  On `ContextOverflowError`, the latest step's results are replaced with a
+  note, their passages leave the ledger (so they can't be cited), and the
+  forced turn answers. If there's no step to roll back, the error propagates.
+  `ContextOverflowError` moved to `rag/generation/llm.py` so the agent needn't
+  import a concrete adapter.
+- **`timeout_s` bounds the searching, not the whole turn.** It is checked
+  before each model call and each search. An in-flight call isn't
+  interrupted, and the forced answer is one more call after the budget.
+- **`cap` means a guard cut something off.** `planned` with exactly
+  `max_tool_calls` queries reports `answered`. `react` reports `cap` once it
+  is out of searches or model steps: steps are bounded by `max_tool_calls`
+  too, so a model that only repeats itself still runs out.
+- **Citations carry the text the model saw,** capped at `max_passage_chars`,
+  not the whole chunk, so the answer eval's judge and evidence recall see
+  what the answer could have used. A chunk returned again is referenced as
+  "already shown" rather than repeated.
+- **History:** an earlier answer's `[n]` markers are stripped before it goes
+  back to the model. They numbered that turn's passages, and a copied `[3]`
+  would cite something this turn never showed.
+- **Groundedness is check-only:** `crag.check_groundedness` reports a verdict
+  on `ChatAnswer.grounded` without regenerating, so phase 4 can measure the
+  checker by itself. CRAG's grader and retries are ignored in agentic mode,
+  with a warning at build time.
+- **Fingerprint:** `agent` counts only when `chat.mode: agentic`, and
+  `chat.mode` itself is excluded while it's `pipeline`. Default and
+  `vanilla.yaml` fingerprints match `main`'s exactly, so logged turns keep
+  their keys.
+- **Tests (`tests/test_agent.py`, 24):** the planned exit criteria (the cap
+  leads to a synthesis turn with tools removed; a repeated query spends no
+  search; a timeout answers with what was found; ledger numbering and dedup;
+  `planned` calls the model exactly twice for 1, 3 or 6 sub-queries, and a
+  plan over the cap is truncated), plus overflow rollback, history
+  stripping, metering, and building each mode.
+  Each guard was checked by breaking it in the source: all nine mutations
+  failed a test.
+
+**The prototype's six multi-hop questions, in the real code** (`react`,
+`qwen3.8:27b-mlx`, EDGAR, M2 Max; searches / prompt tokens / seconds). Not
+judged; grading is phase 4's job. Run twice: first with the instruction
+appended to the tool result, then with the shipped separate message.
+
+| question | prototype | first run | shipped |
+|---|---|---|---|
+| airlines revenue | 8 / 78k / 383 | 4, answered / 20k / 124 | 5, answered / 27k / 119 |
+| lease obligations | 5 / 19k / 132 | 8, cap / 18k / 138, **"Let me try one more search."** | 8, cap / 18k / 131, "not in the passages" |
+| retail comps | 4 / 12k / 132 | 3, answered / 11k / 69 | 4, answered / 12k / 98 |
+| pharma IRA (3 cos) | 8 / 33k / 289 | 8, cap / 22k / 189 | 8, cap / 21k / 182 |
+| Southwest fuel | 1 / 3k / 68 | 1, answered / 3k / 30 | 1, answered / 3k / 30 |
+| superlative | 8 / 46k / 382 | 8, cap / 34k / 253, **""** | 8, cap / 38k / 265 |
+
+- **Reproduces:** one search per entity, iteration when a passage points
+  somewhere new (airlines, retail), and the cap on the hard ones. Prompt
+  tokens are down, up to 3× on airlines, because the ledger references a
+  repeated passage rather than resending it.
+- **Every turn now ends in a real answer.** The first run returned the
+  prototype's two cap failures verbatim; that led to the placement change
+  above.
+- **Doesn't reproduce: lease.** In both runs the 27b never found Apple's or
+  Microsoft's lease table within 8 searches, and it said so rather than
+  guessing. The prototype found them in 5. It also called COST "Costa Mesa"
+  (it's Costco), a slip no passage supports.
+- **The superlative answer names a winner (NVIDIA) after seeing margins for
+  only some of the 14 companies.** That's the open question below about
+  where this question belongs, not a loop bug.
 
 ### 4 — Measure (the milestone's actual deliverable)
 

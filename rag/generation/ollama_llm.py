@@ -21,6 +21,7 @@ import httpx
 from rag.generation.llm import (
     AssistantTurn,
     ChatMessage,
+    ContextOverflowError,
     LLMUsage,
     Message,
     ToolCall,
@@ -28,6 +29,8 @@ from rag.generation.llm import (
     ToolDefinition,
     ToolResult,
 )
+
+__all__ = ["ContextOverflowError", "OllamaLLMClient"]
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +41,6 @@ CONTEXT_WARN_FRACTION = 0.9
 #: `think` as Ollama takes it: on/off, or a reasoning level for models that
 #: accept one (the 27b takes `low`/`medium`/`xhigh`).
 ThinkSetting = bool | str
-
-
-class ContextOverflowError(RuntimeError):
-    """The prompt is longer than the context window the request asked for.
-
-    Raised instead of letting Ollama truncate. A caller holding a growing
-    conversation (the agent) catches it to stop adding and answer with what it
-    has, rather than carrying on with a prompt that lost its beginning.
-    """
 
 
 class OllamaLLMClient(ToolCallingLLM):

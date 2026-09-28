@@ -138,6 +138,18 @@ class ToolResult:
 Message = ChatMessage | AssistantTurn | ToolResult
 
 
+class ContextOverflowError(RuntimeError):
+    """The prompt is longer than the context window the request asked for.
+
+    Raised instead of letting the provider truncate (Ollama's llama.cpp engine
+    otherwise drops the start of the prompt silently). A caller holding a
+    growing conversation (the agent) catches it to stop adding and answer with
+    what it has, rather than carrying on with a prompt that lost its beginning.
+    Defined here rather than in an adapter, so the agent can catch it without
+    importing a concrete provider.
+    """
+
+
 class ToolCallingLLM(LLMClient):
     """An `LLMClient` that can also hold a multi-turn conversation with tools.
 

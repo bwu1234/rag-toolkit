@@ -54,7 +54,7 @@ from rag.eval.answer_eval import _parse_verdict, add_judge_arguments, build_judg
 from rag.eval.dataset import EvalDataset, EvalSample, ExpectedSpan
 from rag.eval.relevance import unmatched_spans
 from rag.generation.builder import build_chat_service
-from rag.generation.chat_service import ChatService
+from rag.generation.chat_service import ChatResponder
 from rag.generation.llm import LLMClient
 from rag.logging_config import configure_logging
 
@@ -199,7 +199,7 @@ class MultihopReport:
 
 def run_multihop_eval(
     dataset: EvalDataset,
-    chat_service: ChatService,
+    chat_service: ChatResponder,
     judge: LLMClient,
     *,
     completed: Mapping[str, MultihopSampleResult] | None = None,
