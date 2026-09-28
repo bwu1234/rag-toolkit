@@ -195,6 +195,15 @@ VARIANTS: list[Variant] = [
     # index data/eval/config_header.yaml builds. Same three pairs as the
     # embedder, plus the reranker scoring the header too (pairs with
     # `header=on`), the plan's open question about what the cross-encoder sees.
+    # The plain pipeline with every Phase 2 setting pinned off, for pairing now
+    # that `baseline` (the shipped default) has the header on. It reads the
+    # header-free index `rag/config/vanilla.yaml` builds: the same chunks and
+    # embedder as the shipped index, no header.
+    Variant("header=off", "header",
+            {"paths.index_dir": "data/index_vanilla",
+             "chunking.header.template": None,
+             "reranker.include_header": False},
+            requires="index"),
     *[
         Variant(f"header=on{suffix}", "header",
                 {"paths.index_dir": "data/index_header",

@@ -24,10 +24,11 @@
 | `embedder=4b query_instruction=retrieval` | 0.686 | [0.598, 0.763] | 0.686 | 0.151 | 0.504 | 0.585 | +0.034 [-0.024, +0.091] 8W/4L p=0.39 | +0.024 [-0.020, +0.067] | 0 | 123 |
 | `embedder=4b query_instruction=retrieval mode=dense` | 0.661 | [0.572, 0.740] | 0.661 | 0.147 | 0.483 | 0.568 | +0.008 [-0.068, +0.085] 11W/10L p=1 | +0.006 [-0.053, +0.066] | 0 | 120 |
 | | | | | | | | | | | |
-| `header=on` | 0.797 | [0.715, 0.859] | 0.797 | 0.180 | 0.571 | 0.679 | +0.144 [+0.072, +0.216]* 19W/2L p=0.00022 | +0.118 [+0.065, +0.171]* | 0 | 114 |
+| `header=off` | 0.652 | [0.563, 0.732] | 0.652 | 0.141 | 0.493 | 0.533 | +0.000 [+0.000, +0.000] 0W/0L p=1 | -0.029 [-0.051, -0.006]* | 0 | 117 |
+| `header=on` | 0.797 | [0.715, 0.859] | 0.797 | 0.180 | 0.571 | 0.628 | +0.144 [+0.072, +0.216]* 19W/2L p=0.00022 | +0.066 [+0.012, +0.121]* | 0 | 114 |
 | `header=on stage1_top_k=20` | 0.873 | [0.801, 0.921] | 0.873 | 0.050 | 0.580 | 0.714 | +0.220 [+0.142, +0.299]* 27W/1L p=2.2e-07 | +0.152 [+0.098, +0.206]* | 0 | 113 |
 | `header=on mode=dense` | 0.746 | [0.660, 0.816] | 0.746 | 0.170 | 0.555 | 0.656 | +0.093 [+0.012, +0.175]* 18W/7L p=0.043 | +0.095 [+0.025, +0.164]* | 0 | 118 |
-| `header=on rerank_header` | 0.822 | [0.743, 0.881] | 0.822 | 0.188 | 0.657 | 0.767 | +0.169 [+0.090, +0.249]* 23W/3L p=8.8e-05 | +0.205 [+0.125, +0.285]* | 0 | 119 |
+| `header=on rerank_header` | 0.822 | [0.743, 0.881] | 0.822 | 0.188 | 0.657 | 0.698 | +0.169 [+0.090, +0.249]* 23W/3L p=8.8e-05 | +0.137 [+0.059, +0.214]* | 0 | 119 |
 
 By kind, each reported on its own (the rows above mix them):
 
@@ -61,13 +62,15 @@ By kind, each reported on its own (the rows above mix them):
 | `embedder=4b query_instruction=retrieval` | paraphrase | 64 | 0.562 | [0.441, 0.677] | 0.458 | +0.062 [-0.034, +0.159] 7W/3L p=0.34 |
 | `embedder=4b query_instruction=retrieval mode=dense` | implicit | 54 | 0.741 | [0.611, 0.839] | 0.672 | -0.093 [-0.200, +0.014] 2W/7L p=0.18 |
 | `embedder=4b query_instruction=retrieval mode=dense` | paraphrase | 64 | 0.594 | [0.471, 0.705] | 0.481 | +0.094 [-0.011, +0.198] 9W/3L p=0.15 |
-| `header=on` | implicit | 54 | 0.833 | [0.713, 0.910] | 0.760 | +0.000 [-0.073, +0.073] 2W/2L p=1 |
-| `header=on` | paraphrase | 64 | 0.766 | [0.649, 0.853] | 0.612 | +0.266 [+0.157, +0.375]* 17W/0L p=1.5e-05 |
+| `header=off` | implicit | 54 | 0.833 | [0.713, 0.910] | 0.679 | +0.000 [+0.000, +0.000] 0W/0L p=1 |
+| `header=off` | paraphrase | 64 | 0.500 | [0.381, 0.619] | 0.410 | +0.000 [+0.000, +0.000] 0W/0L p=1 |
+| `header=on` | implicit | 54 | 0.833 | [0.713, 0.910] | 0.680 | +0.000 [-0.073, +0.073] 2W/2L p=1 |
+| `header=on` | paraphrase | 64 | 0.766 | [0.649, 0.853] | 0.584 | +0.266 [+0.157, +0.375]* 17W/0L p=1.5e-05 |
 | `header=on stage1_top_k=20` | implicit | 54 | 0.889 | [0.778, 0.948] | 0.790 | +0.056 [-0.025, +0.136] 4W/1L p=0.38 |
 | `header=on stage1_top_k=20` | paraphrase | 64 | 0.859 | [0.754, 0.924] | 0.649 | +0.359 [+0.241, +0.478]* 23W/0L p=2.4e-07 |
 | `header=on mode=dense` | implicit | 54 | 0.722 | [0.591, 0.824] | 0.681 | -0.111 [-0.210, -0.012]* 1W/7L p=0.07 |
 | `header=on mode=dense` | paraphrase | 64 | 0.766 | [0.649, 0.853] | 0.636 | +0.266 [+0.157, +0.375]* 17W/0L p=1.5e-05 |
-| `header=on rerank_header` | implicit | 54 | 0.852 | [0.734, 0.923] | 0.810 | +0.019 [-0.078, +0.115] 4W/3L p=1 |
-| `header=on rerank_header` | paraphrase | 64 | 0.797 | [0.683, 0.877] | 0.730 | +0.297 [+0.184, +0.410]* 19W/0L p=3.8e-06 |
+| `header=on rerank_header` | implicit | 54 | 0.852 | [0.734, 0.923] | 0.715 | +0.019 [-0.078, +0.115] 4W/3L p=1 |
+| `header=on rerank_header` | paraphrase | 64 | 0.797 | [0.683, 0.877] | 0.685 | +0.297 [+0.184, +0.410]* 19W/0L p=3.8e-06 |
 
 `hit 95% CI` is a Wilson interval on that rate alone, the noise floor of one run on this many questions. Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval that excludes zero; `W/L` counts the questions the variant gained / lost and `p` is McNemar's exact test on them -- trust it over the CI when W+L is small. `(no CI)` rows predate per-sample scores and need a re-run to be tested. `unmatch.` counts expected spans no chunk contains under that variant's chunking (`—` predates the count).
