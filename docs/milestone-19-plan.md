@@ -431,6 +431,32 @@ outcome is **"agentic is an opt-in mode for hard questions"**, not a new
 default. If `planned / 9b` wins by more than noise, prefer it over the 27b
 for any default; it is the only agentic variant that runs at 9b speed.
 
+**Consider Inspect for the agentic rows.** The
+[eval harness plan](eval-harness-plan.md#decisions-and-rejected-alternatives)
+keeps pipeline evals on this repo's own run store, but defers this decision
+to here. An agent failure is read in its transcript (which searches it ran,
+what came back, why it stopped), and
+[Inspect](https://inspect.aisi.org.uk/)'s `inspect view` shows every model
+and tool call per sample. The run store only shows final outputs. Check
+three things before adopting it:
+
+- **How the agent's calls reach Inspect.** Inspect's agent bridge intercepts
+  only the OpenAI, Anthropic and Google SDK APIs. `OllamaLLM` calls Ollama's
+  native `/api/chat` over httpx, so the bridge would not see it. The fit here
+  is an `inspect` `LLMClient` provider that delegates to Inspect's model API
+  (use the `add-provider` skill). Then `rag/generation/agent.py` runs
+  unchanged and every call lands in the transcript.
+- **Pairing against the pipeline baseline.** Inspect reports each run's own
+  standard error, not a paired difference. The default-flip criterion
+  above still needs `paired.py` over per-sample scores exported from both
+  logs, with sample ids matching the pipeline runs'.
+- **The dependency.** About 40 direct dependencies. Put it in an optional
+  `eval-agent` extra, never a core dependency, in the same way the `mcp`
+  extra is optional.
+
+If the transcript view doesn't change how a phase 4 failure gets diagnosed,
+leave the agentic rows on the run store with the rest.
+
 ### 5 — Follow-ups (only if phase 4 justifies the agent)
 
 - **Structural tools:** `read_document(doc_id, section?)` and
