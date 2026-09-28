@@ -39,10 +39,16 @@ REGROUND_SYSTEM_PROMPT = (
 
 
 def _citation_label(chunk: ScoredChunk) -> str:
-    """Build a human-readable source label, including a page number if known."""
+    """Build a human-readable source label, including a page number if known.
 
+    The chunk header, when there is one, replaces the document id: "Apple Inc.
+    (AAPL) 10-K, period ended 2024-09-28" tells the answering model which
+    company and period a passage is about, where a file name only hints at it.
+    """
+
+    label = chunk.header or chunk.document_id
     page = chunk.metadata.get("page")
-    return f"{chunk.document_id} (p.{page})" if page is not None else chunk.document_id
+    return f"{label} (p.{page})" if page is not None else label
 
 
 def format_passage(number: int, chunk: ScoredChunk) -> str:

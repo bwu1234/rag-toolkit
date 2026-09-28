@@ -456,8 +456,8 @@ def test_config_fingerprint_keys_on_the_agent_section_in_agentic_mode() -> None:
 def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None:
     gemini = LLMConfig(provider="gemini", model="gemini-3.5-flash-lite")
     unset = RagConfig(llm=gemini)
-    # None of `llm.thinking_level`, `agent`, `chat.mode` or
-    # `embedding.query_instruction` existed when the turns already logged were hashed.
+    # None of `llm.thinking_level`, `agent`, `chat.mode`, `embedding.query_instruction`
+    # or the chunk header fields existed when the turns already logged were hashed.
     as_before = hashlib.sha256(
         unset.model_dump_json(
             exclude={
@@ -467,6 +467,8 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
                 "llm": {"thinking_level"},
                 "chat": {"mode"},
                 "embedding": {"query_instruction"},
+                "chunking": {"carry_metadata", "header"},
+                "reranker": {"include_header"},
             }
         ).encode()
     ).hexdigest()[:12]
@@ -479,7 +481,8 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
 
 def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> None:
     unset = RagConfig()
-    # `embedding.query_instruction` didn't exist when the turns already logged were hashed.
+    # `embedding.query_instruction` and the chunk header fields didn't exist when
+    # the turns already logged were hashed.
     as_before = hashlib.sha256(
         unset.model_dump_json(
             exclude={
@@ -489,6 +492,8 @@ def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> N
                 "llm": {"thinking_level"},
                 "chat": {"mode"},
                 "embedding": {"query_instruction"},
+                "chunking": {"carry_metadata", "header"},
+                "reranker": {"include_header"},
             }
         ).encode()
     ).hexdigest()[:12]

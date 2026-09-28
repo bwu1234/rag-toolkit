@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from rag.ingestion.loaders import (
     TextLoader,
     get_loader_for,
     load_corpus,
+    split_front_matter,
 )
 from rag.ingestion.models import make_document_id
 
@@ -102,3 +104,45 @@ def test_load_corpus_dispatches_across_formats_and_skips_unsupported(tmp_path: P
 def test_load_corpus_raises_for_missing_directory(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         load_corpus(tmp_path / "does_not_exist")
+
+
+# ---------------------------------------------------------------------------
+# Front matter (chunking plan, Phase 2)
+# ---------------------------------------------------------------------------
+
+_BODY = "# Apple Inc. (AAPL) 10-K\n\nRevenue grew.\n"
+_FRONT_MATTER = "---\ncompany: Apple Inc.\nticker: AAPL\nperiod_end: 2024-09-28\n---\n"
+
+
+def test_front_matter_becomes_typed_metadata_and_leaves_the_text(tmp_path: Path) -> None:
+    (tmp_path / "a.md").write_text(_FRONT_MATTER + _BODY, encoding="utf-8")
+
+    [doc] = MarkdownLoader().load(tmp_path / "a.md", corpus_root=tmp_path)
+
+    assert doc.text == _BODY, "offsets and eval spans must not move when front matter is added"
+    assert doc.metadata["company"] == "Apple Inc."
+    assert doc.metadata["period_end"] == date(2024, 9, 28)
+    assert doc.metadata["title"] == "Apple Inc. (AAPL) 10-K", "title still comes from the first heading"
+
+
+def test_front_matter_title_overrides_the_heading(tmp_path: Path) -> None:
+    (tmp_path / "a.md").write_text("---\ntitle: Stated\n---\n" + _BODY, encoding="utf-8")
+
+    [doc] = MarkdownLoader().load(tmp_path / "a.md", corpus_root=tmp_path)
+
+    assert doc.metadata["title"] == "Stated"
+
+
+def test_text_without_front_matter_is_returned_unchanged() -> None:
+    text = "# Title\n\n---\n\nA horizontal rule is not front matter.\n"
+    assert split_front_matter(text) == ({}, text)
+
+
+def test_unclosed_front_matter_is_an_error() -> None:
+    with pytest.raises(ValueError, match="no closing"):
+        split_front_matter("---\ncompany: Apple\n# Title\n")
+
+
+def test_front_matter_that_is_not_a_mapping_is_an_error() -> None:
+    with pytest.raises(ValueError, match="mapping"):
+        split_front_matter("---\n- a\n- b\n---\nbody\n")

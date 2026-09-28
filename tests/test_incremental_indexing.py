@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -248,6 +249,62 @@ def test_toggling_contextual_chunking_refuses_to_extend_the_index(corpus) -> Non
     config.chunking.contextual.enabled = True
     with pytest.raises(IndexManifestMismatch, match="contextual.enabled"):
         _index()
+
+
+def test_changing_the_header_template_refuses_to_extend_the_index(corpus) -> None:
+    """The content hash covers `chunk.text` only, so old and new headers would mix."""
+    config, _ = corpus
+    _index()
+
+    config.chunking.header.template = "{title}"
+    with pytest.raises(IndexManifestMismatch, match="chunk_fields.header_template"):
+        _index()
+
+
+def test_changing_carried_metadata_refuses_to_extend_the_index(corpus) -> None:
+    config, _ = corpus
+    _index()
+
+    config.chunking.carry_metadata = ["title", "ticker"]
+    with pytest.raises(IndexManifestMismatch, match="chunk_fields.carry_metadata"):
+        _index()
+
+
+def test_a_manifest_from_before_chunk_fields_matches_the_defaults(corpus) -> None:
+    """An index built before chunk fields were recorded carried the default keys, no header."""
+    config, _ = corpus
+    _index()
+    selection = config.corpus_selection()
+    path = index_manifest_path(selection.index_dir, selection.slug)
+    raw = json.loads(path.read_text())
+    del raw["chunk_fields"]
+    path.write_text(json.dumps(raw))
+
+    _index()  # not refused
+
+    config.chunking.header.template = "{title}"
+    with pytest.raises(IndexManifestMismatch, match="header_template: None -> '{title}'"):
+        _index()
+
+
+def test_the_header_is_embedded_and_indexed_but_not_stored_as_text(corpus) -> None:
+    config, embedder = corpus
+    (_docs(config) / "filing.md").write_text(
+        "---\nticker: AAPL\n---\n" + _words(5), encoding="utf-8"
+    )
+    config.chunking.header.template = "{ticker} filing"
+    seen: list[str] = []
+    original = embedder.embed_documents
+    embedder.embed_documents = lambda texts: seen.extend(texts) or original(texts)  # type: ignore[method-assign]
+
+    _index()
+
+    assert "AAPL filing\n\n" + _words(5) in seen
+    selection = config.corpus_selection()
+    [hit] = BM25Index(bm25_index_path(selection.index_dir, selection.slug)).query("AAPL", top_k=5)
+    assert hit.document_id == "filing.md"
+    assert hit.text == _words(5)
+    assert hit.header == "AAPL filing"
 
 
 def test_an_index_without_a_manifest_is_adopted(corpus, caplog: pytest.LogCaptureFixture) -> None:

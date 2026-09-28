@@ -63,11 +63,13 @@ class CrossEncoderReranker(Reranker):
         aggregate: RerankAggregation = "max",
         query_prefix: str = "",
         document_prefix: str = "",
+        include_header: bool = False,
     ) -> None:
         self.model_name = model
         self.aggregate: RerankAggregation = aggregate
         self.query_prefix = query_prefix
         self.document_prefix = document_prefix
+        self.include_header = include_header
         self._model: object | None = None
 
     def _format(self, template: str, field: str, value: str) -> str:
@@ -84,6 +86,18 @@ class CrossEncoderReranker(Reranker):
             return template.replace(placeholder, value)
         return f"{template}{value}"
 
+    def _passage(self, candidate: ScoredChunk) -> str:
+        """The passage side of a pair: the chunk text, after its header when configured.
+
+        Never the generated context, for the reason the Milestone 9 notes give.
+        The header is opt-in for the same reason (it changes what the model
+        scores), but it's a fixed line of document metadata, and the only way
+        the cross-encoder can see which company and period a passage is from.
+        """
+        if self.include_header and candidate.header:
+            return f"{candidate.header}\n\n{candidate.text}"
+        return candidate.text
+
     def rerank(self, queries: list[str], candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
         if not candidates or not queries:
             return []
@@ -96,7 +110,7 @@ class CrossEncoderReranker(Reranker):
         pairs = [
             (
                 self._format(self.query_prefix, "query", query),
-                self._format(self.document_prefix, "document", candidate.text),
+                self._format(self.document_prefix, "document", self._passage(candidate)),
             )
             for query in queries
             for candidate in candidates

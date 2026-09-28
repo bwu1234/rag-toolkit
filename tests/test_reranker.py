@@ -8,6 +8,7 @@ actual sentence-transformers model (the heaviest dependency in the project).
 
 from __future__ import annotations
 
+import dataclasses
 import math
 from pathlib import Path
 
@@ -396,3 +397,27 @@ def test_rerank_on_empty_queries_returns_nothing_without_loading_the_model() -> 
 
     assert reranker.rerank([], [_scored("a", "ta")], top_k=5) == []
     assert reranker._model is None
+
+
+def test_reranker_scores_the_header_only_when_configured() -> None:
+    headed = dataclasses.replace(_scored("a", "text a"), header="Apple 10-K")
+
+    plain = CrossEncoderReranker(model="m")
+    plain_fake = _PairKeyedCrossEncoder({("q", "text a"): 1.0})
+    plain._model = plain_fake
+    plain.rerank(["q"], [headed], top_k=1)
+
+    with_header = CrossEncoderReranker(model="m", include_header=True)
+    header_fake = _PairKeyedCrossEncoder({("q", "Apple 10-K\n\ntext a"): 1.0, ("q", "text b"): 0.0})
+    with_header._model = header_fake
+    with_header.rerank(["q"], [headed, _scored("b", "text b")], top_k=2)
+
+    assert plain_fake.seen_pairs == [("q", "text a")], "default: the pair is unchanged"
+    assert header_fake.seen_pairs == [("q", "Apple 10-K\n\ntext a"), ("q", "text b")]
+
+
+def test_get_reranker_passes_include_header() -> None:
+    reranker = get_reranker(RerankerConfig(provider="cross_encoder", include_header=True))
+
+    assert isinstance(reranker, CrossEncoderReranker)
+    assert reranker.include_header is True

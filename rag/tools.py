@@ -373,6 +373,10 @@ def _result_entry(rank: int, chunk: Any, max_chars: int) -> dict[str, Any]:
     # Present only when contextual chunking generated one at index time.
     if chunk.context:
         entry["context"] = chunk.context
+    # Present only when `chunking.header` rendered one: the company and period
+    # an agent needs to tell near-identical filings apart.
+    if chunk.header:
+        entry["header"] = chunk.header
     return entry
 
 

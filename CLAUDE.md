@@ -57,6 +57,10 @@ index.
   `expected_doc_ids`.
 - Corpora live at `data/corpora/<name>/documents/`. `baseline` is committed;
   others (e.g. `edgar`) are gitignored and fetched from their `manifest.json`.
+  EDGAR files carry YAML front matter that the default chunk header reads.
+  Files fetched before that need `scripts/fetch_edgar.py
+  --backfill-front-matter`; `index-report` shows how many documents have a
+  header.
 
 Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora-notes-shipped-with-milestone-11).
 
@@ -74,8 +78,9 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 - Whole pipeline end to end: `scripts/demo.sh` (takes `--corpus`, `--question "..."`)
 - Build the index: `python -m rag.cli index`. Incremental: unchanged chunks
   are skipped, and chunks of deleted/shortened documents are removed. Add
-  `--reset` to rebuild; it's **required** after changing the embedder or
-  anything under `chunking.contextual`, and the index manifest
+  `--reset` to rebuild; it's **required** after changing the embedder,
+  anything under `chunking.contextual`, `chunking.carry_metadata` or
+  `chunking.header`, and the index manifest
   (`rag/index_manifest.py`) refuses the run until you do. Generated
   contexts survive `--reset` on purpose (so rebuilds don't re-pay for them);
   `--clear-context-cache` forces regeneration.

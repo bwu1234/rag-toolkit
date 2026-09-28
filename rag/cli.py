@@ -20,6 +20,7 @@ from rag.embedding.factory import get_embedder
 from rag.generation.builder import build_chat_service
 from rag.generation.factory import get_llm_client
 from rag.index_manifest import (
+    INDEX_SECTIONS,
     IndexManifest,
     IndexManifestMismatch,
     index_manifest_path,
@@ -119,8 +120,9 @@ def _cmd_index(args: argparse.Namespace) -> None:
     `paths.index_dir`) and costs real time/compute (one embedding call per
     chunk batch). It is incremental: unchanged chunks are skipped by content
     hash, and chunks the corpus no longer produces (deleted or shortened
-    documents) are removed from both indexes. Changing the embedder or
-    contextual settings can't be applied incrementally; the index manifest
+    documents) are removed from both indexes. Changing the embedder,
+    contextual settings, carried metadata or header template can't be applied
+    incrementally; the index manifest
     refuses the run until `--reset` rebuilds it (see `rag.index_manifest`).
     """
 
@@ -214,19 +216,11 @@ def _cmd_index(args: argparse.Namespace) -> None:
             # killed contextual build left 4,236 vectors against 4,172 BM25
             # chunks, and a re-run "successfully" skipped every one of them.
             if stored_hash != new_hashes[c.id] or not sparse.has_chunk(c.id):
-                # Build a fresh Chunk with an index-time content_hash set in
-                # metadata — Chunk is frozen, so create a new instance.
-                updated_meta = dict(c.metadata)
-                updated_meta["content_hash"] = new_hashes[c.id]
-                updated = type(c)(
-                    id=c.id,
-                    text=c.text,
-                    document_id=c.document_id,
-                    source=c.source,
-                    doc_type=c.doc_type,
-                    metadata=updated_meta,
-                )
-                to_update.append(updated)
+                # Chunk is frozen, so copy it with an index-time content_hash
+                # in its metadata. `replace` keeps every other field (the
+                # header included) without listing them here.
+                updated_meta = {**c.metadata, "content_hash": new_hashes[c.id]}
+                to_update.append(dataclasses.replace(c, metadata=updated_meta))
 
         if not to_update:
             print(f"  skipped {len(batch)} unchanged chunk(s)")
@@ -242,10 +236,10 @@ def _cmd_index(args: argparse.Namespace) -> None:
             print(f"  generating context for {len(to_update)} chunk(s)...")
             to_update = contextualizer.contextualize(to_update, documents)
 
-        # Embed the contextualized text (context + chunk) while the store keeps
+        # Embed the index text (header + context + chunk) while the store keeps
         # `chunk.text` verbatim, so retrieval matches on the enriched string and
         # citations still quote the real source span.
-        vectors = embedder.embed_documents([chunk.contextual_text for chunk in to_update])
+        vectors = embedder.embed_documents([chunk.index_text for chunk in to_update])
         store.upsert(to_update, vectors)
         sparse.upsert(to_update)
         done = min(start + _INDEX_BATCH_SIZE, len(chunks))
@@ -293,6 +287,7 @@ def _cmd_index_report(args: argparse.Namespace) -> None:
         chunks=chunks,
         min_chars=args.min_chars,
         max_chars=args.max_chars or config.chunking.chunk_size,
+        header_template=config.chunking.header.template,
         index=_index_state(config, selection, chunks),
     )
     if args.json:
@@ -325,7 +320,7 @@ def _index_state(config: RagConfig, selection: CorpusSelection, chunks: list[Chu
 
     manifest = read_index_manifest(index_manifest_path(selection.index_dir, selection.slug))
     differences = (
-        manifest.differences(IndexManifest.from_config(config), sections=("embedding", "contextual"))
+        manifest.differences(IndexManifest.from_config(config), sections=INDEX_SECTIONS)
         if manifest is not None
         else []
     )

@@ -34,7 +34,7 @@ flowchart LR
     M -- yes --> E{changed?<br/>content hash}
     E -- no --> S[skip]
     E -- yes --> F[ChunkContextualizer<br/><i>optional</i>]
-    F --> G[EmbeddingModel<br/>embed contextual_text]
+    F --> G[EmbeddingModel<br/>embed index_text]
     G --> H[(VectorStore<br/>Chroma)]
     F --> I[(BM25Index<br/>JSON)]
     H & I --> P[purge ids the<br/>corpus no longer produces]
@@ -48,10 +48,13 @@ service.
    corpus are loaded, and a duplicate `Document.id` across corpora raises
    ([why](milestone-notes.md#named-corpora-notes-shipped-with-milestone-11)).
 2. **Clean and chunk.** `rag/ingestion/cleaners.py`, then the configured
-   `Chunker` (`rag/chunking/`).
+   `Chunker` (`rag/chunking/`). The chunker copies the document metadata keys
+   named in `chunking.carry_metadata` onto each chunk (Markdown front matter
+   is where EDGAR's company, ticker, form and dates come from), and renders
+   `chunking.header.template` into each chunk's `header` when set.
 3. **Check the manifest.** Before anything is written, the index's
-   `index_manifest__<slug>.json` is compared with the configured embedder and
-   `chunking.contextual` settings. On a mismatch the run stops and asks for
+   `index_manifest__<slug>.json` is compared with the configured embedder,
+   `chunking.contextual` settings, carried metadata keys and header template. On a mismatch the run stops and asks for
    `--reset`, because what changed would alter vectors without altering chunk
    text, which is all the hash below can see. An empty index, or one that
    predates manifests, takes the current config.
@@ -67,8 +70,9 @@ service.
    survives `--reset`. The hash in step 4 covers chunk text only, which is why
    step 3 guards these settings.
    ([Milestone 9 notes](milestone-notes.md#contextual-chunking-notes-milestone-9))
-6. **Write both indexes.** The embedder embeds `chunk.contextual_text`
-   (blurb + chunk), but the store keeps `chunk.text` verbatim, so retrieval
+6. **Write both indexes.** The embedder embeds `chunk.index_text` (header +
+   blurb + chunk, each when present), and BM25 tokenizes the same string, but
+   the store keeps `chunk.text` verbatim, so retrieval
    matches the enriched string while citations quote the real source. BM25 is
    **always** built alongside the vectors, whatever `retrieval.mode` says, so
    switching to hybrid later never forces a re-embed.

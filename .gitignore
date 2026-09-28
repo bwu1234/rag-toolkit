@@ -23,6 +23,10 @@ data/index_ctx/
 # Per-embedder indexes for the chunking plan's Phase 1b size comparison
 # (data/eval/config_embedder_*.yaml).
 data/index_emb-*/
+# The header-on index for the chunking plan's Phase 2 (data/eval/config_header.yaml).
+data/index_header/
+# The header-free index rag/config/vanilla.yaml reads, so its floor stays plain RAG.
+data/index_vanilla/
 
 # Per-turn logs (Milestone 12) -- local usage data, not source.
 data/logs/

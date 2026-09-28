@@ -123,3 +123,16 @@ def test_prompt_style_selects_builder_and_system_prompt() -> None:
     assert build_prompt("plain", "q", chunks) == build_plain_prompt("q", chunks)
     assert system_prompt_for("grounded") == SYSTEM_PROMPT
     assert system_prompt_for("plain") is None
+
+
+def test_build_rag_prompt_labels_a_passage_with_its_header_when_it_has_one() -> None:
+    headed = dataclasses.replace(
+        _scored("a", "Revenue grew.", document_id="AAPL_10-K_2024-09-28.md"),
+        header="Apple Inc. (AAPL) 10-K, period ended 2024-09-28",
+    )
+
+    prompt = build_rag_prompt("q", [headed, _scored("b", "Other.", document_id="notes.md")])
+
+    assert "Passage [1] (source: Apple Inc. (AAPL) 10-K, period ended 2024-09-28):" in prompt
+    assert "Passage [2] (source: notes.md):" in prompt
+    assert "Apple Inc." not in prompt.split("Revenue grew.")[1], "the header labels the passage; it isn't passage text"

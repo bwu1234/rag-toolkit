@@ -2,8 +2,8 @@
 
 The incremental indexer skips a chunk when its *text* hash is unchanged, so a
 config change that alters the vectors without altering chunk text -- a new
-embedding model, contextual chunking toggled or re-tuned -- would otherwise go
-unnoticed: new chunks would be embedded one way and the untouched rest another,
+embedding model, contextual chunking toggled or re-tuned, a chunk header
+template changed -- would otherwise go unnoticed: new chunks would be embedded one way and the untouched rest another,
 all in one collection. A query embedded with a different model than the index
 has the same problem from the other side. Neither fails loudly on its own
 (Chroma only complains if the *dimensions* differ).
@@ -14,9 +14,10 @@ fix. It is a sidecar file rather than vector-store metadata because it
 describes the vector and BM25 indexes together and shouldn't depend on which
 `VectorStore` backend is configured.
 
-Chunking parameters are deliberately absent: they change chunk text (and ids),
-which the content hash and stale-chunk purge in `rag.cli index` already handle
-incrementally.
+Chunk sizes are deliberately absent: they change chunk text (and ids), which
+the content hash and stale-chunk purge in `rag.cli index` already handle
+incrementally. The header template and carried metadata are present because
+they don't: both change what is stored beside an unchanged text.
 """
 
 from __future__ import annotations
@@ -29,11 +30,22 @@ from pathlib import Path
 from typing import Any
 
 from rag.chunking.contextualizer import CONTEXT_SYSTEM_PROMPT, build_context_prompt
-from rag.config.settings import RagConfig
+from rag.config.settings import DEFAULT_CARRY_METADATA, RagConfig
 
 logger = logging.getLogger(__name__)
 
 _MANIFEST_VERSION = 1
+
+#: Every section that describes an index's contents, and so must match to extend it.
+INDEX_SECTIONS = ("embedding", "contextual", "chunk_fields")
+
+#: `chunk_fields` as it was before manifests recorded it: the chunker carried a
+#: hardcoded allowlist and wrote no header. An older manifest is read as this,
+#: so an index built then isn't refused under settings that match it.
+_LEGACY_CHUNK_FIELDS: dict[str, Any] = {
+    "carry_metadata": list(DEFAULT_CARRY_METADATA),
+    "header_template": None,
+}
 
 
 class IndexManifestMismatch(RuntimeError):
@@ -60,10 +72,13 @@ class IndexManifest:
     Attributes:
         embedding: What turns text into vectors -- must match at query time too.
         contextual: How chunks were enriched before embedding; index-time only.
+        chunk_fields: What is stored beside each chunk's text: the metadata
+            keys carried from its document, and the header template.
     """
 
     embedding: dict[str, Any]
     contextual: dict[str, Any]
+    chunk_fields: dict[str, Any]
 
     @classmethod
     def from_config(cls, config: RagConfig) -> IndexManifest:
@@ -84,7 +99,11 @@ class IndexManifest:
                 max_context_chars=ctx.max_context_chars,
                 prompt_hash=_context_prompt_hash(),
             )
-        return cls(embedding=embedding, contextual=contextual)
+        chunk_fields = {
+            "carry_metadata": list(config.chunking.carry_metadata),
+            "header_template": config.chunking.header.template,
+        }
+        return cls(embedding=embedding, contextual=contextual, chunk_fields=chunk_fields)
 
     def differences(self, other: IndexManifest, *, sections: tuple[str, ...]) -> list[str]:
         """Human-readable ``section.key: stored -> configured`` lines, for ``sections``."""
@@ -105,7 +124,11 @@ def read_index_manifest(path: Path) -> IndexManifest | None:
     if not path.exists():
         return None
     raw = json.loads(path.read_text(encoding="utf-8"))
-    return IndexManifest(embedding=raw["embedding"], contextual=raw["contextual"])
+    return IndexManifest(
+        embedding=raw["embedding"],
+        contextual=raw["contextual"],
+        chunk_fields=raw.get("chunk_fields", _LEGACY_CHUNK_FIELDS),
+    )
 
 
 def write_index_manifest(path: Path, manifest: IndexManifest) -> None:
@@ -129,7 +152,7 @@ def prepare_for_indexing(path: Path, config: RagConfig, *, index_is_empty: bool)
     current = IndexManifest.from_config(config)
     stored = read_index_manifest(path)
     if stored is not None and not index_is_empty:
-        diffs = stored.differences(current, sections=("embedding", "contextual"))
+        diffs = stored.differences(current, sections=INDEX_SECTIONS)
         if diffs:
             raise IndexManifestMismatch(
                 f"The index at {path.parent} was built with different settings:\n  "
@@ -140,7 +163,7 @@ def prepare_for_indexing(path: Path, config: RagConfig, *, index_is_empty: bool)
     elif stored is None and not index_is_empty:
         logger.warning(
             "Index at %s has no manifest (built before manifests existed); assuming it "
-            "matches the current config. If the embedding model or contextual settings "
+            "matches the current config. If the embedding model, contextual settings or chunk fields "
             "changed since it was built, re-run with --reset.",
             path.parent,
         )

@@ -6,7 +6,7 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
-from rag.config.settings import REPO_ROOT, RagConfig, TurnLogConfig
+from rag.config.settings import DEFAULT_CARRY_METADATA, REPO_ROOT, RagConfig, TurnLogConfig
 from rag.observability.sink import JsonlTurnSink, TurnSink
 
 
@@ -36,7 +36,9 @@ def config_fingerprint(config: RagConfig) -> str:
 
     `llm.thinking_level` is excluded only while unset, so adding the field
     didn't re-key every turn already logged; setting it changes the hash.
-    `embedding.query_instruction` is handled the same way.
+    `embedding.query_instruction` is handled the same way, as are
+    `chunking.carry_metadata`, `chunking.header` and `reranker.include_header`
+    while each is at its default.
 
     `agent` counts only under `chat.mode: agentic`, the one mode that reads
     it; a pipeline turn's hash doesn't move when agent settings change. For
@@ -52,5 +54,14 @@ def config_fingerprint(config: RagConfig) -> str:
         exclude["llm"] = {"thinking_level"}
     if config.embedding.query_instruction is None:
         exclude["embedding"] = {"query_instruction"}
+    chunking_new = set()
+    if tuple(config.chunking.carry_metadata) == DEFAULT_CARRY_METADATA:
+        chunking_new.add("carry_metadata")
+    if config.chunking.header.template is None:
+        chunking_new.add("header")
+    if chunking_new:
+        exclude["chunking"] = chunking_new
+    if not config.reranker.include_header:
+        exclude["reranker"] = {"include_header"}
     payload = config.model_dump_json(exclude=exclude)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]

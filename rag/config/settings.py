@@ -242,6 +242,25 @@ class ContextualChunkingConfig(BaseModel):
     )
 
 
+#: What `chunking.carry_metadata` defaults to, and what chunks carried before it existed.
+DEFAULT_CARRY_METADATA = ("title", "page", "page_count")
+
+
+class ChunkHeaderConfig(BaseModel):
+    """A deterministic line naming each chunk's document, indexed ahead of its text.
+
+    `template` is a `str.format` string over the document's metadata, e.g.
+    `"{company} ({ticker}) {form}, period ended {period_end}"`. `null` (the
+    default) adds no header. A document missing any field the template names
+    gets no header rather than a half-filled one. The header is indexed
+    (embedded and BM25) and shown to the answering model, but `Chunk.text`
+    stays verbatim, as with contextual chunking. Changing it needs
+    `index --reset`; the index manifest enforces that.
+    """
+
+    template: str | None = None
+
+
 class ChunkingConfig(BaseModel):
     """Parameters for splitting documents into retrievable chunks.
 
@@ -254,6 +273,12 @@ class ChunkingConfig(BaseModel):
     chunk_size: int = Field(default=1000, gt=0, description="Target characters per chunk")
     chunk_overlap: int = Field(default=150, ge=0, description="Characters of overlap between consecutive chunks")
     contextual: ContextualChunkingConfig = ContextualChunkingConfig()
+    # Document metadata keys copied onto each of its chunks, where the vector
+    # store and BM25 index keep them. Keys a document lacks are skipped. Dates
+    # are stored as YYYYMMDD integers: Chroma takes only primitives, and an
+    # integer still supports range filters.
+    carry_metadata: list[str] = Field(default_factory=lambda: list(DEFAULT_CARRY_METADATA))
+    header: ChunkHeaderConfig = ChunkHeaderConfig()
 
 
 class VectorStoreConfig(BaseModel):
@@ -295,6 +320,11 @@ class RerankerConfig(BaseModel):
     # treated as a plain prefix.
     query_prefix: str = ""
     document_prefix: str = ""
+    # Score the passage with its chunk header (`chunking.header`) in front, so
+    # the cross-encoder can see the company and period. Off by default: it
+    # changes what every reranker measurement means. No effect on chunks
+    # without a header.
+    include_header: bool = False
 
 
 class QueryExpansionConfig(BaseModel):

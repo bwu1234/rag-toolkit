@@ -94,7 +94,7 @@ def format_passages(chunks: list[ScoredChunk]) -> str:
     """Render passages for a checker prompt, numbered as `build_rag_prompt` does."""
 
     return "\n\n".join(
-        f"Passage [{index}]:\n{chunk.contextual_text}" for index, chunk in enumerate(chunks, start=1)
+        f"Passage [{index}]:\n{chunk.index_text}" for index, chunk in enumerate(chunks, start=1)
     )
 
 
@@ -147,7 +147,7 @@ class DocumentGrader:
     def _is_relevant(self, query: str, chunk: ScoredChunk) -> bool:
         prompt = (
             f"Question: {query}\n\n"
-            f"Passage:\n{chunk.contextual_text}\n\n"
+            f"Passage:\n{chunk.index_text}\n\n"
             "Does this passage help answer the question? Reply YES or NO:"
         )
         try:

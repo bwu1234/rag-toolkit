@@ -7,13 +7,25 @@
 # The point is a floor to measure the default pipeline against -- what hybrid
 # search, reranking and the grounded prompt actually buy on a given corpus.
 #
-# Inherits config.yaml and lists only what it changes, so it always reads the
-# same index (paths, corpora, embedder, chunking) with the same generator.
-# Extras that config.yaml already leaves off (query expansion, web search,
-# min_score, CRAG, contextual chunking) aren't repeated here;
-# tests/test_config.py fails if turning one on in config.yaml leaks into this
-# baseline.
+# Inherits config.yaml and lists only what it changes, so it shares the
+# corpora, embedder, chunk sizes and generator. Extras that config.yaml already
+# leaves off (query expansion, web search, min_score, CRAG, contextual
+# chunking) aren't repeated here; tests/test_config.py fails if turning one on
+# in config.yaml leaks into this baseline.
+#
+# The chunk header is the exception that needs its own index: it's stored in
+# the index, not applied at query time, so the shipped index can't serve a
+# header-free baseline. Build this one once with
+#   python -m rag.cli --config rag/config/vanilla.yaml index --corpus edgar
 base: config.yaml
+
+paths:
+  index_dir: data/index_vanilla
+
+chunking:
+  # No "{company} ({ticker}) ..." line indexed ahead of each chunk.
+  header:
+    template: null
 
 retrieval:
   # Vector similarity only -- no BM25, no RRF.

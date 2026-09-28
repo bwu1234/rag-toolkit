@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
+import yaml
 from pypdf import PdfReader
 
 from rag.ingestion.models import Document, Loader, make_document_id
@@ -67,14 +69,17 @@ class MarkdownLoader(Loader):
 
     def load(self, path: Path, *, corpus_root: Path) -> list[Document]:
         relative = path.relative_to(corpus_root)
-        text = path.read_text(encoding="utf-8", errors="replace")
+        raw = path.read_text(encoding="utf-8", errors="replace")
+        front_matter, text = split_front_matter(raw)
         return [
             Document(
                 id=make_document_id(relative),
                 text=text,
                 source=path,
                 doc_type="markdown",
-                metadata={"title": _first_heading(text) or path.stem},
+                # Front matter wins over the heading, so a file can state its
+                # title outright rather than have it guessed.
+                metadata={"title": _first_heading(text) or path.stem, **front_matter},
             )
         ]
 
@@ -165,6 +170,34 @@ def _pdf_title(reader: PdfReader) -> str | None:
     except Exception:
         return None
     return title.strip() if title and title.strip() else None
+
+
+def split_front_matter(markdown_text: str) -> tuple[dict[str, Any], str]:
+    """Split a leading YAML front matter block off `markdown_text`.
+
+    Returns the parsed mapping and the text after the closing `---`. The block
+    is removed rather than left in, so `Document.text` -- and every character
+    offset and eval span measured against it -- is the same whether or not a
+    file carries front matter. Values keep their YAML types: an unquoted
+    `2024-09-28` is a `datetime.date`. Text without a block comes back as-is.
+
+    Raises:
+        ValueError: the block opens but never closes, or isn't a mapping.
+            Loud on purpose: a file whose metadata silently vanished would
+            index without the fields filters and headers depend on.
+    """
+
+    if not markdown_text.startswith("---\n"):
+        return {}, markdown_text
+    end = markdown_text.find("\n---\n", 3)
+    if end == -1:
+        raise ValueError("front matter opens with `---` but has no closing `---` line")
+    parsed = yaml.safe_load(markdown_text[4:end])
+    if parsed is None:
+        parsed = {}
+    if not isinstance(parsed, dict):
+        raise ValueError(f"front matter must be a mapping, got {type(parsed).__name__}")
+    return parsed, markdown_text[end + len("\n---\n") :]
 
 
 def _first_heading(markdown_text: str) -> str | None:

@@ -16,7 +16,7 @@ from typing import Any
 
 from rank_bm25 import BM25Okapi
 
-from rag.chunking.models import Chunk
+from rag.chunking.models import Chunk, join_index_text
 from rag.vectorstore.base import ScoredChunk
 
 logger = logging.getLogger(__name__)
@@ -137,6 +137,7 @@ class BM25Index(SparseIndex):
                 "doc_type": chunk.doc_type,
                 "metadata": dict(chunk.metadata),
                 "context": chunk.context,
+                "header": chunk.header,
             }
         self._dirty = True
         logger.info("Upserted %d chunk(s) into BM25 index (%d total)", len(chunks), len(self._records))
@@ -190,6 +191,7 @@ class BM25Index(SparseIndex):
                     score=norm,
                     metadata=dict(record["metadata"]),
                     context=record.get("context"),
+                    header=record.get("header"),
                 )
             )
         return results
@@ -227,16 +229,14 @@ class BM25Index(SparseIndex):
 
     @staticmethod
     def _index_text(record: dict[str, Any]) -> list[str]:
-        """Tokens for one record: its context (if any) plus its text.
+        """Tokens for one record: its header and context (if any) plus its text.
 
-        Mirrors `Chunk.contextual_text`, but reads the persisted record rather
-        than a `Chunk` -- the on-disk index is the only place BM25 sees chunks
-        after indexing, and older index files predate the `context` key.
+        Mirrors `Chunk.index_text`, but reads the persisted record rather than
+        a `Chunk` -- the on-disk index is the only place BM25 sees chunks after
+        indexing, and older index files predate the `context` and `header` keys.
         """
 
-        context = record.get("context")
-        text = record["text"]
-        return tokenize(f"{context}\n\n{text}" if context else text)
+        return tokenize(join_index_text(record.get("header"), record.get("context"), record["text"]))
 
     def _ensure_index(self) -> None:
         if not self._dirty and self._bm25 is not None:

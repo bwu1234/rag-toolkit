@@ -1,0 +1,17 @@
+# Chunking plan Phase 2: the deterministic chunk header, measured against the
+# shipped index. Inherits the shipped config and changes only what is stored
+# with each chunk, so it needs its own index:
+#
+#   python -m rag.cli --config data/eval/config_header.yaml index --corpus edgar --reset
+#
+# EDGAR documents need front matter first (`scripts/fetch_edgar.py
+# --backfill-front-matter` for files fetched before the fetcher wrote it).
+base: ../../rag/config/config.yaml
+
+paths:
+  index_dir: data/index_header
+
+chunking:
+  carry_metadata: [title, page, page_count, company, ticker, form, period_end, filed, accession]
+  header:
+    template: "{company} ({ticker}) {form}, period ended {period_end}"

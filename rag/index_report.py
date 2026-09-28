@@ -73,6 +73,8 @@ class IndexReport:
     duplicate_groups: int = 0
     #: Chunks whose exact text occurs more than once, counting every copy.
     duplicate_chunks: int = 0
+    #: Documents whose chunks got no header, or None when `chunking.header` is off.
+    headerless_documents: list[str] | None = None
     index: IndexState | None = None
 
 
@@ -111,6 +113,7 @@ def build_report(
     chunks: list[Chunk],
     min_chars: int,
     max_chars: int,
+    header_template: str | None = None,
     index: IndexState | None = None,
 ) -> IndexReport:
     """Compute the report for ``chunks``, which ``documents`` (cleaned) produced."""
@@ -142,6 +145,11 @@ def build_report(
         empty_documents=sorted(document.id for document in documents if document.id not in chunked_docs),
         duplicate_groups=sum(1 for count in copies.values() if count > 1),
         duplicate_chunks=sum(count for count in copies.values() if count > 1),
+        headerless_documents=(
+            sorted(chunked_docs - {chunk.document_id for chunk in chunks if chunk.header})
+            if header_template
+            else None
+        ),
         index=index,
     )
 
@@ -157,6 +165,19 @@ def _percentiles(sizes: list[int]) -> dict[str, int]:
         result.update({f"p{p}": round(cuts[p - 1]) for p in SIZE_PERCENTILES})
     result["max"] = sizes[-1]
     return result
+
+
+def _format_headers(report: IndexReport) -> str:
+    """How many chunked documents got a header -- where a missing front matter shows up."""
+    if report.headerless_documents is None:
+        return "Chunk headers      off"
+    missing = report.headerless_documents
+    chunked = report.documents - len(report.empty_documents)
+    line = f"Chunk headers      {chunked - len(missing)} of {chunked} document(s)"
+    if missing:
+        shown = ", ".join(missing[:5]) + (f", +{len(missing) - 5} more" if len(missing) > 5 else "")
+        line += f"; none on {shown}"
+    return line
 
 
 def format_report(report: IndexReport) -> str:
@@ -180,6 +201,7 @@ def format_report(report: IndexReport) -> str:
         f"Zero-chunk docs    {len(report.empty_documents)}"
         + (f": {', '.join(report.empty_documents)}" if report.empty_documents else ""),
         f"Duplicate chunks   {report.duplicate_chunks} ({report.duplicate_groups} distinct text(s))",
+        _format_headers(report),
         "",
     ]
     state = report.index

@@ -170,6 +170,25 @@ VARIANTS: list[Variant] = [
         "crag.check_groundedness": True,
         "crag.max_retries": 0,
     }),
+    # Chunking plan Phase 2: the deterministic chunk header, from the index
+    # data/eval/config_header.yaml builds. It changes retrieval and the prompt
+    # together (the header replaces the file name as the passage's source
+    # label), so this is the pipeline-level effect. CRAG off, pairing with
+    # `crag=off`.
+    Variant("header=on", {
+        "crag.enabled": False,
+        "paths.index_dir": "data/index_header",
+        "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}",
+        # Pinned: the shipped default turned this on after this row was measured.
+        "reranker.include_header": False,
+    }),
+    # The same, with the cross-encoder scoring the header too.
+    Variant("header=on rerank_header", {
+        "crag.enabled": False,
+        "paths.index_dir": "data/index_header",
+        "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}",
+        "reranker.include_header": True,
+    }),
 ]
 
 

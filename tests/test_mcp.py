@@ -12,6 +12,8 @@ being checked against a hand-written expectation that could rot with them.
 
 from __future__ import annotations
 
+import dataclasses
+
 import io
 import json
 from pathlib import Path
@@ -523,3 +525,15 @@ def test_sdk_marks_both_tools_read_only(tools: RagTools) -> None:
 
     sdk_tools = anyio.run(build_mcp_server(tools).list_tools)
     assert all(t.annotations and t.annotations.read_only_hint for t in sdk_tools)
+
+
+def test_search_result_names_the_chunk_header_only_when_there_is_one(
+    tools: RagTools, fake_retriever: _FakeRetriever
+) -> None:
+    headed = dataclasses.replace(_chunk("doc.md::1"), header="Apple Inc. (AAPL) 10-K, period ended 2024-09-28")
+    fake_retriever.result = RetrievalResult(chunks=[headed, _chunk()], candidate_count=2)
+
+    first, second = tools.search("q")["results"]
+
+    assert first["header"] == "Apple Inc. (AAPL) 10-K, period ended 2024-09-28"
+    assert "header" not in second

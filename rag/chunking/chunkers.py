@@ -8,10 +8,12 @@ references a concrete class.
 from __future__ import annotations
 
 import logging
-from typing import Iterable
+from datetime import date
+from string import Formatter
+from typing import Any, Iterable
 
 from rag.chunking.models import Chunk, Chunker, make_chunk_id
-from rag.config.settings import ChunkingConfig
+from rag.config.settings import DEFAULT_CARRY_METADATA, ChunkingConfig
 from rag.ingestion.models import Document
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,54 @@ logger = logging.getLogger(__name__)
 # keep chunk sizes close to the configured target, large enough to find a
 # break in normal prose (average English word length is ~5 chars).
 _BOUNDARY_SEARCH_WINDOW = 50
+
+
+def carried_metadata(document: Document, keys: Iterable[str]) -> dict[str, Any]:
+    """The document metadata a chunk keeps, in a form every index can store.
+
+    Dates become `YYYYMMDD` integers: Chroma accepts only primitive values, and
+    an integer keeps the ordering a period range filter needs, which a string
+    like "2024-09-28" would only keep by accident of formatting.
+    """
+
+    carried: dict[str, Any] = {}
+    for key in keys:
+        if key not in document.metadata:
+            continue
+        value = document.metadata[key]
+        carried[key] = int(value.strftime("%Y%m%d")) if isinstance(value, date) else value
+    return carried
+
+
+def template_fields(template: str) -> list[str]:
+    """The metadata keys a header template names, in order.
+
+    Raises:
+        ValueError: the template is malformed, or uses positional (`{}`) or
+            nested fields, which have no metadata key to fill them.
+    """
+
+    fields = [name for _literal, name, _spec, _conv in Formatter().parse(template) if name is not None]
+    for name in fields:
+        if not name.isidentifier():
+            raise ValueError(f"chunking.header.template field {{{name}}} must be a metadata key name")
+    return fields
+
+
+def render_header(template: str, document: Document) -> str | None:
+    """`template` filled from `document.metadata`, or `None` if any named field is missing.
+
+    All or nothing, because a header like "Apple Inc. (None) 10-K" would be
+    indexed as though "None" were part of the document's identity.
+    """
+
+    values = {}
+    for name in template_fields(template):
+        value = document.metadata.get(name)
+        if value is None or value == "":
+            return None
+        values[name] = value.isoformat() if isinstance(value, date) else value
+    return template.format_map(values)
 
 
 class FixedSizeChunker(Chunker):
@@ -37,7 +87,14 @@ class FixedSizeChunker(Chunker):
     which would otherwise hurt embedding quality.
     """
 
-    def __init__(self, chunk_size: int, chunk_overlap: int) -> None:
+    def __init__(
+        self,
+        chunk_size: int,
+        chunk_overlap: int,
+        *,
+        carry_metadata: Iterable[str] = DEFAULT_CARRY_METADATA,
+        header_template: str | None = None,
+    ) -> None:
         if chunk_overlap >= chunk_size:
             raise ValueError(
                 f"chunk_overlap ({chunk_overlap}) must be smaller than chunk_size ({chunk_size}), "
@@ -45,26 +102,42 @@ class FixedSizeChunker(Chunker):
             )
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        self.carry_metadata = tuple(carry_metadata)
+        if header_template is not None:
+            template_fields(header_template)  # fail at construction, not per document
+        self.header_template = header_template
 
     def chunk(self, documents: Iterable[Document]) -> list[Chunk]:
         chunks: list[Chunk] = []
         document_count = 0
+        headerless = 0
         for document in documents:
             document_count += 1
-            chunks.extend(self._chunk_one(document))
+            header = render_header(self.header_template, document) if self.header_template else None
+            if self.header_template and header is None:
+                headerless += 1
+            chunks.extend(self._chunk_one(document, header))
         logger.info("Chunked %d document(s) into %d chunk(s)", document_count, len(chunks))
+        if headerless:
+            # Info, not a warning: it's expected for a corpus without the
+            # metadata (`baseline`, the default active corpus). `index-report`
+            # lists which documents, for when it's a corpus that should have it.
+            logger.info(
+                "%d of %d document(s) lack a field chunking.header.template names; "
+                "their chunks have no header",
+                headerless,
+                document_count,
+            )
         return chunks
 
-    def _chunk_one(self, document: Document) -> list[Chunk]:
+    def _chunk_one(self, document: Document, header: str | None) -> list[Chunk]:
         text = document.text
         if not text:
             return []
 
-        # Carry forward metadata that helps a citation describe its source
-        # without a join back to the parent Document (title, page, ...).
-        inherited_metadata = {
-            key: value for key, value in document.metadata.items() if key in ("title", "page", "page_count")
-        }
+        # Carry forward metadata that describes the source without a join back
+        # to the parent Document (title, page, company, period, ...).
+        inherited_metadata = carried_metadata(document, self.carry_metadata)
 
         spans = list(self._spans(text))
         result: list[Chunk] = []
@@ -85,6 +158,7 @@ class FixedSizeChunker(Chunker):
                         "char_start": start,
                         "char_end": end,
                     },
+                    header=header,
                 )
             )
         return result
@@ -157,6 +231,11 @@ def get_chunker(config: ChunkingConfig) -> Chunker:
     """
 
     if config.strategy == "fixed":
-        return FixedSizeChunker(chunk_size=config.chunk_size, chunk_overlap=config.chunk_overlap)
+        return FixedSizeChunker(
+            chunk_size=config.chunk_size,
+            chunk_overlap=config.chunk_overlap,
+            carry_metadata=config.carry_metadata,
+            header_template=config.header.template,
+        )
 
     raise ValueError(f"Unknown chunking strategy: {config.strategy!r}")
