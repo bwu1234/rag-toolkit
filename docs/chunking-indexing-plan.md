@@ -613,6 +613,20 @@ inside it, with no caller input.
   sets. This is the realistic version of Phase 3's oracle, so the gap between
   the two is the number to report.
 
+*Done 2026-09-28: `retrieval.document_routing` shipped, off by default.* A
+probe of the router alone came first. As specified here (header-only records,
+top-*M* filter), it could only lose: its top 5 held the right filing less
+often than chunk retrieval already did. Two changes came out of that probe.
+Records add the period end spelled the way questions write it. And the
+fallback is agreement: route to the top filing only when BM25 and dense both
+put it first. That has no threshold to hand-set. With `top_m: 1` it recovers
+5 of the ceiling's 6 `period` wins (0.836 → 0.927) and 4 of 11 on
+`underspecified` (0.822 → 0.856), with one wrong route in 162 routed
+questions. The CIs exclude zero, but McNemar's p is 0.062 and 0.12, and the
+gate was chosen on the same questions, so it stays off. `top_m: 2` is
+dominated. See
+[measured results](measured-results.md#document-routing-chunking-plan-phase-3b).
+
 ### Phase 4 — Recover structure at parse time (2–3 days)
 
 The chunker can only split on structure the parser kept.

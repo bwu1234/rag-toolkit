@@ -32,5 +32,8 @@
 | | | | | | | | | | | |
 | `filters=company` | 0.836 | [0.717, 0.911] | 0.836 | 0.182 | 0.723 | 0.752 | +0.000 [+0.000, +0.000] 0W/0L p=1 | -0.009 [-0.023, +0.005] | 0 | 53 |
 | `filters=company+period` | 0.946 | [0.851, 0.981] | 0.946 | 0.204 | 0.832 | 0.861 | +0.109 [+0.026, +0.192]* 6W/0L p=0.031 | +0.100 [+0.043, +0.157]* | 0 | 61 |
+| | | | | | | | | | | |
+| `routing=top1` | 0.927 | [0.827, 0.971] | 0.927 | 0.200 | 0.813 | 0.841 | +0.091 [+0.014, +0.168]* 5W/0L p=0.062 | +0.080 [+0.026, +0.135]* | 0 | 60 |
+| `routing=top2` | 0.891 | [0.782, 0.949] | 0.891 | 0.193 | 0.767 | 0.798 | +0.055 [-0.006, +0.115] 3W/0L p=0.25 | +0.037 [+0.005, +0.069]* | 0 | 60 |
 
 `hit 95% CI` is a Wilson interval on that rate alone, the noise floor of one run on this many questions. Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval that excludes zero; `W/L` counts the questions the variant gained / lost and `p` is McNemar's exact test on them -- trust it over the CI when W+L is small. `(no CI)` rows predate per-sample scores and need a re-run to be tested. `unmatch.` counts expected spans no chunk contains under that variant's chunking (`—` predates the count).

@@ -92,6 +92,7 @@ FINGERPRINTED_WHEN_SET = (
     "embedding.query_instruction",
     "chunking.header.template",
     "reranker.include_header",
+    "retrieval.document_routing.top_m",
 )
 
 # The chunk header data/eval/config_header.yaml indexes EDGAR with.
@@ -234,6 +235,13 @@ VARIANTS: list[Variant] = [
     Variant("filters=company", "filters", {}, filters="company"),
     Variant("filters=company+period", "filters", {}, filters="company+period"),
 
+    # Document routing (chunking plan, Phase 3b): the filter above, but chosen
+    # by ranking one record per filing instead of taken from labels. Routes only
+    # when BM25 and dense agree on the top filing. `filters=company+period` is
+    # its ceiling.
+    Variant("routing=top1", "routing", {"retrieval.document_routing.top_m": 1}),
+    Variant("routing=top2", "routing", {"retrieval.document_routing.top_m": 2}),
+
     # The payoff question the stage-1 axis raises: retrieval can surface the
     # right chunk far more often with a bigger candidate pool, but that is only
     # useful if the reranker promotes it into the handful the LLM actually sees.
@@ -361,6 +369,9 @@ def fingerprint(config: RagConfig) -> tuple[str, dict[str, Any]]:
             if (value := read_path(config, path)) is not None and value is not False
         }
     )
+    if config.retrieval.document_routing.top_m is not None:
+        # The template shapes routing only while routing is on.
+        settings["retrieval.document_routing.record_template"] = config.retrieval.document_routing.record_template
     serialized = json.dumps({k: str(v) for k, v in settings.items()}, sort_keys=True)
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:12], settings
 
@@ -429,6 +440,7 @@ def run_variant(
                 "mrr": round(r.rr, 4),
                 "ndcg": round(r.ndcg, 4),
                 **({"kind": r.kind} if r.kind is not None else {}),
+                **({"routed_to": r.routed_to} if r.routed_to else {}),
             }
             for r in report.sample_results
         },

@@ -173,6 +173,22 @@ retrieval:
     min_similarity: 0.5
     dedup_threshold: 0.75
     timeout_s: 10.0
+  # Document-level routing: rank one record per document (BM25 + dense) and,
+  # when both put the same document first, filter chunk retrieval to the
+  # `top_m` best. When they disagree, retrieval runs unfiltered. Needs no
+  # caller input, unlike `filters` on POST /chat. An explicit filter wins.
+  # null = off. Query-time only, so no reindex to change it.
+  #
+  # Off by evidence, for now: top_m 1 took period-tier hit 0.836 -> 0.927 and
+  # underspecified 0.822 -> 0.856 with one wrong route in 162, but McNemar's p
+  # (0.062, 0.12) doesn't clear noise and the gate was chosen on the same
+  # questions. top_m 2 is dominated. Use 1 if turning it on
+  # (docs/measured-results.md, "Document routing").
+  # `record_template` fills from the chunk header and carried metadata; `:date`
+  # spells a date the way questions write it ("February 15, 2026").
+  document_routing:
+    top_m: null
+    record_template: "{header}; period ended {period_end:date}"
 
 chat:
   # pipeline -- retrieve once, then generate (the default, and what every

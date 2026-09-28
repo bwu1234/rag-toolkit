@@ -25,6 +25,11 @@ A third, independent source -- live web search (``retrieval.web_search``,
 dense/BM25 the same way, whatever `mode` is set to. It has its own internal
 similarity scoring (cosine, not a `Reranker`), so its ranked list joins the
 others as just one more list for RRF to fuse.
+
+Before any of it, an optional `DocumentRouter` (``retrieval.document_routing``)
+can pick the document(s) a query is about and turn that into a `QueryFilter`,
+so chunks from other filings never compete. It only acts when the caller
+passed no filter of their own.
 """
 
 from __future__ import annotations
@@ -39,6 +44,7 @@ from rag.config.settings import DEFAULT_CARRY_METADATA
 from rag.embedding.base import EmbeddingModel
 from rag.events import EventSink, emit
 from rag.query_filter import QueryFilter, check_filterable
+from rag.retrieval.document_router import DocumentRouter
 from rag.retrieval.expansion import ExpandedQuery, NoOpQueryExpander, QueryExpander
 from rag.retrieval.reranker import Reranker
 from rag.retrieval.rrf import DEFAULT_RRF_K, reciprocal_rank_fusion
@@ -71,6 +77,8 @@ class RetrievalResult:
     """Reranked results discarded by the `min_score` floor."""
     search_queries: list[str] = field(default_factory=list)
     """Every query actually searched, when expansion produced more than the one asked for."""
+    routed_to: list[str] = field(default_factory=list)
+    """Documents routing restricted retrieval to; empty when it's off, fell back, or a filter was passed."""
 
 
 class Retriever:
@@ -102,6 +110,7 @@ class Retriever:
         query_expander: QueryExpander | None = None,
         web_search: SearxNGWebSearch | None = None,
         filterable_fields: Sequence[str] = DEFAULT_CARRY_METADATA,
+        document_router: DocumentRouter | None = None,
     ) -> None:
         if mode == "hybrid" and sparse_index is None:
             raise ValueError(
@@ -122,6 +131,7 @@ class Retriever:
         # What `chunking.carry_metadata` stores on chunks: the only fields a
         # `QueryFilter` can match, besides `document_id`.
         self.filterable_fields = tuple(filterable_fields)
+        self._document_router = document_router
 
     def retrieve(
         self,
@@ -150,6 +160,10 @@ class Retriever:
         `rag.query_filter`). Web search is skipped under a filter: its results
         carry no corpus metadata, so none could match.
 
+        With a `DocumentRouter` and no `query_filter`, the router may pick the
+        document(s) `query` is about and filter to them; `routed_to` says
+        which. A caller's own filter always wins: routing never narrows it.
+
         `on_event`, if given, is called once per completed stage (embedding,
         search, fusion, rerank) with a `PipelineEvent` -- e.g. so the UI can
         show a live trace. It's purely an observation hook: omitting it
@@ -163,6 +177,19 @@ class Retriever:
         if query_filter is not None:
             check_filterable(query_filter, self.filterable_fields)
             logger.info("Filtering retrieval to: %s", query_filter.describe())
+
+        routed_to: list[str] = []
+        if query_filter is None and self._document_router is not None:
+            start = time.monotonic()
+            decision = self._document_router.route(query)
+            if decision.routed:
+                routed_to = decision.document_ids
+                query_filter = decision.to_filter()
+                message = f"Routed to {', '.join(routed_to)} ({decision.reason})"
+            else:
+                message = f"Routing fell back to all documents: {decision.reason}"
+            emit(on_event, start, "route", message)
+            logger.info("%s", message)
 
         start = time.monotonic()
         expanded = self._query_expander.expand(query)
@@ -205,6 +232,7 @@ class Retriever:
             candidate_count=len(candidates),
             dropped_below_min_score=dropped,
             search_queries=expanded.all_queries() if expanded.is_expanded else [],
+            routed_to=routed_to,
         )
 
     def _candidates(

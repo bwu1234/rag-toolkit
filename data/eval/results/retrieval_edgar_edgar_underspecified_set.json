@@ -1,5 +1,5 @@
 {
-  "label": "chunking plan Phase 3: metadata filters",
+  "label": "",
   "corpus": "edgar (isolated)",
   "collection": "rag_corpus__edgar",
   "eval_set": "data/eval/edgar_underspecified_set.json",
@@ -30,7 +30,7 @@
         "reranker.include_header": "True"
       },
       "num_samples": 118,
-      "elapsed_s": 121.8,
+      "elapsed_s": 121.1,
       "metrics": {
         "hit_rate": 0.822,
         "recall": 0.822,
@@ -18748,6 +18748,2081 @@
           "mrr": 1.0,
           "ndcg": 1.0,
           "kind": "paraphrase"
+        }
+      }
+    },
+    {
+      "variant": "routing=top1",
+      "axis": "routing",
+      "overrides": {
+        "retrieval.document_routing.top_m": 1
+      },
+      "fingerprint": "5467ce818e51",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max",
+        "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}",
+        "reranker.include_header": "True",
+        "retrieval.document_routing.top_m": "1",
+        "retrieval.document_routing.record_template": "{header}; period ended {period_end:date}"
+      },
+      "num_samples": 118,
+      "elapsed_s": 127.6,
+      "metrics": {
+        "hit_rate": 0.8559,
+        "recall": 0.8559,
+        "precision": 0.1966,
+        "mrr": 0.6907,
+        "ndcg": 0.7321
+      },
+      "by_kind": {
+        "implicit": {
+          "num_samples": 54,
+          "metrics": {
+            "hit_rate": 0.8519,
+            "recall": 0.8519,
+            "precision": 0.2074,
+            "mrr": 0.6716,
+            "ndcg": 0.7168
+          }
+        },
+        "paraphrase": {
+          "num_samples": 64,
+          "metrics": {
+            "hit_rate": 0.8594,
+            "recall": 0.8594,
+            "precision": 0.1875,
+            "mrr": 0.7068,
+            "ndcg": 0.745
+          }
+        }
+      },
+      "recall_by_k": {
+        "1": 0.5847,
+        "3": 0.7966,
+        "5": 0.8559
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "implicit::AAPL_10-K_2024-09-28.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "AAPL_10-K_2024-09-28.md"
+          ]
+        },
+        "implicit::AAPL_10-K_2025-09-27.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::COST_10-K_2025-08-31.md::chunk46": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit",
+          "routed_to": [
+            "COST_10-K_2025-08-31.md"
+          ]
+        },
+        "implicit::COST_10-Q_2026-05-10.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-K_2024-12-31.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-K_2025-12-31.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-K_2025-12-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-K_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-Q_2025-09-30.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-Q_2025-09-30.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-Q_2026-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-K_2025-12-31.md::chunk20": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-K_2025-12-31.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-K_2025-12-31.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2025-09-30.md::chunk93": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-03-31.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-03-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-03-31.md::chunk8": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-06-30.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-K_2024-12-31.md::chunk72": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-K_2024-12-31.md::chunk79": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-Q_2025-09-30.md::chunk10": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-Q_2026-06-30.md::chunk70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "implicit"
+        },
+        "implicit::MSFT_10-Q_2026-03-31.md::chunk55": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "MSFT_10-Q_2026-03-31.md"
+          ]
+        },
+        "implicit::NVDA_10-K_2025-01-26.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::NVDA_10-K_2025-01-26.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-K_2025-01-26.md"
+          ]
+        },
+        "implicit::NVDA_10-K_2026-01-25.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::NVDA_10-K_2026-01-25.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-K_2026-01-25.md"
+          ]
+        },
+        "implicit::NVDA_10-K_2026-01-25.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::NVDA_10-Q_2025-07-27.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-Q_2025-07-27.md"
+          ]
+        },
+        "implicit::NVDA_10-Q_2025-10-26.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-Q_2025-10-26.md"
+          ]
+        },
+        "implicit::NVDA_10-Q_2025-10-26.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::NVDA_10-Q_2025-10-26.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-Q_2025-10-26.md"
+          ]
+        },
+        "implicit::TGT_10-K_2025-02-01.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::TGT_10-Q_2025-11-01.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "TGT_10-Q_2025-11-01.md"
+          ]
+        },
+        "implicit::TGT_10-Q_2026-05-02.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-K_2024-12-31.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-K_2025-12-31.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-Q_2025-09-30.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-Q_2026-06-30.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk58": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-Q_2025-10-31.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-Q_2026-04-30.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-Q_2026-04-30.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit",
+          "routed_to": [
+            "WMT_10-Q_2026-04-30.md"
+          ]
+        },
+        "paraphrase::AAPL_10-K_2025-09-27.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase",
+          "routed_to": [
+            "AAPL_10-K_2025-09-27.md"
+          ]
+        },
+        "paraphrase::AAPL_10-K_2025-09-27.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::AAPL_10-Q_2026-03-28.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::AAPL_10-Q_2026-06-27.md::chunk22": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::COST_10-K_2024-09-01.md::chunk109": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "COST_10-K_2024-09-01.md"
+          ]
+        },
+        "paraphrase::COST_10-K_2024-09-01.md::chunk140": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::COST_10-K_2024-09-01.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "COST_10-K_2024-09-01.md"
+          ]
+        },
+        "paraphrase::COST_10-K_2025-08-31.md::chunk77": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::COST_10-Q_2026-02-15.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::COST_10-Q_2026-02-15.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "COST_10-Q_2026-02-15.md"
+          ]
+        },
+        "paraphrase::COST_10-Q_2026-05-10.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "COST_10-Q_2026-05-10.md"
+          ]
+        },
+        "paraphrase::COST_10-Q_2026-05-10.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307,
+          "kind": "paraphrase"
+        },
+        "paraphrase::CVX_10-K_2025-12-31.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-K_2024-12-31.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-K_2024-12-31.md"
+          ]
+        },
+        "paraphrase::DAL_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-K_2024-12-31.md"
+          ]
+        },
+        "paraphrase::DAL_10-K_2024-12-31.md::chunk55": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-K_2024-12-31.md"
+          ]
+        },
+        "paraphrase::DAL_10-Q_2025-09-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-Q_2025-09-30.md"
+          ]
+        },
+        "paraphrase::DAL_10-Q_2026-03-31.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-Q_2026-03-31.md"
+          ]
+        },
+        "paraphrase::DAL_10-Q_2026-03-31.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-Q_2026-03-31.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-Q_2026-03-31.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-Q_2026-06-30.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-Q_2026-06-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::JNJ_10-K_2024-12-29.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "JNJ_10-K_2024-12-29.md"
+          ]
+        },
+        "paraphrase::JNJ_10-Q_2026-06-28.md::chunk13": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "JNJ_10-Q_2026-06-28.md"
+          ]
+        },
+        "paraphrase::JNJ_10-Q_2026-06-28.md::chunk5": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "JNJ_10-Q_2026-06-28.md"
+          ]
+        },
+        "paraphrase::LUV_10-K_2025-12-31.md::chunk22": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::LUV_10-Q_2025-09-30.md::chunk50": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::LUV_10-Q_2025-09-30.md::chunk53": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "LUV_10-Q_2025-09-30.md"
+          ]
+        },
+        "paraphrase::LUV_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MRK_10-K_2024-12-31.md::chunk57": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MRK_10-K_2024-12-31.md"
+          ]
+        },
+        "paraphrase::MRK_10-K_2025-12-31.md::chunk114": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MRK_10-Q_2026-03-31.md::chunk68": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MRK_10-Q_2026-03-31.md::chunk84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MRK_10-Q_2026-03-31.md"
+          ]
+        },
+        "paraphrase::MSFT_10-K_2025-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MSFT_10-Q_2025-09-30.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MSFT_10-Q_2025-09-30.md"
+          ]
+        },
+        "paraphrase::MSFT_10-Q_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MSFT_10-Q_2025-12-31.md"
+          ]
+        },
+        "paraphrase::MSFT_10-Q_2025-12-31.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MSFT_10-Q_2026-03-31.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MSFT_10-Q_2026-03-31.md"
+          ]
+        },
+        "paraphrase::MSFT_10-Q_2026-03-31.md::chunk51": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MSFT_10-Q_2026-03-31.md"
+          ]
+        },
+        "paraphrase::NVDA_10-K_2025-01-26.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307,
+          "kind": "paraphrase"
+        },
+        "paraphrase::NVDA_10-K_2025-01-26.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "NVDA_10-K_2025-01-26.md"
+          ]
+        },
+        "paraphrase::NVDA_10-K_2025-01-26.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::NVDA_10-K_2026-01-25.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::NVDA_10-Q_2025-07-27.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::NVDA_10-Q_2026-04-26.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::TGT_10-K_2025-02-01.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::TGT_10-K_2026-01-31.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::TGT_10-Q_2025-08-02.md::chunk13": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "TGT_10-Q_2025-08-02.md"
+          ]
+        },
+        "paraphrase::TGT_10-Q_2025-08-02.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "TGT_10-Q_2025-08-02.md"
+          ]
+        },
+        "paraphrase::TGT_10-Q_2026-05-02.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-K_2024-12-31.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "UAL_10-K_2024-12-31.md"
+          ]
+        },
+        "paraphrase::UAL_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-Q_2025-09-30.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-Q_2026-06-30.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-Q_2026-06-30.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::WMT_10-K_2026-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-K_2026-01-31.md"
+          ]
+        },
+        "paraphrase::WMT_10-Q_2025-07-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-Q_2025-07-31.md"
+          ]
+        },
+        "paraphrase::WMT_10-Q_2025-10-31.md::chunk49": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-Q_2025-10-31.md"
+          ]
+        },
+        "paraphrase::WMT_10-Q_2026-04-30.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-Q_2026-04-30.md"
+          ]
+        },
+        "paraphrase::WMT_10-Q_2026-04-30.md::chunk2": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-Q_2026-04-30.md"
+          ]
+        },
+        "paraphrase::XOM_10-Q_2026-06-30.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "XOM_10-Q_2026-06-30.md"
+          ]
+        },
+        "paraphrase::XOM_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "XOM_10-Q_2026-06-30.md"
+          ]
+        }
+      }
+    },
+    {
+      "variant": "routing=top2",
+      "axis": "routing",
+      "overrides": {
+        "retrieval.document_routing.top_m": 2
+      },
+      "fingerprint": "2c8e64cb7ad1",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max",
+        "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}",
+        "reranker.include_header": "True",
+        "retrieval.document_routing.top_m": "2",
+        "retrieval.document_routing.record_template": "{header}; period ended {period_end:date}"
+      },
+      "num_samples": 118,
+      "elapsed_s": 126.4,
+      "metrics": {
+        "hit_rate": 0.8559,
+        "recall": 0.8559,
+        "precision": 0.1983,
+        "mrr": 0.6879,
+        "ndcg": 0.7301
+      },
+      "by_kind": {
+        "implicit": {
+          "num_samples": 54,
+          "metrics": {
+            "hit_rate": 0.8519,
+            "recall": 0.8519,
+            "precision": 0.2074,
+            "mrr": 0.6716,
+            "ndcg": 0.7168
+          }
+        },
+        "paraphrase": {
+          "num_samples": 64,
+          "metrics": {
+            "hit_rate": 0.8594,
+            "recall": 0.8594,
+            "precision": 0.1906,
+            "mrr": 0.7016,
+            "ndcg": 0.7413
+          }
+        }
+      },
+      "recall_by_k": {
+        "1": 0.5763,
+        "3": 0.7966,
+        "5": 0.8559
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "implicit::AAPL_10-K_2024-09-28.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "AAPL_10-K_2024-09-28.md",
+            "AAPL_10-Q_2026-03-28.md"
+          ]
+        },
+        "implicit::AAPL_10-K_2025-09-27.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::COST_10-K_2025-08-31.md::chunk46": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit",
+          "routed_to": [
+            "COST_10-K_2025-08-31.md",
+            "TGT_10-Q_2025-08-02.md"
+          ]
+        },
+        "implicit::COST_10-Q_2026-05-10.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-K_2024-12-31.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-K_2025-12-31.md::chunk12": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-K_2025-12-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-K_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-Q_2025-09-30.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-Q_2025-09-30.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::DAL_10-Q_2026-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-K_2025-12-31.md::chunk20": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-K_2025-12-31.md::chunk30": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-K_2025-12-31.md::chunk81": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2025-09-30.md::chunk93": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-03-31.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-03-31.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-03-31.md::chunk8": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::LUV_10-Q_2026-06-30.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-K_2024-12-31.md::chunk72": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-K_2024-12-31.md::chunk79": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-Q_2025-09-30.md::chunk10": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-Q_2025-09-30.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::MRK_10-Q_2026-06-30.md::chunk70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "implicit"
+        },
+        "implicit::MSFT_10-Q_2026-03-31.md::chunk55": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "MSFT_10-Q_2026-03-31.md",
+            "AAPL_10-Q_2026-03-28.md"
+          ]
+        },
+        "implicit::NVDA_10-K_2025-01-26.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::NVDA_10-K_2025-01-26.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-K_2025-01-26.md",
+            "NVDA_10-Q_2025-10-26.md"
+          ]
+        },
+        "implicit::NVDA_10-K_2026-01-25.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::NVDA_10-K_2026-01-25.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-K_2026-01-25.md",
+            "NVDA_10-K_2025-01-26.md"
+          ]
+        },
+        "implicit::NVDA_10-K_2026-01-25.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::NVDA_10-Q_2025-07-27.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-Q_2025-07-27.md",
+            "AAPL_10-Q_2025-12-27.md"
+          ]
+        },
+        "implicit::NVDA_10-Q_2025-10-26.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-Q_2025-10-26.md",
+            "NVDA_10-K_2025-01-26.md"
+          ]
+        },
+        "implicit::NVDA_10-Q_2025-10-26.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::NVDA_10-Q_2025-10-26.md::chunk33": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "NVDA_10-Q_2025-10-26.md",
+            "NVDA_10-K_2025-01-26.md"
+          ]
+        },
+        "implicit::TGT_10-K_2025-02-01.md::chunk37": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "implicit"
+        },
+        "implicit::TGT_10-Q_2025-11-01.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit",
+          "routed_to": [
+            "TGT_10-Q_2025-11-01.md",
+            "COST_10-Q_2025-11-23.md"
+          ]
+        },
+        "implicit::TGT_10-Q_2026-05-02.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-K_2024-12-31.md::chunk4": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-K_2025-12-31.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-Q_2025-09-30.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-Q_2025-09-30.md::chunk31": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-Q_2026-06-30.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::UAL_10-Q_2026-06-30.md::chunk21": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk33": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk35": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk47": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-K_2025-01-31.md::chunk58": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-Q_2025-10-31.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-Q_2026-04-30.md::chunk25": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "implicit"
+        },
+        "implicit::WMT_10-Q_2026-04-30.md::chunk27": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "implicit",
+          "routed_to": [
+            "WMT_10-Q_2026-04-30.md",
+            "LUV_10-Q_2026-06-30.md"
+          ]
+        },
+        "paraphrase::AAPL_10-K_2025-09-27.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase",
+          "routed_to": [
+            "AAPL_10-K_2025-09-27.md",
+            "AAPL_10-Q_2025-12-27.md"
+          ]
+        },
+        "paraphrase::AAPL_10-K_2025-09-27.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::AAPL_10-Q_2026-03-28.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::AAPL_10-Q_2026-06-27.md::chunk22": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::COST_10-K_2024-09-01.md::chunk109": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "COST_10-K_2024-09-01.md",
+            "COST_10-Q_2025-11-23.md"
+          ]
+        },
+        "paraphrase::COST_10-K_2024-09-01.md::chunk140": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::COST_10-K_2024-09-01.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "COST_10-K_2024-09-01.md",
+            "COST_10-Q_2025-11-23.md"
+          ]
+        },
+        "paraphrase::COST_10-K_2025-08-31.md::chunk77": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::COST_10-Q_2026-02-15.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::COST_10-Q_2026-02-15.md::chunk34": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "COST_10-Q_2026-02-15.md",
+            "COST_10-Q_2026-05-10.md"
+          ]
+        },
+        "paraphrase::COST_10-Q_2026-05-10.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "COST_10-Q_2026-05-10.md",
+            "COST_10-Q_2026-02-15.md"
+          ]
+        },
+        "paraphrase::COST_10-Q_2026-05-10.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307,
+          "kind": "paraphrase"
+        },
+        "paraphrase::CVX_10-K_2025-12-31.md::chunk78": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-K_2024-12-31.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-K_2024-12-31.md",
+            "DAL_10-K_2025-12-31.md"
+          ]
+        },
+        "paraphrase::DAL_10-K_2024-12-31.md::chunk42": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-K_2024-12-31.md",
+            "DAL_10-Q_2025-09-30.md"
+          ]
+        },
+        "paraphrase::DAL_10-K_2024-12-31.md::chunk55": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-K_2024-12-31.md",
+            "DAL_10-Q_2026-03-31.md"
+          ]
+        },
+        "paraphrase::DAL_10-Q_2025-09-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-Q_2025-09-30.md",
+            "DAL_10-K_2025-12-31.md"
+          ]
+        },
+        "paraphrase::DAL_10-Q_2026-03-31.md::chunk16": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "DAL_10-Q_2026-03-31.md",
+            "DAL_10-Q_2026-06-30.md"
+          ]
+        },
+        "paraphrase::DAL_10-Q_2026-03-31.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-Q_2026-03-31.md::chunk28": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-Q_2026-03-31.md::chunk30": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-Q_2026-06-30.md::chunk32": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::DAL_10-Q_2026-06-30.md::chunk35": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::JNJ_10-K_2024-12-29.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "JNJ_10-K_2024-12-29.md",
+            "JNJ_10-Q_2025-09-28.md"
+          ]
+        },
+        "paraphrase::JNJ_10-Q_2026-06-28.md::chunk13": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "JNJ_10-Q_2026-06-28.md",
+            "JNJ_10-K_2025-12-28.md"
+          ]
+        },
+        "paraphrase::JNJ_10-Q_2026-06-28.md::chunk5": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "JNJ_10-Q_2026-06-28.md",
+            "JNJ_10-K_2025-12-28.md"
+          ]
+        },
+        "paraphrase::LUV_10-K_2025-12-31.md::chunk22": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::LUV_10-Q_2025-09-30.md::chunk50": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::LUV_10-Q_2025-09-30.md::chunk53": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "LUV_10-Q_2025-09-30.md",
+            "LUV_10-K_2025-12-31.md"
+          ]
+        },
+        "paraphrase::LUV_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MRK_10-K_2024-12-31.md::chunk57": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MRK_10-K_2024-12-31.md",
+            "MRK_10-Q_2025-09-30.md"
+          ]
+        },
+        "paraphrase::MRK_10-K_2025-12-31.md::chunk114": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MRK_10-Q_2026-03-31.md::chunk68": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MRK_10-Q_2026-03-31.md::chunk84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MRK_10-Q_2026-03-31.md",
+            "MRK_10-K_2024-12-31.md"
+          ]
+        },
+        "paraphrase::MSFT_10-K_2025-06-30.md::chunk41": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MSFT_10-Q_2025-09-30.md::chunk38": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MSFT_10-Q_2025-09-30.md",
+            "MSFT_10-K_2025-06-30.md"
+          ]
+        },
+        "paraphrase::MSFT_10-Q_2025-12-31.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MSFT_10-Q_2025-12-31.md",
+            "MSFT_10-Q_2025-09-30.md"
+          ]
+        },
+        "paraphrase::MSFT_10-Q_2025-12-31.md::chunk5": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::MSFT_10-Q_2026-03-31.md::chunk43": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MSFT_10-Q_2026-03-31.md",
+            "MRK_10-Q_2026-03-31.md"
+          ]
+        },
+        "paraphrase::MSFT_10-Q_2026-03-31.md::chunk51": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "MSFT_10-Q_2026-03-31.md",
+            "MRK_10-Q_2026-03-31.md"
+          ]
+        },
+        "paraphrase::NVDA_10-K_2025-01-26.md::chunk1": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307,
+          "kind": "paraphrase"
+        },
+        "paraphrase::NVDA_10-K_2025-01-26.md::chunk15": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "NVDA_10-K_2025-01-26.md",
+            "NVDA_10-Q_2025-10-26.md"
+          ]
+        },
+        "paraphrase::NVDA_10-K_2025-01-26.md::chunk2": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::NVDA_10-K_2026-01-25.md::chunk36": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::NVDA_10-Q_2025-07-27.md::chunk23": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::NVDA_10-Q_2026-04-26.md::chunk6": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::TGT_10-K_2025-02-01.md::chunk39": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "kind": "paraphrase"
+        },
+        "paraphrase::TGT_10-K_2026-01-31.md::chunk36": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::TGT_10-Q_2025-08-02.md::chunk13": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "TGT_10-Q_2025-08-02.md",
+            "TGT_10-Q_2026-05-02.md"
+          ]
+        },
+        "paraphrase::TGT_10-Q_2025-08-02.md::chunk29": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "TGT_10-Q_2025-08-02.md",
+            "TGT_10-Q_2026-05-02.md"
+          ]
+        },
+        "paraphrase::TGT_10-Q_2026-05-02.md::chunk27": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-K_2024-12-31.md::chunk24": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "UAL_10-K_2024-12-31.md",
+            "UAL_10-K_2025-12-31.md"
+          ]
+        },
+        "paraphrase::UAL_10-K_2025-12-31.md::chunk26": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-Q_2025-09-30.md::chunk28": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-Q_2026-03-31.md::chunk11": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-Q_2026-06-30.md::chunk18": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "paraphrase"
+        },
+        "paraphrase::UAL_10-Q_2026-06-30.md::chunk9": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase"
+        },
+        "paraphrase::WMT_10-K_2026-01-31.md::chunk48": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-K_2026-01-31.md",
+            "WMT_10-K_2025-01-31.md"
+          ]
+        },
+        "paraphrase::WMT_10-Q_2025-07-31.md::chunk47": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-Q_2025-07-31.md",
+            "WMT_10-K_2025-01-31.md"
+          ]
+        },
+        "paraphrase::WMT_10-Q_2025-10-31.md::chunk49": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-Q_2025-10-31.md",
+            "WMT_10-K_2025-01-31.md"
+          ]
+        },
+        "paraphrase::WMT_10-Q_2026-04-30.md::chunk14": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-Q_2026-04-30.md",
+            "WMT_10-K_2026-01-31.md"
+          ]
+        },
+        "paraphrase::WMT_10-Q_2026-04-30.md::chunk2": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "WMT_10-Q_2026-04-30.md",
+            "WMT_10-K_2026-01-31.md"
+          ]
+        },
+        "paraphrase::XOM_10-Q_2026-06-30.md::chunk17": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "XOM_10-Q_2026-06-30.md",
+            "MSFT_10-K_2026-06-30.md"
+          ]
+        },
+        "paraphrase::XOM_10-Q_2026-06-30.md::chunk40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "kind": "paraphrase",
+          "routed_to": [
+            "XOM_10-Q_2026-06-30.md",
+            "MSFT_10-K_2026-06-30.md"
+          ]
         }
       }
     }

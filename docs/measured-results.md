@@ -1018,6 +1018,96 @@ on each query, which isn't worth optimising at 4,236 chunks.
 Raw records: `baseline`, `filters=company` and `filters=company+period` in
 `data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`.
 
+### Document routing (chunking plan, Phase 3b)
+
+**The router alone, first.** Before any interface change,
+`scripts/experiments/2026-09-doc-routing/router_probe.py` ranked one record per
+filing (61) against every question, by BM25, dense (`qwen3-embedding:0.6b`) and
+their RRF fusion, and recorded where the expected filing landed
+(`data/eval/results/probe_2026-09_doc_router.json`). Two record texts: the
+Phase 2 header as the plan specified, and the header plus the period end
+spelled out ("February 15, 2026"), the way questions write it.
+
+| records | set | R@1 (RRF) | R@5 (RRF) | R@1 (BM25) | chunk hit today |
+|---|---|---|---|---|---|
+| header | generated (174) | 0.661 | 0.971 | 0.632 | 0.977 |
+| header | `period` (55) | 0.836 | 1.0 | 0.927 | 0.836 |
+| header | `underspecified` (118) | 0.483 | 0.856 | 0.424 | 0.822 |
+| header + date | generated | 0.724 | 0.966 | 0.707 | 0.977 |
+| header + date | `period` | 0.891 | 1.0 | **1.0** | 0.836 |
+| header + date | `underspecified` | 0.525 | 0.881 | 0.568 | 0.822 |
+
+The plan's version, header-only records filtering to the top *M*, could
+only lose. On the generated set the router's top 5 holds the right filing
+less often than chunk retrieval's top 5 already does. And a top 5 is about one
+company's filings, which Phase 3 showed adds nothing. Two changes followed.
+First, the spelled date: the header's ISO date shares only digits with a
+question. Second, a gate: route to the top filing only when BM25 and dense
+agree on it, and otherwise run unfiltered. Replaying Phase 3's saved
+per-sample results predicted the numbers below exactly, before the interface
+was built. The record text and the gate were both chosen on these three sets,
+so the result is in-sample.
+
+**Setup.** Run on 2026-09-28 at the shipped config (header on, reranker sees
+it, `edgar` index in sync), through the real `retrieval.document_routing` path:
+`run_matrix.py`'s `routing=top1` and `routing=top2`, default record template
+`"{header}; period ended {period_end:date}"`. `baseline` was re-run and equals
+the previous rows sample for sample. The ceiling is Phase 3's
+`filters=company+period`, the right filing given from labels.
+
+| set | variant | hit | Δ hit [95% CI], W/L, p | NDCG | Δ NDCG [95% CI] | routed (wrong) |
+|---|---|---|---|---|---|---|
+| generated (174) | ceiling | 0.983 | +0.006 [−0.014, +0.025], 2W/1L | 0.937 | +0.045\* | — |
+| generated | `routing=top1` | 0.977 → 0.966 | −0.011 [−0.027, +0.004], 0W/2L, p=0.5 | 0.892 → 0.906 | +0.014 [−0.001, +0.029] | 83 (1) |
+| generated | `routing=top2` | 0.966 | −0.011, 0W/2L, p=0.5 | 0.897 | +0.005 [−0.008, +0.017] | 83 (1) |
+| `period` (55) | ceiling | 0.945 | +0.109\*, 6W/0L, p=0.031 | 0.861 | +0.100\* | — |
+| `period` | `routing=top1` | 0.836 → **0.927** | +0.091 [+0.014, +0.168]\*, 5W/0L, p=0.062 | 0.761 → 0.841 | +0.080 [+0.026, +0.135]\* | 38 (0) |
+| `period` | `routing=top2` | 0.891 | +0.055 [−0.006, +0.115], 3W/0L, p=0.25 | 0.798 | +0.037 [+0.005, +0.069]\* | 38 (0) |
+| `underspecified` (118) | ceiling | 0.898 | +0.076\*, 11W/2L, p=0.022 | 0.807 | +0.109\* | — |
+| `underspecified` | `routing=top1` | 0.822 → 0.856 | +0.034 [+0.001, +0.067]\*, 4W/0L, p=0.12 | 0.698 → 0.732 | +0.034 [+0.006, +0.062]\* | 41 (0) |
+| · `implicit` (54) | `routing=top1` | 0.852 | +0.000, 0W/0L | 0.717 | | |
+| · `paraphrase` (64) | `routing=top1` | 0.797 → 0.859 | +0.062 [+0.003, +0.122]\*, 4W/0L, p=0.12 | 0.745 | | |
+
+`routed (wrong)`: questions the router filtered, and how many of those
+excluded the expected filing. Cost: 5–8% longer end to end. That wasn't profiled. Likely causes are the
+router's extra query embedding and the per-chunk BM25 filter check Phase 3
+already pays.
+
+**Findings**
+
+- **Routing recovers most of the ceiling where the router is sure, and it
+  stays off by default.** On `period`, 5 of the ceiling's 6 wins with no
+  losses. On `underspecified`, 4 of its 11. The CIs exclude zero on both,
+  but with this few flipped questions McNemar's p (0.062, 0.12) is the test
+  to trust, and it doesn't clear 0.05. By this repo's rule that is "not
+  shown". Add that the gate and the record text were chosen on these same
+  questions, and it isn't grounds to change a default.
+- **The gate does what it was built for.** Routing fired on 162 of 347
+  questions and excluded the answer once. That question asked about "the
+  March 2023 quarter", a period the corpus doesn't hold, and "March" matched
+  a 2026 filing. The generated set's other loss is one the ceiling shares:
+  the right filing, with the answer chunk edged from 5th to 6th, the same
+  rank flip Phase 3's company filter showed.
+- **`top_m: 2` is dominated.** Same questions routed, fewer wins: the second
+  filing is usually the competing period's copy, the one the filter exists
+  to remove. If routing is turned on, it's `top_m: 1`.
+- **`implicit` questions never route usefully** (0W/0L). They name neither
+  the company nor the date in the form a record holds, so the gate falls back,
+  which is the intended failure mode. The `underspecified` gain is all
+  `paraphrase`, which keeps the company and date.
+- **What it really measures.** `period` questions spell out the exact period
+  end, so BM25 over spelled-date records gets `period` R@1 1.0. Real questions
+  say "Q3" or "last year" more often. That is Milestone 20's query
+  understanding, which would fill Phase 3's `QueryFilter` directly. Routing is
+  the no-extraction approximation of it, and it's only as good as the
+  question's wording is close to a record's.
+- **Not measured:** answers with routing on, and routing on questions not
+  drafted from these labels.
+
+Raw records: `baseline`, `routing=top1` and `routing=top2` in
+`data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`
+(each routed sample carries `routed_to`).
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a
