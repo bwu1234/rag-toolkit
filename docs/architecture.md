@@ -93,8 +93,17 @@ Two layers, and callers pick which one they need:
 
 - **`Retriever`** (`rag/retrieval/retriever.py`) — question in, ranked passages
   out. No LLM unless query expansion is on.
-- **`ChatService`** (`rag/generation/chat_service.py`) — wraps a `Retriever`
-  and adds condensing, CRAG, generation and citations.
+- **A `ChatResponder`** (`rag/generation/chat_service.py`) — question in,
+  answer with citations out. `chat.mode` picks which:
+  - **`ChatService`** (`pipeline`, the default) wraps a `Retriever` and adds
+    condensing, CRAG, generation and citations. The diagram below is this path.
+  - **`AgentService`** (`agentic`, `rag/generation/agent.py`) lets the model
+    call search as a tool, as often as it needs; see
+    [below](#agentserviceask-chatmode-agentic).
+
+  Both inherit `ask()` from `ChatResponder`, which owns what surrounds an
+  answer (metering, timing, the turn record), so every entrypoint and eval
+  runner works with either.
 
 ```mermaid
 flowchart TD
@@ -165,6 +174,33 @@ The CRAG pieces live in `ChatService` rather than `Retriever` because retrying
 and groundedness both need to see both sides of the retrieve/generate boundary.
 ([Milestone 10 notes](milestone-notes.md#corrective-rag-notes-milestone-10))
 
+### `AgentService.ask` (`chat.mode: agentic`)
+
+1. **History goes to the model as messages.** No condenser: the model sees
+   the conversation and writes standalone queries itself. Earlier answers
+   lose their `[n]` markers on the way in.
+2. **The loop (`agent.strategy`).** `react`: the model is offered
+   `rag_search` and decides after every result whether to search again.
+   `planned`: one call's tool calls are the plan, all of them run, then one
+   answering call.
+3. **Every search goes through `RagTools.retrieve`**, the path MCP's
+   `rag_search` uses, pinned to the turn's corpus selection, so it is
+   `Retriever.retrieve` as above.
+4. **A passage ledger numbers what the model sees**, in first-seen order and
+   deduplicated by chunk id. It becomes `ChatAnswer.citations`, so `[n]`
+   means the same thing in both modes.
+5. **Guards (`agent.*`)** end the searching: `max_tool_calls`, `timeout_s`,
+   a refused repeat query, and a context-window overflow. Each ends in one
+   tool-free call that must answer. `ChatAnswer.stopped_reason` says which
+   guard fired.
+6. **Check groundedness (optional).** `crag.check_groundedness` checks the
+   final answer against the ledger and only reports the verdict. CRAG's
+   grader and retries don't apply.
+
+It runs on its own model (`agent.llm`, falling back to `llm`) through
+`build_agent_llm`, which refuses a provider without tool calling at build time.
+([Milestone 19 plan](milestone-19-plan.md))
+
 ## Entrypoints
 
 Every entrypoint builds its pipeline through one of two builders, so they all
@@ -201,6 +237,8 @@ Two consequences worth knowing:
   names a concrete class.
 - **One LLM client per `ChatService`.** `build_chat_service` creates a single
   `LLMClient` and hands it to the expander, condenser and every CRAG component.
+  The agent has two: its loop runs on `agent.llm`, and query expansion and the
+  groundedness check stay on `llm`.
 - **Pipeline events.** `Retriever` and `ChatService` accept an optional
   `on_event` callback (`rag/events.py`) and call it once per completed stage
   with a timed `PipelineEvent`. Purely observational. `ChatService.ask` always

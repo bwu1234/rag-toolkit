@@ -396,10 +396,10 @@ def _cmd_retrieve(args: argparse.Namespace) -> None:
 
 
 def _cmd_chat(args: argparse.Namespace) -> None:
-    """Run the full retrieve -> rerank -> generate pipeline for a question and print the answer.
+    """Answer a question through the configured `chat.mode` and print the answer.
 
-    This is the same orchestration the `/chat` API endpoint uses
-    (`rag.generation.chat_service.ChatService`), exercised from the command
+    This is the same responder the `/chat` API endpoint uses (`ChatService`,
+    or `AgentService` under `chat.mode: agentic`), exercised from the command
     line -- handy for sanity-checking prompts and citations against a live
     Ollama daemon without standing up the API.
     """
@@ -411,6 +411,9 @@ def _cmd_chat(args: argparse.Namespace) -> None:
 
     print(f"\nQuestion: {args.query!r}")
     print(f"LLM: {config.llm.provider}:{config.llm.model} ({config.llm.base_url})")
+    if config.chat.mode == "agentic":
+        agent_llm = config.agent.llm or config.llm
+        print(f"Agent: {config.agent.strategy} on {agent_llm.provider}:{agent_llm.model}")
 
     result = chat_service.ask(args.query)
 
@@ -419,7 +422,14 @@ def _cmd_chat(args: argparse.Namespace) -> None:
     # pipeline does silently are visible from every entrypoint, not just the UI.
     if result.rewritten_query:
         print(f"Retrieved for: {result.rewritten_query!r}")
-    if result.search_queries:
+    if result.stopped_reason is not None:
+        print(
+            f"Agent ran {result.tool_calls} search(es) in {result.retrieval_attempts} round(s); "
+            f"stopped: {result.stopped_reason}"
+        )
+        for rank, search_query in enumerate(result.search_queries, start=1):
+            print(f"  {rank}. {search_query}")
+    elif result.search_queries:
         print(f"Expanded into {len(result.search_queries)} search query/queries:")
         for rank, search_query in enumerate(result.search_queries, start=1):
             print(f"  {rank}. {search_query}")

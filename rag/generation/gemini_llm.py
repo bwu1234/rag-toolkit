@@ -270,7 +270,10 @@ def _to_contents(messages: Sequence[Message]) -> tuple[str | None, list[dict[str
     """Translate a conversation into Gemini's `systemInstruction` and `contents`.
 
     Consecutive `ToolResult`s share one user turn: Gemini wants a step's
-    responses together, after all of its calls.
+    responses together, after all of its calls. A user message right after
+    them is folded into the last response's text, which is where Gemini 3.x
+    documents inline instructions go ("appended directly to the response
+    text") -- the agent's forced-synthesis instruction arrives this way.
     """
     system: list[str] = []
     contents: list[dict[str, Any]] = []
@@ -282,7 +285,12 @@ def _to_contents(messages: Sequence[Message]) -> tuple[str | None, list[dict[str
                 raise ValueError("Gemini takes system messages only before the first user/assistant turn")
             system.append(message.content)
         elif isinstance(message, ChatMessage):
-            contents.append({"role": "user", "parts": [{"text": message.content}]})
+            previous = contents[-1] if contents else None
+            if previous and previous["role"] == "user" and all("functionResponse" in p for p in previous["parts"]):
+                result = previous["parts"][-1]["functionResponse"]["response"]
+                result["result"] = f"{result['result']}\n\n{message.content}"
+            else:
+                contents.append({"role": "user", "parts": [{"text": message.content}]})
         elif isinstance(message, ToolResult):
             response: dict[str, Any] = {"name": message.call.name, "response": {"result": message.content}}
             if message.call.id is not None:

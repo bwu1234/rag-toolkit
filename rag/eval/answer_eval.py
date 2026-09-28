@@ -54,7 +54,7 @@ from rag.config.settings import LLMConfig, LLMProvider, RagConfig, load_config
 from rag.eval.dataset import EvalDataset, EvalSample
 from rag.eval.relevance import sample_unmatched_spans
 from rag.generation.builder import build_chat_service
-from rag.generation.chat_service import ChatService
+from rag.generation.chat_service import ChatResponder
 from rag.generation.factory import get_llm_client
 from rag.generation.llm import LLMClient
 from rag.logging_config import configure_logging
@@ -277,7 +277,7 @@ class AnswerEvalReport:
 
 def run_answer_eval(
     dataset: EvalDataset,
-    chat_service: ChatService,
+    chat_service: ChatResponder,
     llm_client: LLMClient,
     *,
     completed: Mapping[str, AnswerSampleResult] | None = None,

@@ -105,7 +105,7 @@ from rag.eval.dataset import EvalDataset  # noqa: E402
 from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.generation.builder import build_chat_service  # noqa: E402
-from rag.generation.chat_service import ChatService  # noqa: E402
+from rag.generation.chat_service import ChatResponder  # noqa: E402
 from rag.generation.factory import get_llm_client  # noqa: E402
 from rag.generation.llm import LLMClient  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
@@ -183,7 +183,7 @@ def checkpoint_fingerprint(
 
 def run_one(
     label: str,
-    chat_service: ChatService,
+    chat_service: ChatResponder,
     judge: LLMClient,
     dataset: EvalDataset,
     checkpoint: SampleCheckpoint | None = None,
@@ -248,7 +248,7 @@ def paired_pass_delta(result: dict[str, Any], baseline: dict[str, Any]) -> str:
 
 
 def run_multihop(
-    chat_service: ChatService,
+    chat_service: ChatResponder,
     judge: LLMClient,
     dataset: EvalDataset,
     checkpoint: SampleCheckpoint | None = None,

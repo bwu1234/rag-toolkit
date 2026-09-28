@@ -68,7 +68,7 @@ class StageEvent:
 
 @dataclass(frozen=True)
 class TurnRecord:
-    """Everything one `ChatService.ask` call did, in one JSON line.
+    """Everything one `ChatResponder.ask` call did, in one JSON line.
 
     `shown_chunk_ids` and `cited_chunk_ids` together are an implicit relevance
     judgment logged on every turn: of the passages the model was shown (in
@@ -102,6 +102,10 @@ class TurnRecord:
     events: list[StageEvent] = field(default_factory=list)
     error: str | None = None
     metadata: dict[str, str] = field(default_factory=dict)
+    tool_calls: int = 0
+    """Agentic turns: searches run. Each one is also an entry in `attempts`."""
+    stopped_reason: str | None = None
+    """Agentic turns: `answered`, `cap`, `timeout` or `context`. None for a pipeline turn."""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

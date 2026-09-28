@@ -32,6 +32,10 @@ validated by pydantic models in `rag/config/settings.py`. Load it via
 `load_config()`. Don't hardcode model names, chunk sizes, or paths in pipeline
 code — read them from `RagConfig`.
 
+`chat.mode: agentic` swaps the retrieve-then-generate pipeline for an agent
+that calls search as a tool (`rag/generation/agent.py`, settings under
+`agent:`). It stays off by default until Milestone 19 phase 4 measures it.
+
 A config file may start with `base: <path>` (relative to itself) to inherit
 another and list only what it changes — mappings merge, lists replace.
 `rag/config/vanilla.yaml` does this: plain dense RAG, no reranker,

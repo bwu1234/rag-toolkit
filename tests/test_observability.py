@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from rag.api.main import app
 from rag.api.routes.chat import get_chat_service, get_turn_sink
-from rag.config.settings import AgentConfig, LLMConfig, RagConfig, TurnLogConfig
+from rag.config.settings import AgentConfig, ChatConfig, LLMConfig, RagConfig, TurnLogConfig
 from rag.events import EventSink, PipelineEvent
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
@@ -439,20 +439,34 @@ def test_config_fingerprint_ignores_where_logs_go_but_not_behaviour() -> None:
     assert config_fingerprint(base) != config_fingerprint(other_top_k)
 
 
-def test_config_fingerprint_ignores_the_agent_section_while_nothing_reads_it() -> None:
+def test_config_fingerprint_ignores_the_agent_section_in_pipeline_mode() -> None:
     base = RagConfig()
     other_agent = base.model_copy(update={"agent": AgentConfig(max_tool_calls=3)})
     assert config_fingerprint(base) == config_fingerprint(other_agent)
 
 
+def test_config_fingerprint_keys_on_the_agent_section_in_agentic_mode() -> None:
+    agentic = RagConfig(chat=ChatConfig(mode="agentic"))
+    other_agent = agentic.model_copy(update={"agent": AgentConfig(max_tool_calls=3)})
+
+    assert config_fingerprint(agentic) != config_fingerprint(RagConfig())
+    assert config_fingerprint(agentic) != config_fingerprint(other_agent)
+
+
 def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None:
     gemini = LLMConfig(provider="gemini", model="gemini-3.5-flash-lite")
     unset = RagConfig(llm=gemini)
-    # Neither `llm.thinking_level` nor `agent` existed when the turns already
-    # logged were hashed.
+    # None of `llm.thinking_level`, `agent` or `chat.mode` existed when the
+    # turns already logged were hashed.
     as_before = hashlib.sha256(
         unset.model_dump_json(
-            exclude={"observability": True, "eval": True, "agent": True, "llm": {"thinking_level"}}
+            exclude={
+                "observability": True,
+                "eval": True,
+                "agent": True,
+                "llm": {"thinking_level"},
+                "chat": {"mode"},
+            }
         ).encode()
     ).hexdigest()[:12]
     minimal = RagConfig(llm=gemini.model_copy(update={"thinking_level": "minimal"}))

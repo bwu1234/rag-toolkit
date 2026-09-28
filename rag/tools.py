@@ -23,6 +23,7 @@ never pay for (or require) the optional extra.
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import logging
 import threading
@@ -34,9 +35,10 @@ from typing import Annotated, Any, get_type_hints
 from pydantic import Field, create_model
 
 from rag.config.settings import REPO_ROOT, CorpusSelection, RagConfig, load_config
-from rag.generation.llm import ToolDefinition
+from rag.events import EventSink
+from rag.generation.llm import LLMClient, ToolDefinition
 from rag.retrieval.builder import build_retriever
-from rag.retrieval.retriever import Retriever
+from rag.retrieval.retriever import RetrievalResult, Retriever
 from rag.retrieval.sparse import BM25Index, bm25_index_path
 
 logger = logging.getLogger(__name__)
@@ -79,6 +81,32 @@ class ToolSpec:
         """
 
         return ToolDefinition(name=self.name, description=self.description, parameters=self.input_schema)
+
+    def definition_without(self, *pinned: str) -> ToolDefinition:
+        """`definition`, minus arguments the caller fixes itself.
+
+        A projection of the same schema, not a second one: every remaining
+        property is byte-identical to what MCP serves. The agent uses it to
+        keep `corpus`, `top_k` and `max_chars` out of the model's hands --
+        they belong to the turn (the eval's `--corpus`, the prompt-size
+        guards), not to the model. Only optional arguments can be pinned; a
+        required one has no value to fall back on.
+        """
+
+        schema = self.input_schema
+        properties = dict(schema.get("properties", {}))
+        required = list(schema.get("required", []))
+        for name in pinned:
+            if name not in properties:
+                raise ValueError(f"{self.name} has no argument {name!r} to pin")
+            if name in required:
+                raise ValueError(f"{self.name} argument {name!r} is required and can't be pinned")
+            del properties[name]
+        return ToolDefinition(
+            name=self.name,
+            description=self.description,
+            parameters={**schema, "properties": properties},
+        )
 
 
 def input_schema_for(handler: Callable[..., Any]) -> dict[str, Any]:
@@ -138,7 +166,11 @@ class RagTools:
     """
 
     def __init__(
-        self, config_path: str | Path | None = None, *, config: RagConfig | None = None
+        self,
+        config_path: str | Path | None = None,
+        *,
+        config: RagConfig | None = None,
+        llm_client: LLMClient | None = None,
     ) -> None:
         """Read config from `config_path` on first use, or take `config` as given.
 
@@ -146,12 +178,17 @@ class RagTools:
         agent passes the `RagConfig` its builder already holds, so `--config`
         overlays and in-memory overrides (the eval matrices) reach its searches
         too, instead of a second load from disk quietly reading something else.
+
+        `llm_client` goes to `build_retriever` for query expansion. The agent
+        passes its metered client so expansion calls, if expansion is on,
+        count toward the turn; MCP leaves it unset.
         """
 
         if config_path is not None and config is not None:
             raise ValueError("pass config_path or config, not both")
         self._config_path = config_path
         self._config: RagConfig | None = config
+        self._llm_client = llm_client
         self._retrievers: dict[str, tuple[CorpusSelection, Retriever]] = {}
         # Reentrant: `_retriever_for` holds the lock and reads `.config`,
         # which takes it again.
@@ -177,7 +214,7 @@ class RagTools:
             cached = self._retrievers.get(selection.slug)
             if cached is None:
                 logger.info("Building retriever for corpus selection %s", selection.describe())
-                retriever = build_retriever(config, corpora=selection.names)
+                retriever = build_retriever(config, self._llm_client, corpora=selection.names)
                 # Widen stage 2 only. Stage-1 `top_k` governs candidate width
                 # and fusion, so changing it would change which chunks compete;
                 # `rerank_top_k` only governs how deep the sorted output runs.
@@ -185,6 +222,34 @@ class RagTools:
                 cached = (selection, retriever)
                 self._retrievers[selection.slug] = cached
             return cached
+
+    def retrieve(
+        self,
+        query: str,
+        corpus: str | Sequence[str] | None = None,
+        top_k: int | None = None,
+        *,
+        on_event: EventSink | None = None,
+    ) -> tuple[CorpusSelection, RetrievalResult]:
+        """Run retrieve -> rerank and return the top `top_k` chunks, unformatted.
+
+        The one retrieval path behind `rag_search`: `search` renders this as
+        MCP's JSON, and the agent renders it as numbered passages. Raises
+        `ValueError` for arguments a caller got wrong (empty query, `top_k`
+        out of range, unknown corpus), so both can report them as tool errors.
+        """
+
+        if not query.strip():
+            raise ValueError("query must not be empty")
+
+        requested = self.config.retrieval.rerank_top_k if top_k is None else top_k
+        if not 1 <= requested <= MAX_RESULTS:
+            raise ValueError(f"top_k must be between 1 and {MAX_RESULTS} (got {requested})")
+
+        names = [corpus] if isinstance(corpus, str) else corpus
+        selection, retriever = self._retriever_for(names)
+        outcome = retriever.retrieve(query, on_event=on_event)
+        return selection, dataclasses.replace(outcome, chunks=outcome.chunks[:requested])
 
     def search(
         self,
@@ -195,20 +260,12 @@ class RagTools:
     ) -> dict[str, Any]:
         """Run retrieve -> rerank and return ranked passages."""
 
-        if not query.strip():
-            raise ValueError("query must not be empty")
-
-        requested = self.config.retrieval.rerank_top_k if top_k is None else top_k
-        if not 1 <= requested <= MAX_RESULTS:
-            raise ValueError(f"top_k must be between 1 and {MAX_RESULTS} (got {requested})")
         budget = DEFAULT_MAX_CHARS if max_chars is None else max_chars
         if budget < 1:
             raise ValueError(f"max_chars must be at least 1 (got {budget})")
 
-        names = [corpus] if isinstance(corpus, str) else corpus
-        selection, retriever = self._retriever_for(names)
-        outcome = retriever.retrieve(query)
-        chunks = outcome.chunks[:requested]
+        selection, outcome = self.retrieve(query, corpus, top_k)
+        chunks = outcome.chunks
 
         payload: dict[str, Any] = {
             "query": query,
@@ -325,10 +382,8 @@ ranked best first. Runs the full retrieval pipeline (hybrid dense + BM25 \
 search, then cross-encoder reranking) and returns raw passages with their \
 provenance -- it does not generate an answer.
 
-Use this to ground an answer in the user's own documents. Each result carries \
-a `document_id`, `source` path, and `score`, so you can cite exactly where a \
-claim came from. If you do not know which corpora exist, call rag_list_corpora \
-first."""
+Use this to ground an answer in the user's own documents. Each result names \
+the document it came from, so you can cite exactly where a claim came from."""
 
 _LIST_CORPORA_DESCRIPTION = """\
 List the document corpora available to search, with a description of each, \

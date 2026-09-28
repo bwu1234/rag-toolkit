@@ -20,7 +20,7 @@ from rag.api.schemas import (
     FeedbackRequest,
     FeedbackResponse,
 )
-from rag.generation.chat_service import ChatAnswer, ChatService, Citation
+from rag.generation.chat_service import ChatAnswer, ChatResponder, Citation
 from rag.generation.query_rewriter import ChatTurn
 from rag.observability.records import FeedbackRecord
 from rag.observability.sink import TurnSink
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["chat"])
 
 
-def get_chat_service(request: Request) -> ChatService:
+def get_chat_service(request: Request) -> ChatResponder:
     """Fetch the `ChatService` built once at startup (see `rag.api.main`'s lifespan).
 
     A `Depends`-based dependency rather than a direct `request.app.state` read
@@ -84,7 +84,7 @@ def _to_response(answer: ChatAnswer) -> ChatResponse:
 
 
 @router.post("/chat", response_model=ChatResponse, summary="Ask a question of the indexed corpus")
-def chat(payload: ChatRequest, chat_service: ChatService = Depends(get_chat_service)) -> ChatResponse:
+def chat(payload: ChatRequest, chat_service: ChatResponder = Depends(get_chat_service)) -> ChatResponse:
     logger.info("Received chat query: %r (%d prior turn(s))", payload.query, len(payload.history))
     answer = chat_service.ask(payload.query, history=[_to_chat_turn(turn) for turn in payload.history])
     return _to_response(answer)

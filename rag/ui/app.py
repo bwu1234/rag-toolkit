@@ -34,7 +34,7 @@ import streamlit as st
 from rag.config.settings import RagConfig, load_config
 from rag.events import PipelineEvent
 from rag.generation.builder import build_chat_service
-from rag.generation.chat_service import ChatAnswer, ChatService
+from rag.generation.chat_service import ChatAnswer, ChatResponder
 from rag.logging_config import configure_logging
 from rag.observability.factory import get_turn_sink
 from rag.observability.records import FeedbackRecord
@@ -69,7 +69,7 @@ st.set_page_config(
 
 
 @st.cache_resource(show_spinner="Loading config and building chat service…")
-def _load_chat_service() -> tuple[ChatService, RagConfig, TurnSink | None]:
+def _load_chat_service() -> tuple[ChatResponder, RagConfig, TurnSink | None]:
     config = load_config()
     sink = get_turn_sink(config.observability.turn_log)
     service = build_chat_service(config, turn_sink=sink)
@@ -207,7 +207,7 @@ def _render_history(sink: TurnSink | None) -> None:
                     _render_feedback(msg["answer"], sink)
 
 
-def _handle_query(query: str, chat_service: ChatService, sink: TurnSink | None) -> None:
+def _handle_query(query: str, chat_service: ChatResponder, sink: TurnSink | None) -> None:
     """Add the user message, run the pipeline, and append the assistant reply."""
     # Snapshot the conversation *before* appending the current question -- the
     # condenser wants the turns preceding the query, not the query itself.
