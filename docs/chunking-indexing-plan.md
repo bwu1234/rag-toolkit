@@ -577,6 +577,19 @@ it's the only fix for the 16.5% of text that is identical across periods.
   set would be suspicious. Plus tests that a filtered query never returns a
   chunk outside the filter from either index.
 
+*Done 2026-09-28: `QueryFilter` shipped, no default change.* The oracle ran
+first, against the post-Phase-2 baseline (0.977 / 0.836 / 0.822, not the 0.908
+this section predates). A company filter adds nothing: the header and
+reranker already keep other companies out, and 0W/0L on `period`. The
+headroom is the period. A company + period filter takes `period` to 0.945
+(+10.9pp) and `underspecified` to 0.898 (+7.6pp), both with CIs excluding
+zero, and the real interface reproduced the oracle sample for sample.
+Filters are caller-supplied (`POST /chat`, MCP `rag_search`), so the gain
+needs a caller that knows the period. The agent's model doesn't get to set
+them yet; that's Milestone 19's to measure. The oracle also surfaced an NDCG
+bug, fixed separately. See
+[measured results](measured-results.md#metadata-filters-chunking-plan-phase-3).
+
 **Phase 3b — Document-level routing (2 days).** Explicit filters help only
 callers who pass them. The UI, `cli chat` and most `/chat` calls won't. The
 February 2026 FinanceBench study above found the right filing is retrieved
@@ -796,7 +809,8 @@ earlier, not a measurement of their value.
   If it can't reach >90% precision, is a heading-free structured chunker
   (tables atomic, paragraphs packed) enough on its own?
 - Should `filters` on `/chat` be exposed in the Streamlit UI, or stay API/MCP
-  only until Milestone 20's query understanding can fill them?
+  only until Milestone 20's query understanding can fill them? *(Phase 3
+  shipped them API/MCP only; still open.)*
 
 ## Sources
 

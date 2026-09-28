@@ -778,3 +778,38 @@ removed, and config changes the content hash couldn't see.
   did. The indexer and contextualizer rebuilt `Chunk` the same way and would
   have dropped `header`; both now use `replace` too.
 
+
+## Metadata filter notes (chunking plan, Phase 3)
+
+- **One typed `QueryFilter`, from the wire to the stores.** `equals` and
+  `any_of` on strings, `range` on integers, all ANDed (`rag/query_filter.py`).
+  It's a pydantic model rather than an internal dataclass because it's
+  validated at two wire boundaries, `POST /chat` and MCP `rag_search`, and
+  then travels unchanged to Chroma and BM25. Range bounds accept ISO dates
+  and convert them to the `YYYYMMDD` integers Phase 2 stores, so a caller
+  can write `"2025-01-01"`.
+- **Filter before top-k, in both stores.** Chroma gets a native `where`, so
+  `n_results` counts matching chunks only. BM25 scores the corpus and ranks
+  only the matching chunks. IDF stays corpus-wide on purpose: the filter
+  decides which chunks compete, not how rare a term is. Filtering an
+  unfiltered top-k afterwards was the rejected shortcut. It silently returns
+  fewer results than exist, most often exactly when the filter matters.
+- **An unknown field is an error, not an empty result.** A filter naming a
+  field chunks don't store (a typo, or a key left out of
+  `chunking.carry_metadata`) matches nothing, which looks exactly like "the
+  corpus has no answer". `Retriever` checks fields against what's carried and
+  raises `UnfilterableField`: `/chat` returns 400, MCP a tool error.
+- **Web search is skipped under a filter.** Its results carry no corpus
+  metadata, so none could match. Silently mixing them in would defeat the
+  filter.
+- **The filter is the turn's, everywhere.** `ChatResponder.ask` takes it,
+  CRAG's reworded retries keep it (a retry is still about the same company
+  and period), and in agentic mode it applies to every search. The agent's
+  model doesn't see `filters` in its tool schema: it's pinned like `corpus`,
+  because letting the model choose filters is a behaviour Milestone 19
+  should measure, not inherit. The turn log records the filter.
+- **Measured against labels, shaped like a caller.** `run_matrix.py`'s
+  `filters=` variants derive each sample's filter from its
+  `expected_doc_ids`, as a ticker plus a `period_end` range, the way a caller
+  would write it, not as a document-id list. That keeps the measurement
+  about the interface a caller would actually use.

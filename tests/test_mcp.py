@@ -22,6 +22,7 @@ import pytest
 
 from rag.mcp.fallback import FallbackServer, serve
 from rag.mcp.tools import MAX_RESULTS, PROTOCOL_VERSION, RagTools, build_tool_specs
+from rag.query_filter import QueryFilter
 from rag.retrieval.retriever import RetrievalResult
 from rag.vectorstore.base import ScoredChunk
 
@@ -43,11 +44,13 @@ class _FakeRetriever:
     def __init__(self, result: RetrievalResult) -> None:
         self.result = result
         self.queries: list[str] = []
+        self.filters: list[object] = []
         self.rerank_top_k = 5
         self.top_k = 20
 
-    def retrieve(self, query: str, *, on_event: object = None) -> RetrievalResult:
+    def retrieve(self, query: str, *, query_filter: object = None, on_event: object = None) -> RetrievalResult:
         self.queries.append(query)
+        self.filters.append(query_filter)
         return self.result
 
 
@@ -86,7 +89,7 @@ def test_search_schema_documents_every_argument(tools: RagTools) -> None:
     schema = spec.input_schema
 
     assert schema["required"] == ["query"]
-    assert set(schema["properties"]) == {"query", "corpus", "top_k", "max_chars"}
+    assert set(schema["properties"]) == {"query", "corpus", "top_k", "max_chars", "filters"}
     # Descriptions are what an agent reads to pick arguments; a schema that
     # loses them still validates but degrades tool use.
     for name, prop in schema["properties"].items():
@@ -537,3 +540,28 @@ def test_search_result_names_the_chunk_header_only_when_there_is_one(
 
     assert first["header"] == "Apple Inc. (AAPL) 10-K, period ended 2024-09-28"
     assert "header" not in second
+
+
+def test_search_passes_filters_through_and_echoes_them(tools: RagTools, fake_retriever: _FakeRetriever) -> None:
+    spec = next(s for s in build_tool_specs(tools) if s.name == "rag_search")
+
+    # Raw JSON, as the fallback transport hands it over.
+    payload = spec.handler(query="q", filters={"equals": {"ticker": "AAPL"}, "range": {"period_end": {"gte": "2025-01-01"}}})
+
+    [applied] = fake_retriever.filters
+    assert applied == QueryFilter(equals={"ticker": "AAPL"}, range={"period_end": {"gte": 20250101}})
+    assert payload["filters"] == {"equals": {"ticker": "AAPL"}, "range": {"period_end": {"gte": 20250101}}}
+
+
+def test_search_without_filters_passes_none_and_echoes_nothing(tools: RagTools, fake_retriever: _FakeRetriever) -> None:
+    payload = tools.search("q")
+
+    assert fake_retriever.filters == [None]
+    assert "filters" not in payload
+
+
+def test_a_malformed_filter_is_a_tool_error_not_a_crash(tools: RagTools) -> None:
+    spec = next(s for s in build_tool_specs(tools) if s.name == "rag_search")
+
+    with pytest.raises(ValueError):
+        spec.handler(query="q", filters={"range": {"period_end": {}}})

@@ -29,6 +29,7 @@ from rag.generation.llm import (
 )
 from rag.generation.prompts import AGENT_SYNTHESIS_INSTRUCTION
 from rag.observability.usage import metered_client
+from rag.query_filter import QueryFilter
 from rag.retrieval.retriever import RetrievalResult
 from rag.tools import RagTools
 from rag.vectorstore.base import ScoredChunk
@@ -53,6 +54,7 @@ class _FakeTools(RagTools):
         super().__init__(config=RagConfig())
         self.results = results or {}
         self.searches: list[tuple[str, list[str] | None]] = []
+        self.filters: list[object] = []
 
     def retrieve(  # type: ignore[override]
         self,
@@ -60,8 +62,10 @@ class _FakeTools(RagTools):
         corpus: str | Sequence[str] | None = None,
         top_k: int | None = None,
         *,
+        query_filter: object = None,
         on_event: EventSink | None = None,
     ) -> tuple[CorpusSelection, RetrievalResult]:
+        self.filters.append(query_filter)
         if not query.strip():
             raise ValueError("query must not be empty")
         self.searches.append((query, list(corpus) if corpus is not None else None))
@@ -414,3 +418,15 @@ def test_the_search_tool_the_agent_offers_is_the_mcp_schema_projected() -> None:
     assert (offered.name, offered.description) == (mcp.name, mcp.description)
     assert offered.parameters["properties"]["query"] == mcp.parameters["properties"]["query"]
     assert offered.parameters["required"] == mcp.parameters["required"] == ["query"]
+
+
+def test_a_turn_filter_applies_to_every_agent_search_and_the_model_cannot_set_one() -> None:
+    tools = _FakeTools({"q0": [_chunk("c0")], "q1": [_chunk("c1")]})
+    llm = ScriptedToolLLM([_step(_search("q0"), _search("q1")), _answer("Done [1][2].")])
+    aapl = QueryFilter(equals={"ticker": "AAPL"})
+
+    _agent(llm, tools).ask("question", query_filter=aapl)
+
+    assert tools.filters == [aapl, aapl]
+    [tool] = llm.calls[0][1]
+    assert "filters" not in tool.parameters["properties"]

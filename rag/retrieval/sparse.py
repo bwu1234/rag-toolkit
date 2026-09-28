@@ -17,6 +17,7 @@ from typing import Any
 from rank_bm25 import BM25Okapi
 
 from rag.chunking.models import Chunk, join_index_text
+from rag.query_filter import QueryFilter
 from rag.vectorstore.base import ScoredChunk
 
 logger = logging.getLogger(__name__)
@@ -61,8 +62,11 @@ class SparseIndex(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def query(self, query: str, top_k: int) -> list[ScoredChunk]:
+    def query(self, query: str, top_k: int, query_filter: QueryFilter | None = None) -> list[ScoredChunk]:
         """Return up to ``top_k`` chunks most relevant to ``query``, best first.
+
+        With ``query_filter``, only chunks whose metadata matches it are
+        ranked, so the filter narrows what competes before the top-k cut.
 
         ``score`` is normalized to ``[0, 1]`` within the returned result set
         (relative BM25 strength), matching the ``ScoredChunk`` convention.
@@ -142,7 +146,7 @@ class BM25Index(SparseIndex):
         self._dirty = True
         logger.info("Upserted %d chunk(s) into BM25 index (%d total)", len(chunks), len(self._records))
 
-    def query(self, query: str, top_k: int) -> list[ScoredChunk]:
+    def query(self, query: str, top_k: int, query_filter: QueryFilter | None = None) -> list[ScoredChunk]:
         if top_k <= 0 or not self._records:
             return []
 
@@ -154,10 +158,22 @@ class BM25Index(SparseIndex):
             return []
 
         scores = self._bm25.get_scores(tokens)
+        # IDF stays corpus-wide under a filter: the filter decides which chunks
+        # compete, not how rare a term is, so a chunk scores the same filtered
+        # or not and only its rank among the survivors changes.
+        allowed = (
+            None
+            if query_filter is None or query_filter.is_empty
+            else {idx for idx, cid in enumerate(self._ordered_ids) if query_filter.matches(self._flat_metadata(cid))}
+        )
         # BM25Okapi IDF can go negative when a term appears in most/all docs,
         # so "relevant" is "non-zero", not "positive". Zero means no overlap.
         ranked = sorted(
-            ((float(score), idx) for idx, score in enumerate(scores) if score != 0.0),
+            (
+                (float(score), idx)
+                for idx, score in enumerate(scores)
+                if score != 0.0 and (allowed is None or idx in allowed)
+            ),
             key=lambda pair: pair[0],
             reverse=True,
         )[:top_k]
@@ -198,6 +214,11 @@ class BM25Index(SparseIndex):
 
     def count(self) -> int:
         return len(self._records)
+
+    def _flat_metadata(self, chunk_id: str) -> dict[str, Any]:
+        """A record's metadata plus `document_id`, the shape a `QueryFilter` matches against."""
+        record = self._records[chunk_id]
+        return {**record["metadata"], "document_id": record["document_id"]}
 
     def has_chunk(self, chunk_id: str) -> bool:
         return chunk_id in self._records

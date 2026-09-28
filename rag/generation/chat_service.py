@@ -16,9 +16,10 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 from rag.events import EventSink, PipelineEvent, emit
+from rag.query_filter import QueryFilter
 from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryRewriter
 from rag.generation.llm import LLMClient
 from rag.config.settings import PromptStyle
@@ -175,6 +176,7 @@ class TurnTrace:
     groundedness_checks: list[bool | None] = field(default_factory=list)
     shown_chunk_ids: list[str] = field(default_factory=list)
     outcome: TurnOutcome = "answered"
+    query_filter: dict[str, Any] | None = None
 
 
 def _stage_totals(events: list[PipelineEvent]) -> dict[str, float]:
@@ -245,8 +247,12 @@ class ChatResponder(ABC):
         history: list[ChatTurn] | None,
         on_event: EventSink,
         trace: TurnTrace,
+        query_filter: QueryFilter | None = None,
     ) -> ChatAnswer:
-        """Answer one turn, appending what it did to `trace` as it goes."""
+        """Answer one turn, appending what it did to `trace` as it goes.
+
+        `query_filter`, if given, restricts every retrieval the turn makes.
+        """
 
         raise NotImplementedError
 
@@ -255,9 +261,14 @@ class ChatResponder(ABC):
         query: str,
         *,
         history: list[ChatTurn] | None = None,
+        query_filter: QueryFilter | None = None,
         on_event: EventSink | None = None,
     ) -> ChatAnswer:
         """Answer `query`, measuring and (when a `TurnSink` is wired in) recording the turn.
+
+        `query_filter`, if given, restricts every retrieval this turn makes to
+        chunks whose metadata matches it (see `rag.query_filter`) -- including
+        CRAG's retries and, in agentic mode, every search the agent runs.
 
         `history`, if given, is the conversation preceding `query`, oldest
         first; callers with no conversation (the CLI, the eval runners) omit
@@ -275,6 +286,8 @@ class ChatResponder(ABC):
         turn_id = new_id()
         timestamp = utc_now()
         trace = TurnTrace()
+        if query_filter is not None and not query_filter.is_empty:
+            trace.query_filter = query_filter.model_dump(exclude_defaults=True)
 
         # Tee every pipeline event into the trace as well as the caller's sink.
         # The events already carry each stage's timing, so latency comes from
@@ -287,7 +300,7 @@ class ChatResponder(ABC):
         start = time.monotonic()
         with metered() as meter:
             try:
-                answer = self._answer(query, history, observe, trace)
+                answer = self._answer(query, history, observe, trace, query_filter)
             except Exception as exc:
                 trace.outcome = "error"
                 self._record(
@@ -338,6 +351,7 @@ class ChatResponder(ABC):
             outcome=trace.outcome,
             answer=answer.answer if answer is not None else None,
             history_turns=len(history or []),
+            query_filter=trace.query_filter,
             rewritten_query=answer.rewritten_query if answer is not None else None,
             search_queries=answer.search_queries if answer is not None else [],
             retry_queries=answer.retry_queries if answer is not None else [],
@@ -418,6 +432,7 @@ class ChatService(ChatResponder):
         history: list[ChatTurn] | None,
         on_event: EventSink,
         trace: TurnTrace,
+        query_filter: QueryFilter | None = None,
     ) -> ChatAnswer:
         """The pipeline itself: condense, retrieve with correction, generate, cite.
 
@@ -466,7 +481,7 @@ class ChatService(ChatResponder):
         # make callers render "rewritten to: <the same question>".
         rewritten_query = search_query if search_query != query else None
 
-        corrected = self._retrieve_with_correction(search_query, on_event, trace)
+        corrected = self._retrieve_with_correction(search_query, on_event, trace, query_filter)
         chunks = corrected.chunks
         if not chunks:
             return self._no_context_answer(query, corrected, rewritten_query, on_event, trace)
@@ -512,7 +527,11 @@ class ChatService(ChatResponder):
         )
 
     def _retrieve_with_correction(
-        self, query: str, on_event: EventSink | None, trace: TurnTrace
+        self,
+        query: str,
+        on_event: EventSink | None,
+        trace: TurnTrace,
+        query_filter: QueryFilter | None = None,
     ) -> "_CorrectedRetrieval":
         """Retrieve, grade, and retry with a reworded query until something survives.
 
@@ -547,7 +566,9 @@ class ChatService(ChatResponder):
                 retry_queries.append(attempt_query)
                 emit(on_event, start, "crag_retry", f"Retrying with rewritten query: {attempt_query!r}")
 
-            result = self._retriever.retrieve(attempt_query, on_event=on_event)
+            # The filter holds across retries: a reworded query is still
+            # about the company and period the caller restricted it to.
+            result = self._retriever.retrieve(attempt_query, query_filter=query_filter, on_event=on_event)
             chunks = result.chunks
             kept_ids: list[str] | None = None
 

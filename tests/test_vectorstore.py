@@ -14,6 +14,7 @@ import pytest
 
 from rag.chunking.models import Chunk
 from rag.config.settings import VectorStoreConfig
+from rag.query_filter import QueryFilter
 from rag.vectorstore.base import ScoredChunk, VectorStore
 from rag.vectorstore.chroma_store import ChromaVectorStore
 from rag.vectorstore.factory import get_vector_store
@@ -211,3 +212,41 @@ def test_chunk_header_survives_the_round_trip(tmp_path: Path) -> None:
     assert "header" not in result.metadata, "provenance fields are split back out of the flat metadata"
     assert result.metadata["period_end"] == 20240928
     assert result.text == "Revenue grew 2%."
+
+
+# ---------------------------------------------------------------------------
+# Metadata filters (chunking plan, Phase 3)
+# ---------------------------------------------------------------------------
+
+
+def _filing_chunks() -> tuple[list[Chunk], list[list[float]]]:
+    """Ten chunks, two tickers and two periods; AAPL's are the *least* similar to _AXIS_X."""
+    chunks, vectors = [], []
+    for i in range(10):
+        ticker = "MSFT" if i < 6 else "AAPL"
+        period = 20240928 if i % 2 else 20250927
+        chunks.append(_chunk(f"c{i}", f"text {i}", source=f"{ticker}.md", ticker=ticker, period_end=period))
+        vectors.append([1.0, i / 10, 0.0])
+    return chunks, vectors
+
+
+def test_filtered_query_never_returns_a_chunk_outside_the_filter(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    store.upsert(*_filing_chunks())
+    only_2024_aapl = QueryFilter(equals={"ticker": "AAPL"}, range={"period_end": {"lte": 20241231}})
+
+    results = store.query(_AXIS_X, top_k=10, query_filter=only_2024_aapl)
+
+    assert results, "matching chunks exist"
+    assert all(r.metadata["ticker"] == "AAPL" and r.metadata["period_end"] <= 20241231 for r in results)
+
+
+def test_filter_applies_before_top_k_so_results_are_not_short(tmp_path: Path) -> None:
+    # The 4 AAPL chunks rank below all 6 MSFT ones, so filtering an unfiltered
+    # top-3 afterwards would return none. Pre-filtering returns 3.
+    store = _store(tmp_path)
+    store.upsert(*_filing_chunks())
+
+    results = store.query(_AXIS_X, top_k=3, query_filter=QueryFilter(equals={"ticker": "AAPL"}))
+
+    assert [r.chunk_id for r in results] == ["c6", "c7", "c8"]

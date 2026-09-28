@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from rag.chunking.models import Chunk, join_index_text
+from rag.query_filter import QueryFilter
 
 
 @dataclass(frozen=True)
@@ -94,8 +95,15 @@ class VectorStore(ABC):
         return {}
 
     @abstractmethod
-    def query(self, embedding: list[float], top_k: int) -> list[ScoredChunk]:
-        """Return the `top_k` chunks most similar to `embedding`, best first."""
+    def query(
+        self, embedding: list[float], top_k: int, query_filter: QueryFilter | None = None
+    ) -> list[ScoredChunk]:
+        """Return the `top_k` chunks most similar to `embedding`, best first.
+
+        With `query_filter`, rank only chunks whose metadata matches it, and
+        apply it *before* taking `top_k`: filtering an unfiltered top-k would
+        silently return fewer results than exist.
+        """
         raise NotImplementedError
 
     @abstractmethod

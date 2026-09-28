@@ -46,17 +46,19 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rag.config.settings import RagConfig, load_config  # noqa: E402
-from rag.eval.dataset import EvalDataset  # noqa: E402
+from rag.eval.dataset import EvalDataset, EvalSample  # noqa: E402
 from rag.eval.metrics import wilson_interval  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.eval.retrieval_eval import run_retrieval_eval  # noqa: E402
 from rag.ingestion.corpora import chunk_selected_corpora  # noqa: E402
+from rag.ingestion.models import Document  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
+from rag.query_filter import QueryFilter  # noqa: E402
 from rag.retrieval.builder import build_retriever  # noqa: E402
 
 logger = logging.getLogger(__name__)
@@ -108,6 +110,10 @@ class Variant:
     overrides: dict[str, Any] = field(default_factory=dict)
     #: Set when a variant needs something the default index does not have.
     requires: str = ""
+    #: Retrieve each sample with a metadata filter derived from its own labels:
+    #: "company" (the expected filing's ticker) or "company+period" (ticker and
+    #: period_end). What a caller who names those would pass; see `derive_filters`.
+    filters: str = ""
 
 
 # The matrix. `baseline` is the shipped default and every other variant differs
@@ -220,6 +226,14 @@ VARIANTS: list[Variant] = [
         )
     ],
 
+    # Metadata filtering (chunking plan, Phase 3), at the shipped config. Each
+    # sample is filtered by what its own labels say a caller would name. The
+    # oracle before the interface existed found "company" adds nothing after
+    # Phase 2 and the headroom is in the period; these measure the real
+    # `QueryFilter` path end to end.
+    Variant("filters=company", "filters", {}, filters="company"),
+    Variant("filters=company+period", "filters", {}, filters="company+period"),
+
     # The payoff question the stage-1 axis raises: retrieval can surface the
     # right chunk far more often with a bigger candidate pool, but that is only
     # useful if the reranker promotes it into the handful the LLM actually sees.
@@ -292,6 +306,32 @@ VARIANTS: list[Variant] = [
 ]
 
 
+def derive_filters(kind: str, documents: list[Document]) -> Callable[[EvalSample], QueryFilter | None]:
+    """A per-sample `QueryFilter` built from the sample's `expected_doc_ids`.
+
+    Labels stand in for a caller here: "company" is what someone naming only
+    the company would pass, "company+period" someone naming both. The filter
+    is shaped the way a caller would write it (a ticker and a `period_end`
+    range), not as a list of document ids, so it also admits any other filing
+    that shares them. A sample with no expected documents gets no filter.
+    """
+    metadata = {d.id: d.metadata for d in documents}
+
+    def for_sample(sample: EvalSample) -> QueryFilter | None:
+        expected = [metadata[doc_id] for doc_id in sample.expected_doc_ids if doc_id in metadata]
+        if not expected:
+            return None
+        tickers = sorted({m["ticker"] for m in expected})
+        if kind == "company":
+            return QueryFilter(any_of={"ticker": tickers})
+        if kind == "company+period":
+            periods = [m["period_end"] for m in expected]
+            return QueryFilter(any_of={"ticker": tickers}, range={"period_end": {"gte": min(periods), "lte": max(periods)}})
+        raise ValueError(f"Unknown derived filter kind: {kind!r}")
+
+    return for_sample
+
+
 def apply_overrides(config: RagConfig, overrides: dict[str, Any]) -> RagConfig:
     """Return a deep copy of `config` with dotted-path values replaced."""
     updated = config.model_copy(deep=True)
@@ -330,14 +370,20 @@ def run_variant(
 ) -> dict[str, Any]:
     config = apply_overrides(base, variant.overrides)
     digest, settings = fingerprint(config)
+    if variant.filters:
+        # Derived filters change what every sample retrieves, so they are part
+        # of what makes two runs comparable.
+        settings["eval.derived_filters"] = variant.filters
+        digest = hashlib.sha256(json.dumps({k: str(v) for k, v in settings.items()}, sort_keys=True).encode()).hexdigest()[:12]
 
     logger.info("[%s] %s", variant.name, variant.overrides or "(shipped defaults)")
     # Re-chunked per variant, since a variant may override chunking; it costs
     # about a second, against minutes for the retrieval itself.
-    _selection, _documents, corpus_chunks = chunk_selected_corpora(config, corpora)
+    _selection, documents, corpus_chunks = chunk_selected_corpora(config, corpora)
+    filters_for = derive_filters(variant.filters, documents) if variant.filters else None
     started = time.monotonic()
     retriever = build_retriever(config, corpora=corpora)
-    report = run_retrieval_eval(dataset, retriever, corpus_chunks=corpus_chunks)
+    report = run_retrieval_eval(dataset, retriever, corpus_chunks=corpus_chunks, filters_for=filters_for)
     elapsed = time.monotonic() - started
 
     summary = report.overall
@@ -355,6 +401,7 @@ def run_variant(
         "variant": variant.name,
         "axis": variant.axis,
         "overrides": variant.overrides,
+        **({"filters": variant.filters} if variant.filters else {}),
         "fingerprint": digest,
         "settings": {k: str(v) for k, v in settings.items()},
         "num_samples": summary.num_samples,
@@ -527,7 +574,8 @@ def main() -> int:
     if args.list:
         for v in variants:
             marker = " (needs LLM)" if v.requires == "llm" else ""
-            print(f"  {v.axis:<14} {v.name:<26} {v.overrides or '(defaults)'}{marker}")
+            derived = f" [filters derived: {v.filters}]" if v.filters else ""
+            print(f"  {v.axis:<14} {v.name:<26} {v.overrides or '(defaults)'}{derived}{marker}")
         return 0
 
     if not args.eval_set.exists():

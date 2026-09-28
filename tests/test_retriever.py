@@ -10,8 +10,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import dataclasses
+
 import pytest
 
+from rag.query_filter import QueryFilter
 from rag.retrieval.expansion import ExpandedQuery
 from rag.retrieval.reranker import NoOpReranker, Reranker
 from rag.retrieval.retriever import Retriever
@@ -50,19 +53,28 @@ class _FakeEmbedder:
         return len(self.vector)
 
 
+def _filtered(candidates: list[ScoredChunk], query_filter: QueryFilter | None) -> list[ScoredChunk]:
+    """What a real store does with a filter: drop non-matching chunks before the top-k cut."""
+    if query_filter is None:
+        return candidates
+    return [c for c in candidates if query_filter.matches({**c.metadata, "document_id": c.document_id})]
+
+
 class _FakeVectorStore(VectorStore):
     """Returns a canned candidate list and records the query it received."""
 
     def __init__(self, candidates: list[ScoredChunk]) -> None:
         self.candidates = candidates
         self.queries: list[tuple[list[float], int]] = []
+        self.filters: list[QueryFilter | None] = []
 
     def upsert(self, chunks, vectors) -> None:
         raise AssertionError("Retriever should never call upsert")
 
-    def query(self, vector: list[float], top_k: int) -> list[ScoredChunk]:
+    def query(self, vector: list[float], top_k: int, query_filter: QueryFilter | None = None) -> list[ScoredChunk]:
         self.queries.append((vector, top_k))
-        return self.candidates[:top_k]
+        self.filters.append(query_filter)
+        return _filtered(self.candidates, query_filter)[:top_k]
 
     def count(self) -> int:
         return len(self.candidates)
@@ -83,13 +95,15 @@ class _FakeSparseIndex(SparseIndex):
     def __init__(self, candidates: list[ScoredChunk]) -> None:
         self.candidates = candidates
         self.queries: list[tuple[str, int]] = []
+        self.filters: list[QueryFilter | None] = []
 
     def upsert(self, chunks) -> None:
         raise AssertionError("Retriever should never call sparse upsert")
 
-    def query(self, query: str, top_k: int) -> list[ScoredChunk]:
+    def query(self, query: str, top_k: int, query_filter: QueryFilter | None = None) -> list[ScoredChunk]:
         self.queries.append((query, top_k))
-        return self.candidates[:top_k]
+        self.filters.append(query_filter)
+        return _filtered(self.candidates, query_filter)[:top_k]
 
     def count(self) -> int:
         return len(self.candidates)
@@ -665,3 +679,55 @@ def test_hyde_shaped_expansion_keeps_the_generated_passage_out_of_reranking() ->
 
     [(queries, _candidates, _top_k)] = reranker.calls  # type: ignore[attr-defined]
     assert queries == ["original"]
+
+
+# ---------------------------------------------------------------------------
+# Metadata filters (chunking plan, Phase 3)
+# ---------------------------------------------------------------------------
+
+
+def _filed(chunk_id: str, ticker: str) -> ScoredChunk:
+    return dataclasses.replace(_scored(chunk_id), metadata={"ticker": ticker})
+
+
+def test_filter_reaches_both_stores_and_only_matching_chunks_come_back() -> None:
+    candidates = [_filed("a", "AAPL"), _filed("m", "MSFT"), _filed("b", "AAPL")]
+    retriever, _e, vector_store, _r, sparse, _w = _retriever(
+        candidates=candidates, mode="hybrid", reranker=NoOpReranker(), rerank_top_k=5
+    )
+    retriever.filterable_fields = ("ticker",)
+    aapl = QueryFilter(equals={"ticker": "AAPL"})
+
+    results = retriever.retrieve("q", query_filter=aapl).chunks
+
+    assert {c.chunk_id for c in results} == {"a", "b"}
+    assert vector_store.filters == [aapl]
+    assert sparse is not None and sparse.filters == [aapl]
+
+
+def test_filter_on_an_uncarried_field_is_rejected_before_searching() -> None:
+    retriever, embedder, *_ = _retriever()
+
+    with pytest.raises(ValueError, match="ticker"):
+        retriever.retrieve("q", query_filter=QueryFilter(equals={"ticker": "AAPL"}))
+    assert embedder.queries == [], "nothing is searched with a filter that can match nothing"
+
+
+def test_an_empty_filter_is_no_filter() -> None:
+    retriever, _e, vector_store, *_ = _retriever()
+
+    retriever.retrieve("q", query_filter=QueryFilter())
+
+    assert vector_store.filters == [None]
+
+
+def test_web_search_is_skipped_under_a_filter() -> None:
+    retriever, _e, _v, _r, _s, web_search = _retriever(
+        candidates=[_filed("a", "AAPL")], web_search_candidates=[_scored("w")], reranker=NoOpReranker()
+    )
+    retriever.filterable_fields = ("ticker",)
+
+    results = retriever.retrieve("q", query_filter=QueryFilter(equals={"ticker": "AAPL"})).chunks
+
+    assert web_search is not None and web_search.queries == []
+    assert [c.chunk_id for c in results] == ["a"]

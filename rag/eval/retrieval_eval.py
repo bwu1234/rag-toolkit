@@ -46,12 +46,13 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from rag.chunking.models import Chunk
 from rag.config.settings import RagConfig, load_config
-from rag.eval.dataset import MODE_DOCUMENT, EvalDataset
+from rag.eval.dataset import MODE_DOCUMENT, EvalDataset, EvalSample
 from rag.eval.metrics import (
     hit_rate,
     mean,
@@ -64,6 +65,7 @@ from rag.eval.metrics import (
 from rag.eval.relevance import UnmatchableSpan, find_unmatchable_spans, judge_ranking
 from rag.ingestion.corpora import chunk_selected_corpora
 from rag.logging_config import configure_logging
+from rag.query_filter import QueryFilter
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.retriever import Retriever
 
@@ -160,16 +162,22 @@ def run_retrieval_eval(
     retriever: Retriever,
     *,
     corpus_chunks: list[Chunk] | None = None,
+    filters_for: Callable[[EvalSample], QueryFilter | None] | None = None,
 ) -> EvalReport:
     """Run retrieval for every sample and return an :class:`EvalReport`.
 
     Pass ``corpus_chunks`` -- what the configured chunker makes of the evaluated
     corpus -- to have the report count spans no chunk contains.
+
+    Pass ``filters_for`` to retrieve each sample with a metadata filter, e.g.
+    one derived from its labels to measure what a caller who names the
+    company or period would get (see ``scripts/run_matrix.py``).
     """
     results: list[SampleResult] = []
 
     for sample in dataset:
-        chunks = retriever.retrieve(sample.query).chunks
+        query_filter = filters_for(sample) if filters_for is not None else None
+        chunks = retriever.retrieve(sample.query, query_filter=query_filter).chunks
         judgment = judge_ranking(sample, chunks)
 
         # Recall at each cutoff is computed by re-judging a prefix of the
