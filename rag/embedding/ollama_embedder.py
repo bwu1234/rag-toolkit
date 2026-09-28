@@ -36,11 +36,13 @@ class OllamaEmbedder(EmbeddingModel):
         base_url: str,
         dimensions: int | None = None,
         *,
+        query_instruction: str | None = None,
         batch_size: int = _DEFAULT_BATCH_SIZE,
         timeout: float = 60.0,
     ) -> None:
         self.model = model
         self.base_url = base_url.rstrip("/")
+        self.query_instruction = query_instruction
         self.batch_size = batch_size
         # `trust_env=False`: a local Ollama daemon is reached over loopback,
         # so picking up the environment's HTTP(S)_PROXY/ALL_PROXY settings
@@ -60,6 +62,10 @@ class OllamaEmbedder(EmbeddingModel):
         return vectors
 
     def embed_query(self, text: str) -> list[float]:
+        # No space after "Query:" -- that is the model card's exact format, and
+        # the model was trained on it.
+        if self.query_instruction is not None:
+            text = f"Instruct: {self.query_instruction}\nQuery:{text}"
         return self._embed_batch([text])[0]
 
     @property

@@ -494,6 +494,70 @@ against the baseline moved by at most 0.02. Raw records:
 `data/eval/results/retrieval_edgar_edgar_eval_set.json` and
 `data/eval/results_contextual/`.
 
+### Query instruction for the embedder (chunking plan, Phase 1)
+
+**Setup.** Run on 2026-09-27. `edgar` corpus, the shipped plain index
+(4,236 chunks, `index-report` in sync), `qwen3-embedding:0.6b` via Ollama
+(Q8_0). Two sets: the generated set (174 samples, fixed labels) and the frozen
+`underspecified` tier (118: 54 `implicit`, 64 `paraphrase`). The variants set
+`embedding.query_instruction` to the Qwen3-Embedding model card's default
+retrieval task, "Given a web search query, retrieve relevant passages that
+answer the query", sent as `Instruct: {task}\nQuery:{query}`. Documents are
+unchanged, so no reindex. Each pair differs only in the instruction, at three
+settings: shipped (hybrid, `bge-v2-m3`, `top_k 20`, `rerank_top_k 5`), the
+stage-1 ceiling (`top_k` and `rerank_top_k` both 20), and dense-only.
+
+| set | pair | hit, no instr. → instr. | Δ hit [95% CI], W/L, p | Δ NDCG [95% CI] |
+|---|---|---|---|---|
+| generated | shipped | 0.908 → 0.902 | −0.006 [−0.025, +0.014], 1W/2L, p=1 | −0.015 [−0.032, +0.003] |
+| generated | stage-1 ceiling | 0.931 → 0.920 | −0.011 [−0.027, +0.004], 0W/2L, p=0.5 | −0.017 [−0.033, +0.000] |
+| generated | dense | 0.741 → 0.718 | −0.023 [−0.045, −0.001]\*, 0W/4L, p=0.12 | −0.021 [−0.043, +0.000] |
+| underspecified | shipped | 0.653 → 0.619 | −0.034 [−0.074, +0.006], 1W/5L, p=0.22 | −0.011 [−0.041, +0.020] |
+| underspecified | stage-1 ceiling | 0.686 → 0.644 | −0.042 [−0.086, +0.001], 1W/6L, p=0.12 | −0.014 [−0.045, +0.017] |
+| underspecified | dense | 0.619 → 0.576 | −0.042 [−0.086, +0.001], 1W/6L, p=0.12 | −0.022 [−0.054, +0.009] |
+
+By kind, at the shipped config: `implicit` hit is unchanged (0.833, 0W/0L;
+NDCG +0.012 [−0.006, +0.031]). `paraphrase` goes 0.500 → 0.438,
+−0.062 [−0.137, +0.012], 1W/5L, p=0.22. `run_matrix.py` reports only the
+whole set, so the by-kind split was computed from the stored per-sample
+scores, grouped by the sample-id prefix.
+
+This is also the first **`underspecified` retrieval baseline** (Phase 0
+step 3, retrieval half): shipped 0.653 hit / 0.562 NDCG. `implicit` scores
+0.833 and `paraphrase` 0.500, against 0.908 on the generated set. Paraphrasing
+away the span's wording costs far more than naming the company indirectly.
+
+**Findings**
+
+- **The instruction stays off.** No pair's hit-rate interval excludes zero
+  in the instruction's favour, which was the bar for making it the default.
+  Every point estimate but one (`implicit` NDCG) is negative.
+- **It leans toward hurting, but that isn't shown either.** The one interval
+  that excludes zero (dense, generated set) rests on 4 discordant questions,
+  all losses, with McNemar p=0.12. Across all six pairs the flips are 4 wins
+  against 25 losses. That's consistent, but the pairs share questions, so the
+  tally isn't independent evidence.
+- **Hybrid retrieval doesn't hide a dense gain.** The dense-only pair was run
+  to check exactly that, and it's the most negative of the three.
+- **The loss is in stage 1, not the reranker.** At the stage-1 ceiling, where
+  nothing is filtered, the instruction still loses questions. So it moves
+  answer chunks *down* the dense ranking, the opposite of what this plan needs
+  (answers ranked 21st–100th).
+- **Why the card's claimed 1–5% gain doesn't show here is open.** Candidates:
+  the web-search task doesn't fit questions about financial filings; the
+  Q8_0 build or Ollama's pooling (its template is a bare `{{ .Prompt }}` and
+  doesn't show whether it appends the EOS token the card's reference code
+  adds); or the corpus. None was tested. A task written for this corpus would
+  have to be chosen without looking at these sets' misses, or it's tuned to
+  them.
+- **Phase 1b inherits `null`**, per the plan: the 4b and 8b embedders are
+  compared without the instruction. They're different checkpoints, so one
+  pair with the instruction there is cheap and worth running once, rather
+  than assuming this result carries over.
+
+Raw records: `data/eval/results/retrieval_edgar_edgar_eval_set.json` and
+`retrieval_edgar_edgar_underspecified_set.json`.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a

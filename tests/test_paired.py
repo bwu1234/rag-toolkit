@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from rag.config.settings import RagConfig
 from rag.eval.paired import (
     Z_95,
     compare_by_id,
@@ -227,3 +228,15 @@ def test_multihop_table_reports_cost_and_marks_rows_recorded_before_it() -> None
 
     assert "| 1.0 | 10.5 | 4,321 / ? (30 of 34) |" in table
     assert "| 12.0 | — | — | — |" in table
+
+
+def test_matrix_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> None:
+    """Rows recorded before the field existed keep their fingerprint at its default."""
+    unset = RagConfig()
+    instructed = run_matrix.apply_overrides(
+        unset, {"embedding.query_instruction": run_matrix.QWEN3_RETRIEVAL_INSTRUCTION}
+    )
+
+    digest, settings = run_matrix.fingerprint(unset)
+    assert "embedding.query_instruction" not in settings
+    assert run_matrix.fingerprint(instructed)[0] != digest

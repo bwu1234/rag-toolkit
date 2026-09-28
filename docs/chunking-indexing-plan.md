@@ -391,6 +391,18 @@ no reindex.
   retrieval instruction on EDGAR, with a paired CI. It becomes the default
   only if the CI excludes zero.
 
+*Done 2026-09-27: stays `null`.* No interval favoured the instruction, on
+the generated set or `underspecified`, in hybrid, stage-1-ceiling or
+dense-only mode. The point estimates lean negative (4 wins, 25 losses across
+the six pairs), and the loss shows at stage 1, so it pushes answer chunks
+down rather than up. Phase 1b compares sizes with `null`, plus one
+instruction pair on the winner, since a different checkpoint may respond
+differently. See
+[measured results](measured-results.md#query-instruction-for-the-embedder-chunking-plan-phase-1).
+The run also recorded `underspecified`'s retrieval baseline (0.653 hit;
+`implicit` 0.833, `paraphrase` 0.500). Step 3's `period` and answer-side
+baselines are still to do.
+
 ### Phase 1b — Embedder size (1 day, mostly unattended)
 
 Every phase keeps `qwen3-embedding:0.6b`, and no embedder has been compared on

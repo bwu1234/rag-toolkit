@@ -125,6 +125,12 @@ class EmbeddingConfig(BaseModel):
     # Embedding dimensionality is provider/model-specific; recorded here so the
     # vector store can validate it rather than discovering mismatches at query time.
     dimensions: int | None = None
+    # Task instruction for query vectors only, for instruction-tuned embedders
+    # (Qwen3-Embedding). Sent as `Instruct: {instruction}\nQuery:{query}`, the
+    # model card's format; documents are embedded without it. `null` embeds the
+    # bare query. Query-time only, so changing it needs no reindex and it stays
+    # out of the index manifest.
+    query_instruction: str | None = None
 
 
 #: Where `provider: gemini` points when `base_url` isn't set explicitly.
