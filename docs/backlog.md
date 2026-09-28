@@ -465,11 +465,20 @@ API/UI boundary rather than in retrieval:
 
 `answer_eval` needs a hand-written `expected_answer` to grade against, so a
 corpus question with no reference answer can't be evaluated at all today.
-RAG-triad-style metrics don't need one:
+Faithfulness, answer relevance and context relevance can run without one.
+
+The offline scoring integration is now scheduled in
+[eval harness Phase 4a](eval-harness-plan.md#phase-4a--grounding-completeness-and-citation-scoring-estimate-pending).
+Its first requirements are faithfulness, required-answer-point coverage and
+citation support alongside existing correctness. Answer and context relevance
+remain companion scorers on that interface. Calibrate each rubric separately,
+retain immutable judgments, and report per-metric applicability and denominators.
 
 - **Faithfulness/groundedness** — already exists as a runtime check
-  (`GroundednessChecker`, Milestone 10); reuse it as a metric so it can be
-  reported per eval run instead of only inferred from a live `grounded` flag.
+  (`GroundednessChecker`, Milestone 10); use it as a starting point for the
+  calibrated offline scorer, adding claim-level evidence and explanations.
+  Report it per eval run instead of only inferring it from a live `grounded`
+  flag, and keep it separate from correctness.
 - **Answer relevance** — does the answer address the question asked,
   independent of whether it's *correct*. New judgment, no existing component
   to reuse.
@@ -485,21 +494,24 @@ RAG-triad-style metrics don't need one:
 
 CI runs `ruff`, `mypy` and `pytest`, all hermetic, so nothing stops a change
 that makes answers or retrieval worse from merging. The eval harness exists
-and the noise floor is measured; nothing runs it automatically. It depends on
-nothing else in this list and is worth pulling ahead of it.
+and the noise floor is measured; nothing runs it automatically. Pull this
+ahead once the [eval harness plan](eval-harness-plan.md) provides verified
+index provenance and immutable score revisions. Nightly answer tracking also
+needs its Phase 4 judge calibration and repeat analysis.
 
 - **Retrieval, gated on every PR.** `retrieval_eval` on the EDGAR eval set,
   failing the build when the **paired** 95% CI on Δ hit rate or Δ NDCG against
-  a committed baseline result (with per-sample scores) lies entirely below
-  zero — `rag/eval/paired.py`, as `run_matrix.py` reports it. Not a fixed
+  a committed baseline run and pinned score revision (with per-sample scores)
+  lies entirely below zero — `rag/eval/paired.py`, as `run_matrix.py` reports it. Not a fixed
   threshold of "SE ≈ 2.5pp": that is the unpaired error of one rate, not of a
   difference between two runs on the same questions. A threshold tighter than
   the real noise fails on chance; a looser one lets real regressions through.
 - **The index is the hard part.** A GitHub runner has no Ollama, no EDGAR
   documents (gitignored and deliberately not redistributed), and no GPU. Build
   it once from `manifest.json` in a CI job and store it with `actions/cache`,
-  keyed on the manifest, the `FINGERPRINTED` chunking settings and the
-  embedding model, so it rebuilds only when one of those changes. Then, so
+  selected by the harness's index recipe and corpus content hashes, with the
+  restored build identity and inventory validated before reuse. Recipe
+  equality alone does not prove the indexed data is unchanged. Then, so
   the per-PR run needs no Ollama, add a precomputed-vector path to
   `retrieval_eval` and the retriever: load the
   committed 174 query embeddings and pass each vector directly to retrieval,
@@ -601,9 +613,12 @@ PR #15 fixed how differences are *tested* (paired CIs) and made answer failures
 attributable to retrieval or generation. What remains is what the eval sets
 *measure* and how far the judge can be trusted. Several "measured-off" verdicts
 hold only for the kind of question the eval set contains, so this matters as
-much as any new feature. The cheap parts (judge calibration, near-miss
-negatives, eval-time determinism) need no new component and can be pulled ahead
-of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
+much as any new feature. Judge calibration and repeat analysis are now planned
+as acceptance requirements of [eval harness Phase 4](eval-harness-plan.md#phase-4--answer-side-generate-and-judge-as-separate-steps-15-days),
+ahead of Milestone 23's nightly answer tracking. Coverage additions and an
+untouched confirmation set remain dataset work here, and must precede the
+broader measurement claims they support. None of this is marked shipped by
+the harness plan's publication.
 
 - **A question tier that doesn't name its own entities.** In
   `edgar_eval_set.json`, all 174 questions name company and period (by
@@ -631,6 +646,31 @@ of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
   a human to add spans and a reference answer to. Never auto-label: a silently
   wrong label is worse than a smaller set, the rule `generate_eval_set.py`
   already follows. This is also the natural source for the tier above.
+- **Question review and annotation procedure.** Follow the
+  [harness measurement requirements](eval-harness-plan.md#measurement-quality-requirements):
+  record answerability, target-user usefulness and clarity with decisions and
+  reasons before accepting new samples. Apply tier-specific criteria so valid
+  refusals and history-dependent questions are retained. LLM critique can flag
+  drafts; human review decides acceptance. Write worked labeling examples,
+  independently review a subset across tiers/outcomes, and preserve reviewer
+  decisions, agreement counts and adjudications. Use the same procedure for
+  benchmark labels and judge-calibration labels; document a single-reviewer
+  limitation when independent review is unavailable.
+- **Required answer points.** Harness Phase 4a extends compound questions with
+  reviewed facts and evidence, including company, period, quantity and units
+  where applicable. Reuse the multi-hop parts/conclusion pattern to report
+  coverage and omissions beside pass/fail, leaving one-fact questions simple.
+  Store per-point judgments and version label changes; correctness and
+  completeness do not substitute for checking grounding.
+- **Conversational coverage.** Owned by
+  [harness Phase 4c](eval-harness-plan.md#phase-4c--conversational-dataset-and-runner-estimate-pending).
+  Add a separate reviewed conversation dataset covering elliptical follow-ups,
+  company/topic switches, corrections and unanswerable turns. Evaluate fixed
+  reference history separately from histories containing each variant's own
+  answers. Record ordered turns, actual history, exact generator messages and
+  rewritten retrieval queries; report per-turn and conversation outcomes.
+  Keep conversations together in splits and uncertainty calculations. Multi-hop
+  questions alone do not test these behaviors.
 - **Judge calibration set.** The judge's accuracy has been spot-checked once
   (15 complete multi-hop answers read by hand, one false pass), never
   measured. Hand-label ~60 answers once: single-hop pass and fail, refusals,
@@ -638,7 +678,12 @@ of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
   attached to the wrong period). Commit them as a fixture, and add a runner
   that reports the judge's agreement with them and its false-pass and
   false-fail rates. Re-run it whenever `eval.judge` or a judge prompt changes.
-  Without it, a pass-rate change can't be separated from judge drift.
+  Include category counts, uncertainty and human-label rationale; set acceptable
+  error bounds before testing a new judge. Also recheck parser changes and
+  retain repeated judgments of fixed answers to measure consistency separately
+  from accuracy. Phase 4 stores each attempt with rubric, reference and model
+  provenance. Without calibration, a pass-rate change can't be separated from
+  judge drift; consistency alone does not establish correctness.
 - **Reference answers that are answers.** 61 of 174 `expected_answer`s are the
   expected span copied verbatim, a sentence fragment rather than an answer.
   Regenerate them as one-sentence answers (a human reviews the diff) so the
@@ -650,15 +695,41 @@ of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
   period-shifted negatives from answerable samples, and verify programmatically
   that the answer is absent from the corpus before keeping one. That check is
   what the two removed Costco negatives lacked. The cross-company superlative
-  is already covered by the Milestone 19 plan's open question.
-- **Deterministic generation at eval time, or repeats.** The generator runs at
+  is already covered by the Milestone 19 plan's open question. Human-review
+  and freeze this tier before comparing variants, and require its results
+  before claiming reliable refusal behavior.
+- **Generation settings and repeat analysis.** The generator runs at
   `llm.temperature: 0.2` during evals, which is where the measured ±2-sample
   run-to-run noise on answer eval comes from. Either add an `eval.generator`
-  override (temperature 0) so a variant's answers are reproducible, or have
-  `run_answer_matrix.py --repeats k` report the mean and spread. The paired CI
-  covers which questions were sampled, not a single run's sampling luck.
+  override (temperature 0) and check its observed variability, or keep the
+  deployment settings and repeat them. Harness Phase 4 adds
+  `run_answer_matrix.py --repeats k` and reports per-run rates, mean, standard
+  deviation, range and paired repeat deltas. Start with at least three repeats
+  per compared variant, predeclaring count and pairing/order; this does not
+  guarantee enough power for small effects. Retain repeat IDs and available
+  seeds. The paired CI covers which questions were sampled, not a single
+  run's sampling luck. Do not count repeats of a question as independent new
+  questions. Repeat judging of fixed outputs separately from generation;
+  any combined interval must account for repeated observations per question.
   With paired CIs the full 174-sample set (~45 min per variant at the phase-0
   latency) is also worth making the default over `--limit 40`.
+- **Coverage before generalization.** Report generated, period, underspecified
+  (and each kind), refusal and multi-hop tiers separately, with counts and
+  remaining coverage gaps. The table tier is owned by chunking-plan Phase 4
+  and is required before evaluating its new chunker; harder refusal cases
+  are required as above. Audit label alternatives and reference-answer quality
+  alongside adding questions. Shipping the harness does not complete coverage.
+- **Untouched confirmation set for default selection.** Reserve reviewed,
+  frozen questions before further tuning, covering the intended tiers and
+  grouping related source facts/document families so paraphrases do not cross
+  the tuning/confirmation boundary. Use existing matrices for exploration;
+  keep confirmation outcomes out of candidate selection. Predeclare primary
+  metrics, slices and practical improvement/regression criteria, then compare
+  the selected candidate with the baseline and publish that result separately.
+  Freeze rules protect labels but do not prevent tuning to a repeatedly
+  inspected benchmark. Record confirmation-set use and replenish after its
+  results have informed later tuning. Harness completion alone cannot satisfy
+  this requirement for selecting new defaults.
 - **Missing labels.** Spans are checked to be unique across filings, but not
   checked for *other* chunks stating the same fact in different words (a
   table next to prose). Judge the top-5 chunks of every retrieval miss with
@@ -672,7 +743,11 @@ of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
 - **Per-citation support.** Milestone 21 marks which passages an answer cited;
   Milestone 22 scores faithfulness for the whole answer. Neither checks that
   a cited passage `[n]` supports the claim attached to it. An eval-only metric
-  (judge each claim–citation pair) fits alongside Milestone 22's faithfulness.
+  (judge each claim–citation pair) is now part of harness Phase 4a alongside
+  Milestone 22's faithfulness. Preserve markers, mappings and passage text;
+  distinguish incorrect citations from missing citations under a declared
+  citation requirement. Calibrate on human-reviewed examples and keep this
+  score separate from correctness and whole-answer grounding.
 - **Smaller harness fixes.** `recall_by_k` averages only over samples that
   returned at least k results, so the denominators differ when `min_score`
   prunes lists. Pad to k instead. The `baseline` corpus's `eval_set.json` is

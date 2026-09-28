@@ -222,8 +222,21 @@ and committed *before* anything is measured on it. Questions written after
 seeing which ones the current config misses make a set tuned to that config's
 failures, and any change aimed at those failures would then look good. After
 the commit, a set changes only to fix a label error. Record each fix in the
-set's file, and re-run every variant that set has already scored, since old
-and new numbers aren't comparable.
+set's file, and score every compared variant against the same corrected
+revision, since old and new labels aren't comparable. Until the
+[eval harness plan](eval-harness-plan.md) ships offline revisions, this means
+re-running those variants. With retained outputs, span/doc-label fixes can
+be rescored; reference-answer or rubric changes require re-judging, and
+changed queries require fresh outputs. Keep historical revisions intact.
+
+Freezing labels does not prevent tuning to a repeatedly inspected set.
+Milestone 27 also reserves an untouched confirmation set before further
+tuning, grouping related source facts so paraphrases cannot straddle the
+split. Report its candidate-versus-baseline result separately before selecting
+new defaults. Continue reporting each tier separately; the table tier below
+and harder refusal cases in Milestone 27 remain requirements for claims about
+those question types. Harness Phase 4 adds human judge calibration and repeat
+analysis before small answer-score changes are treated as improvements.
 
 **Step 1 — Harness fixes and a label-quality check.** *Done 2026-09-26.*
 All four items below shipped. The label check found label errors aren't rare
