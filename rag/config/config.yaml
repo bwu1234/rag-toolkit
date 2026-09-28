@@ -40,6 +40,10 @@ corpora:
 
 embedding:
   provider: ollama
+  # 0.6b on evidence: the 4b and 8b sizes (Q8_0) measured no better than noise
+  # at this pipeline's settings -- BM25 already finds what they add in dense-only
+  # retrieval (docs/measured-results.md, "Embedder size"). Changing it needs
+  # `index --reset`.
   model: qwen3-embedding:0.6b
   base_url: http://localhost:11434
   dimensions: null

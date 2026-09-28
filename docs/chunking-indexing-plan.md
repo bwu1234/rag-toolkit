@@ -455,6 +455,16 @@ embedder that will ship.
   [Milestone 24](backlog.md#milestone-24--latency-percentiles-and-cost-per-query)
   will track.
 
+*Done 2026-09-28: stays `qwen3-embedding:0.6b`.* Compared at Q8_0 for all
+three sizes, since Ollama's `:4b` and `:8b` tags are q4_K_M. No larger size
+clears noise at the shipped config on any set. Dense-only, both gain clearly
+on the generated set (8b +8.6pp), but hybrid already answers those questions
+through BM25. The one lean the pipeline keeps is `underspecified`'s
+`paraphrase` kind (4b +4.2pp on the tier, p=0.18), the tier Phase 2 targets
+too. 4b costs 5.1× the build time and +43 ms per query, and the instruction
+stays off at 4b as well. See
+[measured results](measured-results.md#embedder-size-chunking-plan-phase-1b).
+
 ### Phase 2 — Document metadata and a deterministic chunk header (2–3 days)
 
 - **Metadata in front matter.** `fetch_edgar.py` writes YAML front matter

@@ -640,6 +640,101 @@ ceiling and dense deltas from the table above.
 
 Raw records: `data/eval/results/retrieval_edgar_edgar_{eval,underspecified,period}_set.json`.
 
+### Embedder size (chunking plan, Phase 1b)
+
+**Setup.** Run on 2026-09-28. `edgar` corpus, three indexes of the same
+4,236 chunks, one per embedder, each built with `--reset` from
+`data/eval/config_embedder_{0.6b,4b,8b}.yaml` and in sync per `index-report`.
+All three are **Q8_0**: `qwen3-embedding:0.6b` already is, but Ollama's
+`:4b` and `:8b` tags point at q4_K_M, so the runs use `:4b-q8_0` and
+`:8b-q8_0` to vary size and not quantization. `query_instruction: null`,
+per Phase 1. The same three pairs as Phase 1: shipped (hybrid,
+`bge-v2-m3`, `top_k 20`, `rerank_top_k 5`), the stage-1 ceiling (`top_k`
+and `rerank_top_k` both 20), and dense-only. Each larger size is paired with
+its matching 0.6b row. The 0.6b rows were re-run in the same session and
+reproduced the committed results sample for sample on all three sets. The
+generated set has 174 questions, `underspecified` 118 and `period` 55. M2 Max,
+64 GB, Ollama serving one model at a time.
+
+| set | pair | 0.6b → 4b hit | Δ hit [95% CI], W/L, p | 0.6b → 8b hit | Δ hit [95% CI], W/L, p |
+|---|---|---|---|---|---|
+| generated | shipped | 0.908 → 0.897 | −0.011 [−0.034, +0.011], 1W/3L, p=0.62 | 0.908 → 0.902 | −0.006 [−0.017, +0.006], 0W/1L, p=1 |
+| generated | stage-1 ceiling | 0.931 → 0.925 | −0.006 [−0.025, +0.014], 1W/2L, p=1 | 0.931 → 0.931 | +0.000, 0W/0L |
+| generated | dense | 0.741 → 0.810 | **+0.069 [+0.025, +0.113]\***, 14W/2L, p=0.004 | 0.741 → 0.828 | **+0.086 [+0.039, +0.134]\***, 17W/2L, p=0.0007 |
+| `underspecified` | shipped | 0.653 → 0.695 | +0.042 [−0.007, +0.092], 7W/2L, p=0.18 | 0.653 → 0.686 | +0.034 [−0.024, +0.091], 8W/4L, p=0.39 |
+| `underspecified` | stage-1 ceiling | 0.686 → 0.729 | +0.042 [−0.017, +0.102], 9W/4L, p=0.27 | 0.686 → 0.720 | +0.034 [−0.024, +0.091], 8W/4L, p=0.39 |
+| `underspecified` | dense | 0.619 → 0.686 | +0.068 [+0.002, +0.133]\*, 12W/4L, p=0.077 | 0.619 → 0.678 | +0.059 [+0.000, +0.118]\*, 10W/3L, p=0.092 |
+| `period` | shipped | 0.582 → 0.600 | +0.018 [−0.017, +0.054], 1W/0L, p=1 | 0.582 → 0.582 | +0.000 [−0.051, +0.051], 1W/1L, p=1 |
+| `period` | stage-1 ceiling | 0.709 → 0.709 | +0.000 [−0.051, +0.051], 1W/1L, p=1 | 0.709 → 0.727 | +0.018 [−0.044, +0.080], 2W/1L, p=1 |
+| `period` | dense | 0.509 → 0.545 | +0.036 [−0.035, +0.108], 3W/1L, p=0.62 | 0.509 → 0.564 | +0.055 [−0.039, +0.149], 5W/2L, p=0.45 |
+
+NDCG moves the same way. The intervals that exclude zero are dense on the
+generated set (4b +0.042, 8b +0.060), dense 8b on `underspecified` (+0.048),
+and 4b's `paraphrase` NDCG at the shipped config and the ceiling (+0.065,
++0.060). `underspecified` by kind, at the shipped config: `implicit` doesn't
+move (0.833 → 0.833 for 4b, → 0.815 for 8b). All of the tier's gain is
+`paraphrase`, 0.500 → 0.578 for both sizes (4b: +0.078 [−0.001, +0.157],
+6W/1L, p=0.12).
+
+Cost, on the same machine:
+
+| | 0.6b | 4b | 8b |
+|---|---|---|---|
+| index build (`--reset`, 4,236 chunks) | 243 s | 1,247 s (5.1×) | 2,228 s (9.2×) |
+| vector dimensions | 1,024 | 2,560 | 4,096 |
+| `embed_query`, median / p95 (174 queries, warm) | 33 / 38 ms | 76 / 101 ms | 110 / 163 ms |
+
+The latency row comes from
+`scripts/experiments/2026-09-embedder-size/query_latency.py`, which times
+`embed_query` alone. The matrix's `elapsed_s` includes the reranker, and at
+the shipped config it grew by 0–14%. The added per-query cost, +43 ms for 4b
+and +77 ms for 8b, is small next to the reranker's ~1.1 s. Memory isn't small:
+8b sat at 15 GB resident in Ollama at its default 40K context.
+
+**The instruction on 4b.** Phase 1 asked for one instruction pair on a
+larger checkpoint, and 4b was it (the size leading at the shipped config on
+`underspecified`). The result repeats Phase 1: shipped 0.897 → 0.897 (3W/3L)
+on the generated set, 0.695 → 0.686 on `underspecified` and 0.600 → 0.564 on
+`period`, with dense −0.023, −0.025 and −0.018. No interval excludes zero,
+and every hit-rate estimate is flat or negative.
+
+**Findings**
+
+- **0.6b stays the default.** The plan's bar was a paired CI excluding zero,
+  and no larger size clears it at the shipped config on any set. Phase 2 is
+  judged on 0.6b.
+- **The larger embedders are better embedders, and the pipeline doesn't
+  need that where the questions name their subject.** Dense-only, 8b gains
+  +8.6pp on the generated set (17W/2L). Through hybrid fusion and the
+  reranker, that becomes −0.6pp. Of 4b's 14 dense wins there, 12 were
+  questions hybrid 0.6b already answered, because BM25 matches the company
+  and period the question states. All three sizes put the answer in stage
+  1's top 20 for 92.5–93.1% of those questions.
+- **`underspecified` is where a bigger embedder shows, and it isn't shown
+  yet.** Only 6 of 4b's 12 dense wins there were already hybrid hits, and
+  hybrid 4b keeps 9. The net is +4.2pp at the shipped config (7W/2L,
+  p=0.18), all of it on `paraphrase`. That's the tier Phases 1–2 are aimed
+  at, and both sizes lean the same way on all three pairs. With 118
+  questions, a gain this size can't be told from noise.
+- **Neither larger size dominates.** 4b leads 8b on all three
+  `underspecified` pairs. 8b leads on all three generated-set pairs and two
+  of three `period` pairs. Every gap between them is 1–3 questions. 4b costs
+  56% of 8b's build time and 69% of its median query latency, so if a later
+  measurement makes the case for a larger embedder, start with 4b.
+- **`period` barely moves** (+1.8pp at most at the shipped config). That tier's
+  misses are the same text in two periods, and a better vector for the
+  same text can't separate them. Phase 3's filters are for that.
+- **The query instruction stays off at 4b too.** A second checkpoint gives
+  the same answer as Phase 1, so the instruction's failure isn't a 0.6b quirk.
+- **Not measured:** answer-side effects (retrieval didn't clear noise), the
+  q4_K_M builds that Ollama's default tags point to, and `top_k` above 20.
+  So whether the larger embedders lift answers from rank 21–100 into the top
+  20 is unknown. The ceiling rows say they don't change much within the top 20.
+
+Raw records: the `embedder=*` variants in
+`data/eval/results/retrieval_edgar_edgar_{eval,underspecified,period}_set.json`,
+and `data/eval/results/probe_2026-09_embedder_query_latency.json`.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a

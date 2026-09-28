@@ -20,6 +20,9 @@ data/index/*
 # (data/eval/config_contextual.yaml points its index_dir here). Same category:
 # 79MB of Chroma sqlite and binary blobs, rebuildable from the corpus.
 data/index_ctx/
+# Per-embedder indexes for the chunking plan's Phase 1b size comparison
+# (data/eval/config_embedder_*.yaml).
+data/index_emb-*/
 
 # Per-turn logs (Milestone 12) -- local usage data, not source.
 data/logs/
