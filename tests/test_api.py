@@ -16,6 +16,7 @@ from rag.api.main import app
 from rag.api.routes.chat import get_chat_service
 from rag.generation.chat_service import ChatAnswer, Citation
 from rag.generation.query_rewriter import ChatTurn
+from rag.query_filter import QueryFilter, check_filterable
 
 
 class _FakeChatService:
@@ -23,10 +24,16 @@ class _FakeChatService:
         self.answer = answer
         self.queries: list[str] = []
         self.histories: list[list[ChatTurn]] = []
+        self.filters: list[QueryFilter | None] = []
 
-    def ask(self, query: str, *, history: list[ChatTurn] | None = None) -> ChatAnswer:
+    def ask(
+        self, query: str, *, history: list[ChatTurn] | None = None, query_filter: QueryFilter | None = None
+    ) -> ChatAnswer:
         self.queries.append(query)
         self.histories.append(list(history or []))
+        self.filters.append(query_filter)
+        if query_filter is not None:
+            check_filterable(query_filter, ["ticker", "period_end"])
         return self.answer
 
 
@@ -231,3 +238,39 @@ def test_chat_response_crag_fields_default_to_neutral_values(client: TestClient)
     assert body["retrieval_attempts"] == 1
     # Null, not false: "not checked" and "failed the check" are different states.
     assert body["grounded"] is None
+
+
+# ---------------------------------------------------------------------------
+# Metadata filters (chunking plan, Phase 3)
+# ---------------------------------------------------------------------------
+
+
+def test_chat_passes_filters_to_the_service(client: TestClient) -> None:
+    response = client.post(
+        "/chat",
+        json={"query": "q", "filters": {"equals": {"ticker": "AAPL"}, "range": {"period_end": {"lte": "2025-12-31"}}}},
+    )
+
+    assert response.status_code == 200
+    assert client.fake_chat_service.filters == [  # type: ignore[attr-defined]
+        QueryFilter(equals={"ticker": "AAPL"}, range={"period_end": {"lte": 20251231}})
+    ]
+
+
+def test_chat_without_filters_passes_none(client: TestClient) -> None:
+    client.post("/chat", json={"query": "q"})
+
+    assert client.fake_chat_service.filters == [None]  # type: ignore[attr-defined]
+
+
+def test_a_malformed_filter_is_a_422(client: TestClient) -> None:
+    response = client.post("/chat", json={"query": "q", "filters": {"range": {"period_end": {}}}})
+
+    assert response.status_code == 422
+
+
+def test_a_filter_on_a_field_chunks_do_not_store_is_a_400(client: TestClient) -> None:
+    response = client.post("/chat", json={"query": "q", "filters": {"equals": {"tickr": "AAPL"}}})
+
+    assert response.status_code == 400
+    assert "tickr" in response.json()["detail"]

@@ -29,6 +29,7 @@ from rag.observability.factory import config_fingerprint, get_turn_sink as build
 from rag.observability.records import FeedbackRecord, TurnRecord
 from rag.observability.sink import JsonlTurnSink, TurnSink, read_turn_log, turns_with_feedback
 from rag.observability.usage import MeteredLLMClient, MeteredToolCallingLLM, metered, metered_client
+from rag.query_filter import QueryFilter
 from rag.retrieval.retriever import RetrievalResult
 from rag.ui.helpers import format_turn_metrics, rating_from_feedback_widget
 from rag.vectorstore.base import ScoredChunk
@@ -54,7 +55,9 @@ class _Retriever:
         self.results = list(results)
         self.calls = 0
 
-    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> RetrievalResult:
+    def retrieve(
+        self, query: str, *, query_filter: object = None, on_event: EventSink | None = None
+    ) -> RetrievalResult:
         result = self.results[min(self.calls, len(self.results) - 1)]
         self.calls += 1
         if on_event is not None:
@@ -295,6 +298,23 @@ def test_turn_record_captures_attempts_shown_cited_and_events() -> None:
     json.dumps(record.to_dict())  # must be JSON-serializable as-is
 
 
+def test_turn_record_keeps_the_query_filter_and_omits_it_when_there_is_none() -> None:
+    sink = _RecordingSink()
+    service = ChatService(
+        retriever=_Retriever(_result("a")),
+        llm_client=MeteredLLMClient(_UsageLLM("See [1].")),
+        turn_sink=sink,
+    )
+
+    service.ask("q", query_filter=QueryFilter(equals={"ticker": "AAPL"}, range={"period_end": {"gte": 20250101}}))
+    service.ask("q")
+
+    filtered, unfiltered = sink.turns
+    assert filtered.query_filter == {"equals": {"ticker": "AAPL"}, "range": {"period_end": {"gte": 20250101}}}
+    assert unfiltered.query_filter is None
+    json.dumps(filtered.to_dict())
+
+
 def test_turn_record_captures_grader_verdicts_retries_and_groundedness() -> None:
     class _Grader:
         def grade(self, query: str, chunks: list[ScoredChunk]) -> GradedChunks:
@@ -509,7 +529,7 @@ def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> N
 
 
 class _FakeChatService:
-    def ask(self, query: str, *, history: object = None) -> ChatAnswer:
+    def ask(self, query: str, *, history: object = None, query_filter: object = None) -> ChatAnswer:
         return ChatAnswer(
             answer="a [1]",
             cited_chunk_ids=["c1"],

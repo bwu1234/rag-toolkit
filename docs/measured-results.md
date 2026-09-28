@@ -920,6 +920,103 @@ Phase 2's NDCG deltas, corrected (paired, 95% CI):
 
 Raw records: `header=off`, `header=on` and `header=on rerank_header` in
 `data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`.
+### Metadata filtering oracle (chunking plan, Phase 3)
+
+**Setup.** Run on 2026-09-28 at the shipped config after Phase 2 (header on,
+reranker sees it, `edgar` index in sync). No interface change:
+`scripts/experiments/2026-09-filter-oracle/oracle.py` restricts each sample's
+retrieval using its own labels. Chroma is restricted with a native `where` on
+`document_id`, and BM25 by scoring everything and keeping only the allowed
+documents' chunks. Both filter before their top-k. Three modes: `none`, which
+reproduced the shipped `header=on rerank_header` rows sample for sample on
+all three sets, so the harness changes nothing by itself; `company`, every
+filing of the expected filing's company, 4.7–4.9 filings on average, the
+filter a caller who names the company would pass; and `filing`, exactly
+`expected_doc_ids`, the ceiling. On this corpus each company-period pair is
+one filing, so `filing` is also what a company-plus-period filter would give.
+
+| set | shipped | `company` | Δ hit, W/L, p | `filing` (ceiling) | Δ hit, W/L, p |
+|---|---|---|---|---|---|
+| generated (174) | 0.977 | 0.966 | −0.011 [−0.027, +0.004], 0W/2L, p=0.5 | 0.983 | +0.006 [−0.014, +0.025], 2W/1L, p=1 |
+| `period` (55) | 0.836 | 0.836 | +0.000, 0W/0L | **0.945** | **+0.109 [+0.026, +0.192]\***, 6W/0L, p=0.031 |
+| `underspecified` (118) | 0.822 | 0.831 | +0.008 [−0.042, +0.058], 5W/4L, p=1 | **0.898** | **+0.076 [+0.018, +0.135]\***, 11W/2L, p=0.022 |
+| · `implicit` (54) | 0.852 | 0.852 | 2W/2L | 0.870 | +0.019, 3W/2L |
+| · `paraphrase` (64) | 0.797 | 0.812 | 3W/2L | **0.922** | **+0.125 [+0.043, +0.207]\***, 8W/0L, p=0.008 |
+
+NDCG isn't reported here; the oracle ran before the NDCG fix.
+
+**Findings**
+
+- **A company filter adds nothing on top of Phase 2.** With the header
+  indexed and scored, other companies' chunks already stay out of the top 5.
+  The step-3 `period` analysis's "other filing's copy ranked above it" cases
+  are the same company, which a company filter keeps.
+- **The ceiling clears noise where the plan said it should.** Restricting to
+  the right filing gains +10.9pp on `period` and +7.6pp on `underspecified`,
+  none of it on `implicit`. That headroom is the period, not the company:
+  it's realized only by a filter that names the period (`period_end`),
+  which a caller has to supply, or Phase 3b's routing has to infer.
+- **The generated set has no headroom left** (0.977; the ceiling is 0.983).
+- By the plan's rule (stop unless the oracle beats the baseline by more than
+  noise), Phase 3 continues, with the period as the filter that matters.
+
+**A metric bug this surfaced.** `mean_ndcg` came out at 1.027 for `filing` on
+the generated set, which led to the [span-credit fix](#ndcg-credits-each-span-once).
+This section reports hit rate only.
+
+### Metadata filters (chunking plan, Phase 3)
+
+**Setup.** Run on 2026-09-28 at the shipped config (header on, reranker sees
+it, `edgar` index in sync), with the NDCG fix. This is the real `QueryFilter`
+path end to end: `run_matrix.py`'s `filters=` variants derive each sample's
+filter from its `expected_doc_ids`, shaped as a caller would write it.
+`company` is `{"any_of": {"ticker": [...]}}`. `company+period` adds
+`{"range": {"period_end": {"gte": ..., "lte": ...}}}`. Chroma applies it as a
+`where` clause, and BM25 ranks only matching chunks. `baseline` was re-run and
+equals the `header=on rerank_header` rows sample for sample. Both filter
+variants reproduced the [oracle](#metadata-filtering-oracle-chunking-plan-phase-3)
+hits sample for sample (`company` = `company`; `company+period` = `filing`),
+so the interface does what the pre-interface hack did.
+
+| set | filter | hit | Δ hit [95% CI], W/L, p | NDCG | Δ NDCG [95% CI] |
+|---|---|---|---|---|---|
+| generated (174) | company | 0.977 → 0.966 | −0.011 [−0.027, +0.004], 0W/2L, p=0.5 | 0.892 → 0.890 | −0.002 [−0.010, +0.005] |
+| generated | company + period | 0.977 → 0.983 | +0.006 [−0.014, +0.025], 2W/1L, p=1 | 0.892 → 0.937 | **+0.045 [+0.025, +0.065]\*** |
+| `period` (55) | company | 0.836 → 0.836 | +0.000, 0W/0L | 0.761 → 0.752 | −0.009 [−0.023, +0.005] |
+| `period` | company + period | 0.836 → **0.945** | **+0.109 [+0.026, +0.192]\***, 6W/0L, p=0.031 | 0.761 → 0.861 | **+0.100 [+0.043, +0.157]\*** |
+| `underspecified` (118) | company | 0.822 → 0.831 | +0.008 [−0.042, +0.058], 5W/4L, p=1 | 0.698 → 0.724 | +0.026 [−0.011, +0.063] |
+| `underspecified` | company + period | 0.822 → **0.898** | **+0.076 [+0.018, +0.135]\***, 11W/2L, p=0.022 | 0.698 → 0.807 | **+0.109 [+0.062, +0.155]\*** |
+| · `implicit` (54) | company + period | 0.852 → 0.870 | +0.019, 3W/2L | 0.715 → 0.783 | +0.069 [+0.010, +0.128]\* |
+| · `paraphrase` (64) | company + period | 0.797 → **0.922** | **+0.125 [+0.043, +0.207]\***, 8W/0L, p=0.008 | 0.685 → 0.827 | +0.142 [+0.073, +0.211]\* |
+
+Cost: the `company+period` runs took 3–10% longer end to end. That wasn't
+profiled; the likely cause is BM25 checking the filter against every record
+on each query, which isn't worth optimising at 4,236 chunks.
+
+**Findings**
+
+- **A filter that names the period is the next real gain after the header.**
+  `period` hit goes to 0.945, `underspecified` to 0.898, and generated-set
+  NDCG rises too, as the right filing's chunks stop sharing the top 5 with
+  other periods' copies.
+- **A company-only filter adds nothing on top of Phase 2**, and it never
+  helps a `period` question (0W/0L). Its two generated-set losses are both
+  rank-5 flips: removing other companies from each retriever's top 20 let
+  more same-company chunks into the pool, and one edged the answer chunk
+  from 5th to 6th. The same-company competition this phase targets shows up
+  here as noise.
+- **Nothing changes by default.** Filters are caller-supplied: `POST /chat`,
+  MCP `rag_search`, or (in Milestone 19) an agent. The gain is available only
+  when a caller knows the period. Phase 3b is the version that needs no
+  caller input.
+- **Not measured:** answer eval with filters. Retrieval moved on the same
+  tiers where the header's retrieval gain carried through to answers, but
+  that's an expectation, not a measurement. Also not measured: filters
+  derived from question text (Milestone 20) or chosen by an agent
+  (Milestone 19).
+
+Raw records: `baseline`, `filters=company` and `filters=company+period` in
+`data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`.
 
 ### Not yet measured
 

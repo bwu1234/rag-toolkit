@@ -66,7 +66,7 @@ class _FakeRetriever(Retriever):
         self._chunks = chunks
         self.seen_queries: list[str] = []
 
-    def retrieve(self, query: str) -> RetrievalResult:
+    def retrieve(self, query: str, *, query_filter: object = None) -> RetrievalResult:
         self.seen_queries.append(query)
         return RetrievalResult(chunks=self._chunks, candidate_count=len(self._chunks))
 
@@ -850,7 +850,7 @@ def test_retrieval_eval_ndcg_never_exceeds_one_on_duplicated_spans() -> None:
     duplicated = [_scored(f"c{i}", "d.md", text="The margin was 46% this year.") for i in range(3)]
 
     class _Fixed:
-        def retrieve(self, query: str) -> RetrievalResult:
+        def retrieve(self, query: str, *, query_filter: object = None) -> RetrievalResult:
             return RetrievalResult(chunks=duplicated)
 
     report = run_retrieval_eval(EvalDataset([sample]), _Fixed())  # type: ignore[arg-type]

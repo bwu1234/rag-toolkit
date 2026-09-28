@@ -36,6 +36,7 @@ from pydantic import Field, create_model
 
 from rag.config.settings import REPO_ROOT, CorpusSelection, RagConfig, load_config
 from rag.events import EventSink
+from rag.query_filter import QueryFilter
 from rag.generation.llm import LLMClient, ToolDefinition
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.retriever import RetrievalResult, Retriever
@@ -229,6 +230,7 @@ class RagTools:
         corpus: str | Sequence[str] | None = None,
         top_k: int | None = None,
         *,
+        query_filter: QueryFilter | None = None,
         on_event: EventSink | None = None,
     ) -> tuple[CorpusSelection, RetrievalResult]:
         """Run retrieve -> rerank and return the top `top_k` chunks, unformatted.
@@ -236,7 +238,8 @@ class RagTools:
         The one retrieval path behind `rag_search`: `search` renders this as
         MCP's JSON, and the agent renders it as numbered passages. Raises
         `ValueError` for arguments a caller got wrong (empty query, `top_k`
-        out of range, unknown corpus), so both can report them as tool errors.
+        out of range, unknown corpus, a filter on a field chunks don't store),
+        so both can report them as tool errors.
         """
 
         if not query.strip():
@@ -248,7 +251,7 @@ class RagTools:
 
         names = [corpus] if isinstance(corpus, str) else corpus
         selection, retriever = self._retriever_for(names)
-        outcome = retriever.retrieve(query, on_event=on_event)
+        outcome = retriever.retrieve(query, query_filter=query_filter, on_event=on_event)
         return selection, dataclasses.replace(outcome, chunks=outcome.chunks[:requested])
 
     def search(
@@ -257,6 +260,7 @@ class RagTools:
         corpus: str | list[str] | None = None,
         top_k: int | None = None,
         max_chars: int | None = None,
+        filters: QueryFilter | None = None,
     ) -> dict[str, Any]:
         """Run retrieve -> rerank and return ranked passages."""
 
@@ -264,7 +268,7 @@ class RagTools:
         if budget < 1:
             raise ValueError(f"max_chars must be at least 1 (got {budget})")
 
-        selection, outcome = self.retrieve(query, corpus, top_k)
+        selection, outcome = self.retrieve(query, corpus, top_k, query_filter=filters)
         chunks = outcome.chunks
 
         payload: dict[str, Any] = {
@@ -273,6 +277,7 @@ class RagTools:
             "pooled": selection.is_pooled,
             "candidate_count": outcome.candidate_count,
             "returned": len(chunks),
+            **({"filters": filters.model_dump(exclude_defaults=True)} if filters and not filters.is_empty else {}),
             "results": [
                 _result_entry(rank, chunk, budget)
                 for rank, chunk in enumerate(chunks, start=1)
@@ -441,8 +446,28 @@ def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
                 ),
             ),
         ] = None,
+        filters: Annotated[
+            QueryFilter | None,
+            Field(
+                description=(
+                    "Restrict the search to passages whose document metadata matches, e.g. "
+                    '{"equals": {"ticker": "AAPL"}, "range": {"period_end": {"gte": "2025-01-01", '
+                    '"lte": "2025-12-31"}}}. `equals`/`any_of` take strings; `range` takes integers '
+                    "or ISO dates (dates are compared as YYYYMMDD). Filterable fields are "
+                    "`document_id` plus the corpus's carried metadata (on EDGAR filings: company, "
+                    "ticker, form, period_end, filed, accession). Use it when the question names a "
+                    "company or period: identical passages from other periods then can't outrank "
+                    "the right one. Omit to search everything."
+                )
+            ),
+        ] = None,
     ) -> dict[str, Any]:
-        return tools.search(query, corpus=corpus, top_k=top_k, max_chars=max_chars)
+        # The `mcp` SDK validates arguments into a `QueryFilter`; the fallback
+        # transport passes the raw JSON object. A bad one raises
+        # `ValidationError` (a `ValueError`), reported as a tool error.
+        if filters is not None and not isinstance(filters, QueryFilter):
+            filters = QueryFilter.model_validate(filters)
+        return tools.search(query, corpus=corpus, top_k=top_k, max_chars=max_chars, filters=filters)
 
     def rag_list_corpora() -> dict[str, Any]:
         return tools.list_corpora()

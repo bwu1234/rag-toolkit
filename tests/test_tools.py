@@ -104,7 +104,7 @@ def test_rag_tools_uses_a_given_config_without_reading_disk(monkeypatch: pytest.
     class _Retriever:
         rerank_top_k = 5
 
-        def retrieve(self, query: str, *, on_event: object = None) -> RetrievalResult:
+        def retrieve(self, query: str, *, query_filter: object = None, on_event: object = None) -> RetrievalResult:
             return RetrievalResult(chunks=[], candidate_count=0)
 
     def _build(cfg, llm_client=None, corpora=None):  # type: ignore[no-untyped-def]

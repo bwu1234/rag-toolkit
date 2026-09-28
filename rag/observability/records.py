@@ -84,6 +84,8 @@ class TurnRecord:
     answer: str | None = None
     kind: Literal["turn"] = "turn"
     history_turns: int = 0
+    query_filter: dict[str, Any] | None = None
+    """The metadata filter the caller restricted retrieval with, as sent; absent when none."""
     rewritten_query: str | None = None
     search_queries: list[str] = field(default_factory=list)
     retry_queries: list[str] = field(default_factory=list)

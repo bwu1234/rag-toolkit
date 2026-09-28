@@ -16,6 +16,7 @@ from rag.generation.chat_service import ChatService, Citation
 from rag.generation.crag import GradedChunks
 from rag.generation.prompts import build_plain_prompt
 from rag.generation.query_rewriter import ChatTurn, QueryCondenser
+from rag.query_filter import QueryFilter
 from rag.retrieval.retriever import RetrievalResult
 from rag.vectorstore.base import ScoredChunk
 
@@ -49,9 +50,13 @@ class _FakeRetriever:
         self.candidate_count = candidate_count if candidate_count is not None else len(results)
         self.dropped = dropped
         self.queries: list[str] = []
+        self.filters: list[object] = []
 
-    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> RetrievalResult:
+    def retrieve(
+        self, query: str, *, query_filter: object = None, on_event: EventSink | None = None
+    ) -> RetrievalResult:
         self.queries.append(query)
+        self.filters.append(query_filter)
         return RetrievalResult(
             chunks=self.results,
             candidate_count=self.candidate_count,
@@ -435,9 +440,13 @@ class _SequenceRetriever:
     def __init__(self, *results: list[ScoredChunk]) -> None:
         self.results = list(results) or [[]]
         self.queries: list[str] = []
+        self.filters: list[object] = []
 
-    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> RetrievalResult:
+    def retrieve(
+        self, query: str, *, query_filter: object = None, on_event: EventSink | None = None
+    ) -> RetrievalResult:
         self.queries.append(query)
+        self.filters.append(query_filter)
         chunks = self.results[min(len(self.queries) - 1, len(self.results) - 1)]
         return RetrievalResult(chunks=chunks, candidate_count=max(len(chunks), 1))
 
@@ -714,3 +723,27 @@ def test_crag_stages_are_reported_as_pipeline_events() -> None:
         "regenerate",
         "crag_groundedness",
     ]
+
+
+def test_a_query_filter_reaches_every_retrieval_including_retries() -> None:
+    retriever = _SequenceRetriever([_scored("drop")], [_scored("keep")])
+    service = ChatService(
+        retriever=retriever,  # type: ignore[arg-type]
+        llm_client=_FakeLLMClient(),  # type: ignore[arg-type]
+        grader=_FakeGrader({"keep"}),  # type: ignore[arg-type]
+        retry_rewriter=_FakeRewriter("a reworded query"),  # type: ignore[arg-type]
+        max_retries=1,
+    )
+    aapl = QueryFilter(equals={"ticker": "AAPL"})
+
+    service.ask("the original question", query_filter=aapl)
+
+    assert retriever.filters == [aapl, aapl], "a reworded retry is still about what the caller restricted"
+
+
+def test_no_query_filter_by_default() -> None:
+    service, retriever, _llm = _service([_scored("a")])
+
+    service.ask("q")
+
+    assert retriever.filters == [None]

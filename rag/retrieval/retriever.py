@@ -31,11 +31,14 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
+from rag.config.settings import DEFAULT_CARRY_METADATA
 from rag.embedding.base import EmbeddingModel
 from rag.events import EventSink, emit
+from rag.query_filter import QueryFilter, check_filterable
 from rag.retrieval.expansion import ExpandedQuery, NoOpQueryExpander, QueryExpander
 from rag.retrieval.reranker import Reranker
 from rag.retrieval.rrf import DEFAULT_RRF_K, reciprocal_rank_fusion
@@ -98,6 +101,7 @@ class Retriever:
         min_score: float = 0.0,
         query_expander: QueryExpander | None = None,
         web_search: SearxNGWebSearch | None = None,
+        filterable_fields: Sequence[str] = DEFAULT_CARRY_METADATA,
     ) -> None:
         if mode == "hybrid" and sparse_index is None:
             raise ValueError(
@@ -115,8 +119,17 @@ class Retriever:
         self.rrf_k = rrf_k
         self.min_score = min_score
         self._query_expander = query_expander or NoOpQueryExpander()
+        # What `chunking.carry_metadata` stores on chunks: the only fields a
+        # `QueryFilter` can match, besides `document_id`.
+        self.filterable_fields = tuple(filterable_fields)
 
-    def retrieve(self, query: str, *, on_event: EventSink | None = None) -> RetrievalResult:
+    def retrieve(
+        self,
+        query: str,
+        *,
+        query_filter: QueryFilter | None = None,
+        on_event: EventSink | None = None,
+    ) -> RetrievalResult:
         """Return the `rerank_top_k` chunks most relevant to `query`, best first.
 
         Stage 1 (``top_k`` candidates, denser still for hybrid before fusion)
@@ -132,6 +145,11 @@ class Retriever:
         `ChatService` explain *which* kind of nothing it got (see
         `RetrievalResult`).
 
+        `query_filter`, if given, restricts both stage-1 retrievers to chunks
+        whose metadata matches it, before their top-k (see
+        `rag.query_filter`). Web search is skipped under a filter: its results
+        carry no corpus metadata, so none could match.
+
         `on_event`, if given, is called once per completed stage (embedding,
         search, fusion, rerank) with a `PipelineEvent` -- e.g. so the UI can
         show a live trace. It's purely an observation hook: omitting it
@@ -140,6 +158,11 @@ class Retriever:
 
         if not query.strip():
             return RetrievalResult()
+        if query_filter is not None and query_filter.is_empty:
+            query_filter = None
+        if query_filter is not None:
+            check_filterable(query_filter, self.filterable_fields)
+            logger.info("Filtering retrieval to: %s", query_filter.describe())
 
         start = time.monotonic()
         expanded = self._query_expander.expand(query)
@@ -151,7 +174,7 @@ class Retriever:
                 f"Expanded into {len(expanded.dense)} dense / {len(expanded.sparse)} sparse query/queries",
             )
 
-        candidates = self._candidates(expanded, on_event)
+        candidates = self._candidates(expanded, query_filter, on_event)
 
         logger.info(
             "Retrieved %d candidate(s) via mode=%s for query %r",
@@ -184,7 +207,9 @@ class Retriever:
             search_queries=expanded.all_queries() if expanded.is_expanded else [],
         )
 
-    def _candidates(self, expanded: ExpandedQuery, on_event: EventSink | None) -> list[ScoredChunk]:
+    def _candidates(
+        self, expanded: ExpandedQuery, query_filter: QueryFilter | None, on_event: EventSink | None
+    ) -> list[ScoredChunk]:
         """Run every expanded query through every enabled retriever and fuse the lot.
 
         Each (query, retriever) pair produces one ranked list, and RRF folds
@@ -196,13 +221,15 @@ class Retriever:
         never compares their scores, only their positions.
         """
 
-        ranked_lists = [self._dense_search(query, on_event) for query in expanded.dense]
+        ranked_lists = [self._dense_search(query, query_filter, on_event) for query in expanded.dense]
 
         if self.mode == "hybrid":
             assert self._sparse_index is not None  # enforced in __init__ for hybrid
-            ranked_lists.extend(self._sparse_search(query, on_event) for query in expanded.sparse)
+            ranked_lists.extend(self._sparse_search(query, query_filter, on_event) for query in expanded.sparse)
 
-        if self._web_search is not None:
+        if self._web_search is not None and query_filter is not None:
+            logger.info("Skipping web search: a query filter restricts results to corpus metadata")
+        elif self._web_search is not None:
             # Web search gets the same sparse (question-shaped) queries as
             # BM25 -- a HyDE passage is the wrong text to send to a search
             # engine, but a multi-query rephrasing is a fine search query.
@@ -240,20 +267,24 @@ class Retriever:
         )
         return fused
 
-    def _dense_search(self, query: str, on_event: EventSink | None) -> list[ScoredChunk]:
+    def _dense_search(
+        self, query: str, query_filter: QueryFilter | None, on_event: EventSink | None
+    ) -> list[ScoredChunk]:
         start = time.monotonic()
         query_vector = self._embedder.embed_query(query)
         emit(on_event, start, "embed", f"Embedded {query[:60]!r} into a {len(query_vector)}-dim vector")
 
         start = time.monotonic()
-        results = self._vector_store.query(query_vector, top_k=self.top_k)
+        results = self._vector_store.query(query_vector, top_k=self.top_k, query_filter=query_filter)
         emit(on_event, start, "vector_search", f"Vector search returned {len(results)} candidate(s)")
         return results
 
-    def _sparse_search(self, query: str, on_event: EventSink | None) -> list[ScoredChunk]:
+    def _sparse_search(
+        self, query: str, query_filter: QueryFilter | None, on_event: EventSink | None
+    ) -> list[ScoredChunk]:
         assert self._sparse_index is not None
         start = time.monotonic()
-        results = self._sparse_index.query(query, top_k=self.top_k)
+        results = self._sparse_index.query(query, top_k=self.top_k, query_filter=query_filter)
         emit(on_event, start, "sparse_search", f"BM25 search returned {len(results)} candidate(s)")
         return results
 

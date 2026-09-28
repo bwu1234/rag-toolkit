@@ -13,6 +13,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from rag.query_filter import QueryFilter
+
 
 class ChatTurnModel(BaseModel):
     """One prior message in the conversation, as sent over the wire."""
@@ -43,6 +45,16 @@ class ChatRequest(BaseModel):
             "question is rewritten into a standalone one before retrieval so "
             "follow-ups ('what about part-time staff?') search for what they "
             "actually mean. Omit for one-shot questions."
+        ),
+    )
+    filters: QueryFilter | None = Field(
+        default=None,
+        description=(
+            "Restrict retrieval to passages whose document metadata matches, e.g. "
+            '{"equals": {"ticker": "AAPL"}, "range": {"period_end": {"gte": "2025-01-01"}}}. '
+            "Filterable fields are `document_id` plus `chunking.carry_metadata`; a field "
+            "chunks don't store is rejected with 400 rather than silently matching nothing. "
+            "Applies to every retrieval the turn makes. Omit to search everything."
         ),
     )
 

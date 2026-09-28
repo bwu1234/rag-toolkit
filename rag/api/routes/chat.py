@@ -24,6 +24,7 @@ from rag.generation.chat_service import ChatAnswer, ChatResponder, Citation
 from rag.generation.query_rewriter import ChatTurn
 from rag.observability.records import FeedbackRecord
 from rag.observability.sink import TurnSink
+from rag.query_filter import UnfilterableField
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,16 @@ def _to_response(answer: ChatAnswer) -> ChatResponse:
 @router.post("/chat", response_model=ChatResponse, summary="Ask a question of the indexed corpus")
 def chat(payload: ChatRequest, chat_service: ChatResponder = Depends(get_chat_service)) -> ChatResponse:
     logger.info("Received chat query: %r (%d prior turn(s))", payload.query, len(payload.history))
-    answer = chat_service.ask(payload.query, history=[_to_chat_turn(turn) for turn in payload.history])
+    try:
+        answer = chat_service.ask(
+            payload.query,
+            history=[_to_chat_turn(turn) for turn in payload.history],
+            query_filter=payload.filters,
+        )
+    except UnfilterableField as exc:
+        # The request named a field chunks don't store: the caller's error,
+        # and one they can fix, so 400 with the message rather than a 500.
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return _to_response(answer)
 
 

@@ -15,6 +15,7 @@ from typing import Any
 import chromadb
 
 from rag.chunking.models import Chunk
+from rag.query_filter import QueryFilter
 from rag.vectorstore.base import ScoredChunk, VectorStore
 
 logger = logging.getLogger(__name__)
@@ -96,14 +97,20 @@ class ChromaVectorStore(VectorStore):
             out[cid]["_document_text"] = doc
         return out
 
-    def query(self, embedding: list[float], top_k: int) -> list[ScoredChunk]:
+    def query(
+        self, embedding: list[float], top_k: int, query_filter: QueryFilter | None = None
+    ) -> list[ScoredChunk]:
         if self.count() == 0:
             return []
 
+        # A native `where` pre-filters inside Chroma, so `n_results` counts
+        # matching chunks only -- never an unfiltered top-k cut down afterwards.
+        where = query_filter.to_chroma_where() if query_filter is not None else None
         result = self._collection.query(
             # See the `upsert` comment above -- same invariant-List mismatch.
             query_embeddings=[embedding],  # type: ignore[arg-type]
             n_results=top_k,
+            where=where,  # type: ignore[arg-type]
             include=["documents", "metadatas", "distances"],
         )
 

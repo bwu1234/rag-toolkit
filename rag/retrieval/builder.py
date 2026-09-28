@@ -72,4 +72,5 @@ def build_retriever(
         min_score=config.retrieval.min_score,
         query_expander=query_expander,
         web_search=web_search,
+        filterable_fields=config.chunking.carry_metadata,
     )

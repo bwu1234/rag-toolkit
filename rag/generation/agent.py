@@ -37,6 +37,7 @@ from dataclasses import dataclass, field
 
 from rag.config.settings import AgentStrategy
 from rag.events import EventSink, emit
+from rag.query_filter import QueryFilter
 from rag.generation.chat_service import (
     BLANK_QUERY_ANSWER,
     ChatAnswer,
@@ -78,7 +79,9 @@ SEARCH_TOOL = "rag_search"
 #: the prompt-size guards: prompts grew ~6x over the pipeline's in the
 #: prototype, and a model asking for 20 full-length passages per search would
 #: undo `max_tool_calls` x `max_passage_chars` as a bound.
-PINNED_ARGUMENTS = ("corpus", "top_k", "max_chars")
+#: `filters` is the turn's too: a `/chat` filter applies to every search, and
+#: letting the model choose its own filters is Milestone 19's call to measure.
+PINNED_ARGUMENTS = ("corpus", "top_k", "max_chars", "filters")
 
 
 class PassageLedger:
@@ -141,6 +144,8 @@ class _Run:
     deadline: float
     on_event: EventSink
     trace: TurnTrace
+    #: The turn's metadata filter, applied to every search.
+    query_filter: QueryFilter | None = None
     queries: list[str] = field(default_factory=list)
     #: Normalized query -> the passage numbers its search returned.
     searched: dict[str, list[int]] = field(default_factory=dict)
@@ -218,6 +223,7 @@ class AgentService(ChatResponder):
         history: list[ChatTurn] | None,
         on_event: EventSink,
         trace: TurnTrace,
+        query_filter: QueryFilter | None = None,
     ) -> ChatAnswer:
         """Run the strategy, then build a `ChatAnswer` from the ledger.
 
@@ -237,6 +243,7 @@ class AgentService(ChatResponder):
             deadline=self._clock() + self.timeout_s,
             on_event=on_event,
             trace=trace,
+            query_filter=query_filter,
         )
         stopped = self._react(run) if self.strategy == "react" else self._planned(run)
 
@@ -392,7 +399,9 @@ class AgentService(ChatResponder):
 
         start = time.monotonic()
         try:
-            _, result = self._tools.retrieve(query, self._corpora, on_event=run.on_event)
+            _, result = self._tools.retrieve(
+                query, self._corpora, query_filter=run.query_filter, on_event=run.on_event
+            )
         except ValueError as exc:
             # An argument the model got wrong: tell it, don't fail the turn.
             emit(run.on_event, start, "search_refused", f"Search error: {exc}")

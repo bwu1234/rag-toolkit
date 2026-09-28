@@ -29,6 +29,27 @@ weaker one and add several seconds of latency per call.
 | `corpus` | string \| string[] | active corpora | One name, or several to search as one pooled index |
 | `top_k` | int (1–20) | `retrieval.rerank_top_k` | Passages to return |
 | `max_chars` | int | 1200 | Per-passage truncation budget |
+| `filters` | object | none | Metadata filter: search only passages whose document matches (below) |
+
+`filters` takes `equals` (field → string), `any_of` (field → list of strings)
+and `range` (field → `{"gte": …, "lte": …}`, integers or ISO dates, compared as
+`YYYYMMDD`); every condition must hold. Filterable fields are `document_id`
+plus whatever `chunking.carry_metadata` stores on chunks; on EDGAR that's
+`company`, `ticker`, `form`, `period_end`, `filed` and `accession`. For example,
+Apple's filings for periods ending in 2025:
+
+```json
+{"equals": {"ticker": "AAPL"}, "range": {"period_end": {"gte": "2025-01-01", "lte": "2025-12-31"}}}
+```
+
+Both retrievers apply the filter before their top-k, so it narrows what
+competes rather than trimming what already won. A field chunks don't store is
+a tool error naming the fields that are, not an empty result. When a filter
+was applied, the response echoes it under `filters`. Pass the period when the
+question names one: after the chunk header, that's where filtering
+[measured](measured-results.md#metadata-filters-chunking-plan-phase-3) its
+gain, since identical paragraphs from other periods of the same company are
+what outrank the right one.
 
 Each result carries `rank`, `score`, `chunk_id`, `document_id`, `source`
 (repo-relative), and `text`, plus `page`, `context` and `header` (the

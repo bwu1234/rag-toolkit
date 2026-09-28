@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from rag.chunking.models import Chunk
+from rag.query_filter import QueryFilter
 from rag.retrieval.sparse import BM25Index, tokenize
 
 
@@ -212,3 +213,52 @@ def test_bm25_matches_terms_that_only_appear_in_a_chunks_header(tmp_path: Path) 
     assert result.chunk_id == "a"
     assert result.header == "Apple Inc. (AAPL) 10-K, period ended 2024-09-28", "and it survives persistence"
     assert result.text == "Revenue grew 2% on services."
+
+
+# ---------------------------------------------------------------------------
+# Metadata filters (chunking plan, Phase 3)
+# ---------------------------------------------------------------------------
+
+
+def _filed(chunk_id: str, text: str, ticker: str, period_end: int) -> Chunk:
+    return Chunk(
+        id=chunk_id,
+        text=text,
+        document_id=f"{ticker}_{period_end}.md",
+        source=Path(f"/tmp/{ticker}.md"),
+        doc_type="markdown",
+        metadata={"ticker": ticker, "period_end": period_end},
+    )
+
+
+def _filings_index(tmp_path: Path) -> BM25Index:
+    index = BM25Index(tmp_path / "bm25_index.json")
+    # MSFT's chunks repeat the query term, so they outrank every AAPL chunk.
+    index.upsert(
+        [_filed(f"m{i}", "revenue revenue revenue grew", "MSFT", 20250630) for i in range(5)]
+        + [_filed("a24", "revenue grew", "AAPL", 20240928), _filed("a25", "revenue grew", "AAPL", 20250927)]
+    )
+    return index
+
+
+def test_bm25_filter_never_returns_a_chunk_outside_it(tmp_path: Path) -> None:
+    results = _filings_index(tmp_path).query(
+        "revenue", top_k=10, query_filter=QueryFilter(equals={"ticker": "AAPL"}, range={"period_end": {"gte": 20250101}})
+    )
+
+    assert [r.chunk_id for r in results] == ["a25"]
+
+
+def test_bm25_filter_applies_before_top_k(tmp_path: Path) -> None:
+    # An unfiltered top-2 is all MSFT; filtering that afterwards would return nothing.
+    results = _filings_index(tmp_path).query("revenue", top_k=2, query_filter=QueryFilter(equals={"ticker": "AAPL"}))
+
+    assert {r.chunk_id for r in results} == {"a24", "a25"}
+
+
+def test_bm25_filter_can_name_the_document_id(tmp_path: Path) -> None:
+    results = _filings_index(tmp_path).query(
+        "revenue", top_k=5, query_filter=QueryFilter(any_of={"document_id": ["AAPL_20240928.md"]})
+    )
+
+    assert [r.chunk_id for r in results] == ["a24"]
