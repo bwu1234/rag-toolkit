@@ -598,9 +598,12 @@ of Milestone 23, whose nightly answer tracking inherits the judge's error rate.
   rose most", "how exposed is Apple to China"). Add a separate,
   hand-reviewed tier of underspecified and paraphrased questions. Report it
   apart from the generated set, and re-measure contextual chunking and
-  expansion on it before treating either verdict as general. *Planned in
-  [Chunking and indexing plan](chunking-indexing-plan.md) Phase 0, alongside
-  `period` and `table` tiers.*
+  expansion on it before treating either verdict as general. *Built and
+  baselined in [Chunking and indexing plan](chunking-indexing-plan.md)
+  Phase 0 (2026-09-27): `edgar_underspecified_set.json`, 118 questions,
+  retrieval hit 0.833 `implicit` / 0.500 `paraphrase` against 0.908 on the
+  generated set. The `period` tier shipped with it; `table` waits for Phase 4.
+  Re-measuring contextual chunking and expansion on it is still open.*
 - **Turn log → eval candidates.** Milestone 12 called logged queries with
   feedback "the cheapest source of new eval samples", but nothing converts
   them. Add a `rag.cli turns --export-candidates` path that writes thumbs-down
