@@ -1,5 +1,5 @@
 {
-  "label": "re-run after 2026-09-26 label fixes (7 samples)",
+  "label": "re-run after 2026-09-26 label fixes (7 samples); baseline re-run 2026-09-27 for chunking plan Phase 0 step 3",
   "corpus": "edgar (isolated)",
   "collection": "rag_corpus__edgar",
   "eval_set": "data/eval/edgar_eval_set.json",
@@ -28,7 +28,7 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 199.2,
+      "elapsed_s": 207.8,
       "metrics": {
         "hit_rate": 0.908,
         "recall": 0.908,
@@ -36,6 +36,7 @@
         "mrr": 0.7223,
         "ndcg": 0.8213
       },
+      "by_kind": {},
       "recall_by_k": {
         "1": 0.592,
         "3": 0.8621,

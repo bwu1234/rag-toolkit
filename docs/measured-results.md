@@ -494,6 +494,81 @@ against the baseline moved by at most 0.02. Raw records:
 `data/eval/results/retrieval_edgar_edgar_eval_set.json` and
 `data/eval/results_contextual/`.
 
+### Baselines on the three question sets (chunking plan, Phase 0 step 3)
+
+**Setup.** Run on 2026-09-27 at commit `574fb8a`. `edgar`, non-contextual
+index (`index-report`: in sync, 4,236 chunks), shipped retrieval (hybrid,
+`bge-reranker-v2-m3`, `top_k 20`, `rerank_top_k 5`, `min_score 0.0`), CRAG
+off, generator `qwen3.5:9b-mlx`, judge `gemma4:31b-mlx` at temperature 0.
+Every set was run in full: the generated set is 174 questions on the fixed
+labels, not the 40-sample subset. Retrieval used `run_matrix.py --variant
+baseline`, fingerprint `baseline` in each file. Answers used `run_answer_matrix.py
+--variant crag=off --sets answerable,period,underspecified --limit 0
+--results-dir data/eval/results_chunking`. Phases 1–3 of the
+[chunking plan](chunking-indexing-plan.md) are measured against these rows.
+
+| set | n | retrieval hit [95% CI] | NDCG | answer pass [95% CI] | answer fails: retrieval / generation |
+|---|---|---|---|---|---|
+| generated | 174 | 0.908 [0.856, 0.943] | 0.821 | 0.862 [0.803, 0.906] | 15 / 9 |
+| `period` | 55 | **0.582** [0.450, 0.703] | 0.393 | 0.782 [0.656, 0.871] | 12 / 0 |
+| `underspecified` | 118 | 0.652 [0.563, 0.732] | 0.562 | 0.610 [0.520, 0.693] | 37 / 9 |
+| · `implicit` | 54 | 0.833 [0.713, 0.910] | 0.741 | 0.722 [0.591, 0.824] | |
+| · `paraphrase` | 64 | **0.500** [0.381, 0.619] | 0.410 | 0.516 [0.396, 0.634] | |
+
+The bracketed intervals are 95% Wilson intervals on each rate alone, which is
+each tier's noise floor. A later variant is judged by its paired Δ against
+these rows, not by whether its rate leaves this interval. `unmatchable_spans`
+is 0 on all three sets. The tiers are reported apart from the generated set
+and never averaged into it. `underspecified`'s two kinds are reported
+separately too, because they fail differently.
+
+- **The generated set reproduces exactly.** The retrieval re-run gave
+  0.908 / 0.821, identical to the post-label-fix row above. Answer pass is
+  150/174, which agrees with the 40-sample run under the same judge (35/40,
+  0.875).
+- **`period` is the weakest retrieval tier.** The right filing's copy
+  reaches the top 5 for 32 of 55 questions. An ad hoc script (not committed)
+  re-ran the tier's retrieval and classified each result against the filings
+  in `competing_doc_ids`:
+
+  | outcome | n |
+  |---|---|
+  | hit, and no copy from the other filing ranks above it | 17 |
+  | hit, but the other filing's identical copy ranked above it | 15 |
+  | miss: only the other filing's copy is in the top 5 | 10 |
+  | miss: neither filing's copy is in the top 5 | 13 |
+
+  In 25 of 55, the same-text copy from the wrong period outranks the right
+  one. Nothing in the chunk text can break that tie, which is what Phase 3's
+  period filter is for. The other 13 misses are a different problem: the
+  paragraph didn't reach the top 5 at all.
+- **Answer pass on `period` can't judge Phase 3.** The competing paragraph is
+  word-for-word the same, so an answer built from the wrong filing is still
+  correct: 11 of the 23 evidence misses passed anyway. Pass (0.782) sits
+  above hit (0.582) for that reason. Phase 3 is judged on `period`'s
+  retrieval hit and NDCG under `span_and_document`, and answer pass is only a
+  check that nothing broke.
+- **`paraphrase` halves retrieval.** It keeps company and period, and only
+  rewords the question away from the span. Hit falls to 0.500 from 0.908 on
+  the questions it was drawn from. This is the first measurement of the
+  tier that contextual chunking and query expansion were designed for, which
+  both measured as noise on the generated set. Re-measure both on this tier
+  before treating either verdict as general.
+- **`implicit` costs less than `paraphrase`.** Naming a company through a
+  product or description ("the iPhone maker") drops hit to 0.833. The
+  question keeps the period and most of the span's wording, so BM25 still
+  gets purchase on the rest of the question.
+- **Failures on the tiers are retrieval, not generation.** Of
+  `underspecified`'s 46 failures, 37 had no gold span in the prompt. That is
+  the stage Phases 1–3 change.
+
+**Not checked.** The single-hop sets store verdicts but not the answers or
+the judge's replies (the multi-hop set stores both), so no verdict here has
+been read by hand. The judge's earlier false-pass rate on multi-hop, about 1
+in 15, is the only estimate available. Also not measured: run-to-run noise
+from the generator's temperature 0.2. The multi-hop re-run put it at about ±2
+questions on 34, and a single answer run on the tiers is one draw.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a
@@ -502,11 +577,13 @@ against the baseline moved by at most 0.02. Raw records:
   isolated) — the registry supports it, no numbers taken.
 - Anything on the `baseline` corpus, which is retained as a control and has not
   been re-measured since the reranker change.
-- **Answer-side re-runs after the 2026-09-26 label fixes.** The CRAG answer
-  matrix and the gemma4-31b-judged pipeline baseline were scored on the old
-  labels. Their 40-sample subsample includes one fixed sample (MRK), and the
-  multi-hop set has two rebuilt samples (`mh-ual-unrealized`,
-  `mh-cash-ual-luv`). Re-run them, the answer matrix with `--limit 0` for the
-  full 174, before comparing new answer results against them.
+- **Answer-side re-runs after the 2026-09-26 label fixes, partly done.** The
+  full 174-question pipeline baseline on the fixed labels is now recorded
+  ([above](#baselines-on-the-three-question-sets-chunking-plan-phase-0-step-3),
+  `data/eval/results_chunking/`). Still on the old labels: the CRAG answer
+  matrix, and the 40-sample `crag=off` answerable row in
+  `data/eval/results/answer_edgar__judge-gemma4-31b-mlx.json`, which
+  Milestone 19 phase 4 pairs against. That subsample includes one fixed
+  sample (MRK). Re-run them before comparing new answer results against them.
 - `retrieval.top_k` between 20 and 100 with `bge-v2-m3`. 100 measured as noise
   against 20 (see the label-check re-run); intermediate values untested.
