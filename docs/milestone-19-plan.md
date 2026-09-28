@@ -185,9 +185,9 @@ Search count and cap-hit rate come with the agent in phase 3.
   the note after this list.)
 - `agent:` in `settings.py` / `config.yaml`: `llm`, `strategy`,
   `max_tool_calls: 8`, `timeout_s: 600`, `max_passage_chars: 1200`,
-  `num_ctx: 32768`. It is inert until phase 3, so `config_fingerprint`
-  excludes it for now and logged turns keep their fingerprint. **Phase 3 must
-  put it back in the hash when `chat.mode: agentic`.** `timeout_s: 600` is a
+  `num_ctx: 32768`. It was inert until phase 3, so `config_fingerprint`
+  excluded it; phase 3 put it back in the hash when `chat.mode: agentic` (see
+  "Fingerprint" under phase 3). `timeout_s: 600` is a
   measurement default. The interactive-latency question below is still open.
 - **`num_ctx` alone doesn't prevent silent truncation, and the 90% warning
   doesn't detect it.** Measured on Ollama 0.34.4 with a ~6.9k-token prompt:
@@ -285,7 +285,9 @@ from decision 6. What shipped, and where it departs from the original bullets:
   that raised) moved to a `ChatResponder` base class. `ChatService` and
   `AgentService` each implement only `_answer()`, and `build_chat_service`
   returns a `ChatResponder`. The callers changed one annotation each.
-- **The model doesn't choose `corpus`, `top_k` or `max_chars`.** The agent
+- **The model doesn't choose `corpus`, `top_k` or `max_chars`** (nor
+  `filters`, added to `rag_search` afterwards by the chunking plan's Phase 3:
+  it is pinned to the turn's own `/chat` filter; see phase 5). The agent
   offers `rag_search` as `ToolSpec.definition_without(...)`: the MCP schema
   with those three properties removed, the rest byte-identical. `corpus` is
   the turn's selection, because an eval's `--corpus` must be the index
@@ -386,6 +388,16 @@ appended to the tool result, then with the shipped separate message.
 
 ### 4 — Measure (the milestone's actual deliverable)
 
+**Re-baseline the pipeline first.** The shipped pipeline changed after phase
+0: the [chunking plan](chunking-indexing-plan.md)'s Phase 2 turned on the
+chunk header and `reranker.include_header` (+7.5pp answer pass on the
+generated set), and the 2026-09-26 label fixes touched one sample of the
+40-sample `crag=off` row. Phase 0's multi-hop baseline (15/34) and that row
+both predate it, so `pipeline / 9b` must be re-run at the current config
+before any agentic row is paired against it. The agent searches the same
+header-bearing index, so pairing it against the old baseline would credit it
+with the header's gain.
+
 Matrix, one factor at a time, on all three sets:
 
 | variant | purpose |
@@ -425,9 +437,15 @@ for any default; it is the only agentic variant that runs at 9b speed.
   `read_span(doc_id, start, end)`. A single filing is roughly 15k tokens, well
   within the 27b's 262k context. This is the READ-paper direction, and it
   targets the table-split case the 27b needed 5 searches for.
-- **Metadata filters on `rag_search`** (`company`, `period`, `form`), derived
-  from the filename convention `TICKER_FORM_PERIOD.md`. This overlaps with
-  Milestone 20's filter pushdown, so land it there and expose it here.
+- **Let the model set `filters` on `rag_search`.** The filter itself shipped
+  with the chunking plan's Phase 3: `rag_search` takes a `QueryFilter` over
+  the front-matter fields (`company`, `ticker`, `form`, `period_end`, …), and
+  a company + period filter measured +10.9pp hit on the `period` tier and
+  +7.6pp on `underspecified`. The agent currently pins `filters` to the
+  turn's. Unpinning it is a one-line change (`PINNED_ARGUMENTS` in
+  `rag/generation/agent.py`) plus a matrix row, `agentic react / 9b +
+  filters`, to see whether the model writes filters that help or ones that
+  exclude the answer.
 - **Streaming the agent's intermediate steps**, which is Milestone 21's SSE work.
 - **A `planned_refine` strategy: a planned turn with one forced gap check.**
   After the planned searches, make one structured call ("which sub-question is

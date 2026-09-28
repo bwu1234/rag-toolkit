@@ -85,7 +85,8 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   (`rag/index_manifest.py`) refuses the run until you do. Generated
   contexts survive `--reset` on purpose (so rebuilds don't re-pay for them);
   `--clear-context-cache` forces regeneration.
-- API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`, `/health`)
+- API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`,
+  optional `history` and metadata `filters`; `/health`)
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.
   The `mcp` extra is required only for the streamable HTTP transport; stdio
   uses the fallback implementation without it. The MCP server serves exactly

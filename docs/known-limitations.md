@@ -1,13 +1,13 @@
 # Known limitations / roadmap
 
-- **Neither Milestone 9 nor 10 is measured on this corpus yet.** Both are off by
-  default and both were verified functionally (see `docs/milestone-notes.md`)
-  rather than evaluated. `data/eval/eval_set.json` is now real — 43 samples
-  against documents that exist in `data/corpora/baseline/documents/` — so
-  retrieval and answer eval finally produce signal, but no before/after numbers
-  have been recorded for either feature. Run `retrieval_eval` with
-  `chunking.contextual` on vs. off, and `answer_eval` with `crag` on vs. off,
-  before recommending either.
+- **The measured-off verdicts rest mostly on questions that name their
+  subject.** Contextual chunking (Milestone 9), CRAG (Milestone 10) and query
+  expansion were measured on the generated EDGAR set, where every question
+  names its company and period, and all came out as noise
+  ([measured results](measured-results.md)). The deterministic chunk header
+  has since replaced contextual chunking as the way to put document identity
+  into chunks. CRAG and expansion have not been re-measured on the
+  `underspecified` tier they were designed for.
 - The retry rewriter has the same domain-drift failure mode HyDE does, and it's
   severe: on this corpus "How do I raise my throttling ceiling?" was rewritten
   to "Increase maximum CPU frequency limits via BIOS configuration" — a fluent,
@@ -19,12 +19,13 @@
   despite the system prompt forbidding it. Harmless — the identifying terms are
   still there and that's what's being indexed — but it wastes a few tokens of
   the `max_context_chars` budget on every chunk.
-- The grader, the retry rewriter, the groundedness checker, the condenser, the
-  expanders, and the answering model are all the *same* local 9b model. A
-  groundedness check is only as good as the model performing it, and a model
-  checking output shaped like its own has an obvious blind spot. A larger or
-  simply different judge model would be a real improvement and needs no
-  interface change — only a second `LLMClient` in the builder.
+- On the served path, the grader, the retry rewriter, the groundedness
+  checker, the condenser, the expanders, and the answering model are all the
+  *same* `llm` model. A groundedness check is only as good as the model
+  performing it, and a model checking output shaped like its own has an
+  obvious blind spot. Only the eval judge (`eval.judge`) and the agent's loop
+  (`agent.llm`) can run on a different model today; the runtime checker has
+  no setting of its own.
 - CRAG's latency is not visible in `retrieval.min_score`-style tuning: enabling
   `grade_documents` multiplies the per-turn LLM calls by roughly
   `rerank_top_k`, and there's no batching or concurrency in the grader (one
@@ -44,9 +45,23 @@
   incrementally, because the per-chunk content hash covers `chunk.text` only.
   The context cache keeps that rebuild from re-paying for blurbs whose inputs
   didn't change.
-- Chunking is character-based fixed-size with overlap; token-aware and
-  structure-aware/semantic chunking are deferred until the end-to-end
-  pipeline is proven (both fit behind the existing `Chunker` interface).
+- Chunking is character-based fixed-size with overlap. On EDGAR, 543 chunks
+  (12.8%) start partway through a table, separated from its header row
+  (`index-report` counts them). A structure-aware chunker is planned in the
+  [chunking plan](chunking-indexing-plan.md) (Phases 4–5); semantic chunking
+  was dropped from it on the evidence there. Token-aware sizing waits for an
+  embedder with a hard token limit.
+- **The chunk header needs typed document metadata.** A document missing any
+  field `chunking.header.template` names gets no header, and on EDGAR that
+  metadata comes only from the fetcher's YAML front matter. PDFs and
+  plain-text files have no front matter, so a non-EDGAR corpus gets no header
+  from the shipped template (`index-report` shows the count).
+- **Metadata filters come only from the caller.** `POST /chat` and MCP
+  `rag_search` take `filters`. The UI and `cli chat` don't, nothing extracts
+  them from question text (Milestone 20), and the agent's `filters` argument
+  is pinned to the turn's rather than chosen by the model (Milestone 19). The
+  measured gain from a period filter is therefore unavailable to most
+  traffic.
 - **`data/corpora/baseline` is too small to evaluate against, and that is why the EDGAR
   corpus exists.** At 8 documents / 26,429 characters / 31 chunks, `top_k: 20`
   already retrieves ~65% of the corpus, so hit rate and recall@k are saturated
@@ -78,20 +93,25 @@
   hypothetical passage about reactor coolant loops and terminal code 99-DELTA.
   `include_original: true` (the default) exists precisely so a generation that
   wanders can't sink the search.
-- `retrieval.min_score` is tuned by hand against the eval set; there's no
-  calibration step, and its meaningful range shifts with the reranker. Set it
-  too high and answerable questions get refused; too low and it does nothing.
+- `retrieval.min_score` is 0.0 (off): the hand-tuned value measured inert,
+  and there's no calibration step to derive one from `bge-reranker-v2-m3`'s
+  score distribution. Its meaningful range shifts with the reranker, so an
+  inherited threshold can silently reject everything. Until one is derived,
+  nothing stops the model from being handed five irrelevant passages.
 - Query condensing costs an extra LLM round trip on every turn that has
   history, and the rewrite is only as good as the local model. The rewritten
   query is reported back on `ChatAnswer`/`ChatResponse` and shown in the UI, so
   a bad rewrite is at least visible — but nothing detects or corrects one.
-- Conversation history is never shown to the *answering* model, only to the
-  condenser. Questions whose answer depends on the thread rather than on the
-  corpus ("summarize what you just told me") aren't served by this design.
-- Reranking is opt-in via config (`reranker.provider: none` is still the
-  default in `config.yaml`); switch to `cross_encoder` to enable it. A
-  pure-LLM reranker (reusing the existing `LLMClient`/Ollama setup) remains
-  a possible lighter-weight alternative behind the same `Reranker` interface.
+- In `pipeline` mode, conversation history is never shown to the *answering*
+  model, only to the condenser. Questions whose answer depends on the thread
+  rather than on the corpus ("summarize what you just told me") aren't served
+  by this design. `chat.mode: agentic` passes history to the model, but it
+  is unmeasured and off by default.
+- The cross-encoder reranker (`BAAI/bge-reranker-v2-m3`, the default) costs
+  ~1.1 s/query on Apple Silicon and loads several hundred MB of weights; it
+  will be slower on CPU-only hosts. A pure-LLM reranker behind the same
+  `Reranker` interface is untested, and Qwen3-Reranker has no working
+  adapter ([measured results](measured-results.md#reranker-models)).
 - Stale-chunk removal trusts the corpus as loaded. A file whose loader raises
   (e.g. a corrupt PDF, logged and skipped) produces no chunks that run, so its
   existing chunks are removed along with genuinely deleted documents, and come
@@ -105,7 +125,8 @@
   previous instructions" is concatenated straight into the prompt with no
   delimiter distinguishing untrusted content from the system instructions.
   Wrapping passages and the query in explicit delimiter tags is a cheap first
-  step; nothing is done today.
+  step; nothing is done today (planned in Milestone 28). The agent path
+  shares the passage formatting (`format_passage`) and the same exposure.
 - **The turn log grows without bound and is not rotated.** `data/logs/turns.jsonl`
   gets one line of several KB per turn, since every event, attempt and answer
   is inlined. It's gitignored local data, but nothing prunes it. It also stores
