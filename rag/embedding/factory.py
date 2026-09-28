@@ -15,7 +15,12 @@ def get_embedder(config: EmbeddingConfig) -> EmbeddingModel:
     """Instantiate the `EmbeddingModel` selected by `config.provider`."""
 
     if config.provider == "ollama":
-        return OllamaEmbedder(model=config.model, base_url=config.base_url, dimensions=config.dimensions)
+        return OllamaEmbedder(
+            model=config.model,
+            base_url=config.base_url,
+            dimensions=config.dimensions,
+            query_instruction=config.query_instruction,
+        )
 
     raise ValueError(
         f"Unknown embedding provider: {config.provider!r}. "

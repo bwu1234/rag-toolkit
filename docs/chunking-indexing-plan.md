@@ -424,6 +424,15 @@ no reindex.
   retrieval instruction on EDGAR, with a paired CI. It becomes the default
   only if the CI excludes zero.
 
+*Done 2026-09-27: stays `null`.* No interval favoured the instruction on any
+of the three sets, in hybrid, stage-1-ceiling or dense-only mode. The point
+estimates lean negative (5 wins, 32 losses across the nine pairs), with the
+largest drop on `paraphrase`. The loss shows at stage 1, so the instruction
+pushes answer chunks down rather than up. Phase 1b compares sizes with
+`null`, plus one instruction pair on the winner, since a different checkpoint
+may respond differently. See
+[measured results](measured-results.md#query-instruction-for-the-embedder-chunking-plan-phase-1).
+
 ### Phase 1b — Embedder size (1 day, mostly unattended)
 
 Every phase keeps `qwen3-embedding:0.6b`, and no embedder has been compared on

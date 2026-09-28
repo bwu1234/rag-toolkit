@@ -36,6 +36,7 @@ def config_fingerprint(config: RagConfig) -> str:
 
     `llm.thinking_level` is excluded only while unset, so adding the field
     didn't re-key every turn already logged; setting it changes the hash.
+    `embedding.query_instruction` is handled the same way.
 
     `agent` counts only under `chat.mode: agentic`, the one mode that reads
     it; a pipeline turn's hash doesn't move when agent settings change. For
@@ -49,5 +50,7 @@ def config_fingerprint(config: RagConfig) -> str:
         exclude["chat"] = {"mode"}
     if config.llm.thinking_level is None:
         exclude["llm"] = {"thinking_level"}
+    if config.embedding.query_instruction is None:
+        exclude["embedding"] = {"query_instruction"}
     payload = config.model_dump_json(exclude=exclude)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]

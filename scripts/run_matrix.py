@@ -84,6 +84,15 @@ FINGERPRINTED = (
     "reranker.aggregate",
 )
 
+# Fingerprinted only once set, so results recorded before these fields existed
+# keep their fingerprint while the field sits at its default.
+FINGERPRINTED_WHEN_SET = (
+    "embedding.query_instruction",
+)
+
+# The default retrieval task from the Qwen3-Embedding model card.
+QWEN3_RETRIEVAL_INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
+
 
 @dataclass
 class Variant:
@@ -134,6 +143,21 @@ VARIANTS: list[Variant] = [
             {"retrieval.top_k": 50, "retrieval.rerank_top_k": 50}),
     Variant("stage1_top_k=100", "stage1",
             {"retrieval.top_k": 100, "retrieval.rerank_top_k": 100}),
+
+    # Qwen3-Embedding's query-side instruction (chunking plan, Phase 1), with the
+    # model card's default retrieval task. It changes only query vectors, so no
+    # reindex. The stage-1 variant pairs with `stage1_top_k=20`: the misses this
+    # targets are chunks stage 1 ranks below 20, before the reranker sees them.
+    Variant("query_instruction=retrieval", "query_instruction",
+            {"embedding.query_instruction": QWEN3_RETRIEVAL_INSTRUCTION}),
+    Variant("query_instruction=retrieval stage1_top_k=20", "query_instruction",
+            {"embedding.query_instruction": QWEN3_RETRIEVAL_INSTRUCTION,
+             "retrieval.top_k": 20, "retrieval.rerank_top_k": 20}),
+    # The embedder's own effect, with no BM25 list for fusion to lean on. Pairs
+    # with `mode=dense`.
+    Variant("query_instruction=retrieval mode=dense", "query_instruction",
+            {"embedding.query_instruction": QWEN3_RETRIEVAL_INSTRUCTION,
+             "retrieval.mode": "dense"}),
 
     # The payoff question the stage-1 axis raises: retrieval can surface the
     # right chunk far more often with a bigger candidate pool, but that is only
@@ -229,6 +253,9 @@ def read_path(config: RagConfig, path: str) -> Any:
 def fingerprint(config: RagConfig) -> tuple[str, dict[str, Any]]:
     """Hash the retrieval-relevant settings, and return them alongside the hash."""
     settings = {path: read_path(config, path) for path in FINGERPRINTED}
+    settings.update(
+        {path: value for path in FINGERPRINTED_WHEN_SET if (value := read_path(config, path)) is not None}
+    )
     serialized = json.dumps({k: str(v) for k, v in settings.items()}, sort_keys=True)
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:12], settings
 

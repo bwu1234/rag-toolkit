@@ -81,6 +81,45 @@ def test_embed_query_returns_single_vector() -> None:
     assert embedder.embed_query("hello") == _vector_for("hello")
 
 
+
+def _recording_handler(seen: list[str]):
+    def handler(request: httpx.Request) -> httpx.Response:
+        import json
+
+        inputs = json.loads(request.read())["input"]
+        seen.extend(inputs)
+        return httpx.Response(200, json={"embeddings": [_vector_for(t) for t in inputs]})
+
+    return handler
+
+
+def test_query_instruction_prefixes_queries_in_the_model_card_format() -> None:
+    seen: list[str] = []
+    embedder = _embedder_with_handler(_recording_handler(seen), query_instruction="Find passages")
+
+    embedder.embed_query("revenue in 2025")
+
+    # No space after "Query:" -- Qwen3-Embedding's documented format.
+    assert seen == ["Instruct: Find passages\nQuery:revenue in 2025"]
+
+
+def test_query_instruction_never_reaches_documents() -> None:
+    seen: list[str] = []
+    embedder = _embedder_with_handler(_recording_handler(seen), query_instruction="Find passages")
+
+    embedder.embed_documents(["chunk one", "chunk two"])
+
+    assert seen == ["chunk one", "chunk two"]
+
+
+def test_no_query_instruction_embeds_the_bare_query() -> None:
+    seen: list[str] = []
+    embedder = _embedder_with_handler(_recording_handler(seen))
+
+    embedder.embed_query("revenue in 2025")
+
+    assert seen == ["revenue in 2025"]
+
 def test_dimensions_are_discovered_lazily_and_cached() -> None:
     call_count = 0
 
@@ -130,6 +169,15 @@ def test_get_embedder_factory_selects_ollama() -> None:
 
     assert isinstance(embedder, EmbeddingModel)
     assert isinstance(embedder, OllamaEmbedder)
+
+
+def test_get_embedder_factory_passes_the_query_instruction() -> None:
+    config = EmbeddingConfig(model="m", query_instruction="Find passages")
+
+    embedder = get_embedder(config)
+
+    assert isinstance(embedder, OllamaEmbedder)
+    assert embedder.query_instruction == "Find passages"
 
 
 def test_get_embedder_factory_rejects_unknown_provider() -> None:

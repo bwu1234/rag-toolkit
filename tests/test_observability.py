@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from rag.api.main import app
 from rag.api.routes.chat import get_chat_service, get_turn_sink
-from rag.config.settings import AgentConfig, ChatConfig, LLMConfig, RagConfig, TurnLogConfig
+from rag.config.settings import AgentConfig, ChatConfig, EmbeddingConfig, LLMConfig, RagConfig, TurnLogConfig
 from rag.events import EventSink, PipelineEvent
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
@@ -456,8 +456,8 @@ def test_config_fingerprint_keys_on_the_agent_section_in_agentic_mode() -> None:
 def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None:
     gemini = LLMConfig(provider="gemini", model="gemini-3.5-flash-lite")
     unset = RagConfig(llm=gemini)
-    # None of `llm.thinking_level`, `agent` or `chat.mode` existed when the
-    # turns already logged were hashed.
+    # None of `llm.thinking_level`, `agent`, `chat.mode` or
+    # `embedding.query_instruction` existed when the turns already logged were hashed.
     as_before = hashlib.sha256(
         unset.model_dump_json(
             exclude={
@@ -466,6 +466,7 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
                 "agent": True,
                 "llm": {"thinking_level"},
                 "chat": {"mode"},
+                "embedding": {"query_instruction"},
             }
         ).encode()
     ).hexdigest()[:12]
@@ -474,6 +475,27 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
     # Unset hashes as it did before the field existed, so logged turns keep their key.
     assert config_fingerprint(unset) == as_before
     assert config_fingerprint(minimal) != config_fingerprint(unset)
+
+
+def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> None:
+    unset = RagConfig()
+    # `embedding.query_instruction` didn't exist when the turns already logged were hashed.
+    as_before = hashlib.sha256(
+        unset.model_dump_json(
+            exclude={
+                "observability": True,
+                "eval": True,
+                "agent": True,
+                "llm": {"thinking_level"},
+                "chat": {"mode"},
+                "embedding": {"query_instruction"},
+            }
+        ).encode()
+    ).hexdigest()[:12]
+    instructed = RagConfig(embedding=EmbeddingConfig(query_instruction="Find passages"))
+
+    assert config_fingerprint(unset) == as_before
+    assert config_fingerprint(instructed) != config_fingerprint(unset)
 
 
 # ---------------------------------------------------------------------------

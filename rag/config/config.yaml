@@ -43,6 +43,11 @@ embedding:
   model: qwen3-embedding:0.6b
   base_url: http://localhost:11434
   dimensions: null
+  # Query-side instruction (Qwen3-Embedding's `Instruct: ...\nQuery:` prefix).
+  # null on evidence: the model card's retrieval task measured no better than
+  # noise on EDGAR, and leaned worse (docs/measured-results.md, "Query
+  # instruction for the embedder"). Query-time only, so no reindex to change it.
+  query_instruction: null
 
 llm:
   provider: ollama

@@ -10,8 +10,9 @@ What has shipped and what is next is tracked in [Backlog](docs/backlog.md);
 the MCP server is also shipped.
 
 - **Measured-off features stay off.** Contextual chunking, CRAG, query
-  expansion and `retrieval.min_score` all measured as no better than noise on
-  the EDGAR corpus — don't enable one without re-measuring
+  expansion, `retrieval.min_score` and `embedding.query_instruction` all
+  measured as no better than noise on the EDGAR corpus — don't enable one
+  without re-measuring
   ([Measured results](docs/measured-results.md)).
 - **The MCP server is not Milestone 19.** It serves our retrieval to an outside
   agent; Milestone 19 is *this* system calling search as a tool.
