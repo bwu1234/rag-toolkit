@@ -127,6 +127,11 @@ Design rationale, history, and planning live in `docs/`, read on demand:
 - **`docs/measured-results.md`** — eval numbers with the caveats
   needed to read them safely. Read before turning on anything that is off by
   default. To measure a new change, use the `measure-change` skill.
+- **`docs/eval-harness-plan.md`** — planned run and index provenance, immutable
+  scoring revisions, offline evidence, comparison rules, judge calibration,
+  repeats, confirmation sets and the optional local MLflow tracking pilot.
+  Read before changing eval
+  storage, scoring or orchestration; its proposed commands are not yet shipped.
 - **`docs/backlog.md`** — the planned milestones: the plan behind each, and
   why they are ordered as they are.
 - **`docs/known-limitations.md`** — known gaps and failure modes in what's
