@@ -21,6 +21,7 @@ from rag.eval.metrics import (
     precision_at_k,
     recall_at_k,
     reciprocal_rank,
+    wilson_interval,
 )
 from rag.chunking.models import Chunk
 from rag.eval.relevance import UnmatchableSpan, find_unmatchable_spans, judge_ranking, normalize
@@ -428,6 +429,38 @@ def test_run_retrieval_eval_all_hits() -> None:
     # MRR = (1/1 + 1/2 + 1/3) / 3 = 11/18
     assert report.overall.mrr == pytest.approx((1.0 + 0.5 + 1 / 3) / 3)
     assert len(retriever.seen_queries) == 3
+
+
+def test_wilson_interval_brackets_the_rate_and_stays_inside_zero_one() -> None:
+    low, high = wilson_interval(25, 50)
+    assert low < 0.5 < high
+    # About ±14 points at n=50, the noise floor the chunking plan quotes.
+    assert high - low == pytest.approx(0.267, abs=0.005)
+    assert wilson_interval(0, 50)[0] == 0.0 and wilson_interval(0, 50)[1] > 0.0
+    assert wilson_interval(50, 50)[1] == pytest.approx(1.0) and wilson_interval(50, 50)[0] < 1.0
+    assert wilson_interval(0, 0) == (0.0, 1.0)
+
+
+def test_run_retrieval_eval_breaks_results_down_by_kind() -> None:
+    dataset = EvalDataset.from_dicts([
+        {"id": "q1", "query": "a", "expected_doc_ids": ["a.pdf"], "kind": "implicit"},
+        {"id": "q2", "query": "b", "expected_doc_ids": ["b.pdf"], "kind": "implicit"},
+        {"id": "q3", "query": "c", "expected_doc_ids": ["x.pdf"], "kind": "paraphrase"},
+    ])
+    retriever = _FakeRetriever([_scored("a::chunk0", "a.pdf"), _scored("b::chunk0", "b.pdf")])
+
+    report = run_retrieval_eval(dataset, retriever)
+
+    by_kind = {k.label: k for k in report.by_kind}
+    assert set(by_kind) == {"implicit", "paraphrase"}
+    assert by_kind["implicit"].mean_hit_rate == pytest.approx(1.0)
+    assert by_kind["paraphrase"].mean_hit_rate == pytest.approx(0.0)
+    assert report.overall.hit_ci == wilson_interval(2, 3)
+
+
+def test_run_retrieval_eval_has_no_kind_breakdown_for_a_set_without_kinds() -> None:
+    report = run_retrieval_eval(_make_retrieval_dataset(), _FakeRetriever([_scored("a::chunk0", "a.pdf")]))
+    assert report.by_kind == []
 
 
 def test_run_retrieval_eval_all_misses() -> None:

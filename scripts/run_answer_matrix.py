@@ -66,6 +66,15 @@ question. It is judged part by part (see `rag.eval.multihop_eval`) and reports
 complete-and-correct rate, mean completeness and evidence recall -- the
 baseline the Milestone 19 agent has to beat.
 
+The chunking plan's tiers
+-------------------------
+`--sets period,underspecified` adds the two tiers frozen in Phase 0 of
+docs/chunking-indexing-plan.md. They are opt-in, always run in full
+(`--limit` applies to the answerable set only), and are reported in their own
+table, never averaged into the answerable rate. `underspecified` is also
+broken down by `kind` (implicit, paraphrase). Each pass rate carries a 95%
+Wilson interval, the tier's noise floor on its own.
+
 Usage
 -----
     python scripts/run_answer_matrix.py --corpus edgar --limit 40
@@ -102,6 +111,7 @@ from rag.eval.checkpoint import (  # noqa: E402
     digest,
 )
 from rag.eval.dataset import EvalDataset  # noqa: E402
+from rag.eval.metrics import wilson_interval  # noqa: E402
 from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.generation.builder import build_chat_service  # noqa: E402
@@ -115,7 +125,13 @@ logger = logging.getLogger(__name__)
 DEFAULT_ANSWERABLE = Path("data/eval/edgar_eval_set.json")
 DEFAULT_REFUSALS = Path("data/eval/edgar_refusal_set.json")
 DEFAULT_MULTIHOP = Path("data/eval/edgar_multihop_set.json")
-SETS = ("answerable", "refusals", "multihop")
+DEFAULT_PERIOD = Path("data/eval/edgar_period_set.json")
+DEFAULT_UNDERSPECIFIED = Path("data/eval/edgar_underspecified_set.json")
+#: What runs without `--sets`, as before the tiers existed.
+DEFAULT_SETS = ("answerable", "refusals", "multihop")
+#: The chunking plan's tiers: single-answer like `answerable`, reported apart.
+TIER_SETS = ("period", "underspecified")
+SETS = DEFAULT_SETS + TIER_SETS
 
 
 @dataclass
@@ -203,6 +219,13 @@ def run_one(
         "  %s: %d/%d passed (%.3f) in %.0fs",
         label, report.num_passed, report.num_evaluated, report.pass_rate, elapsed,
     )
+    kind_of = {s.id: s.extra["kind"] for s in dataset if "kind" in s.extra}
+    by_kind: dict[str, dict[str, int]] = {}
+    for r in report.sample_results:
+        if r.sample_id in kind_of:
+            counts = by_kind.setdefault(kind_of[r.sample_id], {"num_evaluated": 0, "num_passed": 0})
+            counts["num_evaluated"] += 1
+            counts["num_passed"] += r.passed is True
     return {
         "num_evaluated": report.num_evaluated,
         "num_passed": report.num_passed,
@@ -210,6 +233,11 @@ def run_one(
         "num_unparseable": report.num_unparseable,
         "num_empty": report.num_empty,
         "pass_rate": round(report.pass_rate, 4),
+        "pass_ci": [round(x, 4) for x in wilson_interval(report.num_passed, report.num_evaluated)],
+        "by_kind": {
+            kind: {**c, "pass_ci": [round(x, 4) for x in wilson_interval(c["num_passed"], c["num_evaluated"])]}
+            for kind, c in sorted(by_kind.items())
+        },
         "mean_latency_s": round(report.mean_latency_s, 1),
         # elapsed_s covers this session only; resumed samples ran in an earlier one.
         "elapsed_s": round(elapsed, 1),
@@ -357,6 +385,33 @@ def render_table(results: list[dict[str, Any]]) -> str:
         f_cell = f"{f['pass_rate']:.3f} | {f['num_evaluated']} | {f['elapsed_s']:.0f}" if f else "— | — | —"
         lines.append(f"| `{r['variant']}` | {a_cell} | {f_cell} |")
 
+    tiers = [(r, name) for r in results for name in TIER_SETS if r.get(name)]
+    if tiers:
+        lines += [
+            "",
+            "Chunking-plan tiers, each reported on its own (CI: 95% Wilson interval "
+            "on that rate alone):",
+            "",
+            "| variant | set | pass | 95% CI | fails: retrieval / generation | n | s |",
+            "|---|---|---|---|---|---|---|",
+        ]
+        for r, name in tiers:
+            t = r[name]
+            split = f"{t['failed_retrieval']} / {t['failed_generation']}"
+            if t["failed_unattributed"]:
+                split += f" (+{t['failed_unattributed']} n/a)"
+            rows = [(name, t)] + [(f"{name}: {k}", c) for k, c in t.get("by_kind", {}).items()]
+            for label, c in rows:
+                low, high = c["pass_ci"]
+                # Stage split and time belong to the whole set, not one kind.
+                whole = c is t
+                elapsed = f"{t['elapsed_s']:.0f}" if whole else "—"
+                lines.append(
+                    f"| `{r['variant']}` | {label} | {c['num_passed'] / c['num_evaluated']:.3f} "
+                    f"| [{low:.3f}, {high:.3f}] | {split if whole else '—'} | {c['num_evaluated']} "
+                    f"| {elapsed} |"
+                )
+
     multihop = [r for r in results if r.get("multihop")]
     if multihop:
         lines += [
@@ -387,8 +442,11 @@ def main() -> int:
     parser.add_argument("--answerable", type=Path, default=DEFAULT_ANSWERABLE)
     parser.add_argument("--refusals", type=Path, default=DEFAULT_REFUSALS)
     parser.add_argument("--multihop", type=Path, default=DEFAULT_MULTIHOP)
-    parser.add_argument("--sets", default=",".join(SETS),
-                        help=f"Comma-separated subset of {', '.join(SETS)} to run.")
+    parser.add_argument("--period", type=Path, default=DEFAULT_PERIOD)
+    parser.add_argument("--underspecified", type=Path, default=DEFAULT_UNDERSPECIFIED)
+    parser.add_argument("--sets", default=",".join(DEFAULT_SETS),
+                        help=f"Comma-separated subset of {', '.join(SETS)} to run "
+                             f"(default: {','.join(DEFAULT_SETS)}).")
     add_judge_arguments(parser, note=" Fixed across all variants.")
     parser.add_argument("--limit", type=int, default=40,
                         help="Answerable samples to evaluate (evenly spaced). 0 = all.")
@@ -417,11 +475,13 @@ def main() -> int:
     base = load_config(args.config)
     judge_config = resolve_judge_config(base, args.judge_model, args.judge_provider)
     judge = get_llm_client(judge_config)
-    datasets = {
-        "answerable": subsample(EvalDataset.load(args.answerable), args.limit),
-        "refusals": EvalDataset.load(args.refusals),
-        "multihop": EvalDataset.load(args.multihop),
+    paths = {
+        "answerable": args.answerable, "refusals": args.refusals, "multihop": args.multihop,
+        "period": args.period, "underspecified": args.underspecified,
     }
+    datasets = {name: EvalDataset.load(paths[name]) for name in sets}
+    if "answerable" in datasets:
+        datasets["answerable"] = subsample(datasets["answerable"], args.limit)
     selection = base.corpus_selection(args.corpus)
     logger.info(
         "Answer matrix: %d variant(s), sets %s, corpus %s, judge %s:%s",
@@ -447,6 +507,8 @@ def main() -> int:
             "answerable_set": str(args.answerable),
             "refusal_set": str(args.refusals),
             "multihop_set": str(args.multihop),
+            "period_set": str(args.period),
+            "underspecified_set": str(args.underspecified),
             "results": ordered,
         }, indent=2) + "\n")
         (args.results_dir / f"{stem}.md").write_text(
