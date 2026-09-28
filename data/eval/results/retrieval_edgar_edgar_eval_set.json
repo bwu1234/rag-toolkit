@@ -1,5 +1,5 @@
 {
-  "label": "re-run after 2026-09-26 label fixes (7 samples); query_instruction variants added 2026-09-27 (chunking plan Phase 1)",
+  "label": "re-run after 2026-09-26 label fixes (7 samples); baseline re-run 2026-09-27 for chunking plan Phase 0 step 3; query_instruction variants 2026-09-27 (chunking plan Phase 1)",
   "corpus": "edgar (isolated)",
   "collection": "rag_corpus__edgar",
   "eval_set": "data/eval/edgar_eval_set.json",
@@ -28,7 +28,7 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 199.2,
+      "elapsed_s": 207.8,
       "metrics": {
         "hit_rate": 0.908,
         "recall": 0.908,
@@ -36,6 +36,7 @@
         "mrr": 0.7223,
         "ndcg": 0.8213
       },
+      "by_kind": {},
       "recall_by_k": {
         "1": 0.592,
         "3": 0.8621,
@@ -1114,7 +1115,7 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 171.6,
+      "elapsed_s": 171.7,
       "metrics": {
         "hit_rate": 0.7414,
         "recall": 0.7414,
@@ -1122,6 +1123,7 @@
         "mrr": 0.6322,
         "ndcg": 0.7153
       },
+      "by_kind": {},
       "recall_by_k": {
         "1": 0.546,
         "3": 0.7299,
@@ -2201,7 +2203,7 @@
         "reranker.aggregate": "max"
       },
       "num_samples": 174,
-      "elapsed_s": 176.9,
+      "elapsed_s": 168.6,
       "metrics": {
         "hit_rate": 0.931,
         "recall": 0.931,
@@ -2209,6 +2211,7 @@
         "mrr": 0.7253,
         "ndcg": 0.8306
       },
+      "by_kind": {},
       "recall_by_k": {
         "1": 0.592,
         "3": 0.8621,
@@ -3290,7 +3293,7 @@
         "embedding.query_instruction": "Given a web search query, retrieve relevant passages that answer the query"
       },
       "num_samples": 174,
-      "elapsed_s": 169.6,
+      "elapsed_s": 165.9,
       "metrics": {
         "hit_rate": 0.9023,
         "recall": 0.9023,
@@ -3298,6 +3301,7 @@
         "mrr": 0.7059,
         "ndcg": 0.8067
       },
+      "by_kind": {},
       "recall_by_k": {
         "1": 0.569,
         "3": 0.8506,
@@ -4379,7 +4383,7 @@
         "embedding.query_instruction": "Given a web search query, retrieve relevant passages that answer the query"
       },
       "num_samples": 174,
-      "elapsed_s": 169.1,
+      "elapsed_s": 166.6,
       "metrics": {
         "hit_rate": 0.9195,
         "recall": 0.9195,
@@ -4387,6 +4391,7 @@
         "mrr": 0.7079,
         "ndcg": 0.814
       },
+      "by_kind": {},
       "recall_by_k": {
         "1": 0.569,
         "3": 0.8506,
@@ -5469,7 +5474,7 @@
         "embedding.query_instruction": "Given a web search query, retrieve relevant passages that answer the query"
       },
       "num_samples": 174,
-      "elapsed_s": 167.5,
+      "elapsed_s": 168.3,
       "metrics": {
         "hit_rate": 0.7184,
         "recall": 0.7184,
@@ -5477,6 +5482,7 @@
         "mrr": 0.6111,
         "ndcg": 0.6941
       },
+      "by_kind": {},
       "recall_by_k": {
         "1": 0.5287,
         "3": 0.7069,

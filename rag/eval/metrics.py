@@ -40,7 +40,10 @@ Metrics
 
 from __future__ import annotations
 
-from math import log2
+from math import log2, sqrt
+
+#: Two-sided 95% normal quantile.
+_Z_95 = 1.959964
 
 
 def hit_rate(gains: list[int]) -> float:
@@ -95,3 +98,22 @@ def ndcg_at_k(gains: list[int], ideal_gains: list[int]) -> float:
 def mean(values: list[float]) -> float:
     """Arithmetic mean of a non-empty list; returns 0.0 for an empty list."""
     return sum(values) / len(values) if values else 0.0
+
+
+def wilson_interval(successes: int, n: int, *, z: float = _Z_95) -> tuple[float, float]:
+    """95% Wilson score interval for a rate of ``successes`` out of ``n``.
+
+    The noise floor of one rate on its own: how far a tier's hit or pass rate
+    could move on a different draw of the same number of questions. Wilson
+    rather than the textbook ``p ± z·sqrt(p(1-p)/n)``, which collapses to zero
+    width at 0% or 100% and runs past [0, 1] near them -- both common on a
+    50-question tier. Comparing two configs is :mod:`rag.eval.paired`'s job;
+    this is the interval to read a single tier's baseline with.
+    """
+    if n <= 0:
+        return 0.0, 1.0
+    p = successes / n
+    denominator = 1 + z**2 / n
+    centre = (p + z**2 / (2 * n)) / denominator
+    half = z * sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / denominator
+    return max(0.0, centre - half), min(1.0, centre + half)

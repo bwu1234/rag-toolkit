@@ -27,6 +27,10 @@ Metrics reported
 
 Results are grouped by matching mode (span, span_and_document, document) when a
 set mixes them, because they are not comparable — see :mod:`rag.eval.relevance`.
+They are also grouped by the samples' ``kind`` field when a set has one (the
+``underspecified`` tier's ``implicit`` and ``paraphrase``), because the chunking
+plan reports each kind on its own rather than averaged together. Every hit rate
+carries a 95% Wilson interval: that tier's noise floor on its own.
 
 Every run also reports **unmatchable spans**: expected spans that no chunk the
 configured chunker makes of the corpus contains.  Those samples score as misses
@@ -55,6 +59,7 @@ from rag.eval.metrics import (
     precision_at_k,
     recall_at_k,
     reciprocal_rank,
+    wilson_interval,
 )
 from rag.eval.relevance import UnmatchableSpan, find_unmatchable_spans, judge_ranking
 from rag.ingestion.corpora import chunk_selected_corpora
@@ -90,6 +95,8 @@ class SampleResult:
     recall_by_k: dict[int, float] = field(default_factory=dict)
     #: Spans the ranking never surfaced — the actionable detail on a miss.
     unmatched_spans: list[str] = field(default_factory=list)
+    #: The sample's ``kind`` field, when the set sorts its questions into kinds.
+    kind: str | None = None
 
 
 @dataclass
@@ -104,6 +111,8 @@ class MetricSummary:
     mrr: float
     mean_ndcg: float
     recall_by_k: dict[int, float] = field(default_factory=dict)
+    #: 95% Wilson interval on the hit rate: the noise floor of this one rate.
+    hit_ci: tuple[float, float] = (0.0, 1.0)
 
 
 @dataclass
@@ -114,6 +123,8 @@ class EvalReport:
     sample_results: list[SampleResult]
     #: Per-matching-mode breakdown, populated only when a set mixes modes.
     by_mode: list[MetricSummary] = field(default_factory=list)
+    #: Per-``kind`` breakdown, populated only when the set's samples carry one.
+    by_kind: list[MetricSummary] = field(default_factory=list)
     #: Spans no corpus chunk contains, or None when the corpus wasn't checked.
     unmatchable_spans: list[UnmatchableSpan] | None = None
 
@@ -140,6 +151,7 @@ def _summarize(label: str, results: list[SampleResult]) -> MetricSummary:
             k: mean([r.recall_by_k[k] for r in results if k in r.recall_by_k])
             for k in k_values
         },
+        hit_ci=wilson_interval(sum(1 for r in results if r.hit), len(results)),
     )
 
 
@@ -183,6 +195,7 @@ def run_retrieval_eval(
                 ndcg=ndcg_at_k(judgment.gains, judgment.ideal_gains),
                 recall_by_k=recall_by_k,
                 unmatched_spans=judgment.unmatched_spans,
+                kind=sample.extra.get("kind"),
             )
         )
 
@@ -192,11 +205,16 @@ def run_retrieval_eval(
         if len(modes) > 1
         else []
     )
+    kinds = sorted({r.kind for r in results if r.kind is not None})
+    by_kind = [_summarize(k, [r for r in results if r.kind == k]) for k in kinds]
+    if kinds and any(r.kind is None for r in results):
+        by_kind.append(_summarize("(no kind)", [r for r in results if r.kind is None]))
     label = modes[0] if len(modes) == 1 else "all samples"
     return EvalReport(
         overall=_summarize(label, results),
         sample_results=results,
         by_mode=by_mode,
+        by_kind=by_kind,
         unmatchable_spans=(
             find_unmatchable_spans(dataset, corpus_chunks) if corpus_chunks is not None else None
         ),
@@ -209,7 +227,8 @@ def _coverage(sample, chunks) -> tuple[int, int]:
 
 
 def _print_summary(summary: MetricSummary, *, indent: str = "  ") -> None:
-    print(f"{indent}Hit rate    {summary.mean_hit_rate:.3f}")
+    low, high = summary.hit_ci
+    print(f"{indent}Hit rate    {summary.mean_hit_rate:.3f}  (95% CI {low:.3f}-{high:.3f})")
     print(f"{indent}Recall@k    {summary.mean_recall:.3f}")
     print(f"{indent}Precision@k {summary.mean_precision:.3f}")
     print(f"{indent}MRR         {summary.mrr:.3f}")
@@ -232,6 +251,12 @@ def print_report(report: EvalReport, *, verbose: bool = False) -> None:
         print("  and are NOT comparable; the combined figures above are only a")
         print("  rough indicator. Read the per-mode breakdown instead:")
         for summary in report.by_mode:
+            print(f"\n  [{summary.label}]  ({summary.num_samples} sample(s))")
+            _print_summary(summary, indent="    ")
+    if report.by_kind:
+        print(f"{'-' * 62}")
+        print("  By kind (reported separately; the combined figures above mix them):")
+        for summary in report.by_kind:
             print(f"\n  [{summary.label}]  ({summary.num_samples} sample(s))")
             _print_summary(summary, indent="    ")
     if report.unmatchable_spans is not None:

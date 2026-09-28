@@ -163,6 +163,29 @@ def test_retrieval_table_shows_a_paired_interval_against_baseline() -> None:
     assert "Δ hit [95% CI]" in table
 
 
+def test_retrieval_table_reports_a_hit_interval_and_each_kind_on_its_own() -> None:
+    def kinded(variant: str, hits: dict[str, float], axis: str) -> dict:
+        row = _row(variant, hits, axis=axis)
+        for sid, s in row["samples"].items():
+            s["kind"] = "implicit" if sid.startswith("i") else "paraphrase"
+        row["by_kind"] = {
+            kind: {"num_samples": 2, "metrics": {**row["metrics"], "hit_rate": rate}}
+            for kind, rate in (("implicit", 0.5), ("paraphrase", 1.0))
+        }
+        return row
+
+    base = kinded("baseline", {"i1": 0.0, "i2": 1.0, "p1": 1.0, "p2": 1.0}, "baseline")
+    variant = kinded("v", {"i1": 1.0, "i2": 1.0, "p1": 1.0, "p2": 1.0}, "x")
+
+    table = run_matrix.render_table([base, variant])
+
+    assert "hit 95% CI" in table
+    assert "| `baseline` | implicit | 2 | 0.500 |" in table
+    assert "| `v` | paraphrase | 2 | 1.000 |" in table
+    # The per-kind delta pairs only that kind's samples: one win, among implicit.
+    assert "1W/0L" in table.split("By kind")[1]
+
+
 def test_retrieval_table_marks_rows_without_per_sample_data() -> None:
     """Results recorded before per-sample storage must not be read as tested."""
     base = _row("baseline", None, axis="baseline")
@@ -212,6 +235,18 @@ def test_answer_table_reports_failures_it_cannot_attribute() -> None:
     run["failed_unattributed"] = 2
     table = run_answer_matrix.render_table([{"variant": "crag=off", "answerable": run}])
     assert "0 / 0 (+2 n/a)" in table
+
+
+def test_answer_table_reports_tiers_apart_with_intervals_and_kinds() -> None:
+    tier = {**_answer_run({"a": True, "b": False}, 1, 0),
+            "num_passed": 1, "pass_ci": [0.1, 0.9],
+            "by_kind": {"implicit": {"num_evaluated": 2, "num_passed": 1, "pass_ci": [0.1, 0.9]}}}
+
+    table = run_answer_matrix.render_table([{"variant": "crag=off", "underspecified": tier}])
+
+    assert "| `crag=off` | underspecified | 0.500 | [0.100, 0.900] | 1 / 0 | 2 | 1 |" in table
+    assert "| `crag=off` | underspecified: implicit | 0.500 | [0.100, 0.900] | — | 2 | — |" in table
+    assert "answerable pass" in table.splitlines()[0]  # the tier never fills the answerable column
 
 
 def test_multihop_table_reports_cost_and_marks_rows_recorded_before_it() -> None:

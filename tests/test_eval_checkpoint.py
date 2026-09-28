@@ -218,3 +218,30 @@ def test_matrix_refuses_a_stale_checkpoint_until_told_fresh(
 
     assert _run_matrix(monkeypatch, tmp_path, chat, "--fresh") == 0
     assert chat.asked == ["q0", "q1", "q2"]
+
+
+def test_matrix_runs_a_tier_in_full_and_counts_each_kind(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    tier = tmp_path / "underspecified.json"
+    tier.write_text(json.dumps([
+        {"id": f"u{i}", "query": f"q{i}", "expected_answer": "x", "tier": "underspecified",
+         "kind": "implicit" if i % 2 else "paraphrase"}
+        for i in range(4)
+    ]))
+    monkeypatch.setattr(run_answer_matrix, "build_chat_service", lambda config, corpora=None: _CountingChat())
+    monkeypatch.setattr(run_answer_matrix, "get_llm_client", lambda config: _PassJudge())
+    monkeypatch.setattr(sys, "argv", [
+        "run_answer_matrix.py", "--sets", "underspecified", "--variant", "crag=off",
+        "--underspecified", str(tier), "--limit", "1", "--results-dir", str(tmp_path / "results"),
+    ])
+
+    assert run_answer_matrix.main() == 0
+
+    [results_file] = (tmp_path / "results").glob("*.json")
+    saved = json.loads(results_file.read_text())["results"][0]
+    assert "answerable" not in saved
+    run = saved["underspecified"]
+    assert run["num_evaluated"] == 4, "--limit subsamples the answerable set only"
+    assert {k: v["num_evaluated"] for k, v in run["by_kind"].items()} == {"implicit": 2, "paraphrase": 2}
+    assert run["pass_ci"][1] == pytest.approx(1.0)

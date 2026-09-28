@@ -202,7 +202,7 @@ Two more corpus facts that shape the plan:
 
 Rough sizes assume one person. All eval runs use local Ollama only.
 
-### Phase 0 — Measurement groundwork (3–5 days)
+### Phase 0 — Measurement groundwork (3–5 days) — *done 2026-09-27*
 
 Nothing below can be judged without this. The steps are ordered: no variant
 gets measured until step 3 has recorded a baseline on every question set that
@@ -366,6 +366,39 @@ with `retrieval_eval` and `answer_eval`, and record the results with their
 fingerprints in `docs/measured-results.md`. Phases 1–3 are measured against
 this.
 
+*Done 2026-09-27.* Recorded in
+[measured results](measured-results.md#baselines-on-the-three-question-sets-chunking-plan-phase-0-step-3),
+with every set run in full at the shipped config:
+
+| set | n | retrieval hit | answer pass |
+|---|---|---|---|
+| generated | 174 | 0.908 | 0.862 |
+| `period` | 55 | 0.582 | 0.782 |
+| `underspecified` · `implicit` | 54 | 0.833 | 0.722 |
+| `underspecified` · `paraphrase` | 64 | 0.500 | 0.516 |
+
+- **The harness reports the tiers apart.** `run_matrix.py` gives every hit
+  rate a 95% Wilson interval (the tier's noise floor) and splits a set with
+  `kind`s into per-kind rows with their own paired deltas.
+  `run_answer_matrix.py --sets period,underspecified` runs the tiers in full
+  (`--limit` only subsamples the generated set) and reports them in their own
+  table.
+- **Where the files are.** The tiers' retrieval results are
+  `data/eval/results/retrieval_edgar_edgar_{period,underspecified}_set.*`.
+  Answer results are in `data/eval/results_chunking/`, a directory of their
+  own: putting the 174-question row in the default file would replace the
+  40-sample `crag=off` row that Milestone 19 phase 4 pairs against. Measure
+  Phases 1–3's answer side into `results_chunking/` too.
+- **What it says about the next phases.** On `period`, the other filing's
+  identical copy outranks the right one in 25 of 55 questions, the tie only
+  Phase 3's filter can break. Judge Phase 3 by `period`'s *retrieval*: answers
+  built from the wrong period's identical paragraph still pass, so answer
+  pass (0.782) overstates it. `paraphrase` halving the hit rate is the
+  headroom Phases 1–2 are aimed at.
+- **Not done here.** No answer-side verdict was read by hand, because
+  single-hop runs don't store answers or judge replies. The tiers' generator
+  noise was not measured with repeat runs. Both are noted with the results.
+
 **Later — the `table` set, between Phases 4 and 5.**
 
 Phase 4 changes how tables are rendered, so table spans written against
@@ -391,17 +424,14 @@ no reindex.
   retrieval instruction on EDGAR, with a paired CI. It becomes the default
   only if the CI excludes zero.
 
-*Done 2026-09-27: stays `null`.* No interval favoured the instruction, on
-the generated set or `underspecified`, in hybrid, stage-1-ceiling or
-dense-only mode. The point estimates lean negative (4 wins, 25 losses across
-the six pairs), and the loss shows at stage 1, so it pushes answer chunks
-down rather than up. Phase 1b compares sizes with `null`, plus one
-instruction pair on the winner, since a different checkpoint may respond
-differently. See
+*Done 2026-09-27: stays `null`.* No interval favoured the instruction on any
+of the three sets, in hybrid, stage-1-ceiling or dense-only mode. The point
+estimates lean negative (5 wins, 32 losses across the nine pairs), with the
+largest drop on `paraphrase`. The loss shows at stage 1, so the instruction
+pushes answer chunks down rather than up. Phase 1b compares sizes with
+`null`, plus one instruction pair on the winner, since a different checkpoint
+may respond differently. See
 [measured results](measured-results.md#query-instruction-for-the-embedder-chunking-plan-phase-1).
-The run also recorded `underspecified`'s retrieval baseline (0.653 hit;
-`implicit` 0.833, `paraphrase` 0.500). Step 3's `period` and answer-side
-baselines are still to do.
 
 ### Phase 1b — Embedder size (1 day, mostly unattended)
 

@@ -63,6 +63,13 @@ Answer-side changes (CRAG, prompts, groundedness) use
 `scripts/run_answer_matrix.py` instead — it costs LLM calls per sample and takes
 hours, so run it only after the cheap retrieval measurements are in.
 
+A change under the [chunking plan](../../../docs/chunking-indexing-plan.md) is
+measured on all three EDGAR sets, not just the generated one:
+`--eval-set data/eval/edgar_{eval,period,underspecified}_set.json` for
+retrieval, and `--sets answerable,period,underspecified --limit 0
+--results-dir data/eval/results_chunking` for answers. Report each tier, and
+each of `underspecified`'s kinds, on its own; never average them together.
+
 ## Reading the results
 
 Metrics: `hit_rate`, `recall`, `precision`, `mrr`, `ndcg`, plus `recall_by_k`.
