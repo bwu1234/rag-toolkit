@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 from pathlib import Path
 
 from rag.chunking.chunkers import FixedSizeChunker
@@ -111,3 +113,20 @@ def test_format_says_when_the_index_is_out_of_sync() -> None:
 
 def test_format_says_when_the_index_is_not_built() -> None:
     assert "Index: not built" in format_report(_report([], []))
+
+
+def test_report_counts_documents_without_a_chunk_header() -> None:
+    headed = dataclasses.replace(_chunk("a.md::chunk0", "alpha", document_id="a.md"), header="A Corp 10-K")
+    bare = _chunk("b.md::chunk0", "beta", document_id="b.md")
+
+    report = _report([_doc("alpha", "a.md"), _doc("beta", "b.md")], [headed, bare], header_template="{company}")
+
+    assert report.headerless_documents == ["b.md"]
+    assert "Chunk headers      1 of 2 document(s); none on b.md" in format_report(report)
+
+
+def test_report_says_headers_are_off_without_a_template() -> None:
+    report = _report([_doc("alpha")], [_chunk("d.md::chunk0", "alpha")])
+
+    assert report.headerless_documents is None
+    assert "Chunk headers      off" in format_report(report)

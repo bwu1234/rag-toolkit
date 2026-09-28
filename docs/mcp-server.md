@@ -31,7 +31,8 @@ weaker one and add several seconds of latency per call.
 | `max_chars` | int | 1200 | Per-passage truncation budget |
 
 Each result carries `rank`, `score`, `chunk_id`, `document_id`, `source`
-(repo-relative), and `text`, plus `page` and `context` when present, and
+(repo-relative), and `text`, plus `page`, `context` and `header` (the
+chunk's document header, from `chunking.header`) when present, and
 `truncated`/`full_length` when the passage was cut.
 
 Two response details exist to keep an agent from drawing a wrong conclusion

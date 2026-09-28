@@ -1917,6 +1917,3760 @@
           }
         ]
       }
+    },
+    {
+      "variant": "header=on",
+      "overrides": {
+        "crag.enabled": false,
+        "paths.index_dir": "data/index_header",
+        "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}"
+      },
+      "generator": "ollama:qwen3.5:9b-mlx",
+      "answerable": {
+        "num_evaluated": 174,
+        "num_passed": 163,
+        "num_failed": 11,
+        "num_unparseable": 0,
+        "num_empty": 0,
+        "pass_rate": 0.9368,
+        "pass_ci": [
+          0.8904,
+          0.9643
+        ],
+        "by_kind": {},
+        "mean_latency_s": 10.9,
+        "elapsed_s": 2692.4,
+        "resumed_samples": 0,
+        "failed_ids": [
+          "CVX_10-K_2024-12-31.md::chunk25",
+          "LUV_10-Q_2025-09-30.md::chunk30",
+          "LUV_10-Q_2025-09-30.md::chunk93",
+          "LUV_10-Q_2026-06-30.md::chunk21",
+          "NVDA_10-Q_2025-07-27.md::chunk9",
+          "TGT_10-Q_2025-11-01.md::chunk26",
+          "UAL_10-K_2025-12-31.md::chunk29",
+          "WMT_10-K_2025-01-31.md::chunk33",
+          "WMT_10-K_2025-01-31.md::chunk47",
+          "WMT_10-Q_2026-04-30.md::chunk2",
+          "XOM_10-Q_2026-06-30.md::chunk23"
+        ],
+        "failed_retrieval": 5,
+        "failed_generation": 6,
+        "failed_unattributed": 0,
+        "samples": [
+          {
+            "id": "AAPL_10-K_2024-09-28.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-K_2025-09-27.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-K_2025-09-27.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-K_2025-09-27.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-Q_2026-03-28.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-Q_2026-06-27.md::chunk22",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-Q_2026-06-27.md::chunk4",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2024-09-01.md::chunk109",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2024-09-01.md::chunk140",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2024-09-01.md::chunk29",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2024-09-01.md::chunk98",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2025-08-31.md::chunk46",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2025-08-31.md::chunk77",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2025-11-23.md::chunk24",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-02-15.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-02-15.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-02-15.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-02-15.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-05-10.md::chunk15",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-05-10.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-05-10.md::chunk32",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2024-12-31.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2024-12-31.md::chunk25",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2024-12-31.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2024-12-31.md::chunk42",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2025-12-31.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2025-12-31.md::chunk47",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2025-12-31.md::chunk78",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-Q_2025-09-30.md::chunk63",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk42",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk55",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2025-12-31.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2025-12-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2025-12-31.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-03-31.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-03-31.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-03-31.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-03-31.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-06-30.md::chunk32",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-06-30.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-06-30.md::chunk41",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2024-12-29.md::chunk1",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2024-12-29.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2024-12-29.md::chunk45",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2024-12-29.md::chunk78",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2025-12-28.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2025-12-28.md::chunk43",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2025-12-28.md::chunk50",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-Q_2026-03-29.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-Q_2026-06-28.md::chunk13",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-Q_2026-06-28.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-Q_2026-06-28.md::chunk5",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-K_2024-12-31.md::chunk119",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-K_2025-12-31.md::chunk20",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-K_2025-12-31.md::chunk22",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-K_2025-12-31.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "LUV_10-K_2025-12-31.md::chunk81",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk30",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk50",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk53",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk68",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk93",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk42",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk8",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-06-30.md::chunk21",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-06-30.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2024-12-31.md::chunk57",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2024-12-31.md::chunk72",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2024-12-31.md::chunk79",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2024-12-31.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2025-12-31.md::chunk114",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2025-09-30.md::chunk10",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2025-09-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-03-31.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-03-31.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-03-31.md::chunk68",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-03-31.md::chunk84",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-06-30.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-06-30.md::chunk52",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-06-30.md::chunk70",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-K_2025-06-30.md::chunk41",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2025-09-30.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2025-12-31.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2025-12-31.md::chunk5",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2026-03-31.md::chunk43",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2026-03-31.md::chunk51",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2026-03-31.md::chunk55",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk1",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk15",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-07-27.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-07-27.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-07-27.md::chunk9",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "NVDA_10-Q_2025-10-26.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "NVDA_10-Q_2025-10-26.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-10-26.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2026-04-26.md::chunk6",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "PFE_10-Q_2025-09-28.md::chunk72",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "PFE_10-Q_2026-06-28.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "PFE_10-Q_2026-06-28.md::chunk81",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk0",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2026-01-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2025-08-02.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2025-08-02.md::chunk13",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2025-08-02.md::chunk29",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2025-11-01.md::chunk26",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk25",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk3",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-K_2024-12-31.md::chunk24",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-K_2024-12-31.md::chunk4",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-K_2025-12-31.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-K_2025-12-31.md::chunk29",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2025-09-30.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2025-09-30.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2025-09-30.md::chunk31",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-03-31.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-06-30.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-06-30.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-06-30.md::chunk21",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-06-30.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk20",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk31",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk33",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk47",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk48",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk58",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2026-01-31.md::chunk48",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2026-01-31.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-07-31.md::chunk47",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-07-31.md::chunk6",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-07-31.md::chunk7",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-10-31.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-10-31.md::chunk49",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk2",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk25",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk6",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk23",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          }
+        ]
+      },
+      "period": {
+        "num_evaluated": 55,
+        "num_passed": 44,
+        "num_failed": 11,
+        "num_unparseable": 0,
+        "num_empty": 0,
+        "pass_rate": 0.8,
+        "pass_ci": [
+          0.6764,
+          0.8845
+        ],
+        "by_kind": {},
+        "mean_latency_s": 11.2,
+        "elapsed_s": 924.2,
+        "resumed_samples": 0,
+        "failed_ids": [
+          "period::COST_10-K_2024-09-01.md::para258",
+          "period::COST_10-Q_2026-02-15.md::para313",
+          "period::DAL_10-Q_2026-06-30.md::para156",
+          "period::LUV_10-Q_2026-06-30.md::para21",
+          "period::MRK_10-Q_2026-06-30.md::para116",
+          "period::MSFT_10-K_2025-06-30.md::para181",
+          "period::MSFT_10-K_2026-06-30.md::para345",
+          "period::NVDA_10-K_2025-01-26.md::para357",
+          "period::NVDA_10-K_2025-01-26.md::para378",
+          "period::NVDA_10-Q_2025-10-26.md::para141",
+          "period::TGT_10-Q_2025-11-01.md::para167"
+        ],
+        "failed_retrieval": 11,
+        "failed_generation": 0,
+        "failed_unattributed": 0,
+        "samples": [
+          {
+            "id": "period::AAPL_10-K_2024-09-28.md::para139",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::AAPL_10-K_2024-09-28.md::para257",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::COST_10-K_2024-09-01.md::para232",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::COST_10-K_2024-09-01.md::para258",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::COST_10-K_2025-08-31.md::para101",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::COST_10-K_2025-08-31.md::para227",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::COST_10-Q_2025-11-23.md::para148",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::COST_10-Q_2026-02-15.md::para313",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::COST_10-Q_2026-02-15.md::para362",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2024-12-31.md::para137",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2024-12-31.md::para231",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2024-12-31.md::para59",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2025-12-31.md::para66",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2025-12-31.md::para86",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-K_2024-12-31.md::para399",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-Q_2025-09-30.md::para219",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-Q_2026-03-31.md::para110",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-Q_2026-03-31.md::para306",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::DAL_10-Q_2026-03-31.md::para411",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::DAL_10-Q_2026-06-30.md::para156",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::DAL_10-Q_2026-06-30.md::para410",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::JNJ_10-K_2025-12-28.md::para233",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::JNJ_10-Q_2026-06-28.md::para265",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::LUV_10-Q_2026-06-30.md::para21",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::MRK_10-K_2024-12-31.md::para198",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MRK_10-Q_2026-06-30.md::para116",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para181",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para230",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para355",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para387",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2026-06-30.md::para345",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::MSFT_10-Q_2026-03-31.md::para344",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::NVDA_10-K_2025-01-26.md::para357",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::NVDA_10-K_2025-01-26.md::para378",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::NVDA_10-Q_2025-10-26.md::para141",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::NVDA_10-Q_2025-10-26.md::para323",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::PFE_10-Q_2025-09-28.md::para432",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-K_2025-02-01.md::para168",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-K_2025-02-01.md::para372",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::TGT_10-K_2025-02-01.md::para44",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::TGT_10-K_2026-01-31.md::para197",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-Q_2025-08-02.md::para104",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-Q_2025-11-01.md::para166",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-Q_2025-11-01.md::para167",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::UAL_10-K_2025-12-31.md::para275",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::UAL_10-Q_2026-03-31.md::para395",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-K_2025-01-31.md::para192",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-K_2025-01-31.md::para304",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-K_2026-01-31.md::para171",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-K_2026-01-31.md::para380",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-Q_2025-07-31.md::para73",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-Q_2025-07-31.md::para84",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-Q_2025-10-31.md::para373",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-Q_2025-10-31.md::para70",
+            "passed": true,
+            "evidence_retrieved": true
+          }
+        ]
+      },
+      "underspecified": {
+        "num_evaluated": 118,
+        "num_passed": 89,
+        "num_failed": 29,
+        "num_unparseable": 0,
+        "num_empty": 0,
+        "pass_rate": 0.7542,
+        "pass_ci": [
+          0.6694,
+          0.8231
+        ],
+        "by_kind": {
+          "implicit": {
+            "num_evaluated": 54,
+            "num_passed": 40,
+            "pass_ci": [
+              0.6107,
+              0.8388
+            ]
+          },
+          "paraphrase": {
+            "num_evaluated": 64,
+            "num_passed": 49,
+            "pass_ci": [
+              0.6487,
+              0.8525
+            ]
+          }
+        },
+        "mean_latency_s": 13.0,
+        "elapsed_s": 2224.8,
+        "resumed_samples": 0,
+        "failed_ids": [
+          "implicit::LUV_10-K_2025-12-31.md::chunk20",
+          "implicit::LUV_10-K_2025-12-31.md::chunk30",
+          "implicit::LUV_10-K_2025-12-31.md::chunk81",
+          "implicit::LUV_10-Q_2025-09-30.md::chunk93",
+          "implicit::LUV_10-Q_2026-06-30.md::chunk21",
+          "implicit::LUV_10-Q_2026-06-30.md::chunk33",
+          "implicit::NVDA_10-Q_2025-07-27.md::chunk9",
+          "implicit::TGT_10-Q_2025-11-01.md::chunk26",
+          "implicit::UAL_10-K_2025-12-31.md::chunk29",
+          "implicit::UAL_10-Q_2026-06-30.md::chunk11",
+          "implicit::UAL_10-Q_2026-06-30.md::chunk21",
+          "implicit::WMT_10-K_2025-01-31.md::chunk33",
+          "implicit::WMT_10-K_2025-01-31.md::chunk47",
+          "implicit::WMT_10-Q_2026-04-30.md::chunk27",
+          "paraphrase::COST_10-K_2024-09-01.md::chunk29",
+          "paraphrase::COST_10-K_2025-08-31.md::chunk77",
+          "paraphrase::DAL_10-K_2024-12-31.md::chunk55",
+          "paraphrase::DAL_10-Q_2025-09-30.md::chunk35",
+          "paraphrase::DAL_10-Q_2026-06-30.md::chunk32",
+          "paraphrase::JNJ_10-K_2024-12-29.md::chunk28",
+          "paraphrase::JNJ_10-Q_2026-06-28.md::chunk13",
+          "paraphrase::LUV_10-Q_2025-09-30.md::chunk50",
+          "paraphrase::LUV_10-Q_2025-09-30.md::chunk53",
+          "paraphrase::MRK_10-Q_2026-03-31.md::chunk68",
+          "paraphrase::MSFT_10-Q_2025-09-30.md::chunk38",
+          "paraphrase::MSFT_10-Q_2025-12-31.md::chunk40",
+          "paraphrase::MSFT_10-Q_2026-03-31.md::chunk43",
+          "paraphrase::UAL_10-Q_2025-09-30.md::chunk28",
+          "paraphrase::WMT_10-K_2026-01-31.md::chunk48"
+        ],
+        "failed_retrieval": 15,
+        "failed_generation": 14,
+        "failed_unattributed": 0,
+        "samples": [
+          {
+            "id": "implicit::AAPL_10-K_2024-09-28.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::AAPL_10-K_2025-09-27.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::COST_10-K_2025-08-31.md::chunk46",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::COST_10-Q_2026-05-10.md::chunk15",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-K_2024-12-31.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-K_2025-12-31.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-K_2025-12-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-K_2025-12-31.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-Q_2025-09-30.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-Q_2025-09-30.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-Q_2025-09-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-Q_2026-06-30.md::chunk41",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-K_2025-12-31.md::chunk20",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-K_2025-12-31.md::chunk30",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::LUV_10-K_2025-12-31.md::chunk81",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2025-09-30.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2025-09-30.md::chunk93",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-03-31.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-03-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-03-31.md::chunk8",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-06-30.md::chunk21",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-06-30.md::chunk33",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::MRK_10-K_2024-12-31.md::chunk72",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MRK_10-K_2024-12-31.md::chunk79",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MRK_10-Q_2025-09-30.md::chunk10",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MRK_10-Q_2025-09-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MRK_10-Q_2026-06-30.md::chunk70",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MSFT_10-Q_2026-03-31.md::chunk55",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2025-01-26.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2025-01-26.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::NVDA_10-K_2026-01-25.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2026-01-25.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2026-01-25.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-Q_2025-07-27.md::chunk9",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::NVDA_10-Q_2025-10-26.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::NVDA_10-Q_2025-10-26.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-Q_2025-10-26.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::TGT_10-K_2025-02-01.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::TGT_10-Q_2025-11-01.md::chunk26",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::TGT_10-Q_2026-05-02.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-K_2024-12-31.md::chunk4",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-K_2025-12-31.md::chunk29",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-Q_2025-09-30.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-Q_2025-09-30.md::chunk31",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-Q_2026-06-30.md::chunk11",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-Q_2026-06-30.md::chunk21",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk33",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk47",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk48",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk58",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-Q_2025-10-31.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-Q_2026-04-30.md::chunk25",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-Q_2026-04-30.md::chunk27",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::AAPL_10-K_2025-09-27.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::AAPL_10-K_2025-09-27.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::AAPL_10-Q_2026-03-28.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::AAPL_10-Q_2026-06-27.md::chunk22",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-K_2024-09-01.md::chunk109",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::COST_10-K_2024-09-01.md::chunk140",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-K_2024-09-01.md::chunk29",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-K_2025-08-31.md::chunk77",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::COST_10-Q_2026-02-15.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::COST_10-Q_2026-02-15.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-Q_2026-05-10.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-Q_2026-05-10.md::chunk32",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::CVX_10-K_2025-12-31.md::chunk78",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-K_2024-12-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-K_2024-12-31.md::chunk42",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-K_2024-12-31.md::chunk55",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2025-09-30.md::chunk35",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-03-31.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-03-31.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-03-31.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-03-31.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-06-30.md::chunk32",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-06-30.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::JNJ_10-K_2024-12-29.md::chunk28",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::JNJ_10-Q_2026-06-28.md::chunk13",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::JNJ_10-Q_2026-06-28.md::chunk5",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::LUV_10-K_2025-12-31.md::chunk22",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::LUV_10-Q_2025-09-30.md::chunk50",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::LUV_10-Q_2025-09-30.md::chunk53",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::LUV_10-Q_2026-03-31.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MRK_10-K_2024-12-31.md::chunk57",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MRK_10-K_2025-12-31.md::chunk114",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MRK_10-Q_2026-03-31.md::chunk68",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::MRK_10-Q_2026-03-31.md::chunk84",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MSFT_10-K_2025-06-30.md::chunk41",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2025-09-30.md::chunk38",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2025-12-31.md::chunk40",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2025-12-31.md::chunk5",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2026-03-31.md::chunk43",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2026-03-31.md::chunk51",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-K_2025-01-26.md::chunk1",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-K_2025-01-26.md::chunk15",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-K_2025-01-26.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-K_2026-01-25.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-Q_2025-07-27.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-Q_2026-04-26.md::chunk6",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-K_2025-02-01.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-K_2026-01-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-Q_2025-08-02.md::chunk13",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-Q_2025-08-02.md::chunk29",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-Q_2026-05-02.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-K_2024-12-31.md::chunk24",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-K_2025-12-31.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-Q_2025-09-30.md::chunk28",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::UAL_10-Q_2026-03-31.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-Q_2026-06-30.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-Q_2026-06-30.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-K_2026-01-31.md::chunk48",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-Q_2025-07-31.md::chunk47",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-Q_2025-10-31.md::chunk49",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-Q_2026-04-30.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-Q_2026-04-30.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::XOM_10-Q_2026-06-30.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::XOM_10-Q_2026-06-30.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          }
+        ]
+      }
+    },
+    {
+      "variant": "header=on rerank_header",
+      "overrides": {
+        "crag.enabled": false,
+        "paths.index_dir": "data/index_header",
+        "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}",
+        "reranker.include_header": true
+      },
+      "generator": "ollama:qwen3.5:9b-mlx",
+      "answerable": {
+        "num_evaluated": 174,
+        "num_passed": 164,
+        "num_failed": 10,
+        "num_unparseable": 0,
+        "num_empty": 0,
+        "pass_rate": 0.9425,
+        "pass_ci": [
+          0.8975,
+          0.9685
+        ],
+        "by_kind": {},
+        "mean_latency_s": 12.2,
+        "elapsed_s": 3066.1,
+        "resumed_samples": 0,
+        "failed_ids": [
+          "COST_10-K_2025-08-31.md::chunk77",
+          "CVX_10-K_2024-12-31.md::chunk25",
+          "JNJ_10-K_2024-12-29.md::chunk45",
+          "LUV_10-Q_2025-09-30.md::chunk93",
+          "TGT_10-Q_2025-11-01.md::chunk26",
+          "UAL_10-K_2025-12-31.md::chunk29",
+          "WMT_10-K_2025-01-31.md::chunk35",
+          "WMT_10-K_2025-01-31.md::chunk47",
+          "WMT_10-K_2025-01-31.md::chunk58",
+          "WMT_10-Q_2026-04-30.md::chunk27"
+        ],
+        "failed_retrieval": 3,
+        "failed_generation": 7,
+        "failed_unattributed": 0,
+        "samples": [
+          {
+            "id": "AAPL_10-K_2024-09-28.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-K_2025-09-27.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-K_2025-09-27.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-K_2025-09-27.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-Q_2026-03-28.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-Q_2026-06-27.md::chunk22",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "AAPL_10-Q_2026-06-27.md::chunk4",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2024-09-01.md::chunk109",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2024-09-01.md::chunk140",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2024-09-01.md::chunk29",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2024-09-01.md::chunk98",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2025-08-31.md::chunk46",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-K_2025-08-31.md::chunk77",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "COST_10-Q_2025-11-23.md::chunk24",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-02-15.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-02-15.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-02-15.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-02-15.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-05-10.md::chunk15",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-05-10.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "COST_10-Q_2026-05-10.md::chunk32",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2024-12-31.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2024-12-31.md::chunk25",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2024-12-31.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2024-12-31.md::chunk42",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2025-12-31.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2025-12-31.md::chunk47",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-K_2025-12-31.md::chunk78",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "CVX_10-Q_2025-09-30.md::chunk63",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk42",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2024-12-31.md::chunk55",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2025-12-31.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2025-12-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-K_2025-12-31.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2025-09-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-03-31.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-03-31.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-03-31.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-03-31.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-06-30.md::chunk32",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-06-30.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "DAL_10-Q_2026-06-30.md::chunk41",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2024-12-29.md::chunk1",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2024-12-29.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2024-12-29.md::chunk45",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2024-12-29.md::chunk78",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2025-12-28.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2025-12-28.md::chunk43",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-K_2025-12-28.md::chunk50",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-Q_2026-03-29.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-Q_2026-06-28.md::chunk13",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-Q_2026-06-28.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "JNJ_10-Q_2026-06-28.md::chunk5",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-K_2024-12-31.md::chunk119",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-K_2025-12-31.md::chunk20",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-K_2025-12-31.md::chunk22",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-K_2025-12-31.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "LUV_10-K_2025-12-31.md::chunk81",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk50",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk53",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk68",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2025-09-30.md::chunk93",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk42",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-03-31.md::chunk8",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-06-30.md::chunk21",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "LUV_10-Q_2026-06-30.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2024-12-31.md::chunk57",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2024-12-31.md::chunk72",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2024-12-31.md::chunk79",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2024-12-31.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-K_2025-12-31.md::chunk114",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2025-09-30.md::chunk10",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2025-09-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-03-31.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-03-31.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-03-31.md::chunk68",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-03-31.md::chunk84",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-06-30.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-06-30.md::chunk52",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MRK_10-Q_2026-06-30.md::chunk70",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-K_2025-06-30.md::chunk41",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2025-09-30.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2025-12-31.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2025-12-31.md::chunk5",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2026-03-31.md::chunk43",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2026-03-31.md::chunk51",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "MSFT_10-Q_2026-03-31.md::chunk55",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk1",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk15",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2025-01-26.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-K_2026-01-25.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-07-27.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-07-27.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-07-27.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-10-26.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-10-26.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2025-10-26.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "NVDA_10-Q_2026-04-26.md::chunk6",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "PFE_10-Q_2025-09-28.md::chunk72",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "PFE_10-Q_2026-06-28.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "PFE_10-Q_2026-06-28.md::chunk81",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk0",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2025-02-01.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-K_2026-01-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2025-08-02.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2025-08-02.md::chunk13",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2025-08-02.md::chunk29",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2025-11-01.md::chunk26",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk25",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "TGT_10-Q_2026-05-02.md::chunk3",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-K_2024-12-31.md::chunk24",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-K_2024-12-31.md::chunk4",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-K_2025-12-31.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-K_2025-12-31.md::chunk29",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2025-09-30.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2025-09-30.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2025-09-30.md::chunk31",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-03-31.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-06-30.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-06-30.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-06-30.md::chunk21",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "UAL_10-Q_2026-06-30.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk20",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk31",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk35",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk47",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk48",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2025-01-31.md::chunk58",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2026-01-31.md::chunk48",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-K_2026-01-31.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-07-31.md::chunk47",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-07-31.md::chunk6",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-07-31.md::chunk7",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-10-31.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2025-10-31.md::chunk49",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk25",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk27",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "WMT_10-Q_2026-04-30.md::chunk6",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "XOM_10-Q_2026-06-30.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          }
+        ]
+      },
+      "period": {
+        "num_evaluated": 55,
+        "num_passed": 51,
+        "num_failed": 4,
+        "num_unparseable": 0,
+        "num_empty": 0,
+        "pass_rate": 0.9273,
+        "pass_ci": [
+          0.8274,
+          0.9714
+        ],
+        "by_kind": {},
+        "mean_latency_s": 11.6,
+        "elapsed_s": 929.7,
+        "resumed_samples": 0,
+        "failed_ids": [
+          "period::DAL_10-Q_2026-06-30.md::para156",
+          "period::LUV_10-Q_2026-06-30.md::para21",
+          "period::MRK_10-Q_2026-06-30.md::para116",
+          "period::TGT_10-K_2025-02-01.md::para44"
+        ],
+        "failed_retrieval": 4,
+        "failed_generation": 0,
+        "failed_unattributed": 0,
+        "samples": [
+          {
+            "id": "period::AAPL_10-K_2024-09-28.md::para139",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::AAPL_10-K_2024-09-28.md::para257",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::COST_10-K_2024-09-01.md::para232",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::COST_10-K_2024-09-01.md::para258",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::COST_10-K_2025-08-31.md::para101",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::COST_10-K_2025-08-31.md::para227",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::COST_10-Q_2025-11-23.md::para148",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::COST_10-Q_2026-02-15.md::para313",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::COST_10-Q_2026-02-15.md::para362",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2024-12-31.md::para137",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2024-12-31.md::para231",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2024-12-31.md::para59",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2025-12-31.md::para66",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::CVX_10-K_2025-12-31.md::para86",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-K_2024-12-31.md::para399",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-Q_2025-09-30.md::para219",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-Q_2026-03-31.md::para110",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-Q_2026-03-31.md::para306",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-Q_2026-03-31.md::para411",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::DAL_10-Q_2026-06-30.md::para156",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::DAL_10-Q_2026-06-30.md::para410",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::JNJ_10-K_2025-12-28.md::para233",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::JNJ_10-Q_2026-06-28.md::para265",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::LUV_10-Q_2026-06-30.md::para21",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::MRK_10-K_2024-12-31.md::para198",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MRK_10-Q_2026-06-30.md::para116",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para181",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para230",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para355",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para387",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2025-06-30.md::para40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::MSFT_10-K_2026-06-30.md::para345",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::MSFT_10-Q_2026-03-31.md::para344",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::NVDA_10-K_2025-01-26.md::para357",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::NVDA_10-K_2025-01-26.md::para378",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::NVDA_10-Q_2025-10-26.md::para141",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::NVDA_10-Q_2025-10-26.md::para323",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::PFE_10-Q_2025-09-28.md::para432",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-K_2025-02-01.md::para168",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-K_2025-02-01.md::para372",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-K_2025-02-01.md::para44",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::TGT_10-K_2026-01-31.md::para197",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-Q_2025-08-02.md::para104",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-Q_2025-11-01.md::para166",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::TGT_10-Q_2025-11-01.md::para167",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::UAL_10-K_2025-12-31.md::para275",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "period::UAL_10-Q_2026-03-31.md::para395",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-K_2025-01-31.md::para192",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-K_2025-01-31.md::para304",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-K_2026-01-31.md::para171",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-K_2026-01-31.md::para380",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-Q_2025-07-31.md::para73",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-Q_2025-07-31.md::para84",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-Q_2025-10-31.md::para373",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "period::WMT_10-Q_2025-10-31.md::para70",
+            "passed": true,
+            "evidence_retrieved": true
+          }
+        ]
+      },
+      "underspecified": {
+        "num_evaluated": 118,
+        "num_passed": 90,
+        "num_failed": 28,
+        "num_unparseable": 0,
+        "num_empty": 0,
+        "pass_rate": 0.7627,
+        "pass_ci": [
+          0.6784,
+          0.8304
+        ],
+        "by_kind": {
+          "implicit": {
+            "num_evaluated": 54,
+            "num_passed": 39,
+            "pass_ci": [
+              0.5911,
+              0.8238
+            ]
+          },
+          "paraphrase": {
+            "num_evaluated": 64,
+            "num_passed": 51,
+            "pass_ci": [
+              0.6829,
+              0.8773
+            ]
+          }
+        },
+        "mean_latency_s": 12.9,
+        "elapsed_s": 2243.1,
+        "resumed_samples": 0,
+        "failed_ids": [
+          "implicit::COST_10-Q_2026-05-10.md::chunk15",
+          "implicit::LUV_10-K_2025-12-31.md::chunk20",
+          "implicit::LUV_10-K_2025-12-31.md::chunk30",
+          "implicit::LUV_10-K_2025-12-31.md::chunk81",
+          "implicit::LUV_10-Q_2025-09-30.md::chunk93",
+          "implicit::LUV_10-Q_2026-06-30.md::chunk21",
+          "implicit::LUV_10-Q_2026-06-30.md::chunk33",
+          "implicit::MRK_10-K_2024-12-31.md::chunk79",
+          "implicit::TGT_10-Q_2025-11-01.md::chunk26",
+          "implicit::UAL_10-Q_2026-06-30.md::chunk11",
+          "implicit::UAL_10-Q_2026-06-30.md::chunk21",
+          "implicit::WMT_10-K_2025-01-31.md::chunk33",
+          "implicit::WMT_10-K_2025-01-31.md::chunk47",
+          "implicit::WMT_10-K_2025-01-31.md::chunk58",
+          "implicit::WMT_10-Q_2026-04-30.md::chunk27",
+          "paraphrase::COST_10-K_2025-08-31.md::chunk77",
+          "paraphrase::DAL_10-K_2024-12-31.md::chunk55",
+          "paraphrase::JNJ_10-K_2024-12-29.md::chunk28",
+          "paraphrase::JNJ_10-Q_2026-06-28.md::chunk13",
+          "paraphrase::LUV_10-Q_2025-09-30.md::chunk50",
+          "paraphrase::LUV_10-Q_2025-09-30.md::chunk53",
+          "paraphrase::MRK_10-Q_2026-03-31.md::chunk68",
+          "paraphrase::MSFT_10-Q_2025-09-30.md::chunk38",
+          "paraphrase::MSFT_10-Q_2025-12-31.md::chunk40",
+          "paraphrase::MSFT_10-Q_2026-03-31.md::chunk43",
+          "paraphrase::NVDA_10-K_2026-01-25.md::chunk36",
+          "paraphrase::WMT_10-K_2026-01-31.md::chunk48",
+          "paraphrase::WMT_10-Q_2026-04-30.md::chunk2"
+        ],
+        "failed_retrieval": 17,
+        "failed_generation": 11,
+        "failed_unattributed": 0,
+        "samples": [
+          {
+            "id": "implicit::AAPL_10-K_2024-09-28.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::AAPL_10-K_2025-09-27.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::COST_10-K_2025-08-31.md::chunk46",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::COST_10-Q_2026-05-10.md::chunk15",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-K_2024-12-31.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-K_2025-12-31.md::chunk12",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-K_2025-12-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-K_2025-12-31.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-Q_2025-09-30.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-Q_2025-09-30.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-Q_2025-09-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::DAL_10-Q_2026-06-30.md::chunk41",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-K_2025-12-31.md::chunk20",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::LUV_10-K_2025-12-31.md::chunk30",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::LUV_10-K_2025-12-31.md::chunk81",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2025-09-30.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2025-09-30.md::chunk93",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-03-31.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-03-31.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-03-31.md::chunk8",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-06-30.md::chunk21",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::LUV_10-Q_2026-06-30.md::chunk33",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::MRK_10-K_2024-12-31.md::chunk72",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MRK_10-K_2024-12-31.md::chunk79",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MRK_10-Q_2025-09-30.md::chunk10",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MRK_10-Q_2025-09-30.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MRK_10-Q_2026-06-30.md::chunk70",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::MSFT_10-Q_2026-03-31.md::chunk55",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2025-01-26.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2025-01-26.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2026-01-25.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2026-01-25.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-K_2026-01-25.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-Q_2025-07-27.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-Q_2025-10-26.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-Q_2025-10-26.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::NVDA_10-Q_2025-10-26.md::chunk33",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::TGT_10-K_2025-02-01.md::chunk37",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::TGT_10-Q_2025-11-01.md::chunk26",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::TGT_10-Q_2026-05-02.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-K_2024-12-31.md::chunk4",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-K_2025-12-31.md::chunk29",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-Q_2025-09-30.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-Q_2025-09-30.md::chunk31",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-Q_2026-06-30.md::chunk11",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::UAL_10-Q_2026-06-30.md::chunk21",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk33",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk47",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk48",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-K_2025-01-31.md::chunk58",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "implicit::WMT_10-Q_2025-10-31.md::chunk38",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-Q_2026-04-30.md::chunk25",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "implicit::WMT_10-Q_2026-04-30.md::chunk27",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::AAPL_10-K_2025-09-27.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::AAPL_10-K_2025-09-27.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::AAPL_10-Q_2026-03-28.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::AAPL_10-Q_2026-06-27.md::chunk22",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-K_2024-09-01.md::chunk109",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::COST_10-K_2024-09-01.md::chunk140",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-K_2024-09-01.md::chunk29",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-K_2025-08-31.md::chunk77",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::COST_10-Q_2026-02-15.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-Q_2026-02-15.md::chunk34",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-Q_2026-05-10.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::COST_10-Q_2026-05-10.md::chunk32",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::CVX_10-K_2025-12-31.md::chunk78",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-K_2024-12-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-K_2024-12-31.md::chunk42",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-K_2024-12-31.md::chunk55",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2025-09-30.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-03-31.md::chunk16",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-03-31.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-03-31.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-03-31.md::chunk30",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-06-30.md::chunk32",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::DAL_10-Q_2026-06-30.md::chunk35",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::JNJ_10-K_2024-12-29.md::chunk28",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::JNJ_10-Q_2026-06-28.md::chunk13",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::JNJ_10-Q_2026-06-28.md::chunk5",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::LUV_10-K_2025-12-31.md::chunk22",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::LUV_10-Q_2025-09-30.md::chunk50",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::LUV_10-Q_2025-09-30.md::chunk53",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::LUV_10-Q_2026-03-31.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MRK_10-K_2024-12-31.md::chunk57",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MRK_10-K_2025-12-31.md::chunk114",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MRK_10-Q_2026-03-31.md::chunk68",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::MRK_10-Q_2026-03-31.md::chunk84",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MSFT_10-K_2025-06-30.md::chunk41",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2025-09-30.md::chunk38",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2025-12-31.md::chunk40",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2025-12-31.md::chunk5",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2026-03-31.md::chunk43",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::MSFT_10-Q_2026-03-31.md::chunk51",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-K_2025-01-26.md::chunk1",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-K_2025-01-26.md::chunk15",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-K_2025-01-26.md::chunk2",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-K_2026-01-25.md::chunk36",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::NVDA_10-Q_2025-07-27.md::chunk23",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::NVDA_10-Q_2026-04-26.md::chunk6",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-K_2025-02-01.md::chunk39",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-K_2026-01-31.md::chunk36",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-Q_2025-08-02.md::chunk13",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-Q_2025-08-02.md::chunk29",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::TGT_10-Q_2026-05-02.md::chunk27",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-K_2024-12-31.md::chunk24",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-K_2025-12-31.md::chunk26",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-Q_2025-09-30.md::chunk28",
+            "passed": true,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::UAL_10-Q_2026-03-31.md::chunk11",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-Q_2026-06-30.md::chunk18",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::UAL_10-Q_2026-06-30.md::chunk9",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-K_2026-01-31.md::chunk48",
+            "passed": false,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-Q_2025-07-31.md::chunk47",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-Q_2025-10-31.md::chunk49",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-Q_2026-04-30.md::chunk14",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::WMT_10-Q_2026-04-30.md::chunk2",
+            "passed": false,
+            "evidence_retrieved": false
+          },
+          {
+            "id": "paraphrase::XOM_10-Q_2026-06-30.md::chunk17",
+            "passed": true,
+            "evidence_retrieved": true
+          },
+          {
+            "id": "paraphrase::XOM_10-Q_2026-06-30.md::chunk40",
+            "passed": true,
+            "evidence_retrieved": true
+          }
+        ]
+      }
     }
   ]
 }

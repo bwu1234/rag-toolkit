@@ -191,3 +191,24 @@ def test_bm25_handles_records_written_before_contextual_chunking_existed(tmp_pat
 
     assert result.context is None
     assert result.text.startswith("The refund policy")
+
+
+def test_bm25_matches_terms_that_only_appear_in_a_chunks_header(tmp_path: Path) -> None:
+    path = tmp_path / "bm25_index.json"
+    index = BM25Index(path)
+    headed = Chunk(
+        id="a",
+        text="Revenue grew 2% on services.",
+        document_id="AAPL.md",
+        source=Path("/tmp/AAPL.md"),
+        doc_type="markdown",
+        header="Apple Inc. (AAPL) 10-K, period ended 2024-09-28",
+    )
+    index.upsert([headed, _chunk("b", "Revenue grew 3% on memberships.")])
+    index.flush()
+
+    [result] = BM25Index(path).query("AAPL", top_k=3)
+
+    assert result.chunk_id == "a"
+    assert result.header == "Apple Inc. (AAPL) 10-K, period ended 2024-09-28", "and it survives persistence"
+    assert result.text == "Revenue grew 2% on services."

@@ -179,7 +179,7 @@ def test_chunk_context_survives_the_round_trip(tmp_path: Path) -> None:
 
     assert result.context == "ACS API rate limiting."
     assert result.text == "The limit is 1,000 requests per minute.", "stored text must stay the verbatim span"
-    assert result.contextual_text == "ACS API rate limiting.\n\nThe limit is 1,000 requests per minute."
+    assert result.index_text == "ACS API rate limiting.\n\nThe limit is 1,000 requests per minute."
 
 
 def test_chunk_without_context_round_trips_as_none(tmp_path: Path) -> None:
@@ -190,3 +190,24 @@ def test_chunk_without_context_round_trips_as_none(tmp_path: Path) -> None:
 
     assert result.context is None
     assert "context" not in result.metadata, "an absent context must not leak into the metadata grab-bag"
+
+
+def test_chunk_header_survives_the_round_trip(tmp_path: Path) -> None:
+    store = _store(tmp_path)
+    chunk = Chunk(
+        id="a",
+        text="Revenue grew 2%.",
+        document_id="AAPL.md",
+        source=Path("AAPL.md"),
+        doc_type="markdown",
+        metadata={"period_end": 20240928},
+        header="Apple Inc. (AAPL) 10-K, period ended 2024-09-28",
+    )
+    store.upsert([chunk], [_AXIS_X])
+
+    [result] = store.query(_AXIS_X, top_k=1)
+
+    assert result.header == "Apple Inc. (AAPL) 10-K, period ended 2024-09-28"
+    assert "header" not in result.metadata, "provenance fields are split back out of the flat metadata"
+    assert result.metadata["period_end"] == 20240928
+    assert result.text == "Revenue grew 2%."

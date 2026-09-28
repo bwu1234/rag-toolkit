@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 from pathlib import Path
 
 from rag.retrieval.rrf import reciprocal_rank_fusion
@@ -88,3 +90,14 @@ def test_rrf_score_capped_at_one_when_first_in_all_lists() -> None:
     lists = [[_scored("top")], [_scored("top")], [_scored("top")]]
     [result] = reciprocal_rank_fusion(lists, top_k=1, k=60)
     assert result.score == 1.0
+
+
+def test_rrf_keeps_the_chunks_context_and_header() -> None:
+    # Fusion used to rebuild each chunk field by field and dropped `context`,
+    # so hybrid retrieval never passed it on to the prompt.
+    enriched = dataclasses.replace(_scored("x", 0.9), context="ctx", header="hdr")
+
+    [result] = reciprocal_rank_fusion([[enriched], [_scored("x", 0.8)]], top_k=1, k=60)
+
+    assert result.context == "ctx"
+    assert result.header == "hdr"

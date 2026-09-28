@@ -161,6 +161,8 @@ class ChromaVectorStore(VectorStore):
         # source, but the context has to survive the round trip for the prompt.
         if chunk.context:
             flat["context"] = chunk.context
+        if chunk.header:
+            flat["header"] = chunk.header
         for key, value in chunk.metadata.items():
             if value is None:
                 continue
@@ -176,6 +178,7 @@ class ChromaVectorStore(VectorStore):
         source = Path(metadata.pop("source", ""))
         doc_type = metadata.pop("doc_type", "")
         context = metadata.pop("context", None)
+        header = metadata.pop("header", None)
 
         return ScoredChunk(
             chunk_id=chunk_id,
@@ -184,6 +187,7 @@ class ChromaVectorStore(VectorStore):
             source=source,
             doc_type=doc_type,
             context=context,
+            header=header,
             # Chroma reports cosine *distance* (1 - cosine similarity) when
             # the collection is configured with `hnsw:space: cosine`;
             # convert back to the `[0, 1]`-similarity convention `ScoredChunk`

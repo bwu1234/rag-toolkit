@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+from datetime import date
 from pathlib import Path
 
 import pytest
 
 from rag.chunking.chunkers import FixedSizeChunker, get_chunker
-from rag.chunking.models import make_chunk_id
-from rag.config.settings import ChunkingConfig
+from rag.chunking.models import Chunk, make_chunk_id
+from rag.config.settings import ChunkHeaderConfig, ChunkingConfig
 from rag.ingestion.models import Document
 
 
@@ -105,3 +107,80 @@ def test_chunk_ids_are_unique_across_documents() -> None:
 
     assert len(ids) == len(set(ids))
     assert all(cid.startswith("a.txt::chunk") for cid in ids if cid.startswith("a")) or True
+
+
+# ---------------------------------------------------------------------------
+# Carried metadata and the chunk header (chunking plan, Phase 2)
+# ---------------------------------------------------------------------------
+
+_TEMPLATE = "{company} ({ticker}), period ended {period_end}"
+
+
+def _filing(text: str = "word " * 50, **overrides) -> Document:
+    metadata = {"title": "t", "company": "Apple Inc.", "ticker": "AAPL", "period_end": date(2024, 9, 28)}
+    metadata.update(overrides)
+    return _doc(text, doc_id="AAPL.md", **metadata)
+
+
+def test_carried_metadata_is_configurable_and_dates_become_integers() -> None:
+    chunker = FixedSizeChunker(chunk_size=500, chunk_overlap=0, carry_metadata=["company", "period_end", "absent"])
+
+    [chunk] = chunker.chunk([_filing()])
+
+    assert chunk.metadata["company"] == "Apple Inc."
+    assert chunk.metadata["period_end"] == 20240928, "Chroma stores primitives; ints keep range order"
+    assert "absent" not in chunk.metadata
+    assert "title" not in chunk.metadata, "only the configured keys are carried"
+
+
+def test_default_carry_is_the_old_allowlist() -> None:
+    [chunk] = FixedSizeChunker(chunk_size=500, chunk_overlap=0).chunk([_filing()])
+
+    assert "title" in chunk.metadata
+    assert "company" not in chunk.metadata
+
+
+def test_header_is_rendered_on_every_chunk_and_kept_out_of_the_text() -> None:
+    chunker = FixedSizeChunker(chunk_size=60, chunk_overlap=0, header_template=_TEMPLATE)
+
+    chunks = chunker.chunk([_filing()])
+
+    assert len(chunks) > 1
+    assert {c.header for c in chunks} == {"Apple Inc. (AAPL), period ended 2024-09-28"}
+    assert all("Apple" not in c.text for c in chunks), "text stays the verbatim span"
+    assert chunks[0].index_text.startswith("Apple Inc. (AAPL), period ended 2024-09-28\n\n")
+
+
+def test_document_missing_a_template_field_gets_no_header(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO, logger="rag.chunking.chunkers")
+    chunker = FixedSizeChunker(chunk_size=500, chunk_overlap=0, header_template=_TEMPLATE)
+
+    [with_header, without] = chunker.chunk([_filing(), _doc("plain text", doc_id="notes.txt")])
+
+    assert with_header.header is not None
+    assert without.header is None, "no half-filled header like 'None (None)'"
+    assert without.index_text == "plain text"
+    assert "1 of 2 document(s) lack a field" in caplog.text
+
+
+def test_malformed_header_template_fails_at_construction() -> None:
+    with pytest.raises(ValueError):
+        FixedSizeChunker(chunk_size=500, chunk_overlap=0, header_template="{company")
+    with pytest.raises(ValueError, match="metadata key"):
+        FixedSizeChunker(chunk_size=500, chunk_overlap=0, header_template="{} filed")
+
+
+def test_get_chunker_passes_header_and_carry_settings() -> None:
+    config = ChunkingConfig(carry_metadata=["ticker"], header=ChunkHeaderConfig(template="{ticker}"))
+
+    [chunk] = get_chunker(config).chunk([_filing()])
+
+    assert chunk.header == "AAPL"
+    assert chunk.metadata["ticker"] == "AAPL"
+
+
+def test_index_text_orders_header_then_context_then_text() -> None:
+    chunk = Chunk(
+        id="c", text="body", document_id="d", source=Path("d"), doc_type="text", context="ctx", header="hdr"
+    )
+    assert chunk.index_text == "hdr\n\nctx\n\nbody"

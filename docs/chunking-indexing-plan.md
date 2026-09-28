@@ -501,6 +501,19 @@ stays off at 4b as well. See
   matches contextual's dense gain, since it costs zero LLM calls instead of
   ~4 hours.
 
+*Done 2026-09-28: on by default, with `reranker.include_header`.* The header
+is the first change in this plan to clear noise on retrieval and answers. At
+the shipped config, answer pass rose +7.5pp on the generated set and +14.4pp
+on `underspecified` (all from `paraphrase`, +25.0pp; `implicit` didn't
+move). On `period` the header got the right chunk into stage 1 (ceiling
+0.709 → 0.945), but the cross-encoder couldn't tell the two periods' identical
+text apart until it saw the header too: answers 0.800 → 0.927 with it. It
+beats contextual chunking's gain at zero LLM calls, so it replaces that as
+the recommended way to put document identity into chunks. `vanilla.yaml`
+gets its own header-free index so its floor stays plain. The Voyage
+comparator below hasn't run. See
+[measured results](measured-results.md#deterministic-chunk-header-chunking-plan-phase-2).
+
 **Comparator: contextualized chunk embeddings (hosted, needs approval).**
 The header puts document identity into the *text*. `voyage-context-4` puts
 document context into the *vector*: send a filing's chunks together, and each
@@ -775,9 +788,10 @@ earlier, not a measurement of their value.
 
 ## Open questions
 
-- Does the reranker see the header? Showing `index_text` to the cross-encoder
-  gives it the period, which it can't see now. It also changes what every
-  reranker measurement means. Measure both.
+- ~~Does the reranker see the header?~~ *Answered in Phase 2: yes.* It's
+  what fixes `period` (answers +12.7pp over the header alone), and it's noise
+  elsewhere. Only the header, via `reranker.include_header`; the generated
+  context still stays out.
 - Heading recovery from filing HTML is heuristic, like the MD&A extraction.
   If it can't reach >90% precision, is a heading-free structured chunker
   (tables atomic, paragraphs packed) enough on its own?

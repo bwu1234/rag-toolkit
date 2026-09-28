@@ -48,6 +48,10 @@ Usage
     # Preview what would be fetched without writing anything:
     python scripts/fetch_edgar.py --manifest ... --dry-run
 
+    # Add YAML front matter to files fetched before the fetcher wrote it
+    # (offline; reads the title and source lines this script wrote):
+    python scripts/fetch_edgar.py --manifest ... --backfill-front-matter
+
 The SEC requires a User-Agent identifying the requester.  Override the default
 with ``--user-agent`` or the ``SEC_USER_AGENT`` environment variable.
 """
@@ -62,10 +66,12 @@ import re
 import sys
 import time
 from dataclasses import dataclass
+from datetime import date
 from html.parser import HTMLParser
 from pathlib import Path
 
 import httpx
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -449,8 +455,29 @@ class EdgarClient:
 # --------------------------------------------------------------------------
 
 
+def front_matter(
+    *, company: str, ticker: str, form: str, period_end: str, filed: str, accession: str
+) -> str:
+    """The YAML front matter block ``MarkdownLoader`` parses into ``Document.metadata``.
+
+    Typed fields, so metadata filters and chunk headers read them directly
+    rather than parsing the title line. Dates are written as YAML dates, which
+    load as ``datetime.date``. The loader strips the block from the text, so
+    adding it moves no character offset.
+    """
+    fields = {
+        "company": company,
+        "ticker": ticker,
+        "form": form,
+        "period_end": date.fromisoformat(period_end),
+        "filed": date.fromisoformat(filed),
+        "accession": accession,
+    }
+    return f"---\n{yaml.safe_dump(fields, sort_keys=False)}---\n"
+
+
 def render_document(filing: FilingRef, body: str) -> str:
-    """Wrap an extracted section in a Markdown document with a title heading.
+    """Wrap an extracted section in a Markdown document: front matter, then a title heading.
 
     The heading is what ``MarkdownLoader`` picks up as ``metadata['title']``,
     and it names the entity and period -- which the body text frequently does
@@ -460,7 +487,51 @@ def render_document(filing: FilingRef, body: str) -> str:
     provenance = (
         f"_Source: SEC EDGAR, accession {filing.accession}, filed {filing.filing_date}._"
     )
-    return f"{header}\n\n{provenance}\n\n{body}\n"
+    meta = front_matter(
+        company=filing.company,
+        ticker=filing.ticker,
+        form=filing.form,
+        period_end=filing.report_date,
+        filed=filing.filing_date,
+        accession=filing.accession,
+    )
+    return f"{meta}{header}\n\n{provenance}\n\n{body}\n"
+
+
+# The two lines ``render_document`` writes under the front matter. Parsed only
+# by the one-off backfill below, never at load time: that would tie every
+# loader to this title format.
+_TITLE_LINE = re.compile(
+    r"^# (?P<company>.+) \((?P<ticker>[^)]+)\) (?P<form>\S+) -- period ended (?P<period_end>\d{4}-\d{2}-\d{2})$"
+)
+_SOURCE_LINE = re.compile(
+    r"^_Source: SEC EDGAR, accession (?P<accession>[\d-]+), filed (?P<filed>\d{4}-\d{2}-\d{2})\._$"
+)
+
+
+def backfill_front_matter(out_dir: Path) -> int:
+    """Prepend front matter to fetched files that predate it. Returns the count changed.
+
+    Offline, and it doesn't re-fetch: the manifest selects each ticker's
+    *most recent* filings, so a re-fetch can return a different corpus and
+    invalidate every eval set's ``expected_doc_ids``. The fields come from the
+    title and source lines this script already wrote. Files that already
+    have front matter are left alone, and a file whose lines don't parse
+    raises instead of being skipped.
+    """
+    changed = 0
+    for path in sorted(out_dir.glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        if text.startswith("---\n"):
+            continue
+        lines = text.split("\n", 3)
+        title = _TITLE_LINE.match(lines[0])
+        source = _SOURCE_LINE.match(lines[2]) if len(lines) > 2 else None
+        if title is None or source is None:
+            raise ValueError(f"{path.name}: title/source lines not in the format render_document writes")
+        path.write_text(front_matter(**title.groupdict(), **source.groupdict()) + text, encoding="utf-8")
+        changed += 1
+    return changed
 
 
 def fetch_corpus(
@@ -564,6 +635,11 @@ def main() -> int:
         help="User-Agent header. The SEC requires one identifying the requester.",
     )
     parser.add_argument("--dry-run", action="store_true", help="List filings, write nothing.")
+    parser.add_argument(
+        "--backfill-front-matter",
+        action="store_true",
+        help="Add YAML front matter to already-fetched files that lack it. Offline.",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -575,6 +651,11 @@ def main() -> int:
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     out_dir = args.out_dir or args.manifest.parent / "documents"
+
+    if args.backfill_front_matter:
+        changed = backfill_front_matter(out_dir)
+        logger.info("Added front matter to %d file(s) in %s", changed, out_dir)
+        return 0
 
     count = fetch_corpus(manifest, out_dir, args.user_agent, dry_run=args.dry_run)
     if not args.dry_run:

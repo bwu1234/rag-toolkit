@@ -189,6 +189,8 @@ def test_vanilla_config_disables_every_extra() -> None:
     assert cfg.chat.prompt == "plain"
     assert not cfg.crag.enabled
     assert not cfg.chunking.contextual.enabled
+    assert cfg.chunking.header.template is None
+    assert cfg.paths.index_dir != load_config().paths.index_dir, "headers live in the index"
     assert cfg.retrieval.top_k >= cfg.retrieval.rerank_top_k
 
 
@@ -197,6 +199,8 @@ def test_vanilla_config_inherits_everything_it_does_not_change() -> None:
     vanilla = load_config(VANILLA_CONFIG_PATH)
 
     changed = {
+        "paths": {"index_dir": "data/index_vanilla"},
+        "chunking": {"header": {"template": None}},
         "retrieval": {"mode": "dense", "top_k": 5},
         "reranker": {"provider": "none"},
         "chat": {"condense_history": False, "prompt": "plain"},

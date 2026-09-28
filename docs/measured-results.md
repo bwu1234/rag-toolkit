@@ -735,6 +735,121 @@ Raw records: the `embedder=*` variants in
 `data/eval/results/retrieval_edgar_edgar_{eval,underspecified,period}_set.json`,
 and `data/eval/results/probe_2026-09_embedder_query_latency.json`.
 
+### Deterministic chunk header (chunking plan, Phase 2)
+
+**Setup.** Run on 2026-09-28. `edgar` corpus, two indexes of the same 4,236
+chunks with `qwen3-embedding:0.6b` (Phase 1b's verdict): the shipped plain
+index, and one built from `data/eval/config_header.yaml`. The second indexes
+each chunk as `"{company} ({ticker}) {form}, period ended {period_end}"`,
+then the chunk, for example "Apple Inc. (AAPL) 10-K, period ended
+2024-09-28". The fields come from YAML front matter, backfilled into the 61
+fetched filings without changing any document's loaded text (checked by
+hash). All 61 got a header. The build took 248 s against 243 s without, with
+no LLM calls. Retrieval pairs are as in Phase 1 (shipped, stage-1 ceiling,
+dense-only), plus `rerank_header`, where the cross-encoder also scores the
+header (`reranker.include_header`). The three plain rows were re-run on this
+branch, which also fixes RRF dropping chunk context, and reproduced the
+committed results sample for sample. Answers used `run_answer_matrix.py
+--judge-model gemma4:31b-mlx --sets answerable,period,underspecified --limit
+0`, generator `qwen3.5:9b-mlx`, paired against the Phase 0 step 3 `crag=off`
+rows. With the header on, the prompt labels each passage with its header
+instead of its file name, so the answer rows measure retrieval and label
+together.
+
+Retrieval, hit rate, each pair against its matching row without a header:
+
+| set | pair | hit | Δ hit [95% CI], W/L, p | Δ NDCG [95% CI] |
+|---|---|---|---|---|
+| generated | shipped | 0.908 → 0.948 | **+0.040 [+0.007, +0.074]\***, 8W/1L, p=0.039 | +0.043 [+0.015, +0.071]\* |
+| generated | stage-1 ceiling | 0.931 → 0.989 | **+0.057 [+0.023, +0.092]\***, 10W/0L, p=0.002 | +0.054 [+0.025, +0.082]\* |
+| generated | dense | 0.741 → 0.920 | **+0.178 [+0.119, +0.237]\***, 32W/1L, p<0.001 | +0.136 [+0.087, +0.186]\* |
+| generated | + reranker sees header | 0.948 → 0.977 | +0.029 [−0.005, +0.062], 7W/2L, p=0.18 | +0.101 [+0.063, +0.139]\* |
+| `period` | shipped | 0.582 → 0.655 | +0.073 [−0.013, +0.159], 5W/1L, p=0.22 | +0.098 [+0.020, +0.177]\* |
+| `period` | stage-1 ceiling | 0.709 → 0.945 | **+0.236 [+0.123, +0.350]\***, 13W/0L, p<0.001 | +0.159 [+0.078, +0.239]\* |
+| `period` | dense | 0.509 → 0.655 | **+0.145 [+0.027, +0.264]\***, 10W/2L, p=0.039 | +0.136 [+0.046, +0.227]\* |
+| `period` | + reranker sees header | 0.655 → 0.836 | **+0.182 [+0.079, +0.285]\***, 10W/0L, p=0.002 | +0.312 [+0.215, +0.409]\* |
+| `underspecified` | shipped | 0.653 → 0.797 | **+0.144 [+0.072, +0.216]\***, 19W/2L, p<0.001 | +0.118 [+0.065, +0.171]\* |
+| `underspecified` | stage-1 ceiling | 0.686 → 0.873 | **+0.186 [+0.112, +0.261]\***, 23W/1L, p<0.001 | +0.136 [+0.082, +0.190]\* |
+| `underspecified` | dense | 0.619 → 0.746 | **+0.127 [+0.054, +0.200]\***, 18W/3L, p=0.002 | +0.121 [+0.062, +0.180]\* |
+| `underspecified` | + reranker sees header | 0.797 → 0.822 | +0.025 [−0.024, +0.075], 6W/3L, p=0.51 | +0.087 [+0.034, +0.140]\* |
+
+The "+ reranker sees header" rows pair against `header=on` at the shipped
+config, so they measure the reranker switch alone. Against the shipped plain
+row, header plus reranker is generated 0.908 → 0.977 (+0.069, 13W/1L),
+`period` 0.582 → 0.836 (+0.255, 15W/1L), and `underspecified` 0.653 → 0.822
+(+0.169, 23W/3L), all with intervals excluding zero. NDCG at the shipped
+config goes 0.821 → 0.965, 0.393 → 0.803 and 0.562 → 0.767. `underspecified` by kind, at the
+shipped config: `paraphrase` 0.500 → 0.766 (+0.266 [+0.157, +0.375]\*,
+17W/0L), `implicit` 0.833 → 0.833 (2W/2L).
+
+Answers, pass rate against `crag=off`:
+
+| set | `header=on` | Δ [95% CI], W/L, p | `+ rerank_header` | Δ [95% CI], W/L, p |
+|---|---|---|---|---|
+| generated (174) | 0.862 → 0.937 | **+0.075 [+0.029, +0.120]\***, 15W/2L, p=0.002 | 0.943 | **+0.080 [+0.026, +0.134]\***, 19W/5L, p=0.007 |
+| `period` (55) | 0.782 → 0.800 | +0.018 [−0.062, +0.098], 3W/2L, p=1 | 0.927 | **+0.145 [+0.017, +0.274]\***, 11W/3L, p=0.057 |
+| `underspecified` (118) | 0.610 → 0.754 | **+0.144 [+0.058, +0.230]\***, 23W/6L, p=0.002 | 0.763 | **+0.153 [+0.065, +0.240]\***, 24W/6L, p=0.001 |
+| · `implicit` (54) | 0.722 → 0.741 | +0.019 [−0.091, +0.128], 5W/4L | 0.722 | +0.000, 6W/6L |
+| · `paraphrase` (64) | 0.516 → 0.766 | **+0.250 [+0.127, +0.373]\***, 18W/2L, p<0.001 | 0.797 | **+0.281 [+0.170, +0.392]\***, 18W/0L, p<0.001 |
+
+The reranker switch alone, `header=on` → `+ rerank_header`: generated +0.006
+(6W/5L), `period` **+0.127 [+0.025, +0.230]\*** (8W/1L, p=0.039),
+`underspecified` +0.008 (6W/5L). Failure split (retrieval / generation), off
+→ header → header + reranker: generated 15/9 → 5/6 → 3/7, `period` 12/0 →
+11/0 → 4/0, `underspecified` 37/9 → 15/14 → 17/11.
+
+**Findings**
+
+- **The header is the first change in this plan to clear noise, on retrieval
+  and on answers.** Generated set: +4.0pp hit and +7.5pp answer pass at the
+  shipped config. `underspecified`: +14.4pp on both. It costs nothing at
+  query time and ~2% at index time, with no LLM calls.
+- **It does what contextual chunking was for, and more.** Contextual chunking
+  measured +6.4pp dense and +0.6pp hybrid (noise) on the generated set at
+  ~4 hours of LLM calls. The header gives +17.8pp dense and +4.0pp hybrid.
+  Per the plan, it replaces contextual chunking as the recommended way to put
+  document identity into chunks, and contextual isn't worth re-running here.
+- **The gain is where questions name a subject the chunk doesn't.**
+  `paraphrase` questions name the company and period but reword the fact, and
+  gain +26.6pp retrieval and +25.0pp answers. `implicit` questions never name
+  the company ("the Dallas-based low-cost carrier"), and the header can't
+  bridge that: 0.833 → 0.833. That tier is left for query understanding
+  (Milestone 20).
+- **On `period`, the header gets the right chunk into stage 1, and the
+  reranker has to see it to rank that chunk first.** The stage-1 ceiling goes
+  0.709 → 0.945, but the shipped hit only 0.582 → 0.655 and the answer
+  0.782 → 0.800 (noise). The cross-encoder scores the text alone, and two
+  periods' copies of a paragraph have identical text. With
+  `include_header`, the `period` hit goes to 0.836, NDCG 0.491 → 0.803, and
+  answers to 0.927 (+12.7pp over the header alone, CI excluding zero). This
+  answers the plan's open question: the reranker should see the header.
+- **The reranker switch costs little elsewhere.** On the generated set and
+  `underspecified` it's noise on answers (6W/5L each) and positive on NDCG. The
+  retrieval run took 4% longer (longer passages for the cross-encoder).
+  `retrieval.min_score` is 0.0 in the shipped config, so no tuned threshold
+  is invalidated.
+- **Generation failures rose on `underspecified`** (9 → 14 with the header),
+  as retrieval failures fell 37 → 15. More questions now reach the prompt with
+  the right chunk and still fail. That's more attempts rather than a worse
+  prompt: the generated set's generation failures didn't rise (9 → 6). These
+  verdicts weren't read by hand.
+- **Not measured:** the hosted comparator (`voyage-context-4`), which needs an
+  explicit yes before any corpus text leaves the machine; the header with the
+  4b embedder; generator run-to-run noise (about ±2 questions per set at
+  temperature 0.2, from the multi-hop re-run).
+
+**Now the default.** `config.yaml` turns on both the header and
+`reranker.include_header`, so the shipped config matches the `header=on
+rerank_header` rows (on `data/index`, rebuilt with `--reset`). Later phases
+pair against those rows, not the plain `baseline` rows above, which stay as
+the record of what was measured before. `vanilla.yaml` reads its own
+header-free index.
+
+Raw records: the `header=*` variants in
+`data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`,
+and `header=on` / `header=on rerank_header` in
+`data/eval/results_chunking/answer_edgar__judge-gemma4-31b-mlx.json`.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a

@@ -85,10 +85,15 @@ FINGERPRINTED = (
 )
 
 # Fingerprinted only once set, so results recorded before these fields existed
-# keep their fingerprint while the field sits at its default.
+# keep their fingerprint while the field sits at its default (`None`/`False`).
 FINGERPRINTED_WHEN_SET = (
     "embedding.query_instruction",
+    "chunking.header.template",
+    "reranker.include_header",
 )
+
+# The chunk header data/eval/config_header.yaml indexes EDGAR with.
+HEADER_TEMPLATE = "{company} ({ticker}) {form}, period ended {period_end}"
 
 # The default retrieval task from the Qwen3-Embedding model card.
 QWEN3_RETRIEVAL_INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
@@ -185,6 +190,27 @@ VARIANTS: list[Variant] = [
              "embedding.query_instruction": QWEN3_RETRIEVAL_INSTRUCTION,
              "retrieval.mode": "dense"}, requires="index"),
 
+    # Deterministic chunk header (chunking plan, Phase 2): "{company} ({ticker})
+    # {form}, period ended {period_end}" indexed ahead of each chunk, from the
+    # index data/eval/config_header.yaml builds. Same three pairs as the
+    # embedder, plus the reranker scoring the header too (pairs with
+    # `header=on`), the plan's open question about what the cross-encoder sees.
+    *[
+        Variant(f"header=on{suffix}", "header",
+                {"paths.index_dir": "data/index_header",
+                 "chunking.header.template": HEADER_TEMPLATE,
+                 # Pinned: the shipped default turned this on after these rows
+                 # were measured, and `header=on` means the header alone.
+                 "reranker.include_header": False, **extra},
+                requires="index")
+        for suffix, extra in (
+            ("", {}),
+            (" stage1_top_k=20", {"retrieval.top_k": 20, "retrieval.rerank_top_k": 20}),
+            (" mode=dense", {"retrieval.mode": "dense"}),
+            (" rerank_header", {"reranker.include_header": True}),
+        )
+    ],
+
     # The payoff question the stage-1 axis raises: retrieval can surface the
     # right chunk far more often with a bigger candidate pool, but that is only
     # useful if the reranker promotes it into the handful the LLM actually sees.
@@ -280,7 +306,11 @@ def fingerprint(config: RagConfig) -> tuple[str, dict[str, Any]]:
     """Hash the retrieval-relevant settings, and return them alongside the hash."""
     settings = {path: read_path(config, path) for path in FINGERPRINTED}
     settings.update(
-        {path: value for path in FINGERPRINTED_WHEN_SET if (value := read_path(config, path)) is not None}
+        {
+            path: value
+            for path in FINGERPRINTED_WHEN_SET
+            if (value := read_path(config, path)) is not None and value is not False
+        }
     )
     serialized = json.dumps({k: str(v) for k, v in settings.items()}, sort_keys=True)
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()[:12], settings

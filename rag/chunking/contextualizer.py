@@ -16,7 +16,7 @@ retrieval unit gets back the identifying terms the split threw away.
 Two properties make this safe to bolt onto an existing index:
 
 - **`Chunk.text` is never modified.** The context lives in its own field and is
-  joined on only where indexing happens (`Chunk.contextual_text`). Citations,
+  joined on only where indexing happens (`Chunk.index_text`). Citations,
   previews, and `char_start`/`char_end` keep pointing at the verbatim span the
   chunker produced, so nothing a user sees is model-generated.
 - **It fails open, per chunk.** A chunk whose context generation raises or comes
@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import replace
 
 from rag.chunking.context_cache import ContextCache, fingerprint
 from rag.chunking.models import Chunk
@@ -80,15 +81,7 @@ def _with_context(chunk: Chunk, context: str) -> Chunk:
     """Copy `chunk` with `context` attached -- `Chunk` is frozen, and `text` is
     never touched (see the module docstring)."""
 
-    return Chunk(
-        id=chunk.id,
-        text=chunk.text,
-        document_id=chunk.document_id,
-        source=chunk.source,
-        doc_type=chunk.doc_type,
-        metadata=dict(chunk.metadata),
-        context=context,
-    )
+    return replace(chunk, metadata=dict(chunk.metadata), context=context)
 
 
 def build_context_prompt(document_text: str, chunk_text: str) -> str:

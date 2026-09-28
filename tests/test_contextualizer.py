@@ -6,7 +6,7 @@ replies, so prompt assembly, truncation, and every fail-open path are verified
 with no Ollama daemon involved.
 
 The load-bearing property under test is the separation `Chunk` maintains:
-generated context enriches what gets *indexed* (`contextual_text`) and never
+generated context enriches what gets *indexed* (`index_text`) and never
 touches what gets *cited* (`text`).
 """
 
@@ -110,23 +110,23 @@ def test_contextualize_attaches_context_without_touching_chunk_text() -> None:
     assert result.text == "The limit is 1,000 requests per minute.", "the cited span must stay verbatim"
 
 
-def test_contextual_text_joins_context_and_text_for_indexing() -> None:
+def test_index_text_joins_context_and_text_for_indexing() -> None:
     client = _FakeLLMClient("From the ACS rate limiting section.")
     contextualizer = ChunkContextualizer(client)  # type: ignore[arg-type]
 
     chunk = _chunk(text="The limit is 1,000 requests per minute.")
     [result] = contextualizer.contextualize([chunk], [_document()])
 
-    assert result.contextual_text == (
+    assert result.index_text == (
         "From the ACS rate limiting section.\n\nThe limit is 1,000 requests per minute."
     )
 
 
-def test_contextual_text_without_context_is_exactly_the_chunk_text() -> None:
+def test_index_text_without_context_is_exactly_the_chunk_text() -> None:
     chunk = _chunk()
 
     assert chunk.context is None
-    assert chunk.contextual_text == chunk.text
+    assert chunk.index_text == chunk.text
 
 
 def test_contextualize_preserves_id_provenance_and_metadata() -> None:
@@ -267,7 +267,7 @@ def test_raising_client_leaves_the_chunk_unchanged() -> None:
     [result] = contextualizer.contextualize([_chunk()], [_document()])
 
     assert result.context is None
-    assert result.contextual_text == result.text
+    assert result.index_text == result.text
 
 
 def test_empty_reply_leaves_the_chunk_unchanged() -> None:

@@ -40,6 +40,10 @@ class Chunk:
             See `rag.chunking.contextualizer` for what it's for; `text` is never
             modified, so a chunk with context still cites exactly the span the
             chunker produced.
+        header: A deterministic line naming the chunk's document, rendered from
+            its metadata by `chunking.header.template`, or `None` when that is
+            off or the document lacks a field it names. Like `context`, it is
+            indexed but never part of `text`.
     """
 
     id: str
@@ -49,19 +53,30 @@ class Chunk:
     doc_type: str
     metadata: dict[str, Any] = field(default_factory=dict)
     context: str | None = None
+    header: str | None = None
 
     @property
-    def contextual_text(self) -> str:
-        """The text that should be *indexed* for this chunk: context, then the chunk.
+    def index_text(self) -> str:
+        """The text that should be *indexed* for this chunk: header, context, then the chunk.
 
         Kept as a derived property rather than folded into `text` so the two
         stay separable at every layer: retrieval matches against the enriched
         string, while citations, previews, and character offsets keep pointing
         at the real span of the real document. Falls back to `text` verbatim
-        when there's no context, so nothing downstream needs to branch.
+        when there's neither, so nothing downstream needs to branch.
         """
 
-        return f"{self.context}\n\n{self.text}" if self.context else self.text
+        return join_index_text(self.header, self.context, self.text)
+
+
+def join_index_text(header: str | None, context: str | None, text: str) -> str:
+    """Header, context and text as the one string an index sees, skipping empty parts.
+
+    Shared by `Chunk`, `ScoredChunk` and the BM25 index's persisted records, so
+    the embedded and keyword-indexed strings can't drift apart.
+    """
+
+    return "\n\n".join(part for part in (header, context, text) if part)
 
 
 def content_hash(text: str) -> str:

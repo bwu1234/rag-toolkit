@@ -433,7 +433,8 @@ the docs fit together.
   unreachable by a query that does.
 - **`Chunk.text` is never modified.** The blurb lives in its own `context`
   field, and `Chunk.contextual_text` / `ScoredChunk.contextual_text` join the
-  two only where indexing happens. Citations, previews, and
+  two only where indexing happens. *(Later: renamed `index_text`, which also
+  joins the chunk header; see [chunk header notes](#chunk-header-notes-chunking-plan-phase-2).)* Citations, previews, and
   `char_start`/`char_end` keep pointing at the verbatim span, so nothing a user
   sees is model-generated. That split is the whole design; it's why the feature
   needed a field rather than a rewrite of `text`.
@@ -725,3 +726,55 @@ removed, and config changes the content hash couldn't see.
   local indexes (`baseline`, `edgar`, contextual `edgar`) were checked
   read-only and held exactly the chunk ids their corpora produce, so adopting
   them lost nothing.
+
+## Chunk header notes (chunking plan, Phase 2)
+
+- **Metadata travels as YAML front matter, not a parsed title.** The EDGAR
+  fetcher writes `company`, `ticker`, `form`, `period_end`, `filed` and
+  `accession` into front matter, and `MarkdownLoader` parses it into
+  `Document.metadata` and strips it from `Document.text`. Stripping it is the
+  point: every character offset and eval span is measured against
+  `Document.text`, and adding the block moves none of them. Regex-parsing the
+  existing `# Company (TICKER) FORM -- period ended DATE` title at load time
+  was rejected: it works for EDGAR only, and it breaks silently when the title
+  format changes. The fetcher's `--backfill-front-matter` does read those
+  lines, but once, offline, from files it wrote itself, raising on any it
+  can't parse. Re-fetching was not an option. The manifest selects each
+  ticker's *most recent* filings, so a re-fetch can return a different corpus
+  and invalidate every eval set.
+- **`chunking.carry_metadata` replaces the chunker's hardcoded allowlist,**
+  defaulting to the same three keys. Dates are stored as `YYYYMMDD` integers
+  because Chroma accepts only primitives, and an integer keeps the order a
+  period range filter (Phase 3) needs.
+- **The header is its own field, like `context`.** `Chunk.header` is rendered
+  from `chunking.header.template` over the document's metadata. It's all or
+  nothing: a document missing any named field gets no header rather than
+  "Apple Inc. (None)", and the chunker logs how many documents that was.
+  `Chunk.index_text` (renamed from `contextual_text`) is header, context and
+  text, each when present, joined by one helper that `Chunk`, `ScoredChunk`
+  and BM25's persisted records all use, so the embedded and keyword-indexed
+  strings can't drift apart. `text` stays verbatim.
+- **Both chunk fields go in the index manifest.** The content hash covers
+  `chunk.text`, so a template change would otherwise leave old and new
+  headers mixed in one index. A manifest written before `chunk_fields`
+  existed is read as the defaults (the old allowlist, no header), so existing
+  indexes aren't refused.
+- **The header replaces the file name as the passage's source label** in the
+  prompt, so the answering model reads "Apple Inc. (AAPL) 10-K, period ended
+  2024-09-28" rather than a filename that only hints at it. MCP `rag_search`
+  results gain a `header` field for the same reason.
+- **The reranker sees the header only with `reranker.include_header`.** The
+  Milestone 9 reasoning still applies: changing what the cross-encoder scores
+  changes every reranker measurement. But the header is fixed metadata, not
+  generated text, and it's the only way the cross-encoder can tell two
+  periods' identical paragraphs apart. So it's a measured switch, not a
+  standing exclusion.
+- **A bug found on the way:** `reciprocal_rank_fusion` rebuilt each
+  `ScoredChunk` field by field and dropped `context`. Since hybrid mode
+  shipped, contextual chunking's context never reached the answer prompt or
+  CRAG's grader. Ranking was unaffected, so no recorded retrieval number
+  changes, and contextual chunking was never measured on answers. Fusion now
+  copies with `dataclasses.replace`, as the reranker's `rescored` already
+  did. The indexer and contextualizer rebuilt `Chunk` the same way and would
+  have dropped `header`; both now use `replace` too.
+

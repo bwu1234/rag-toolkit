@@ -10,6 +10,8 @@ outperforms Condorcet and individual Rank Learning Methods."
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from rag.vectorstore.base import ScoredChunk
 
 # Canonical default from the RRF paper / common IR practice.
@@ -72,16 +74,11 @@ def reciprocal_rank_fusion(
 
     # Theoretical max: rank 1 in every contributing list.
     max_rrf = len(non_empty) / (k + 1)
+    # `replace` rather than a field-by-field rebuild: the rebuild this replaced
+    # silently dropped `context` (and would have dropped `header`), so hybrid
+    # retrieval never passed a chunk's generated context on to the prompt.
     scored = [
-        ScoredChunk(
-            chunk_id=rep.chunk_id,
-            text=rep.text,
-            document_id=rep.document_id,
-            source=rep.source,
-            doc_type=rep.doc_type,
-            score=(raw / max_rrf) if max_rrf > 0 else 0.0,
-            metadata=dict(rep.metadata),
-        )
+        replace(rep, score=(raw / max_rrf) if max_rrf > 0 else 0.0, metadata=dict(rep.metadata))
         for raw, rep in fused.values()
     ]
     scored.sort(key=lambda c: c.score, reverse=True)

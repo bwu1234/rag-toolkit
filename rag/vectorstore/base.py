@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from rag.chunking.models import Chunk
+from rag.chunking.models import Chunk, join_index_text
 
 
 @dataclass(frozen=True)
@@ -36,6 +36,8 @@ class ScoredChunk:
             chunking produced one (see `rag.chunking.contextualizer`). Carried
             through retrieval so the answering model can be shown where a
             passage sits in its document -- `text` remains the verbatim span.
+        header: The chunk's deterministic document header, when
+            `chunking.header` produced one. Carried through for the same reason.
     """
 
     chunk_id: str
@@ -46,12 +48,13 @@ class ScoredChunk:
     score: float
     metadata: dict[str, Any] = field(default_factory=dict)
     context: str | None = None
+    header: str | None = None
 
     @property
-    def contextual_text(self) -> str:
-        """Context and chunk text as one string -- mirrors `Chunk.contextual_text`."""
+    def index_text(self) -> str:
+        """Header, context and chunk text as one string -- mirrors `Chunk.index_text`."""
 
-        return f"{self.context}\n\n{self.text}" if self.context else self.text
+        return join_index_text(self.header, self.context, self.text)
 
 
 class VectorStore(ABC):
