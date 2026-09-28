@@ -8,6 +8,33 @@ states its own setup. The shipped config has changed several times since the
 first one, so read a section's numbers against its setup, not against today's
 defaults.
 
+## Scope of the evidence
+
+These are development benchmarks for specific EDGAR tasks and configurations.
+They support diagnosis and regression checks; they do not establish general
+RAG quality. The main generated set is nearly saturated at the current config
+(170/174 retrieval hits), and 173/174 questions have a single expected span.
+Questions were drafted from existing chunks with explicit company and period
+names. The underspecified and multi-hop sets reuse facts from that set.
+
+Repeated configuration selection on these questions, including the routing
+gate, makes the results in-sample. Paired intervals and McNemar tests do not
+remove that selection bias or account for dependencies among related facts
+and filings. Fresh held-out questions are needed for generalization claims.
+
+Answer pass means agreement with a reference under an LLM judge. The current
+judge does not inspect retrieved evidence or validate citations; a correct
+answer from the wrong period's identical paragraph can pass. Keep answer
+correctness and retrieval provenance separate when interpreting the tables.
+
+Historical shorthand such as "noise" or "measured off" means a benefit was
+not demonstrated sufficiently to enable the feature under that experiment's
+conditions. It does not prove no effect elsewhere. In particular, CRAG and
+expansion have not been re-evaluated on the harder underspecified tier.
+The [evaluation rigor plan](evaluation-rigor-plan.md) specifies the next
+coverage, holdout, and grading work. Existing tables remain the historical
+record; no new runs are reported here.
+
 ### Current shipped baseline
 
 What later changes pair against, as of 2026-09-28: `edgar`, header on and
@@ -84,7 +111,7 @@ samples). Defaults: hybrid, cross-encoder, `top_k 20`, `rerank_top_k 5`,
   place, with regression tests asserting a raw logit of 0.0 maps to 0.5 and not
   0.622. This is the kind of interface bug Milestone 18's "swapping is a config
   change" claim exists to surface.
-- **Expansion hurts and costs 12x the latency.** Both providers land below
+- **Expansion scored lower and cost 12x the latency in this run.** Both providers land below
   baseline. Plausible mechanism, stated as hypothesis not fact: generated
   questions already name company and period, and on a corpus of near-duplicate
   filings differing mainly in entity and period, a rewrite that drops those

@@ -10,11 +10,15 @@ What has shipped and what is next is tracked in [Backlog](docs/backlog.md);
 the MCP server is also shipped.
 
 - **Measured-off features stay off.** Contextual chunking, CRAG, query
-  expansion, `retrieval.min_score` and `embedding.query_instruction` all
-  measured as no better than noise on the EDGAR corpus, and
+  expansion, `retrieval.min_score` and `embedding.query_instruction` have
+  not demonstrated a benefit sufficient to enable them on the evaluated
+  EDGAR tasks and configurations, and
   `retrieval.document_routing` gained on the period tiers without clearing
   McNemar's test — don't enable one without re-measuring
-  ([Measured results](docs/measured-results.md)).
+  ([Measured results](docs/measured-results.md)). These are scoped development
+  results, not evidence that the techniques cannot help other workloads.
+  See the [evaluation rigor plan](docs/evaluation-rigor-plan.md) before
+  extending these conclusions or using new results to claim general quality.
 - **The MCP server is not Milestone 19.** It serves our retrieval to an outside
   agent; Milestone 19 is *this* system calling search as a tool.
 
@@ -132,6 +136,9 @@ Design rationale, history, and planning live in `docs/`, read on demand:
   repeats, confirmation sets and the optional local MLflow tracking pilot.
   Read before changing eval
   storage, scoring or orchestration; its proposed commands are not yet shipped.
+- **`docs/evaluation-rigor-plan.md`** — what the current benchmarks support,
+  their coverage and grading limits, and the plan for held-out questions,
+  evidence-aware grading, judge calibration, and broader corpora.
 - **`docs/backlog.md`** — the planned milestones: the plan behind each, and
   why they are ordered as they are.
 - **`docs/known-limitations.md`** — known gaps and failure modes in what's

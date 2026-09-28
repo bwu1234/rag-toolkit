@@ -16,6 +16,13 @@ Every phase follows the project's rules: selected by config behind an existing
 interface, off by default until measured with the `measure-change` skill, and
 no new dependency without a stated reason.
 
+Evaluation scope and the next benchmark work are specified in the
+[evaluation rigor plan](evaluation-rigor-plan.md). The existing three EDGAR
+tiers remain development controls for these phases. They do not replace a
+fresh holdout, evidence-aware answer grading, or questions authored without
+the current chunk boundaries; generated single-span questions alone cannot
+establish that a chunking strategy is generally better.
+
 ## The production methodology
 
 Indexing is a pipeline with a contract at each stage, not a chunker with an

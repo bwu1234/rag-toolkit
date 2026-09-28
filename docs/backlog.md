@@ -609,6 +609,13 @@ comparing latency across deployments.
 
 ### Milestone 27 — Eval coverage and judge reliability
 
+Implementation order and acceptance criteria now live in the
+[evaluation rigor plan](evaluation-rigor-plan.md). Prioritize a fresh grouped
+holdout, judge calibration, and evidence-aware scoring before further broad
+quality claims or extensive tuning. The existing sets remain development and
+regression benchmarks; the plan below is not evidence that these additions
+have shipped.
+
 PR #15 fixed how differences are *tested* (paired CIs) and made answer failures
 attributable to retrieval or generation. What remains is what the eval sets
 *measure* and how far the judge can be trusted. Several "measured-off" verdicts
@@ -624,10 +631,10 @@ the harness plan's publication.
   `edgar_eval_set.json`, all 174 questions name company and period (by
   construction of the generator). 128 start with "What was/were", 124 spans
   contain a figure, and a median 58% of a question's content words appear in
-  its answer span. That is the case BM25 handles best, and it is why
-  contextual chunking and query expansion measured as noise: both exist for
-  questions that *don't* name what they're about ("which airline's fuel costs
-  rose most", "how exposed is Apple to China"). Add a separate,
+  its answer span. That favors lexical matching and may limit the measured
+  benefit of contextual chunking and query expansion; the results do not
+  establish the cause. Broader questions include "which airline's fuel costs
+  rose most" and "how exposed is Apple to China". Add a separate,
   hand-reviewed tier of underspecified and paraphrased questions. Report it
   apart from the generated set, and re-measure contextual chunking and
   expansion on it before treating either verdict as general. *Built and
@@ -636,8 +643,10 @@ the harness plan's publication.
   retrieval hit 0.833 `implicit` / 0.500 `paraphrase` against 0.908 on the
   generated set. The `period` tier shipped with it; `table` waits for Phase 4.
   Every chunking-plan phase since has been judged on all three sets. Contextual
-  chunking no longer needs re-measuring: Phase 2's deterministic header
-  replaced it (+14.4pp answer pass on this tier). Query expansion and CRAG
+  chunking is not currently prioritized for re-measurement: Phase 2's
+  deterministic header replaced it (+14.4pp answer pass on this tier).
+  That implementation choice does not establish that generated context
+  cannot help another workload. Query expansion and CRAG
   haven't been re-measured on it.*
 - **Turn log → eval candidates.** Milestone 12 called logged queries with
   feedback "the cheapest source of new eval samples", but nothing converts

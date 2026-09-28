@@ -1,13 +1,27 @@
 # Known limitations / roadmap
 
+- **The eval sets are development benchmarks with limited generalization.**
+  The main EDGAR set is nearly saturated (97.7% retrieval hit), and 173 of
+  174 questions have one expected answer span. Its questions were generated
+  from existing chunks; the underspecified and multi-hop sets reuse its
+  facts. Repeated tuning on these sets is not held-out validation. The
+  [evaluation rigor plan](evaluation-rigor-plan.md) specifies fresh grouped
+  holdouts, task coverage, corpus diversity, and acceptance criteria.
+- **Answer pass does not establish citation support.** The answer judge sees
+  a reference answer rather than retrieved evidence. A wrong-period passage
+  with identical wording can yield a passing answer, and a manual multi-hop
+  audit found a false pass on period attribution. Judge calibration and
+  evidence-aware scoring remain planned work.
 - **The measured-off verdicts rest mostly on questions that name their
   subject.** Contextual chunking (Milestone 9), CRAG (Milestone 10) and query
   expansion were measured on the generated EDGAR set, where every question
-  names its company and period, and all came out as noise
+  names its company and period, without demonstrating a benefit sufficient
+  to enable them under those experiments' conditions
   ([measured results](measured-results.md)). The deterministic chunk header
   has since replaced contextual chunking as the way to put document identity
   into chunks. CRAG and expansion have not been re-measured on the
-  `underspecified` tier they were designed for.
+  `underspecified` tier. Their current results do not establish that they
+  cannot help other question distributions.
 - The retry rewriter has the same domain-drift failure mode HyDE does, and it's
   severe: on this corpus "How do I raise my throttling ceiling?" was rewritten
   to "Increase maximum CPU frequency limits via BIOS configuration" — a fluent,
