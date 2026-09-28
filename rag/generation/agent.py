@@ -417,6 +417,7 @@ class AgentService(ChatResponder):
                 retrieved=[RetrievedPassage(c.chunk_id, c.document_id, c.score) for c in result.chunks],
                 candidate_count=result.candidate_count,
                 dropped_below_min_score=result.dropped_below_min_score,
+                routed_to=result.routed_to,
             )
         )
 

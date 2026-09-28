@@ -813,3 +813,42 @@ removed, and config changes the content hash couldn't see.
   `expected_doc_ids`, as a ticker plus a `period_end` range, the way a caller
   would write it, not as a document-id list. That keeps the measurement
   about the interface a caller would actually use.
+
+
+## Document routing notes (chunking plan, Phase 3b)
+
+- **Probe first, then build.** The plan specified header-only records and a
+  top-*M* filter. Measured alone (`scripts/experiments/2026-09-doc-routing/`),
+  that router put the right filing first only 66% of the time on the generated
+  set, and its top 5 held it less often than chunk retrieval already did. A
+  hard filter on that router can only lose answers. Two changes came out of the
+  probe: the records and the gate below.
+- **Records spell the date the way questions do.** The header's ISO date
+  (`2026-02-15`) shares only digits with "the quarter ended February 15,
+  2026". `retrieval.document_routing.record_template` adds a spelled-out date
+  through a `:date` format spec (`{period_end:date}`), a small
+  `string.Formatter` subclass rather than a second template language. The
+  default template is EDGAR-shaped; a corpus without those fields has no
+  records, and the router then never routes and says so in a warning.
+- **The gate is agreement, not a score floor.** A wrong route doesn't rank
+  the answer lower, it filters it out. So the router routes only when BM25
+  and dense independently put the same filing first, with BM25's top score
+  strictly ahead of its second (a company named without a period ties every
+  filing of that company). The plan asked for a floor "derived from the eval
+  run, never hand-set". An agreement rule has no number to set at all, and
+  it's what the probe's simulation favoured.
+- **Records come from the sparse index, built lazily.** `SparseIndex.documents()`
+  returns one entry per indexed document (header plus carried metadata), so
+  routing covers exactly what retrieval can return and can't fall out of sync
+  with the chunk index. There's no third on-disk artifact and no manifest
+  change. The cost is one batched embedding call on the first routed query.
+  At thousands of documents they should be persisted at index time instead.
+- **Routing is a filter, so it reuses Phase 3's path.** A routed query becomes
+  `QueryFilter(any_of={"document_id": [...]})`, applied before top-k in both
+  stores. A caller's explicit filter wins and routing doesn't run. Routing
+  also skips web search, as any filter does. It routes on the query
+  `retrieve` was given, which in chat is the condensed standalone question.
+- **Every decision is visible.** A `route` trace event says where the query
+  went or why it fell back. `RetrievalResult.routed_to`, each turn log's
+  `RetrievalAttempt.routed_to` and each retrieval eval sample's `routed_to`
+  record the routed filings.

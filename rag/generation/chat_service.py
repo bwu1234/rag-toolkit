@@ -593,6 +593,7 @@ class ChatService(ChatResponder):
                     kept=kept_ids,
                     candidate_count=result.candidate_count,
                     dropped_below_min_score=result.dropped_below_min_score,
+                    routed_to=result.routed_to,
                 )
             )
 

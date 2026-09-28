@@ -1,5 +1,5 @@
 {
-  "label": "chunking plan Phase 3: metadata filters",
+  "label": "",
   "corpus": "edgar (isolated)",
   "collection": "rag_corpus__edgar",
   "eval_set": "data/eval/edgar_period_set.json",
@@ -30,7 +30,7 @@
         "reranker.include_header": "True"
       },
       "num_samples": 55,
-      "elapsed_s": 55.1,
+      "elapsed_s": 55.4,
       "metrics": {
         "hit_rate": 0.8364,
         "recall": 0.8364,
@@ -7873,6 +7873,1026 @@
           "recall": 1.0,
           "mrr": 1.0,
           "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        }
+      }
+    },
+    {
+      "variant": "routing=top1",
+      "axis": "routing",
+      "overrides": {
+        "retrieval.document_routing.top_m": 1
+      },
+      "fingerprint": "5467ce818e51",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max",
+        "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}",
+        "reranker.include_header": "True",
+        "retrieval.document_routing.top_m": "1",
+        "retrieval.document_routing.record_template": "{header}; period ended {period_end:date}"
+      },
+      "num_samples": 55,
+      "elapsed_s": 59.9,
+      "metrics": {
+        "hit_rate": 0.9273,
+        "recall": 0.9273,
+        "precision": 0.2,
+        "mrr": 0.8127,
+        "ndcg": 0.8413
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.7455,
+        "3": 0.8727,
+        "5": 0.9273
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "AAPL_10-K_2024-09-28.md"
+          ]
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "AAPL_10-K_2024-09-28.md"
+          ]
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "COST_10-K_2024-09-01.md"
+          ]
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "routed_to": [
+            "COST_10-K_2024-09-01.md"
+          ]
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "routed_to": [
+            "COST_10-Q_2025-11-23.md"
+          ]
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.2,
+          "ndcg": 0.3869,
+          "routed_to": [
+            "COST_10-Q_2026-02-15.md"
+          ]
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "COST_10-Q_2026-02-15.md"
+          ]
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "CVX_10-K_2024-12-31.md"
+          ]
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "CVX_10-K_2024-12-31.md"
+          ]
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "routed_to": [
+            "CVX_10-K_2024-12-31.md"
+          ]
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "CVX_10-K_2025-12-31.md"
+          ]
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-K_2024-12-31.md"
+          ]
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2025-09-30.md"
+          ]
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2026-03-31.md"
+          ]
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2026-03-31.md"
+          ]
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2026-06-30.md"
+          ]
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2026-06-30.md"
+          ]
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "JNJ_10-Q_2026-06-28.md"
+          ]
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "routed_to": [
+            "LUV_10-Q_2026-06-30.md"
+          ]
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MRK_10-K_2024-12-31.md"
+          ]
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-K_2025-06-30.md"
+          ]
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-K_2025-06-30.md"
+          ]
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-K_2025-06-30.md"
+          ]
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-K_2025-06-30.md"
+          ]
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "routed_to": [
+            "MSFT_10-K_2026-06-30.md"
+          ]
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-Q_2026-03-31.md"
+          ]
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "NVDA_10-K_2025-01-26.md"
+          ]
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "NVDA_10-K_2025-01-26.md"
+          ]
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "PFE_10-Q_2025-09-28.md"
+          ]
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307,
+          "routed_to": [
+            "TGT_10-K_2025-02-01.md"
+          ]
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "TGT_10-K_2026-01-31.md"
+          ]
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "TGT_10-Q_2025-08-02.md"
+          ]
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "TGT_10-Q_2025-11-01.md"
+          ]
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "routed_to": [
+            "TGT_10-Q_2025-11-01.md"
+          ]
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "routed_to": [
+            "UAL_10-K_2025-12-31.md"
+          ]
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "UAL_10-Q_2026-03-31.md"
+          ]
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "WMT_10-K_2025-01-31.md"
+          ]
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "WMT_10-Q_2025-07-31.md"
+          ]
+        },
+        "period::WMT_10-Q_2025-07-31.md::para84": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para373": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-10-31.md::para70": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        }
+      }
+    },
+    {
+      "variant": "routing=top2",
+      "axis": "routing",
+      "overrides": {
+        "retrieval.document_routing.top_m": 2
+      },
+      "fingerprint": "2c8e64cb7ad1",
+      "settings": {
+        "chunking.chunk_size": "1000",
+        "chunking.chunk_overlap": "150",
+        "chunking.contextual.enabled": "False",
+        "chunking.contextual.max_context_chars": "400",
+        "embedding.model": "qwen3-embedding:0.6b",
+        "retrieval.mode": "hybrid",
+        "retrieval.top_k": "20",
+        "retrieval.rerank_top_k": "5",
+        "retrieval.rrf_k": "60",
+        "retrieval.min_score": "0.0",
+        "retrieval.expansion.provider": "none",
+        "retrieval.expansion.num_queries": "3",
+        "reranker.provider": "cross_encoder",
+        "reranker.model": "BAAI/bge-reranker-v2-m3",
+        "reranker.aggregate": "max",
+        "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}",
+        "reranker.include_header": "True",
+        "retrieval.document_routing.top_m": "2",
+        "retrieval.document_routing.record_template": "{header}; period ended {period_end:date}"
+      },
+      "num_samples": 55,
+      "elapsed_s": 59.6,
+      "metrics": {
+        "hit_rate": 0.8909,
+        "recall": 0.8909,
+        "precision": 0.1927,
+        "mrr": 0.7667,
+        "ndcg": 0.7978
+      },
+      "by_kind": {},
+      "recall_by_k": {
+        "1": 0.6909,
+        "3": 0.8182,
+        "5": 0.8909
+      },
+      "unmatchable_spans": [],
+      "samples": {
+        "period::AAPL_10-K_2024-09-28.md::para139": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "AAPL_10-K_2024-09-28.md",
+            "AAPL_10-Q_2026-03-28.md"
+          ]
+        },
+        "period::AAPL_10-K_2024-09-28.md::para257": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "AAPL_10-K_2024-09-28.md",
+            "AAPL_10-Q_2026-03-28.md"
+          ]
+        },
+        "period::COST_10-K_2024-09-01.md::para232": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "COST_10-K_2024-09-01.md",
+            "COST_10-Q_2025-11-23.md"
+          ]
+        },
+        "period::COST_10-K_2024-09-01.md::para258": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "routed_to": [
+            "COST_10-K_2024-09-01.md",
+            "COST_10-Q_2025-11-23.md"
+          ]
+        },
+        "period::COST_10-K_2025-08-31.md::para101": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::COST_10-K_2025-08-31.md::para227": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::COST_10-Q_2025-11-23.md::para148": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307,
+          "routed_to": [
+            "COST_10-Q_2025-11-23.md",
+            "COST_10-K_2025-08-31.md"
+          ]
+        },
+        "period::COST_10-Q_2026-02-15.md::para313": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "routed_to": [
+            "COST_10-Q_2026-02-15.md",
+            "COST_10-Q_2026-05-10.md"
+          ]
+        },
+        "period::COST_10-Q_2026-02-15.md::para362": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "COST_10-Q_2026-02-15.md",
+            "COST_10-Q_2026-05-10.md"
+          ]
+        },
+        "period::CVX_10-K_2024-12-31.md::para137": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "CVX_10-K_2024-12-31.md",
+            "CVX_10-K_2025-12-31.md"
+          ]
+        },
+        "period::CVX_10-K_2024-12-31.md::para231": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "CVX_10-K_2024-12-31.md",
+            "CVX_10-K_2025-12-31.md"
+          ]
+        },
+        "period::CVX_10-K_2024-12-31.md::para59": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.3333,
+          "ndcg": 0.5,
+          "routed_to": [
+            "CVX_10-K_2024-12-31.md",
+            "LUV_10-K_2024-12-31.md"
+          ]
+        },
+        "period::CVX_10-K_2025-12-31.md::para66": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "CVX_10-K_2025-12-31.md",
+            "CVX_10-K_2024-12-31.md"
+          ]
+        },
+        "period::CVX_10-K_2025-12-31.md::para86": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307
+        },
+        "period::DAL_10-K_2024-12-31.md::para399": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-K_2024-12-31.md",
+            "DAL_10-K_2025-12-31.md"
+          ]
+        },
+        "period::DAL_10-Q_2025-09-30.md::para219": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2025-09-30.md",
+            "DAL_10-Q_2026-03-31.md"
+          ]
+        },
+        "period::DAL_10-Q_2026-03-31.md::para110": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::DAL_10-Q_2026-03-31.md::para306": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2026-03-31.md",
+            "DAL_10-Q_2026-06-30.md"
+          ]
+        },
+        "period::DAL_10-Q_2026-03-31.md::para411": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2026-03-31.md",
+            "DAL_10-Q_2026-06-30.md"
+          ]
+        },
+        "period::DAL_10-Q_2026-06-30.md::para156": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "routed_to": [
+            "DAL_10-Q_2026-06-30.md",
+            "DAL_10-Q_2025-09-30.md"
+          ]
+        },
+        "period::DAL_10-Q_2026-06-30.md::para410": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "DAL_10-Q_2026-06-30.md",
+            "DAL_10-Q_2026-03-31.md"
+          ]
+        },
+        "period::JNJ_10-K_2025-12-28.md::para233": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::JNJ_10-Q_2026-06-28.md::para265": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "routed_to": [
+            "JNJ_10-Q_2026-06-28.md",
+            "JNJ_10-Q_2025-09-28.md"
+          ]
+        },
+        "period::LUV_10-Q_2026-06-30.md::para21": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "routed_to": [
+            "LUV_10-Q_2026-06-30.md",
+            "LUV_10-Q_2025-09-30.md"
+          ]
+        },
+        "period::MRK_10-K_2024-12-31.md::para198": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "routed_to": [
+            "MRK_10-K_2024-12-31.md",
+            "MRK_10-K_2025-12-31.md"
+          ]
+        },
+        "period::MRK_10-Q_2026-06-30.md::para116": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para181": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::MSFT_10-K_2025-06-30.md::para230": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-K_2025-06-30.md",
+            "MSFT_10-Q_2025-09-30.md"
+          ]
+        },
+        "period::MSFT_10-K_2025-06-30.md::para355": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-K_2025-06-30.md",
+            "MSFT_10-Q_2025-09-30.md"
+          ]
+        },
+        "period::MSFT_10-K_2025-06-30.md::para387": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-K_2025-06-30.md",
+            "MSFT_10-Q_2025-09-30.md"
+          ]
+        },
+        "period::MSFT_10-K_2025-06-30.md::para40": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-K_2025-06-30.md",
+            "MSFT_10-Q_2025-09-30.md"
+          ]
+        },
+        "period::MSFT_10-K_2026-06-30.md::para345": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307,
+          "routed_to": [
+            "MSFT_10-K_2026-06-30.md",
+            "MSFT_10-K_2025-06-30.md"
+          ]
+        },
+        "period::MSFT_10-Q_2026-03-31.md::para344": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "MSFT_10-Q_2026-03-31.md",
+            "MSFT_10-Q_2025-12-31.md"
+          ]
+        },
+        "period::NVDA_10-K_2025-01-26.md::para357": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "NVDA_10-K_2025-01-26.md",
+            "NVDA_10-Q_2025-10-26.md"
+          ]
+        },
+        "period::NVDA_10-K_2025-01-26.md::para378": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "NVDA_10-K_2025-01-26.md",
+            "NVDA_10-Q_2025-10-26.md"
+          ]
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para141": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::NVDA_10-Q_2025-10-26.md::para323": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0
+        },
+        "period::PFE_10-Q_2025-09-28.md::para432": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "PFE_10-Q_2025-09-28.md",
+            "PFE_10-Q_2026-06-28.md"
+          ]
+        },
+        "period::TGT_10-K_2025-02-01.md::para168": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para372": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309
+        },
+        "period::TGT_10-K_2025-02-01.md::para44": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.25,
+          "ndcg": 0.4307,
+          "routed_to": [
+            "TGT_10-K_2025-02-01.md",
+            "TGT_10-Q_2025-11-01.md"
+          ]
+        },
+        "period::TGT_10-K_2026-01-31.md::para197": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "TGT_10-K_2026-01-31.md",
+            "TGT_10-Q_2026-05-02.md"
+          ]
+        },
+        "period::TGT_10-Q_2025-08-02.md::para104": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "TGT_10-Q_2025-08-02.md",
+            "TGT_10-Q_2025-11-01.md"
+          ]
+        },
+        "period::TGT_10-Q_2025-11-01.md::para166": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "TGT_10-Q_2025-11-01.md",
+            "TGT_10-K_2025-02-01.md"
+          ]
+        },
+        "period::TGT_10-Q_2025-11-01.md::para167": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 0.5,
+          "ndcg": 0.6309,
+          "routed_to": [
+            "TGT_10-Q_2025-11-01.md",
+            "TGT_10-K_2025-02-01.md"
+          ]
+        },
+        "period::UAL_10-K_2025-12-31.md::para275": {
+          "hit_rate": 0.0,
+          "recall": 0.0,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "routed_to": [
+            "UAL_10-K_2025-12-31.md",
+            "UAL_10-K_2024-12-31.md"
+          ]
+        },
+        "period::UAL_10-Q_2026-03-31.md::para395": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "UAL_10-Q_2026-03-31.md",
+            "UAL_10-Q_2026-06-30.md"
+          ]
+        },
+        "period::WMT_10-K_2025-01-31.md::para192": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-K_2025-01-31.md::para304": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "WMT_10-K_2025-01-31.md",
+            "WMT_10-Q_2025-10-31.md"
+          ]
+        },
+        "period::WMT_10-K_2026-01-31.md::para171": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-K_2026-01-31.md::para380": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0
+        },
+        "period::WMT_10-Q_2025-07-31.md::para73": {
+          "hit_rate": 1.0,
+          "recall": 1.0,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "routed_to": [
+            "WMT_10-Q_2025-07-31.md",
+            "WMT_10-Q_2025-10-31.md"
+          ]
         },
         "period::WMT_10-Q_2025-07-31.md::para84": {
           "hit_rate": 1.0,

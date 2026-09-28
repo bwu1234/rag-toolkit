@@ -15,10 +15,11 @@ import dataclasses
 import pytest
 
 from rag.query_filter import QueryFilter
+from rag.retrieval.document_router import RoutingDecision
 from rag.retrieval.expansion import ExpandedQuery
 from rag.retrieval.reranker import NoOpReranker, Reranker
 from rag.retrieval.retriever import Retriever
-from rag.retrieval.sparse import SparseIndex
+from rag.retrieval.sparse import IndexedDocument, SparseIndex
 from rag.vectorstore.base import ScoredChunk, VectorStore
 
 
@@ -114,6 +115,9 @@ class _FakeSparseIndex(SparseIndex):
     def ids(self) -> set[str]:
         return {c.chunk_id for c in self.candidates}
 
+    def documents(self) -> list[IndexedDocument]:
+        return []
+
     def delete(self, ids: list[str]) -> None:
         raise AssertionError("Retriever should never call sparse delete")
 
@@ -156,6 +160,7 @@ def _retriever(
     rrf_k: int = 60,
     min_score: float = 0.0,
     query_expander=None,
+    document_router=None,
 ) -> tuple[Retriever, _FakeEmbedder, _FakeVectorStore, Reranker, _FakeSparseIndex | None, _FakeWebSearch | None]:
     embedder = _FakeEmbedder()
     candidates = candidates if candidates is not None else [_scored("a"), _scored("b"), _scored("c")]
@@ -179,6 +184,7 @@ def _retriever(
         min_score=min_score,
         query_expander=query_expander,
         web_search=web_search,
+        document_router=document_router,
     )
     return retriever, embedder, vector_store, reranker, sparse, web_search
 
@@ -731,3 +737,61 @@ def test_web_search_is_skipped_under_a_filter() -> None:
 
     assert web_search is not None and web_search.queries == []
     assert [c.chunk_id for c in results] == ["a"]
+
+
+# ---------------------------------------------------------------------------
+# Document routing (chunking plan, Phase 3b)
+# ---------------------------------------------------------------------------
+
+
+class _FakeRouter:
+    """Returns a canned decision and records the queries it was asked to route."""
+
+    def __init__(self, document_ids: list[str]) -> None:
+        self.document_ids = document_ids
+        self.queries: list[str] = []
+
+    def route(self, query: str) -> RoutingDecision:
+        self.queries.append(query)
+        return RoutingDecision(self.document_ids, "fake")
+
+
+def _in_doc(chunk_id: str, document_id: str) -> ScoredChunk:
+    return dataclasses.replace(_scored(chunk_id), document_id=document_id)
+
+
+def test_routing_filters_both_stores_to_the_routed_documents() -> None:
+    candidates = [_in_doc("a", "A.md"), _in_doc("b", "B.md"), _in_doc("a2", "A.md")]
+    router = _FakeRouter(["A.md"])
+    retriever, _e, vector_store, _r, sparse, _w = _retriever(
+        candidates=candidates, mode="hybrid", reranker=NoOpReranker(), rerank_top_k=5, document_router=router
+    )
+
+    result = retriever.retrieve("q")
+
+    assert {c.chunk_id for c in result.chunks} == {"a", "a2"}
+    assert result.routed_to == ["A.md"]
+    routed = QueryFilter(any_of={"document_id": ["A.md"]})
+    assert vector_store.filters == [routed]
+    assert sparse is not None and sparse.filters == [routed]
+
+
+def test_a_routing_fallback_searches_unfiltered() -> None:
+    retriever, _e, vector_store, *_ = _retriever(document_router=_FakeRouter([]))
+
+    result = retriever.retrieve("q")
+
+    assert vector_store.filters == [None]
+    assert result.routed_to == []
+
+
+def test_a_caller_filter_wins_over_routing() -> None:
+    router = _FakeRouter(["B.md"])
+    retriever, _e, vector_store, *_ = _retriever(candidates=[_in_doc("a", "A.md")], document_router=router)
+    caller = QueryFilter(any_of={"document_id": ["A.md"]})
+
+    result = retriever.retrieve("q", query_filter=caller)
+
+    assert router.queries == [], "routing never runs under a caller's filter"
+    assert vector_store.filters == [caller]
+    assert result.routed_to == []

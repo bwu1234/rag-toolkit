@@ -262,3 +262,13 @@ def test_bm25_filter_can_name_the_document_id(tmp_path: Path) -> None:
     )
 
     assert [r.chunk_id for r in results] == ["a24"]
+
+
+def test_documents_lists_each_indexed_document_once_with_its_metadata(tmp_path: Path) -> None:
+    index = _filings_index(tmp_path)
+    index.flush()
+
+    documents = {d.document_id: d for d in BM25Index(tmp_path / "bm25_index.json").documents()}
+
+    assert set(documents) == {"MSFT_20250630.md", "AAPL_20240928.md", "AAPL_20250927.md"}
+    assert documents["AAPL_20240928.md"].metadata == {"ticker": "AAPL", "period_end": 20240928}

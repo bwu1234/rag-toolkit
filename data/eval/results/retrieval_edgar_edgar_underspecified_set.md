@@ -5,7 +5,7 @@
 
 | variant | hit | hit 95% CI | recall | prec | MRR | NDCG | Δ hit [95% CI] | Δ NDCG [95% CI] | unmatch. | s |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `baseline` | 0.822 | [0.743, 0.881] | 0.822 | 0.188 | 0.657 | 0.698 | — | — | 0 | 122 |
+| `baseline` | 0.822 | [0.743, 0.881] | 0.822 | 0.188 | 0.657 | 0.698 | — | — | 0 | 121 |
 | | | | | | | | | | | |
 | `mode=dense` | 0.619 | [0.529, 0.701] | 0.619 | 0.134 | 0.469 | 0.535 | -0.203 [-0.284, -0.123]* 2W/26L p=3e-06 | -0.163 [-0.244, -0.082]* | 0 | 115 |
 | | | | | | | | | | | |
@@ -32,6 +32,9 @@
 | | | | | | | | | | | |
 | `filters=company` | 0.831 | [0.753, 0.888] | 0.831 | 0.192 | 0.688 | 0.724 | +0.008 [-0.042, +0.058] 5W/4L p=1 | +0.026 [-0.011, +0.063] | 0 | 120 |
 | `filters=company+period` | 0.898 | [0.831, 0.941] | 0.898 | 0.210 | 0.776 | 0.807 | +0.076 [+0.018, +0.135]* 11W/2L p=0.022 | +0.109 [+0.062, +0.155]* | 0 | 126 |
+| | | | | | | | | | | |
+| `routing=top1` | 0.856 | [0.781, 0.908] | 0.856 | 0.197 | 0.691 | 0.732 | +0.034 [+0.001, +0.067]* 4W/0L p=0.12 | +0.034 [+0.006, +0.062]* | 0 | 128 |
+| `routing=top2` | 0.856 | [0.781, 0.908] | 0.856 | 0.198 | 0.688 | 0.730 | +0.034 [+0.001, +0.067]* 4W/0L p=0.12 | +0.032 [+0.001, +0.062]* | 0 | 126 |
 
 By kind, each reported on its own (the rows above mix them):
 
@@ -79,5 +82,9 @@ By kind, each reported on its own (the rows above mix them):
 | `filters=company` | paraphrase | 64 | 0.812 | [0.700, 0.889] | 0.703 | +0.016 [-0.053, +0.085] 3W/2L p=1 |
 | `filters=company+period` | implicit | 54 | 0.870 | [0.756, 0.936] | 0.783 | +0.019 [-0.063, +0.100] 3W/2L p=1 |
 | `filters=company+period` | paraphrase | 64 | 0.922 | [0.830, 0.966] | 0.827 | +0.125 [+0.043, +0.207]* 8W/0L p=0.0078 |
+| `routing=top1` | implicit | 54 | 0.852 | [0.734, 0.923] | 0.717 | +0.000 [+0.000, +0.000] 0W/0L p=1 |
+| `routing=top1` | paraphrase | 64 | 0.859 | [0.754, 0.924] | 0.745 | +0.062 [+0.003, +0.122]* 4W/0L p=0.12 |
+| `routing=top2` | implicit | 54 | 0.852 | [0.734, 0.923] | 0.717 | +0.000 [+0.000, +0.000] 0W/0L p=1 |
+| `routing=top2` | paraphrase | 64 | 0.859 | [0.754, 0.924] | 0.741 | +0.062 [+0.003, +0.122]* 4W/0L p=0.12 |
 
 `hit 95% CI` is a Wilson interval on that rate alone, the noise floor of one run on this many questions. Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval that excludes zero; `W/L` counts the questions the variant gained / lost and `p` is McNemar's exact test on them -- trust it over the CI when W+L is small. `(no CI)` rows predate per-sample scores and need a re-run to be tested. `unmatch.` counts expected spans no chunk contains under that variant's chunking (`—` predates the count).

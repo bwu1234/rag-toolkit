@@ -99,6 +99,8 @@ class SampleResult:
     unmatched_spans: list[str] = field(default_factory=list)
     #: The sample's ``kind`` field, when the set sorts its questions into kinds.
     kind: str | None = None
+    #: Documents ``retrieval.document_routing`` filtered this sample to; empty if it didn't route.
+    routed_to: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -177,7 +179,8 @@ def run_retrieval_eval(
 
     for sample in dataset:
         query_filter = filters_for(sample) if filters_for is not None else None
-        chunks = retriever.retrieve(sample.query, query_filter=query_filter).chunks
+        retrieved = retriever.retrieve(sample.query, query_filter=query_filter)
+        chunks = retrieved.chunks
         judgment = judge_ranking(sample, chunks)
 
         # Recall at each cutoff is computed by re-judging a prefix of the
@@ -204,6 +207,7 @@ def run_retrieval_eval(
                 recall_by_k=recall_by_k,
                 unmatched_spans=judgment.unmatched_spans,
                 kind=sample.extra.get("kind"),
+                routed_to=retrieved.routed_to,
             )
         )
 

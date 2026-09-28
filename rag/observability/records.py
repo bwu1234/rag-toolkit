@@ -55,6 +55,8 @@ class RetrievalAttempt:
     kept: list[str] | None = None
     candidate_count: int = 0
     dropped_below_min_score: int = 0
+    routed_to: list[str] = field(default_factory=list)
+    """Documents `retrieval.document_routing` filtered this attempt to; empty if it didn't."""
 
 
 @dataclass(frozen=True)

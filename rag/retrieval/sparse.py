@@ -11,6 +11,7 @@ import json
 import logging
 import re
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,20 @@ def tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text.lower())
 
 
+def build_bm25(corpus: list[list[str]]) -> BM25Okapi:
+    """BM25Okapi over tokenized texts, with every term's IDF kept positive.
+
+    rank_bm25's IDF goes to zero or below for a term in most documents of a
+    small corpus, which would make a match score no better than a miss.
+    """
+
+    bm25 = BM25Okapi(corpus)
+    for token, idf in list(bm25.idf.items()):
+        if idf <= 0:
+            bm25.idf[token] = 1e-6
+    return bm25
+
+
 def bm25_index_path(index_dir: Path, slug: str | None = None) -> Path:
     """Return the on-disk path for the BM25 index under ``index_dir``.
 
@@ -47,6 +62,19 @@ def bm25_index_path(index_dir: Path, slug: str | None = None) -> Path:
     if slug is None:
         return index_dir / BM25_INDEX_FILENAME
     return index_dir / f"bm25_index__{slug}.json"
+
+
+@dataclass(frozen=True)
+class IndexedDocument:
+    """One document as the index stores it: its chunk header and carried metadata.
+
+    Every chunk of a document carries the same header and metadata, so one
+    entry per document is lossless.
+    """
+
+    document_id: str
+    header: str | None
+    metadata: dict[str, Any]
 
 
 class SparseIndex(ABC):
@@ -95,6 +123,15 @@ class SparseIndex(ABC):
     @abstractmethod
     def ids(self) -> set[str]:
         """Every chunk id currently indexed -- mirrors `VectorStore.ids`."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def documents(self) -> list[IndexedDocument]:
+        """One entry per indexed document, in first-indexed order.
+
+        What document-level routing ranks: read from the index rather than the
+        corpus on disk, so it covers exactly the documents retrieval can return.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -226,6 +263,17 @@ class BM25Index(SparseIndex):
     def ids(self) -> set[str]:
         return set(self._records)
 
+    def documents(self) -> list[IndexedDocument]:
+        seen: dict[str, IndexedDocument] = {}
+        for record in self._records.values():
+            if record["document_id"] not in seen:
+                seen[record["document_id"]] = IndexedDocument(
+                    document_id=record["document_id"],
+                    header=record.get("header"),
+                    metadata=dict(record["metadata"]),
+                )
+        return list(seen.values())
+
     def delete(self, ids: list[str]) -> None:
         removed = sum(self._records.pop(chunk_id, None) is not None for chunk_id in ids)
         if removed:
@@ -275,12 +323,7 @@ class BM25Index(SparseIndex):
         # written before contextual chunking existed simply have no context.
         corpus = [self._index_text(self._records[cid]) for cid in self._ordered_ids]
         # BM25Okapi requires a non-empty corpus; empty token docs are fine.
-        self._bm25 = BM25Okapi(corpus)
-        # Prevent rank_bm25 IDF <= 0 bug on small corpora or high-doc-frequency terms
-        # by ensuring all indexed terms have a small positive IDF floor.
-        for token, idf in list(self._bm25.idf.items()):
-            if idf <= 0:
-                self._bm25.idf[token] = 1e-6
+        self._bm25 = build_bm25(corpus)
         self._dirty = False
 
     def _persist(self) -> None:

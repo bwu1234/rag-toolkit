@@ -19,6 +19,7 @@ from rag.embedding.factory import get_embedder
 from rag.generation.factory import get_llm_client
 from rag.generation.llm import LLMClient
 from rag.index_manifest import check_queryable, index_manifest_path
+from rag.retrieval.document_router import DocumentRouter, check_record_template
 from rag.retrieval.factory import get_query_expander, get_reranker
 from rag.retrieval.retriever import Retriever
 from rag.retrieval.sparse import BM25Index, bm25_index_path
@@ -60,6 +61,18 @@ def build_retriever(
     expander_client = llm_client if llm_client is not None else get_llm_client(config.llm)
     query_expander = get_query_expander(config.retrieval.expansion, expander_client)
 
+    routing = config.retrieval.document_routing
+    document_router = None
+    if routing.top_m is not None:
+        check_record_template(routing.record_template, config.chunking.carry_metadata)
+        document_router = DocumentRouter(
+            embedder,
+            sparse_index,
+            top_m=routing.top_m,
+            record_template=routing.record_template,
+            rrf_k=config.retrieval.rrf_k,
+        )
+
     return Retriever(
         embedder=embedder,
         vector_store=vector_store,
@@ -73,4 +86,5 @@ def build_retriever(
         query_expander=query_expander,
         web_search=web_search,
         filterable_fields=config.chunking.carry_metadata,
+        document_router=document_router,
     )

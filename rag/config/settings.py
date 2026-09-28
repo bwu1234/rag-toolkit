@@ -356,6 +356,32 @@ class QueryExpansionConfig(BaseModel):
     )
 
 
+class DocumentRoutingConfig(BaseModel):
+    """Pick the filing first, then rank chunks only inside it (chunking plan, Phase 3b).
+
+    Each indexed document gets one short record, rendered from
+    `record_template`, and a query is ranked against those records by BM25 and
+    by dense similarity. When the two agree on the top document, chunk
+    retrieval is filtered to the `top_m` best-fused documents; when they
+    disagree, retrieval runs unfiltered. That agreement is the only gate: a
+    router that is wrong filters the answer out entirely, so it acts only when
+    two independent rankers pick the same document.
+
+    `top_m: null` (the default) turns routing off. An explicit caller filter
+    always wins over routing.
+
+    `record_template` is a `str.format` string over the chunk header
+    (`{header}`) and the document's carried metadata (`chunking.carry_metadata`).
+    A `:date` spec spells a stored date the way questions say it, e.g.
+    `{period_end:date}` -> "February 15, 2026". A document missing any named
+    field has no record and can never be routed to. Query-time only: changing
+    either setting needs no reindex.
+    """
+
+    top_m: int | None = Field(default=None, gt=0, description="Documents to route to; null disables routing")
+    record_template: str = "{header}; period ended {period_end:date}"
+
+
 class WebSearchConfig(BaseModel):
     """Optional live web search source, fused into retrieval alongside dense/BM25.
 
@@ -409,6 +435,7 @@ class RetrievalConfig(BaseModel):
     min_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Drop final results scoring below this")
     expansion: QueryExpansionConfig = QueryExpansionConfig()
     web_search: WebSearchConfig = WebSearchConfig()
+    document_routing: DocumentRoutingConfig = DocumentRoutingConfig()
 
 
 ChatMode = Literal["pipeline", "agentic"]

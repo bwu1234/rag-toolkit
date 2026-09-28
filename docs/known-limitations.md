@@ -119,3 +119,13 @@
 - `cited_chunk_ids` trusts the model's `[n]` markers. A small model that cites
   `[1]` by habit, or that forgets to cite at all, yields a misleading or empty
   implicit judgment. Read those in aggregate, not per turn.
+- **Document routing (`retrieval.document_routing`) matches wording, not
+  meaning.** It routes when a question's words match a filing's record: the
+  company name and the period end spelled out. "Q3 2026", "last year" or a
+  fiscal-quarter name won't match, so those questions fall back to unfiltered
+  retrieval, which is safe. A month that matches the wrong year's filing is
+  not safe: "the March 2023 quarter" routed to a 2026 filing and lost its
+  answer. Records are built in memory from the BM25 index on the first routed
+  query. That's fine at 61 filings, but a corpus of thousands would want them
+  persisted at index time. A document missing a field the record template
+  names can never be routed to (the router logs how many).

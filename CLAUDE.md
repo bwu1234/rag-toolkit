@@ -11,8 +11,9 @@ the MCP server is also shipped.
 
 - **Measured-off features stay off.** Contextual chunking, CRAG, query
   expansion, `retrieval.min_score` and `embedding.query_instruction` all
-  measured as no better than noise on the EDGAR corpus — don't enable one
-  without re-measuring
+  measured as no better than noise on the EDGAR corpus, and
+  `retrieval.document_routing` gained on the period tiers without clearing
+  McNemar's test — don't enable one without re-measuring
   ([Measured results](docs/measured-results.md)).
 - **The MCP server is not Milestone 19.** It serves our retrieval to an outside
   agent; Milestone 19 is *this* system calling search as a tool.
