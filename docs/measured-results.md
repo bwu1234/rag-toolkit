@@ -1194,7 +1194,7 @@ statistics are unrealistic there -- read those rows for cost, not ranking.
 | query, 148k chunks | ~470 ms | ~270 ms |
 | open + first query, 148k chunks | 9.7 s | 0.3 s |
 | peak RSS, 148k chunks | 3.3 GB | 52 MB |
-| on disk, 148k chunks | 247 MB JSON | 540 MB |
+| on disk, 148k chunks | 247 MB JSON | 369 MB (540 MB before layout 2) |
 
 **Findings.**
 
@@ -1217,8 +1217,13 @@ statistics are unrealistic there -- read those rows for cost, not ranking.
   and re-tokenizes the whole corpus, holds it in memory, and any change
   rewrites the full JSON and rebuilds the model. FTS5 opens lazily, holds
   almost nothing, and commits each indexing batch.
-- FTS5's file is about twice the JSON, because it stores the token string
-  beside the chunk text as well as the inverted index.
+- FTS5's file is about 1.5× the JSON: the chunk rows are the same data, and
+  the inverted index is extra. Layout 1 also kept a copy of every chunk's
+  token string in the FTS table, 540 MB at 148k chunks. Layout 2 makes the
+  table contentless (`contentless_delete=1`, SQLite >= 3.43), bringing it to
+  369 MB. Migrating a layout-1 file in place took 3.8 s at 148k chunks and
+  returned identical top-20 chunks and scores on all 174 eval questions, so
+  the ranking results above carry over unchanged.
 - Query time grows roughly linearly on both, since every chunk sharing any
   query word is scored. At 10^6+ chunks, stopword-heavy questions will need
   pruning (or a dedicated engine); this backend doesn't solve that.
