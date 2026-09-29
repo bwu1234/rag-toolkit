@@ -1,0 +1,164 @@
+{
+  "name": "beir-nfcorpus",
+  "description": "NFCorpus nutrition/medical retrieval as packaged by BEIR v1.0.0: NutritionFacts.org queries against PubMed abstracts, graded relevance and many relevant documents per query.",
+  "source": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/nfcorpus.zip",
+  "homepage": "https://www.cl.uni-heidelberg.de/statnlpgroup/nfcorpus/",
+  "license": "Hugging Face BeIR/nfcorpus card: CC BY-SA 4.0. Upstream terms of use: 'free to use for academic purposes'; other uses of the NutritionFacts.org data require consulting its Terms of Service. Local evaluation only; fetched at build time, never committed or redistributed.",
+  "fetcher": "scripts/fetch_beir.py (public benchmarks plan, phase 1; not yet implemented)",
+  "protocol": "docs/beir-reference-protocol.md",
+  "archive": {
+    "sha256": "efe5be03f8c5b86a5870102d0599d227c8c6e2484328e68c6522560385671b0b",
+    "md5": "a89dba18a62ef92f7d323ec890a0d38d",
+    "md5_source": "BEIR wiki, Datasets-available (matches)",
+    "bytes": 2448432,
+    "last_modified": "Fri, 15 Jan 2021 13:32:50 GMT",
+    "etag": "60019982-255c30",
+    "release": "BEIR v1.0.0 (the archive has no version marker; Pyserini names this release beir-v1.0.0)",
+    "inventoried": "2026-09-29 with scripts/inventory_beir.py"
+  },
+  "inventory": {
+    "corpus": {
+      "documents": 3633,
+      "duplicate_ids": [],
+      "empty_title": 0,
+      "missing_title_key": 0,
+      "empty_text": 0,
+      "empty_title_and_text": 0,
+      "empty_title_and_text_ids": [],
+      "text_with_leading_or_trailing_whitespace": 0,
+      "text_with_newline": 0,
+      "max_chars": 10089,
+      "sha256": "10cc83ef1826b1425e6a87090b5140b39b27755d5a27e48215a88611c899991f"
+    },
+    "queries": {
+      "total": 3237,
+      "duplicate_ids": [],
+      "empty_text": 0,
+      "ids_that_are_doc_ids": 0,
+      "unjudged_in_any_split": 0,
+      "sha256": "d024e6621b84925d485ae473d316a0c3af31c62c8068a59fb29d22f7613aef2a"
+    },
+    "qrels": {
+      "dev": {
+        "header": [
+          "query-id",
+          "corpus-id",
+          "score"
+        ],
+        "judgments": 11385,
+        "judged_queries": 324,
+        "queries_with_positive": 324,
+        "judged_queries_without_positive": [],
+        "grade_histogram": {
+          "1": 10864,
+          "2": 521
+        },
+        "mean_positive_per_query": 35.139,
+        "duplicate_pairs": 0,
+        "qrels_docs_missing_from_corpus": 0,
+        "qrels_queries_missing_from_queries": [],
+        "judged_queries_that_are_doc_ids": 0,
+        "self_judgments": 0,
+        "judgments_on_empty_documents": 0,
+        "sha256": "b1d38b5e8f78c4a5820bce2b7ec2db54911d7690dc601e76811846b211180bd8"
+      },
+      "test": {
+        "header": [
+          "query-id",
+          "corpus-id",
+          "score"
+        ],
+        "judgments": 12334,
+        "judged_queries": 323,
+        "queries_with_positive": 323,
+        "judged_queries_without_positive": [],
+        "grade_histogram": {
+          "1": 11758,
+          "2": 576
+        },
+        "mean_positive_per_query": 38.186,
+        "duplicate_pairs": 0,
+        "qrels_docs_missing_from_corpus": 0,
+        "qrels_queries_missing_from_queries": [],
+        "judged_queries_that_are_doc_ids": 0,
+        "self_judgments": 0,
+        "judgments_on_empty_documents": 0,
+        "sha256": "f8fba6ef3d4dd9c3a242a8ba4ae38276fc3622fce7dcbae764766d564542fd2a"
+      },
+      "train": {
+        "header": [
+          "query-id",
+          "corpus-id",
+          "score"
+        ],
+        "judgments": 110575,
+        "judged_queries": 2590,
+        "queries_with_positive": 2590,
+        "judged_queries_without_positive": [],
+        "grade_histogram": {
+          "1": 110575
+        },
+        "mean_positive_per_query": 42.693,
+        "duplicate_pairs": 0,
+        "qrels_docs_missing_from_corpus": 0,
+        "qrels_queries_missing_from_queries": [],
+        "judged_queries_that_are_doc_ids": 0,
+        "self_judgments": 0,
+        "judgments_on_empty_documents": 0,
+        "sha256": "6336b80f9bffc4f063f3aa450047ad35c0b7c534efe4a6ba35e16dbace047f6a"
+      }
+    }
+  },
+  "reference": {
+    "pyserini": {
+      "release": "pyserini 2.4.0 (PyPI sdist sha256 45979fa5fc8d54a35dce15cfd59d4d3dc4b4b29d8f0442e1e1f3a9ab0a303541)",
+      "commit": "fbfe965fce10960029c7c616165c657704b63050",
+      "anserini": "2.3.0 (tag anserini-2.3.0, 7ed69af0daf02be3c0cf17f0324c2954cec4c989), Lucene 10.5.0",
+      "trec_eval": "9.0.4, bundled in the Anserini 2.3.0 jar",
+      "eval_data_commit": "castorini/eval 0b4acbd929edd11edfd16250457fb70ff69e9b4f",
+      "prebuilt_indexes_commit": "castorini/prebuilt-indexes 367560b4de7d9c3486f666dcc2df7783ca7758f2",
+      "scores_source": "pyserini/2cr/beir.yaml at the commit above"
+    },
+    "qrels": {
+      "name": "beir-v1.0.0-nfcorpus-test",
+      "file": "qrels/qrels.beir-v1.0.0-nfcorpus.test.txt",
+      "sha256": "9d822ee3fc9e3b395d7fe25a13d81686f54b2a056992574daa825e792800c959",
+      "matches": "identical judgments to qrels/test.tsv in the archive"
+    },
+    "topics": {
+      "name": "beir-v1.0.0-nfcorpus-test",
+      "file": "topics/topics.beir-v1.0.0-nfcorpus.test.tsv.gz",
+      "sha256": "3b2d068344ae4e711656203c0937cbb4c2eb91759c0d0973525af7545500a345",
+      "matches": "same ids as the judged test queries, text identical to queries.jsonl"
+    },
+    "runs": {
+      "bm25-flat": {
+        "nDCG@10": 0.3218,
+        "R@100": 0.2457,
+        "index": {
+          "name": "beir-v1.0.0-nfcorpus.flat",
+          "filename": "lucene-inverted.beir-v1.0.0-nfcorpus.flat.20221116.505594.tar.gz",
+          "md5": "eb7a6f1bb15071c2940bc50752d86626",
+          "documents": 3633
+        },
+        "command": "python -m pyserini.search.lucene --threads 16 --batch-size 128 --index beir-v1.0.0-nfcorpus.flat --topics beir-v1.0.0-nfcorpus-test --output run.beir.bm25-flat.nfcorpus.txt --output-format trec --hits 1000 --bm25 --remove-query"
+      },
+      "bge-base-en-v1.5.faiss": {
+        "nDCG@10": 0.3735,
+        "R@100": 0.3368,
+        "index": {
+          "name": "beir-v1.0.0-nfcorpus.bge-base-en-v1.5",
+          "filename": "faiss-flat.beir-v1.0.0-nfcorpus.bge-base-en-v1.5.20240107.tar.gz",
+          "md5": "40da814f50fadf5f5ac1feb06ed3903b",
+          "documents": 3633
+        },
+        "command": "python -m pyserini.search.faiss --threads 16 --batch-size 512 --encoder-class auto --encoder BAAI/bge-base-en-v1.5 --l2-norm --query-prefix \"Represent this sentence for searching relevant passages:\" --index beir-v1.0.0-nfcorpus.bge-base-en-v1.5 --topics beir-v1.0.0-nfcorpus-test --output run.beir.bge-base-en-v1.5.faiss.nfcorpus.txt --hits 1000 --remove-query"
+      }
+    },
+    "eval_commands": [
+      "python -m pyserini.eval.trec_eval -c -m ndcg_cut.10 beir-v1.0.0-nfcorpus-test RUN",
+      "python -m pyserini.eval.trec_eval -c -m recall.100 beir-v1.0.0-nfcorpus-test RUN"
+    ],
+    "tolerance_abs": 0.0005
+  }
+}
