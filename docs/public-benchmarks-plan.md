@@ -522,6 +522,159 @@ headline is per-part union evidence recall (inherited qrels only), and for
 SciFact also derived-answer accuracy with a closed-book control. Report it
 per dataset, never averaged into MuSiQue or EDGAR numbers.
 
+## Follow-on: unanswerable questions on CRAG
+
+Every BEIR test query has at least one relevant passage, and MuSiQue-Ans is
+answerable by construction. Nothing in this plan yet checks whether the system
+declines when its documents do not support an answer. The only refusal
+evidence today is `data/eval/edgar_refusal_set.json`: 15 hand-written EDGAR
+negatives, scored by the refusal judge in `rag/eval/answer_eval.py`. This
+section adds an outside set with questions the system should decline, scored
+so that declining beats guessing. It is proposed, not scheduled, and needs the
+phase-3 gate.
+
+### Why CRAG
+
+[CRAG](https://github.com/facebookresearch/CRAG)
+([paper](https://arxiv.org/abs/2406.04744)) is Meta's RAG benchmark: 4,409
+questions across five domains and eight question types, each shipped with the
+real web search results retrieved for it.
+
+- **Labelled invalid questions.** 525 questions (12%) are `false_premise`,
+  such as asking for an album that does not exist. Their gold answer is
+  "invalid question".
+- **Answers that are often simply absent.** Task 1 gives each question 5 pages
+  sampled at random from its top-10 search results, so the answer is
+  frequently not in them. The system should then decline rather than guess.
+- **Scoring that rewards declining.** CRAG scores an accurate answer 1, a
+  missing one ("I don't know") 0 and an incorrect one −1. It reports
+  truthfulness as accuracy minus hallucination rate, so a system that guesses
+  when unsure loses points. The paper's baselines show why that matters: its
+  best straightforward RAG setup reached 43.6% accuracy with a 30.1%
+  hallucination rate.
+- **A public test split.** Validation 30%, public test 30% (1,335 questions),
+  private test 40% held out.
+
+**Licence: CC BY-NC 4.0.** Non-commercial use only. That fits this repo's
+evaluation use, but it rules out redistributing derived data. As with every
+corpus here, the data is fetched and gitignored, never committed.
+
+### Alternatives considered
+
+| Candidate | Why not the primary |
+|---|---|
+| MuSiQue-Full | Already planned above. Its unanswerable questions may break when paragraphs are pooled (see the MuSiQue phase A caveat) |
+| SQuAD 2.0 | Crowdworkers wrote unanswerable questions against a single paragraph. It tests reading comprehension, questions share much of their paragraph's wording, and a question unanswerable from its paragraph may be answerable elsewhere in its article once pooled |
+| CRUMQs ([arXiv 2510.11956](https://arxiv.org/abs/2510.11956)) | Unanswerable multi-hop questions, but built over NeuCLIR and TREC RAG 2025, collections far beyond the local budget |
+| UAEval4RAG ([arXiv 2412.12300](https://arxiv.org/abs/2412.12300)), RefusalBench ([arXiv 2510.10390](https://arxiv.org/abs/2510.10390)) | LLM-generated questions, the same lineage problem as writing our own |
+
+### What it does and does not measure
+
+- **Measures:** declining false-premise questions, declining when the answer
+  is not in the retrieved pages, and the cost side: refusing questions the
+  pages do answer.
+- **The production pipeline is back in the loop.** CRAG pages are raw HTML,
+  not pre-split passages. There is no HTML loader today (`rag/ingestion/loaders.py`
+  reads PDF, Markdown and text), and `scripts/fetch_edgar.py`'s standard-library
+  converter is written for SEC filings. Generic web pages need their own
+  extraction step. That exercises more of the real pipeline than BEIR does,
+  but poor extraction can drop an answer and make a correct refusal look like
+  a success. Audit extraction on a sample before reading refusal numbers.
+- **Weak retrieval signal.** With 5 pages per question, retrieval chooses
+  among only a few pages' chunks. Task 3's 50 pages are a later option if
+  retrieval should matter more.
+- **Answers that change over time.** CRAG labels each question `static`,
+  `slow-changing`, `fast-changing` or `real-time`, and gold answers are tied
+  to `query_time`. Keep `static` and `slow-changing`, pass `query_time` into
+  the prompt for the latter, and exclude the rest, whose answers depend on
+  CRAG's mock APIs.
+- **Not measured:** CRAG's knowledge-graph mock APIs (Tasks 2 and 3).
+  This repo has no tool for them.
+- **Probably in training data.** The dataset has been public since 2024, so
+  report a closed-book row beside every answer row. The paper's own LLM-only
+  baseline shows how much a model answers from memory.
+
+### Phase A: pin and inspect
+
+- Pin the Task 1 file: source URL, archive SHA-256, licence and counts per
+  `split`, `question_type` and `static_or_dynamic`, in
+  `data/corpora/crag-t1/manifest.json`. The counts above come from the paper;
+  phase A replaces them with counts from the pinned file, and confirms the
+  `split` values and the exact false-premise gold string.
+- **Splits.** Tune on validation, confirm on public test, and never touch the
+  private test. Freeze the comparison family on validation first, under the
+  test-access rules in [Datasets](#datasets).
+- **Answer-present label.** Only false-premise questions carry an explicit
+  "decline" label. For the rest, derive whether a question's pages contain its
+  gold answer by normalised matching of `answer` and `alt_ans` against the
+  extracted page text. Hand-audit a random sample to estimate the heuristic's
+  error rate. It splits answerable questions into answer-present, where
+  declining is over-refusal, and answer-absent, where declining is correct.
+  Report it as a derived label with its measured error rate.
+
+Exit: a manifest with counts, the kept question population and its
+exclusions, and the audited answer-present label.
+
+### Phase B: corpus and per-question scope
+
+- **HTML extraction** to Markdown, behind the existing loader interface, using
+  the standard-library `html.parser` as `fetch_edgar.py` does. No new
+  dependency without a measured extraction gap. Pages go through the normal
+  cleaner and chunker, not the identity path. Pin the extractor version in
+  index provenance.
+- **One index, per-question scope.** Index every kept page with
+  `interaction_id` in its metadata, and retrieve each question only within its
+  own pages through a metadata filter. Pooling without the filter would do to
+  CRAG what the MuSiQue-Full caveat describes: another question's pages could
+  answer a question whose own pages cannot. `retrieval_eval` already takes a
+  per-sample `filters_for` hook. `answer_eval` and the agent's search tool
+  need the same, and the agent must not be able to widen or drop the filter.
+- **Converter** `scripts/crag_to_eval_set.py` writes
+  `data/eval/crag_t1_<split>.json`. False-premise questions use a new tier and
+  the rest use the answer tier, each with `interaction_id`, `query_time`,
+  `static_or_dynamic`, the answer-present label and gold answers with
+  aliases. Validate every record, and fail on malformed ones rather than
+  dropping them.
+
+Exit: the index builds, `index-report` shows chunk health for web pages, and a
+filtered retrieval for any question returns only that question's chunks.
+
+### Phase C: scoring
+
+- **CRAG's three-way grade** per answer: accurate (1), missing (0), incorrect
+  (−1). Report accuracy, hallucination rate, missing rate and truthfulness,
+  following CRAG's definitions. The grader is `eval.judge`, never the
+  generator. CRAG's own auto-eval also uses an LLM judge, so calibrate ours
+  against a hand-labelled sample before any comparison.
+- **False premise needs its own rubric.** The existing refusal judge asks
+  whether the system declined because its documents cannot answer. A
+  false-premise question calls for pointing out the false assumption, and a
+  plain "I don't know" is a weaker, different outcome. Grade it as: correctly
+  rejects the premise, declines without naming it, or answers as if the
+  premise were true (incorrect).
+- **Report by population, never pooled into one number:** false premise,
+  answer-absent, answer-present. Over-refusal on answer-present is the
+  counterweight: a system that declines everything would score well on the
+  first two.
+
+### Phase D: measurements
+
+- `pipeline / 9b` vs. `closed-book / 9b` on the full kept population.
+- The measured-off corrective-RAG checks (`crag:` in config: passage grading
+  and a groundedness check). They share the acronym with this dataset but are
+  unrelated to it, and they exist to catch unsupported answers. This
+  set can show whether it lowers hallucination on answer-absent questions
+  without raising over-refusal on answer-present ones. A re-measurement, per
+  the measured-off rule: it stays off unless this and the EDGAR sets agree.
+- The Milestone 19 agentic rows, on a stratified sample sized from validation
+  variance. An agent that keeps searching may hallucinate more when the
+  answer is absent, which the EDGAR refusal set is too small to show.
+- Paired per-question deltas with `rag/eval/paired.py` uncertainty, per
+  population.
+
+Cost: local only, no API spend. HTML pages are larger than BEIR passages, so
+record disk, extraction and index time.
+
 ## Deferred: pre-embedded vectors and answer eval
 
 **Importing published vectors into the production pipeline** (Cohere's BEIR
@@ -587,6 +740,7 @@ reported beside it.
 | 4 | Paired measurements recorded in measured results | 3 |
 | MuSiQue A–D (follow-on) | Pooled MuSiQue-Ans corpus, EM/F1 scorer, Milestone 19 rows on outside data | 3; agentic rows also need Milestone 19 phase 3 |
 | Paired BEIR queries (optional) | Own-authored paired questions over the BEIR corpora; SciFact answers derived from its labels | 1, 2; run after MuSiQue D |
+| CRAG A–D (follow-on) | Task 1 web pages with per-question scope, HTML extraction, three-way grading, refusal measured by population | 3; agentic rows also need Milestone 19 phase 3 |
 
 Tracked under [Milestone 27](backlog.md#milestone-27--eval-coverage-and-judge-reliability)
 as the "broaden the corpus" step of the rigor plan, limited to the query-time
