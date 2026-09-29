@@ -59,8 +59,8 @@ credit, so it is not in :attr:`EvalSample.expected_doc_ids`.
 ``"matching_mode": "qrels"`` marks a sample converted from a public benchmark's
 relevance labels (``scripts/beir_to_eval_set.py``): scored per distinct
 document against the graded labels, the way ``trec_eval`` scores it, not by
-the legacy document mode.  The scoring itself is phase 2 of
-``docs/public-benchmarks-plan.md``; until then the runner refuses such a set.
+the legacy document mode (:mod:`rag.eval.qrels`, reached through
+:func:`rag.eval.retrieval_eval.run_qrels_eval`).
 
 After a set is committed it changes only to fix a label error, and each fix is
 recorded on the sample as a ``label_fixes`` entry (date, reason, old values),
@@ -171,8 +171,14 @@ class EvalSample:
             )
         if self.explicit_mode == MODE_QRELS and self.expected_spans:
             raise ValueError(f"Sample {self.id!r}: matching_mode 'qrels' is graded by documents, not spans")
+        if self.explicit_mode == MODE_QRELS:
+            # A qrels query needs judgments, not necessarily a positive one:
+            # trec_eval -c counts a query judged only non-relevant, at 0.
+            if not (self.expected_doc_ids or self.doc_grades):
+                raise ValueError(f"Sample {self.id!r}: matching_mode 'qrels' needs judged expected_doc_ids")
+            return
         needs_spans = self.explicit_mode in (MODE_SPAN, MODE_SPAN_AND_DOCUMENT)
-        needs_docs = self.explicit_mode in (MODE_DOCUMENT, MODE_SPAN_AND_DOCUMENT, MODE_QRELS)
+        needs_docs = self.explicit_mode in (MODE_DOCUMENT, MODE_SPAN_AND_DOCUMENT)
         # Refused rather than degraded: a span_and_document sample with no doc
         # ids would silently become plain span matching, which is the exact
         # wrong-period credit the mode exists to prevent.

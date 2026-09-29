@@ -4,8 +4,8 @@ Status: proposed 2026-09-28. Phase 0 done 2026-09-29: the reference scores,
 pins, protocol and frozen tolerances are in
 [BEIR reference protocol](beir-reference-protocol.md), and per-dataset
 provenance is in `data/corpora/beir-<name>/manifest.json`. Phase 1 done
-2026-09-29 ([what shipped](#phase-1-as-built)). Phases 2 onward are not
-implemented. Sizes and query counts below come from the BEIR README; the
+2026-09-29 ([what shipped](#phase-1-as-built)). Phase 2 done 2026-09-29
+([what shipped](#phase-2-as-built)). Phases 3 onward are not implemented. Sizes and query counts below come from the BEIR README; the
 manifests hold the counts measured from the pinned archives.
 
 Every number in [measured results](measured-results.md) comes from a corpus
@@ -272,6 +272,69 @@ and [trec_eval implementation](https://github.com/usnistgov/trec_eval/blob/maste
 Exit: fixtures pass, and both metrics agree per query and in aggregate to
 4 decimal places on identical rankings. Retain unrounded values to diagnose
 differences. Run the same check over the complete reference runs in phase 3.
+
+### Phase 2 as built
+
+Shipped 2026-09-29.
+
+- **`rag/eval/qrels.py`** holds the pure scoring: `ndcg_cut` (linear gain,
+  ideal from every positive grade, cut at k), `recall_cut` (distinct
+  documents graded ≥ 1), `trec_order` (score descending, then document id
+  descending), `document_ranking` (first occurrence per document, optional
+  self-match removal, then `trec_order`), and TREC run-file I/O. The reader
+  refuses a document ranked twice, and the writer uses `repr` scores so a
+  file reads back as the identical floats.
+- **Policy for queries without positives**, matched to the reference: a
+  query judged only non-relevant is a valid qrels sample. It scores 0 on
+  both metrics and counts toward the mean, as under `trec_eval -c`.
+  `beir_to_eval_set.py` now keeps such queries (with a warning) instead of
+  refusing them. None of the pinned test splits has one.
+- **Runner**: `retrieval_eval` sends a qrels set to `run_qrels_eval`. It reads
+  the stage-1 ranking from the new `RetrievalResult.candidates` (post-fusion,
+  pre-rerank) and the final ranking from `chunks`. It reports nDCG@10 and
+  R@100 for both stages, marks nDCG@10 on the final ranking and R@100 on
+  stage 1 as the reported figures, and counts collapsed duplicate chunks,
+  removed self-matches and short lists. `--candidate-depth` and
+  `--final-depth` override `retrieval.top_k` and `rerank_top_k`. The run is
+  refused if stage 1 is shallower than 100 or the final ranking shallower
+  than 10. `--save-run DIR` writes `stage1.trec`, `final.trec` and unrounded
+  `scores.json`. The reference `--remove-query` rule is on by default;
+  `--keep-self-matches` turns it off. A set that mixes qrels with other modes
+  is refused.
+- **Cross-check against `trec_eval` 9.0.4 itself**, built from its release
+  tag, not `pytrec_eval` or `ir_measures`: it is the pinned evaluator,
+  whereas those wrap it. `scripts/trec_eval_parity.py` scores the same run
+  file with both evaluators and fails above 0.0001. Phase 3 reuses it on
+  the reference runs.
+- **Not wired**: `scripts/run_matrix.py` still calls the legacy path, which
+  refuses qrels samples. Phase 4 connects it.
+
+#### Phase 2 exit
+
+Met 2026-09-29. `tests/test_qrels_eval.py` has hand-computed fixtures for
+mixed grades, the linear-vs-exponential gain difference, short and empty
+lists, unjudged and grade-0 documents, the ideal cut at k, ties, duplicate
+collapsing, self-match removal, run-file round trips and malformed files, and
+queries missing from a run. Every identical-ranking comparison below agrees
+to **0.0000**, per query and in aggregate:
+
+| Rankings | Queries | Notes |
+|---|---|---|
+| SciFact test, this repo's dense run (stage 1 and final) | 300 | Real rankings; reference qrels from `castorini/eval` |
+| NFCorpus test, this repo's dense run (stage 1 and final) | 323 | Real rankings over graded (1–2) qrels |
+| NFCorpus test, randomised awkward rankings | 323 | 53 missing from the run, 13,827 tied adjacent pairs, 1- and 7-deep lists |
+| Synthetic qrels, grades 0–3 | 200 | Includes queries judged only non-relevant; 33 missing, 8,585 ties |
+
+The randomised check has power: with the document-id tie-break removed, it
+fails at a per-query difference of 1.0
+(`scripts/experiments/2026-09-qrels-parity/stress_parity.py`). Its first
+version also caught the policy gap above: 0.0039 in the mean from four
+zero-only queries the schema could not yet hold.
+
+These are scoring checks, not results. The runs use the shipped
+`qwen3-embedding:0.6b`, not BGE. On SciFact, that run's nDCG@10 of 0.6789
+equals the BM25 reference to four places by coincidence; it reproduces
+nothing, and phase 3 is where reproduction happens.
 
 ## Phase 3: validate scoring and reproduce the reference runs (the gate)
 
