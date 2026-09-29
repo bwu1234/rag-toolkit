@@ -199,3 +199,73 @@ def test_an_unknown_variant_name_is_refused(monkeypatch: pytest.MonkeyPatch, tmp
                                       "--results-dir", str(tmp_path)])
     with pytest.raises(SystemExit):
         matrix.main()
+
+
+# ---------------------------------------------------------------------------
+# The hosted reference pair
+# ---------------------------------------------------------------------------
+
+
+def test_hosted_rows_take_their_settings_from_the_model_config_file() -> None:
+    from rag.config.settings import load_config
+
+    reference = load_config(REPO / "rag/config/gemini-3.5-flash-lite.yaml").llm
+    pipeline, agent = (matrix.apply_overrides(RagConfig(), v.overrides) for v in matrix.M19_HOSTED_VARIANTS)
+    assert pipeline.llm == reference
+    assert agent.agent.llm == reference.model_copy(update={"max_tokens": 4096, "timeout_s": 600.0})
+    assert agent.llm.provider == "ollama"  # the utility calls stay local
+    assert reference.requests_per_day is not None  # the budget guard travels with the rows
+
+
+def test_a_plain_m19_run_never_includes_a_hosted_row() -> None:
+    hosted = {v.name for v in matrix.M19_HOSTED_VARIANTS}
+    assert not hosted & {v.name for v in matrix.M19_VARIANTS}
+    assert matrix.DEFAULT_RESULTS_DIRS["m19-hosted"] == matrix.DEFAULT_RESULTS_DIRS["m19"]
+
+
+def test_the_hosted_family_refuses_an_unbounded_answerable_set(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, "argv", ["run_answer_matrix.py", "--family", "m19-hosted", "--limit", "0",
+                                      "--results-dir", str(tmp_path)])
+    with pytest.raises(SystemExit):
+        matrix.main()
+
+
+def test_the_local_baseline_stays_the_first_row_next_to_hosted_rows() -> None:
+    names = ["agentic react / flash-lite", "pipeline / flash-lite", "oracle / 9b", "pipeline / 9b #2", "pipeline / 9b #1"]
+    ordered = sorted(names, key=lambda n: (matrix._ROW_ORDER.get(matrix.base_name(n), 999), n))
+    assert ordered == ["pipeline / 9b #1", "pipeline / 9b #2", "oracle / 9b",
+                       "pipeline / flash-lite", "agentic react / flash-lite"]
+
+
+class _SpentChat(ChatService):
+    """Answers once, then finds the day's request budget spent."""
+
+    def __init__(self) -> None:
+        self.asked: list[str] = []
+
+    def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+        from rag.generation.daily_budget import DailyRequestBudgetSpent
+
+        if self.asked:
+            raise DailyRequestBudgetSpent("spent")
+        self.asked.append(query)
+        return ChatAnswer(answer="a", citations=[], llm_calls=1)
+
+
+def test_a_spent_budget_stops_the_run_and_keeps_its_checkpoint(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    multihop, _ = _write_sets(tmp_path)
+    chat = _SpentChat()
+    monkeypatch.setattr(matrix, "build_chat_service", lambda config, corpora=None, retriever=None: chat)
+    monkeypatch.setattr(matrix, "get_llm_client", lambda config: _PassJudge())
+    monkeypatch.setattr(sys, "argv", [
+        "run_answer_matrix.py", "--family", "m19-hosted", "--sets", "multihop",
+        "--variant", "pipeline / flash-lite", "--multihop", str(multihop),
+        "--results-dir", str(tmp_path / "results"),
+    ])
+
+    assert matrix.main() == 2
+    [partial] = (tmp_path / "results" / ".partial").glob("*.jsonl")
+    assert len(partial.read_text().splitlines()) == 2  # the header and the one finished sample
+    assert not list((tmp_path / "results").glob("*.json"))
