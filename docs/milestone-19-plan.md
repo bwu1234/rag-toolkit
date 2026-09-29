@@ -466,6 +466,19 @@ leave the agentic rows on the run store with the rest.
 
 ### 5 — Follow-ups (only if phase 4 justifies the agent)
 
+**Injection surface.** Retrieved text reaches the agent's model undelimited,
+as it does the pipeline's ([known limitations](known-limitations.md)).
+Today that can corrupt an answer or steer the next search, but it can't
+trigger a side effect: the agent's only tool, `rag_search`, is read-only, and
+`corpus`, `top_k`, `max_chars` and `filters` are pinned. That is why
+tool-hijack benchmarks (InjecAgent, ToolEmu, AgentHarm) don't apply yet.
+Three follow-ups below widen the surface: model-set filters let injected text
+narrow the search, `read_document` puts whole untrusted filings into the
+prompt, and web routing (enhancement 3) brings in content nobody curates.
+Each runs the injection tier from
+[Milestone 28](backlog.md#milestone-28--production-hardening) in agentic mode
+before it is adopted, next to its quality row.
+
 - **Structural tools:** `read_document(doc_id, section?)` and
   `read_span(doc_id, start, end)`. A single filing is roughly 15k tokens, well
   within the 27b's 262k context. This is the READ-paper direction, and it
