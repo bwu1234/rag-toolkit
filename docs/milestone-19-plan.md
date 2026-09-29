@@ -621,6 +621,16 @@ These are design references, not evidence that the additions improve this repo.
   quota; one reference row fits. A frontier model proper still needs an
   Anthropic adapter and **real API budget**, so explicit sign-off with a cost
   estimate first.
+  *Built for Flash-Lite:* `run_answer_matrix.py --family m19-hosted` runs a
+  pair, `pipeline / flash-lite` and `agentic react / flash-lite`. The same
+  model with and without the loop separates the method from the model. The
+  pair is its own family, so `--family m19` never spends quota. It refuses an
+  unbounded answerable set. The client's daily budget stops the run at 450
+  requests, and the same command resumes from the checkpoints after the reset.
+  Estimated at about 400–450 requests for the agent row and 90 for the
+  pipeline row, so 1–2 days of free quota per repeat. Measure calls per
+  question on `--limit 5` first. One confound: Flash-Lite can't turn thinking
+  off (`thinking_level: minimal`), while the 9b runs with it off.
 
 ### The superlative question stays a refusal
 

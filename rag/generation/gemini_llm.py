@@ -50,6 +50,7 @@ from typing import Any
 
 import httpx
 
+from rag.generation.daily_budget import DailyRequestCounter
 from rag.generation.llm import (
     AssistantTurn,
     ChatMessage,
@@ -85,6 +86,8 @@ class GeminiLLMClient(ToolCallingLLM):
     `requests_per_minute` / `tokens_per_minute` are the project's free-tier
     limits for `model`, read from AI Studio; `None` disables that half of the
     pacing. `max_retries` bounds retries of per-minute 429s and 5xx errors.
+    `daily_counter`, if given, is charged one request per HTTP attempt and
+    refuses once this machine's daily budget for the model is spent.
     """
 
     def __init__(
@@ -100,6 +103,7 @@ class GeminiLLMClient(ToolCallingLLM):
         tokens_per_minute: int | None = None,
         max_retries: int = 5,
         thinking_level: str | None = None,
+        daily_counter: DailyRequestCounter | None = None,
     ) -> None:
         if not api_key:
             raise ValueError("GeminiLLMClient needs a non-empty api_key")
@@ -111,6 +115,7 @@ class GeminiLLMClient(ToolCallingLLM):
         self.tokens_per_minute = tokens_per_minute
         self.max_retries = max_retries
         self.thinking_level = thinking_level
+        self.daily_counter = daily_counter
         # The key goes in a header, not the `?key=` query string, so it can't
         # end up in a logged URL or an httpx error message.
         self._client = httpx.Client(
@@ -188,6 +193,8 @@ class GeminiLLMClient(ToolCallingLLM):
         attempt = 0
         while True:
             self._wait_for_capacity(estimate)
+            if self.daily_counter is not None:
+                self.daily_counter.take()  # raises DailyRequestBudgetSpent at the limit
             self._window.append((self._clock(), estimate))
             try:
                 response = self._client.post(path, json=body)

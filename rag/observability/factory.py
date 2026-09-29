@@ -40,6 +40,9 @@ def config_fingerprint(config: RagConfig) -> str:
     `chunking.carry_metadata`, `chunking.header`, `reranker.include_header`
     and `vector_store.hnsw_ef_search` while each is at its default.
 
+    The daily request budget (`requests_per_day` and its reserve and log) is
+    always excluded: it decides whether a turn is sent, not what it says.
+
     `agent` counts only under `chat.mode: agentic`, the one mode that reads
     it; a pipeline turn's hash doesn't move when agent settings change. For
     the same reason `chat.mode` itself is excluded while it's `pipeline`, so
@@ -47,11 +50,14 @@ def config_fingerprint(config: RagConfig) -> str:
     """
 
     exclude: dict[str, Any] = {"observability": True, "eval": True}
+    # The daily request budget decides whether a turn is sent, never what it says.
+    budget = {"requests_per_day", "requests_per_day_reserve", "daily_request_log"}
     if config.chat.mode == "pipeline":
         exclude["agent"] = True
         exclude["chat"] = {"mode"}
-    if config.llm.thinking_level is None:
-        exclude["llm"] = {"thinking_level"}
+    elif config.agent.llm is not None:
+        exclude["agent"] = {"llm": budget}
+    exclude["llm"] = budget | ({"thinking_level"} if config.llm.thinking_level is None else set())
     embedding_new = {
         name for name in ("query_instruction", "revision") if getattr(config.embedding, name) is None
     }
