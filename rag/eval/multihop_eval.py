@@ -36,6 +36,7 @@ Usage::
 
     python -m rag.eval.multihop_eval --corpus edgar --judge-model gemma4:31b-mlx
     python -m rag.eval.multihop_eval --eval-set path/to/set.json -v
+    python -m rag.eval.multihop_eval --corpus edgar --oracle   # gold evidence, no retrieval
 """
 
 from __future__ import annotations
@@ -52,6 +53,7 @@ from typing import Any
 from rag.config.settings import load_config
 from rag.eval.answer_eval import _parse_verdict, add_judge_arguments, build_judge, subsample
 from rag.eval.dataset import EvalDataset, EvalSample, ExpectedSpan
+from rag.eval.oracle import add_oracle_argument, build_oracle_retriever
 from rag.eval.relevance import unmatched_spans
 from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatResponder
@@ -146,6 +148,8 @@ class MultihopSampleResult:
     llm_ms: float = 0.0
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
+    #: CRAG's groundedness verdict on the answer; None when unchecked or inconclusive.
+    grounded: bool | None = None
 
     @property
     def completeness(self) -> float:
@@ -247,6 +251,7 @@ def run_multihop_eval(
                 llm_ms=answer.llm_ms,
                 prompt_tokens=answer.prompt_tokens,
                 completion_tokens=answer.completion_tokens,
+                grounded=answer.grounded,
             )
         )
         if on_result is not None:
@@ -355,6 +360,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit", type=int, default=0, metavar="N",
                         help="Evaluate an evenly-spaced subset of N samples.")
     add_judge_arguments(parser)
+    add_oracle_argument(parser)
     parser.add_argument("--verbose", "-v", action="store_true")
     return parser
 
@@ -371,7 +377,13 @@ def main(argv: list[str] | None = None) -> int:
 
     config = load_config(args.config)
     judge = build_judge(config, args.judge_model, args.judge_provider)
-    chat_service = build_chat_service(config, corpora=args.corpus)
+    retriever = None
+    if args.oracle:
+        retriever, unfound = build_oracle_retriever(config, dataset, args.corpus)
+        if unfound:
+            logger.error("The oracle can't find %d gold span(s) in the chunks; see above", len(unfound))
+            return 1
+    chat_service = build_chat_service(config, corpora=args.corpus, retriever=retriever)
 
     logger.info("Running multi-hop eval on %d sample(s)", len(dataset))
     report = run_multihop_eval(dataset, chat_service, judge)

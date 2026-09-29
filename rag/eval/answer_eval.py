@@ -14,6 +14,7 @@ Usage::
     python -m rag.eval.answer_eval --config path/to/config.yaml
     python -m rag.eval.answer_eval --judge-model gemma4:31b-mlx
     python -m rag.eval.answer_eval --judge-provider gemini --judge-model gemma-4-31b-it
+    python -m rag.eval.answer_eval --corpus edgar --oracle     # gold evidence, no retrieval
 
 The judge prompt is deliberately minimal: it asks the LLM to output exactly
 ``PASS`` or ``FAIL`` (optionally followed by a brief reason on the same line)
@@ -53,6 +54,7 @@ from pathlib import Path
 from rag.config.settings import LLMConfig, LLMProvider, RagConfig, load_config
 from rag.eval.dataset import EvalDataset, EvalSample
 from rag.eval.relevance import sample_unmatched_spans
+from rag.eval.oracle import add_oracle_argument, build_oracle_retriever
 from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatResponder
 from rag.generation.factory import get_llm_client
@@ -223,6 +225,13 @@ class AnswerSampleResult:
     evidence_total: int = 0
     #: Gold spans in none of the passages the generator was shown.
     missing_spans: list[str] = field(default_factory=list)
+    #: CRAG's groundedness verdict on the answer; None when unchecked or inconclusive.
+    grounded: bool | None = None
+    #: The answering turn's LLM usage, as in the multi-hop results; the judge's calls are excluded.
+    llm_calls: int = 0
+    llm_ms: float = 0.0
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
 
     @property
     def evidence_retrieved(self) -> bool | None:
@@ -325,6 +334,11 @@ def run_answer_eval(
                 retrieval_rounds=chat_answer.retrieval_attempts,
                 evidence_total=len(sample.expected_spans),
                 missing_spans=sample_unmatched_spans(sample, passages),
+                grounded=chat_answer.grounded,
+                llm_calls=chat_answer.llm_calls,
+                llm_ms=chat_answer.llm_ms,
+                prompt_tokens=chat_answer.prompt_tokens,
+                completion_tokens=chat_answer.completion_tokens,
             )
         )
         if on_result is not None:
@@ -410,6 +424,7 @@ def _build_parser() -> argparse.ArgumentParser:
                              "per passage when crag.grade_documents is on), so a subset is "
                              "often the only affordable way to compare configurations.")
     add_judge_arguments(parser)
+    add_oracle_argument(parser)
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Print per-sample results in addition to aggregate metrics")
     return parser
@@ -459,7 +474,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     # Before the chat service, so a bad judge fails before anything is loaded.
     judge_llm = build_judge(config, args.judge_model, args.judge_provider)
-    chat_service = build_chat_service(config, corpora=args.corpus)
+    retriever = None
+    if args.oracle:
+        retriever, unfound = build_oracle_retriever(config, dataset, args.corpus)
+        if unfound:
+            logger.error("The oracle can't find %d gold span(s) in the chunks; see above", len(unfound))
+            return 1
+    chat_service = build_chat_service(config, corpora=args.corpus, retriever=retriever)
 
     logger.info("Running answer eval on %d sample(s)", len(dataset))
     report = run_answer_eval(dataset, chat_service, judge_llm)

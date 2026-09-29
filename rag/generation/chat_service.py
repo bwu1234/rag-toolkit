@@ -41,7 +41,7 @@ from rag.observability.records import (
 )
 from rag.observability.sink import TurnSink
 from rag.observability.usage import UsageMeter, metered
-from rag.retrieval.retriever import RetrievalResult, Retriever
+from rag.retrieval.retriever import PassageRetriever, RetrievalResult
 from rag.vectorstore.base import ScoredChunk
 
 logger = logging.getLogger(__name__)
@@ -402,7 +402,7 @@ class ChatService(ChatResponder):
 
     def __init__(
         self,
-        retriever: Retriever,
+        retriever: PassageRetriever,
         llm_client: LLMClient,
         condenser: QueryCondenser | None = None,
         *,

@@ -75,11 +75,31 @@ table, never averaged into the answerable rate. `underspecified` is also
 broken down by `kind` (implicit, paraphrase). Each pass rate carries a 95%
 Wilson interval, the tier's noise floor on its own.
 
+Milestone 19 phase 4
+--------------------
+`--family m19` swaps the CRAG variants for the phase 4 matrix in
+docs/milestone-19-plan.md: the pipeline baseline, the oracle ceiling, and the
+agent under each strategy and model. It writes to `data/eval/results_m19/` by
+default, so its baseline can never be paired against a CRAG row recorded on the
+old labels. Every row pins its generator, so a row's name stays true if the
+config's default model changes. The agent rows also pin the agent model's
+`max_tokens` and timeout, so they differ from each other in one factor only.
+
+**The oracle** answers from each question's gold chunks instead of retrieval
+(`rag.eval.oracle`). It skips any set without gold spans (the refusal set).
+
+**Repeats.** The 9b samples at temperature 0.2, and the phase 0 run moved by
++/-2 multi-hop questions between identical runs. `--repeat N` runs every
+variant N times as separate rows (`name #1` ... `name #N`), each with its own
+checkpoint, and adds a table of the spread across them.
+
 Usage
 -----
     python scripts/run_answer_matrix.py --corpus edgar --limit 40
     python scripts/run_answer_matrix.py --corpus edgar --variant crag=off \
         --judge-model gemma4:31b-mlx
+    python scripts/run_answer_matrix.py --family m19 --corpus edgar --limit 40 \
+        --judge-model gemma4:31b-mlx --variant "pipeline / 9b" --repeat 3
 """
 
 from __future__ import annotations
@@ -92,7 +112,9 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
+
+from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -113,6 +135,7 @@ from rag.eval.checkpoint import (  # noqa: E402
 from rag.eval.dataset import EvalDataset  # noqa: E402
 from rag.eval.metrics import wilson_interval  # noqa: E402
 from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval  # noqa: E402
+from rag.eval.oracle import build_oracle_retriever  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.generation.builder import build_chat_service  # noqa: E402
 from rag.generation.chat_service import ChatResponder  # noqa: E402
@@ -138,6 +161,8 @@ SETS = DEFAULT_SETS + TIER_SETS
 class Variant:
     name: str
     overrides: dict[str, Any] = field(default_factory=dict)
+    #: Answer from the gold chunks instead of retrieval (see `rag.eval.oracle`).
+    oracle: bool = False
 
 
 # Each check is isolated so a difference is attributable to one mechanism.
@@ -192,28 +217,130 @@ VARIANTS: list[Variant] = [
 ]
 
 
+# Milestone 19 phase 4 (docs/milestone-19-plan.md). One factor per row against
+# the row above it. The generator is pinned on every row. The agent rows pin
+# their own model with a larger `max_tokens` (the 27b's reasoning trace counts
+# against it) and the agent's timeout, the same on every agent row, so 9b vs 27b
+# is the model alone. Pipeline answers average ~184 generated tokens, far under
+# either cap.
+_GENERATOR_9B = "qwen3.5:9b-mlx"
+_AGENT_9B = {"model": _GENERATOR_9B, "max_tokens": 4096, "timeout_s": 600}
+_AGENT_27B = {"model": "qwen3.8:27b-mlx", "max_tokens": 4096, "timeout_s": 600}
+_PIPELINE = {"chat.mode": "pipeline", "crag.enabled": False, "llm.model": _GENERATOR_9B}
+_AGENTIC = {"chat.mode": "agentic", "crag.enabled": False, "llm.model": _GENERATOR_9B}
+
+M19_VARIANTS: list[Variant] = [
+    Variant("pipeline / 9b", _PIPELINE),
+    Variant("oracle / 9b", _PIPELINE, oracle=True),
+    Variant("agentic react / 9b", {**_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_9B}),
+    Variant("agentic planned / 9b", {**_AGENTIC, "agent.strategy": "planned", "agent.llm": _AGENT_9B}),
+    Variant("agentic react / 27b", {**_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_27B}),
+    Variant("agentic react / 27b, think=low", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
+    }),
+    # The agent's checker reports a verdict and changes nothing, so this row's
+    # answers match the plain 27b row's up to sampling; what it measures is
+    # whether the verdicts flag the answers the judge failed.
+    Variant("agentic react / 27b + groundedness", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_27B,
+        "crag.enabled": True, "crag.check_groundedness": True,
+        "crag.grade_documents": False, "crag.max_retries": 0,
+    }),
+]
+
+FAMILIES: dict[str, list[Variant]] = {"crag": VARIANTS, "m19": M19_VARIANTS}
+#: Each family writes apart, so a row is only ever paired within its own family.
+DEFAULT_RESULTS_DIRS = {"crag": Path("data/eval/results"), "m19": Path("data/eval/results_m19")}
+
+
 def apply_overrides(config: RagConfig, overrides: dict[str, Any]) -> RagConfig:
+    """Set each dotted path. A dict value for a nested model field is validated into it.
+
+    The dict is merged over the field's current value, or builds a fresh model
+    when the field is unset (`agent.llm: null`), so `{"model": ...}` means
+    "that model, with every other setting at its default".
+    """
     updated = config.model_copy(deep=True)
     for path, value in overrides.items():
         target: Any = updated
         parts = path.split(".")
         for part in parts[:-1]:
             target = getattr(target, part)
-        setattr(target, parts[-1], value)
+        name = parts[-1]
+        if isinstance(value, dict):
+            current = getattr(target, name)
+            if isinstance(current, BaseModel):
+                value = type(current).model_validate({**current.model_dump(exclude_unset=True), **value})
+            else:
+                annotation = type(target).model_fields[name].annotation
+                model = next(t for t in (annotation, *get_args(annotation))
+                             if isinstance(t, type) and issubclass(t, BaseModel))
+                value = model.model_validate(value)
+        setattr(target, name, value)
     return updated
 
 
+def repeated(variants: list[Variant], times: int) -> list[Variant]:
+    """Each variant `times` times, as `name #1` ... `name #N`; unchanged when `times` is 1."""
+    if times <= 1:
+        return variants
+    return [Variant(f"{v.name} #{k}", v.overrides, v.oracle) for v in variants for k in range(1, times + 1)]
+
+
+def base_name(name: str) -> str:
+    """A repeat's variant name without its `#k`."""
+    return re.sub(r" #\d+$", "", name)
+
+
+def generator_of(config: RagConfig) -> str:
+    """The model that writes the answer: the agent's under `chat.mode: agentic`."""
+    llm = (config.agent.llm or config.llm) if config.chat.mode == "agentic" else config.llm
+    return f"{llm.provider}:{llm.model}"
+
+
+def mode_of(config: RagConfig) -> str:
+    return f"agentic:{config.agent.strategy}" if config.chat.mode == "agentic" else "pipeline"
+
+
 def checkpoint_fingerprint(
-    config: RagConfig, judge: LLMConfig, dataset: EvalDataset, corpus: str, code: str
+    config: RagConfig, judge: LLMConfig, dataset: EvalDataset, corpus: str, code: str,
+    *, oracle: bool = False,
 ) -> dict[str, str]:
     """What a set's result depends on; a checkpoint is resumed only if all of it matches."""
-    return {
+    fingerprint = {
         "config": digest(config.model_dump(mode="json")),
         "judge": digest(judge.model_dump(mode="json")),
         "dataset": digest([s.to_dict() for s in dataset]),
         "corpus": corpus,
         "code": code,
     }
+    if oracle:
+        # The oracle row's config equals the pipeline row's; this keeps them apart.
+        fingerprint["retrieval"] = "oracle"
+    return fingerprint
+
+
+def groundedness_counts(verdicts: list[tuple[bool | None, bool]]) -> dict[str, int] | None:
+    """How CRAG's verdicts line up with the judge's, from (grounded, passed) pairs.
+
+    None when nothing was checked, so rows without the checker show no counts
+    rather than zeros. `unchecked` also holds inconclusive checks.
+    """
+    checked = [(g, ok) for g, ok in verdicts if g is not None]
+    if not checked:
+        return None
+    return {
+        "checked": len(checked),
+        "unchecked": len(verdicts) - len(checked),
+        "ungrounded": sum(1 for g, _ in checked if g is False),
+        "ungrounded_and_failed": sum(1 for g, ok in checked if g is False and not ok),
+        "grounded_and_failed": sum(1 for g, ok in checked if g is True and not ok),
+    }
+
+
+def _mean_known(values: list[int | None]) -> float | None:
+    known = [v for v in values if v is not None]
+    return round(sum(known) / len(known), 1) if known else None
 
 
 def run_one(
@@ -258,6 +385,14 @@ def run_one(
             for kind, c in sorted(by_kind.items())
         },
         "mean_latency_s": round(report.mean_latency_s, 1),
+        # The answering turn's cost, as for multi-hop; the judge's calls are not in it.
+        "mean_llm_calls": round(sum(r.llm_calls for r in report.sample_results)
+                                / max(len(report.sample_results), 1), 2),
+        "mean_prompt_tokens": _mean_known([r.prompt_tokens for r in report.sample_results]),
+        "mean_completion_tokens": _mean_known([r.completion_tokens for r in report.sample_results]),
+        "groundedness": groundedness_counts(
+            [(r.grounded, r.passed is True) for r in report.sample_results]
+        ),
         # elapsed_s covers this session only; resumed samples ran in an earlier one.
         "elapsed_s": round(elapsed, 1),
         "resumed_samples": len(completed),
@@ -272,7 +407,9 @@ def run_one(
         ),
         # Per-sample detail, for paired comparison across variants.
         "samples": [
-            {"id": r.sample_id, "passed": r.passed, "evidence_retrieved": r.evidence_retrieved}
+            {"id": r.sample_id, "passed": r.passed, "evidence_retrieved": r.evidence_retrieved,
+             "grounded": r.grounded, "llm_calls": r.llm_calls, "latency_s": round(r.latency_s, 1),
+             "answer": r.actual_answer}
             for r in report.sample_results
         ],
     }
@@ -331,6 +468,7 @@ def run_multihop(
         "mean_prompt_tokens": _round_or_none(report.mean_prompt_tokens),
         "mean_completion_tokens": _round_or_none(report.mean_completion_tokens),
         "num_with_tokens": report.num_with_tokens,
+        "groundedness": groundedness_counts([(r.grounded, r.complete) for r in report.sample_results]),
         "elapsed_s": round(elapsed, 1),
         "resumed_samples": len(completed),
         # Per-sample detail, so a hand check of the judge needs no rerun.
@@ -348,6 +486,8 @@ def run_multihop(
                 "llm_ms": round(r.llm_ms),
                 "prompt_tokens": r.prompt_tokens,
                 "completion_tokens": r.completion_tokens,
+                "grounded": r.grounded,
+                "latency_s": round(r.latency_s, 1),
                 "answer": r.actual_answer,
             }
             for r in report.sample_results
@@ -451,11 +591,70 @@ def render_table(results: list[dict[str, Any]]) -> str:
                 f"| {m['evidence_recall']:.3f} | {m['num_evaluated']} | {m['mean_latency_s']:.1f} "
                 f"| {cost} |"
             )
+
+    checked = [(r, name, r[name]["groundedness"]) for r in results for name in SETS
+               if r.get(name) and r[name].get("groundedness")]
+    if checked:
+        lines += [
+            "",
+            "Groundedness verdicts against the judge (a fail is a judged FAIL, or an "
+            "incomplete multi-hop answer):",
+            "",
+            "| variant | set | checked | flagged ungrounded | flagged & failed | passed check & failed "
+            "| unchecked |",
+            "|---|---|---|---|---|---|---|",
+        ]
+        for r, name, g in checked:
+            lines.append(
+                f"| `{r['variant']}` | {name} | {g['checked']} | {g['ungrounded']} "
+                f"| {g['ungrounded_and_failed']} | {g['grounded_and_failed']} | {g['unchecked']} |"
+            )
+
+    spread = render_repeats(results)
+    if spread:
+        lines += ["", spread]
     return "\n".join(lines)
 
 
+def render_repeats(results: list[dict[str, Any]]) -> str:
+    """Per variant run more than once: each run's headline count, then their mean and range."""
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for r in results:
+        if base_name(r["variant"]) != r["variant"]:
+            groups.setdefault(base_name(r["variant"]), []).append(r)
+    rows = []
+    for name, runs in groups.items():
+        for set_name in SETS:
+            counts = [
+                (run[set_name]["num_passed"] if "num_passed" in run[set_name]
+                 else round(run[set_name]["complete_rate"] * run[set_name]["num_evaluated"]),
+                 run[set_name]["num_evaluated"])
+                for run in runs if run.get(set_name)
+            ]
+            if len(counts) < 2:
+                continue
+            passed = [p for p, _ in counts]
+            label = "complete" if set_name == "multihop" else "pass"
+            rows.append(
+                f"| `{name}` | {set_name} {label} | {', '.join(f'{p}/{n}' for p, n in counts)} "
+                f"| {sum(passed) / len(passed):.1f} | {max(passed) - min(passed)} |"
+            )
+    if not rows:
+        return ""
+    return "\n".join([
+        "Spread across repeats (counts per run; a difference between variants smaller than "
+        "the range is within run-to-run noise):",
+        "",
+        "| variant | set | per run | mean | range |",
+        "|---|---|---|---|---|",
+        *rows,
+    ])
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Answer-eval matrix: CRAG variants over the answerable, refusal and multi-hop sets.")
+    parser = argparse.ArgumentParser(description="Answer-eval matrix: CRAG or Milestone 19 variants over the answerable, refusal and multi-hop sets.")
+    parser.add_argument("--family", choices=sorted(FAMILIES), default="crag",
+                        help="Which variant list to run: the CRAG matrix, or Milestone 19 phase 4's.")
     parser.add_argument("--config", default=None)
     parser.add_argument("--corpus", action="append", default=None, metavar="NAME")
     parser.add_argument("--answerable", type=Path, default=DEFAULT_ANSWERABLE)
@@ -469,7 +668,10 @@ def main() -> int:
     add_judge_arguments(parser, note=" Fixed across all variants.")
     parser.add_argument("--limit", type=int, default=40,
                         help="Answerable samples to evaluate (evenly spaced). 0 = all.")
-    parser.add_argument("--results-dir", type=Path, default=Path("data/eval/results"))
+    parser.add_argument("--results-dir", type=Path, default=None,
+                        help="Default: data/eval/results (crag) or data/eval/results_m19 (m19).")
+    parser.add_argument("--repeat", type=int, default=1, metavar="N",
+                        help="Run each variant N times, as separate rows, to measure run-to-run noise.")
     parser.add_argument("--fresh", action="store_true",
                         help="Discard saved per-sample checkpoints instead of resuming from them.")
     parser.add_argument("--variant", action="append", default=None, metavar="NAME")
@@ -478,13 +680,21 @@ def main() -> int:
 
     configure_logging()
 
-    variants = VARIANTS
+    family = FAMILIES[args.family]
+    if args.results_dir is None:
+        args.results_dir = DEFAULT_RESULTS_DIRS[args.family]
+    variants = family
     if args.variant:
         wanted = set(args.variant)
+        if unknown_variants := wanted - {v.name for v in family}:
+            parser.error(f"unknown variant(s) in family {args.family}: {', '.join(sorted(unknown_variants))}")
         variants = [v for v in variants if v.name in wanted]
+    if args.repeat < 1:
+        parser.error("--repeat must be at least 1")
+    variants = repeated(variants, args.repeat)
     if args.list:
         for v in variants:
-            print(f"  {v.name:<24} {v.overrides}")
+            print(f"  {v.name:<36} {'[oracle] ' if v.oracle else ''}{v.overrides}")
         return 0
 
     sets = [name.strip() for name in args.sets.split(",") if name.strip()]
@@ -517,8 +727,8 @@ def main() -> int:
         accumulated = {r["variant"]: r for r in json.loads(destination.read_text())["results"]}
 
     def flush() -> list[dict[str, Any]]:
-        order = {v.name: i for i, v in enumerate(VARIANTS)}
-        ordered = sorted(accumulated.values(), key=lambda r: order.get(r["variant"], 999))
+        order = {v.name: i for i, v in enumerate(family)}
+        ordered = sorted(accumulated.values(), key=lambda r: (order.get(base_name(r["variant"]), 999), r["variant"]))
         destination.write_text(json.dumps({
             "corpus": selection.describe(),
             "collection": selection.collection_name,
@@ -542,14 +752,22 @@ def main() -> int:
     # after an hour of earlier variants would waste that hour.
     code = code_version()
     configs = {v.name: apply_overrides(base, v.overrides) for v in variants}
+    # The oracle needs gold spans, so it skips any set without them (refusals).
+    sets_for = {
+        v.name: [n for n in sets if not v.oracle or all(s.expected_spans for s in datasets[n])]
+        for v in variants
+    }
+    for v in variants:
+        if skipped := [n for n in sets if n not in sets_for[v.name]]:
+            logger.info("[%s] skipping %s: the oracle needs gold spans", v.name, ", ".join(skipped))
     checkpoints: dict[tuple[str, str], SampleCheckpoint] = {}
     for variant in variants:
-        for name in sets:
+        for name in sets_for[variant.name]:
             variant_slug = re.sub(r"[^A-Za-z0-9.]+", "-", variant.name).strip("-")
             checkpoint = SampleCheckpoint(
                 args.results_dir / ".partial" / f"{stem}__{variant_slug}__{name}.jsonl",
                 checkpoint_fingerprint(configs[variant.name], judge_config, datasets[name],
-                                       selection.slug, code),
+                                       selection.slug, code, oracle=variant.oracle),
             )
             if args.fresh:
                 checkpoint.discard()
@@ -564,16 +782,27 @@ def main() -> int:
     for variant in variants:
         logger.info("[%s] %s", variant.name, variant.overrides)
         config = configs[variant.name]
-        chat_service = build_chat_service(config, corpora=args.corpus)
+        if variant.oracle:
+            retriever, unfound = build_oracle_retriever(
+                config, [s for name in sets_for[variant.name] for s in datasets[name]], args.corpus,
+            )
+            if unfound:
+                logger.error("[%s] %d gold span(s) are in no chunk; see above", variant.name, len(unfound))
+                return 1
+            chat_service = build_chat_service(config, corpora=args.corpus, retriever=retriever)
+        else:
+            chat_service = build_chat_service(config, corpora=args.corpus)
         # Merge into the stored row, so `--sets multihop` adds a column to a
         # variant rather than discarding its answerable/refusal numbers.
         record: dict[str, Any] = {
             **accumulated.get(variant.name, {}),
             "variant": variant.name,
             "overrides": variant.overrides,
-            "generator": f"{config.llm.provider}:{config.llm.model}",
+            "generator": generator_of(config),
+            "mode": mode_of(config),
+            "retrieval": "oracle" if variant.oracle else "configured",
         }
-        for name in sets:
+        for name in sets_for[variant.name]:
             checkpoint = checkpoints[variant.name, name]
             if name == "multihop":
                 record[name] = run_multihop(chat_service, judge, datasets[name], checkpoint)

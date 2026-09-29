@@ -383,8 +383,8 @@ appended to the tool result, then with the shipped separate message.
   guessing. The prototype found them in 5. It also called COST "Costa Mesa"
   (it's Costco), a slip no passage supports.
 - **The superlative answer names a winner (NVIDIA) after seeing margins for
-  only some of the 14 companies.** That's the open question below about
-  where this question belongs, not a loop bug.
+  only some of the 14 companies.** That's a problem with the question, not
+  a loop bug; see [the superlative question](#the-superlative-question-stays-a-refusal).
 
 ### 4 — Measure (the milestone's actual deliverable)
 
@@ -410,6 +410,18 @@ Matrix, one factor at a time, on all three sets:
 | `agentic react / 27b, think=low` | whether reasoning improves search planning enough to justify its tokens |
 | `agentic react / 27b + groundedness` | whether CRAG's checker catches the leakage cases |
 
+*Runner, shipped:* `scripts/run_answer_matrix.py --family m19` defines these
+rows as written and writes to `data/eval/results_m19/`, apart from the CRAG
+rows on the old labels. Every row pins its generator. The agent rows pin the
+agent model's `max_tokens` (4096) and timeout (600 s), so 9b vs 27b is the
+model alone. `--repeat N` runs each row N times as separate rows and reports
+the spread. The groundedness row saves each verdict next to the judge's
+outcome, because the agent's checker changes no answers. What that row
+measures is whether the flags fall on the failures. Answerable and refusal
+results now carry per-turn LLM calls and tokens, as multi-hop results already
+did. Run order: `pipeline / 9b` first, since the table pairs every row against
+the first one.
+
 **The oracle row** feeds the generator the indexed chunks that contain each
 question's gold spans, found by the same `unmatched_spans` matching that
 evidence recall uses, in place of retrieval. It separates two failures that
@@ -419,9 +431,19 @@ which it can't). In a 2026 multi-hop study
 ([arXiv 2601.19827](https://arxiv.org/abs/2601.19827)), 87% of errors were
 composition failures on evidence that had been retrieved. If `oracle / 9b` is
 not much above `pipeline / 9b` on multi-hop completeness, the headroom is in
-the generator, not in searching. It needs an `--oracle` flag on
-`multihop_eval`. It runs on the multi-hop and single-hop sets only, because
-refusal questions have no gold evidence. It is never a candidate default.
+the generator, not in searching. It runs on the multi-hop and single-hop sets
+only, because refusal questions have no gold evidence. It is never a candidate
+default.
+
+*Shipped:* `--oracle` on `multihop_eval` and `answer_eval`
+(`rag/eval/oracle.py`). It swaps the retriever for one that returns the gold
+chunks, so the prompt, generation and citations are the pipeline's own. It
+refuses CRAG and the agent. On the current index every gold span is found:
+1 chunk per single-hop question, 2–4 per multi-hop question. That is fewer
+passages than the pipeline's 5, and none of them distractors, so the ceiling
+is "gold evidence alone". If the oracle and the pipeline rows are close, a
+padded variant (gold plus retrieved fill to `rerank_top_k`) would show whether
+distractors are what costs the pipeline.
 
 **Default-flip criterion:** agentic beats pipeline on multi-hop
 completeness by more than noise, while holding single-hop and refusal within
@@ -599,7 +621,21 @@ These are design references, not evidence that the additions improve this repo.
   quota; one reference row fits. A frontier model proper still needs an
   Anthropic adapter and **real API budget**, so explicit sign-off with a cost
   estimate first.
-- **Does the superlative question belong in the refusal set?** Under the
-  pipeline it's unanswerable. An agent with 14 searches could actually answer
-  it. It probably moves to the multi-hop set with a real gold answer, which
-  means computing operating margin for all 14 companies from their filings.
+
+### The superlative question stays a refusal
+
+Resolved on 2026-09-29, before phase 4. The open question was whether an agent
+with 14 searches could answer "which company had the highest operating margin
+last quarter?", which would move it to the multi-hop set. It can't. Only MD&A
+was extracted, and six of the 14 companies (AAPL, JNJ, MRK, PFE, XOM, CVX)
+report no operating income there. "Last quarter" also ends on different dates,
+March 31 to June 30, 2026, and Chevron's latest filing is a 10-K. So
+`neg-unanswerable-comparison` stays in the refusal set with a corrected
+rationale: the corpus can't support the ranking, however many searches are
+made. Its `negative_type` changed from `requires_aggregation` to
+`unsupported_by_corpus`. The answerable form is a new multi-hop question,
+`mh-agg-airline-margin`: the airlines in the corpus, the quarter ended June 30,
+2026. It still makes the agent find out which companies qualify. Its parts are
+the set's first hand-authored gold, verified against the filings by
+`scripts/build_multihop_set.py`. The set is now 35 questions, so totals from
+before this change (15/34) are not directly comparable.

@@ -509,9 +509,9 @@ shown on SciFact". Don't average across datasets into one headline.
 
 Phases 0–4 score one ranking per single-need query and grade no answers, so
 they cannot measure [Milestone 19](milestone-19-plan.md). Its only multi-hop
-evidence today is `data/eval/edgar_multihop_set.json`: 34 questions built by
-pairing samples written from this repo's own chunks, which is the lineage
-problem this plan exists to break. This section adds an outside multi-hop set
+evidence today is `data/eval/edgar_multihop_set.json`: 35 questions, all but
+one built by pairing samples written from this repo's own chunks, which is the
+lineage problem this plan exists to break. This section adds an outside multi-hop set
 with gold evidence and gold answers. It is proposed, not scheduled, and
 starts only after the phase-3 gate passes.
 

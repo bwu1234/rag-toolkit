@@ -127,6 +127,9 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   `eval.judge`, else the generator grading itself (warned); `--judge-model`
   overrides, plus `--judge-provider` when the judge runs on a different
   provider than the one it inherits. Multi-hop: `python -m rag.eval.multihop_eval --corpus edgar`.
+  Both take `--oracle` (gold chunks instead of retrieval, a diagnostic
+  ceiling). The Milestone 19 phase 4 matrix is `scripts/run_answer_matrix.py
+  --family m19` (`--repeat N` for run-to-run noise).
 
 ## Conventions
 
