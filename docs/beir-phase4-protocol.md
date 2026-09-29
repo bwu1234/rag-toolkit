@@ -7,6 +7,9 @@ was committed ahead of the test runs, so its git history dates the freeze.
 Scoring protocol, pins and the test-access log are in the
 [BEIR reference protocol](beir-reference-protocol.md). Results are in
 [measured results](measured-results.md#beir-query-time-stack-public-benchmarks-plan-phase-4).
+Every test run executed the frozen commit `0cda7fd`. 18 of the 21 provenance
+files record a later HEAD because another session switched the checkout's
+branch mid-run; the results section explains why that changed nothing.
 
 Runner: `scripts/run_beir_stack.py`. Its `VARIANTS` and `FAMILY` constants
 are the machine-readable copy of this page. A change to either after the test

@@ -31,7 +31,8 @@ Historical shorthand such as "noise" or "measured off" means a benefit was
 not demonstrated sufficiently to enable the feature under that experiment's
 conditions. It does not prove no effect elsewhere. In particular, CRAG and
 expansion have not been re-evaluated on the harder underspecified tier.
-The [evaluation rigor plan](evaluation-rigor-plan.md) specifies the next
+The BEIR sections (public benchmarks plan, phases 3 and 4) are a second
+evidence source with independent labels, scoped to those three tasks. The [evaluation rigor plan](evaluation-rigor-plan.md) specifies the next
 coverage, holdout, and grading work. Existing tables remain the historical
 record; no new runs are reported here.
 
@@ -1430,6 +1431,126 @@ the FiQA gap falls from 0.0113 to 0.0020 nDCG@10.
   `hnsw_ef_search` would share its process with the baseline, and Chroma
   would silently keep the first value, so `ChromaVectorStore` refuses a
   second value for a collection in one process.
+
+### BEIR query-time stack (public benchmarks plan, phase 4)
+
+**Setup.** Run on 2026-09-29, test splits of FiQA-2018 (648 queries),
+NFCorpus (323) and SciFact (300), all judged queries, `trec_eval -c`
+semantics, `--remove-query` on. `scripts/run_beir_stack.py` runs seven
+variants at the **benchmark depths**: 100 candidates per retriever, 100 after
+RRF (`rrf_k` 60), which is also the reranker's pool, and 10 final results.
+Every other setting is at its shipped value (`bm25`, `bge-reranker-v2-m3`,
+`min_score` 0) except two BEIR settings: `hnsw_ef_search` 1600 and a
+512-token reranker cap. The shipped pipeline fuses 20 and keeps 5; that operating
+point is not measured here. BGE is `beir_bge.yaml` (the reference encoder);
+Qwen is `beir.yaml` (`qwen3-embedding:0.6b` via Ollama, the shipped
+embedder). The comparison family, reading rules, reranker cap and grouping
+were frozen and committed (`0cda7fd`, PR #59) before any test run:
+[phase-4 protocol](beir-phase4-protocol.md). Each variant ran once. Runs,
+per-query scores, latency and provenance are in `data/benchmarks/phase4/`
+(gitignored).
+
+**Provenance caveat.** Another session switched this checkout's branch
+while the runs were in progress. As a result, 18 of the 21 `provenance.json` files record
+HEAD `aaa0432` or `883f0d1` rather than `0cda7fd`. All 21 ran in one process
+that imported `0cda7fd` at start. The later commits change no BEIR, vanilla or
+base config and add only a typing protocol and Gemini-only LLM fields. No
+run's saved config contains those fields, and each variant's resolved config
+hash is identical on all three datasets. So every run executed `0cda7fd`. The
+runner now records the loaded commit, and warns when HEAD moves.
+
+| Variant | FiQA nDCG@10 / R@100 | NFCorpus | SciFact |
+|---|---|---|---|
+| `bge-dense` | 0.4045 / 0.7396 | 0.3735 / 0.3367 | 0.7404 / 0.9667 |
+| `bge-hybrid` | 0.3352 / 0.7057 | 0.3652 / 0.3346 | 0.7149 / 0.9693 |
+| `bge-hybrid-rerank` | 0.4298 / 0.7057 | 0.3436 / 0.3346 | 0.7351 / 0.9693 |
+| `qwen-dense` | 0.3919 / 0.7432 | 0.2981 / 0.3076 | 0.6789 / 0.9367 |
+| `qwen-hybrid` (descriptive) | 0.3545 / 0.7232 | 0.3469 / 0.3195 | 0.7006 / 0.9567 |
+| `qwen-hybrid-rerank` (shipped stack) | 0.4389 / 0.7232 | 0.3454 / 0.3195 | 0.7354 / 0.9567 |
+| `qwen-dense-instruct` | **0.4691 / 0.7985** | 0.3554 / 0.3286 | 0.6979 / 0.9567 |
+
+The dense rows reproduce phase 3's figures at `ef_search` 1600:
+BGE matches exact search on NFCorpus and SciFact, and FiQA sits 0.0020 below
+the reference.
+
+**The family: ΔnDCG@10**, candidate minus baseline. First the 95%
+interval, then the Bonferroni interval over the 15 comparisons (99.67%);
+the reading comes from the second. SciFact intervals are cluster-robust over
+247 groups of claims that share a relevant abstract. NFCorpus queries can't
+be grouped (318 of 323 connect through shared documents), so **its intervals
+understate their width by an unknown amount**.
+
+| # | Comparison | FiQA | NFCorpus | SciFact |
+|---|---|---|---|---|
+| 1 | hybrid vs dense (BGE) | −0.0692 [−0.089, −0.050]; [−0.099, −0.040] **worse** | −0.0084 [−0.022, +0.005]; [−0.029, +0.012] not shown | −0.0255 [−0.057, +0.006]; [−0.072, +0.021] not shown |
+| 2 | reranker over hybrid (BGE) | +0.0946 [+0.074, +0.115]; [+0.064, +0.126] **improved** | −0.0216 [−0.038, −0.005]; [−0.046, +0.003] not shown | +0.0202 [−0.013, +0.054]; [−0.030, +0.070] not shown |
+| 3 | Qwen vs BGE, dense | −0.0126 [−0.034, +0.009]; [−0.045, +0.020] not shown | −0.0754 [−0.099, −0.052]; [−0.111, −0.040] **worse** | −0.0614 [−0.095, −0.028]; [−0.111, −0.012] **worse** |
+| 4 | shipped stack vs Qwen dense | +0.0470 [+0.026, +0.068]; [+0.015, +0.079] **improved** | +0.0473 [+0.023, +0.072]; [+0.011, +0.084] **improved** | +0.0564 [+0.016, +0.097]; [−0.005, +0.118] not shown |
+| 5 | Qwen query instruction | +0.0772 [+0.063, +0.092]; [+0.056, +0.099] **improved** | +0.0573 [+0.037, +0.078]; [+0.027, +0.088] **improved** | +0.0189 [+0.001, +0.037]; [−0.008, +0.046] not shown |
+
+Wins/losses per query, nDCG@10 (#1–5): FiQA 139/254, 280/113, 201/211,
+239/174, 266/90. NFCorpus 99/99, 93/122, 73/159, 134/101, 140/70. SciFact
+52/62, 50/48, 44/76, 69/53, 51/30.
+
+**R@100 (stage 1, 95%, secondary).** #1, hybrid vs dense: FiQA −0.034
+[−0.050, −0.018]. That is beyond the protocol's 0.01 reporting bar, so fusion
+also loses recall there. NFCorpus −0.002 and SciFact +0.003 are not shown. #4:
+FiQA −0.020 [−0.034, −0.006], NFCorpus +0.012 [+0.001, +0.023], SciFact
++0.020 (not shown). #2 is zero by construction.
+
+**Cost.** Median query latency on an M2 (MPS): dense 17–73 ms, and hybrid
+20–230 ms, where FiQA's `bm25` over 57,600 passages is the slow part.
+Reranking 100 passages takes 2.8–4.4 s, so a reranked variant takes 21–36 min per test set.
+Peak memory for the whole run was 4.9 GB. Indexing FiQA with Qwen through
+Ollama took 6,028 s for 57,600 passages, part of it sharing the machine with
+dev runs, at 1.6 GB resident for the indexer. The BGE index costs are in
+phase 3.
+
+**Findings.** All are scoped to these three test sets at benchmark depths.
+
+- **The shipped stack improves on its own dense leg on FiQA (+0.047) and
+  NFCorpus (+0.047). On SciFact, +0.056 is not shown** at the family level.
+  No dataset reads *worse*, so under the frozen rule the stack transfers. On
+  FiQA it does so while losing 0.020 R@100, because the gain comes from the
+  reranker, not from fusion.
+- **Fusion alone hurt on FiQA (−0.069 nDCG@10, −0.034 R@100) and showed
+  nothing on the other two.** Equal-weight RRF with a much weaker BM25 list
+  (0.22 on FiQA in phase 3, against BGE's 0.40) pulls good dense results
+  down. That differs from EDGAR, where BM25's exact terms (tickers, periods)
+  earned hybrid its place. These queries are natural-language questions
+  with little exact-term signal.
+- **The reranker is what recovers FiQA** (+0.095 over hybrid). It lands
+  above dense alone (0.430 against 0.405), but that comparison is outside
+  the family. On NFCorpus it leans negative (−0.022; the 95% interval
+  excludes zero, the adjusted one doesn't, and the interval is too narrow
+  anyway). On SciFact nothing is shown. Its gain is dataset-dependent, not
+  general.
+- **Without its instruction, Qwen 0.6b trails BGE-base on NFCorpus (−0.075)
+  and SciFact (−0.061).** On FiQA nothing is shown (−0.013).
+- **With the instruction, Qwen gains on FiQA (+0.077) and NFCorpus (+0.057).**
+  SciFact shows nothing (+0.019). On FiQA instructed Qwen is the best
+  row in the table (0.469, above every reranked row), but that comparison is
+  outside the family. This is the feature the EDGAR measurement
+  ([query instruction](#query-instruction-for-the-embedder-chunking-plan-phase-1))
+  left off, where it leaned worse on every set. The two results use the same
+  Ollama build, template and instruction text, which makes that section's
+  "Q8_0 build or Ollama's pooling" explanation unlikely. Task fit or the
+  corpus is the better candidate. **It stays off.** The shipped default is
+  decided on EDGAR, and the web-search task text fits BEIR's queries better than
+  questions about filings. What this justifies is re-measuring on EDGAR with a
+  task written for filings, chosen without reading EDGAR's misses. Whether
+  the gain survives fusion and reranking was not measured: no family
+  comparison has instructed Qwen in the hybrid.
+- **Nothing here changes a shipped default.** The results say how the
+  shipped stages behave on outside data at a depth the product doesn't use.
+  The product's own defaults rest on EDGAR.
+- **Not measured:** query expansion and CRAG (LLM per query, stochastic),
+  chunking-time features (BEIR bypasses chunking), and the shipped 20/5
+  depths.
+
+Raw records: `data/benchmarks/phase4/{fiqa,nfcorpus,scifact}/test/*/` and
+the rendered table `data/benchmarks/phase4/test.md`. Dev runs, exploratory:
+`data/benchmarks/phase4/{fiqa,nfcorpus}/dev/`.
 
 ### Not yet measured
 

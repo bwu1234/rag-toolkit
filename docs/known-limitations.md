@@ -15,6 +15,14 @@
   corpus needs the recall re-measured (`scripts/experiments/2026-09-hnsw-ef-search/ann_recall.py`,
   which needs no labels). Chroma fixes the value for the lifetime of a
   process, so a sweep needs one process per value.
+- **Hybrid fusion weights both lists equally.** RRF has no per-list weight,
+  so when BM25 is much weaker than dense retrieval it drags good dense
+  results down. On BEIR FiQA (natural-language questions, little exact-term
+  signal) hybrid scored 0.069 nDCG@10 below dense alone, and only the
+  reranker recovered it
+  ([BEIR query-time stack](measured-results.md#beir-query-time-stack-public-benchmarks-plan-phase-4)).
+  EDGAR's tickers and periods are why hybrid is the default. A corpus without
+  that signal should measure dense-only before assuming hybrid helps.
 - **A fresh EDGAR fetch doesn't reproduce the corpus.** The committed MD&A
   selection rules (`extract_mda`) postdate the fetch: they select nothing for
   8 of the 61 filings (LUV, TGT and CVX, whose MD&A opens with a table) and a
