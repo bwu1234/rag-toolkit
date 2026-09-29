@@ -288,6 +288,240 @@ and index cost alongside quality, and word conclusions as the rigor plan
 requires. For example: "hybrid + reranker improved nDCG@10 by X on FiQA test; no effect
 shown on SciFact". Don't average across datasets into one headline.
 
+## Follow-on: multi-hop and agentic retrieval on MuSiQue
+
+Phases 0–4 score one ranking per single-need query and grade no answers, so
+they cannot measure [Milestone 19](milestone-19-plan.md). Its only multi-hop
+evidence today is `data/eval/edgar_multihop_set.json`: 34 questions built by
+pairing samples written from this repo's own chunks, which is the lineage
+problem this plan exists to break. This section adds an outside multi-hop set
+with gold evidence and gold answers. It is proposed, not scheduled, and
+starts only after the phase-3 gate passes.
+
+### Why MuSiQue
+
+[MuSiQue](https://github.com/StonyBrookNLP/musique)
+([paper](https://arxiv.org/abs/2108.00573)) has about 25K 2–4 hop questions
+built from Wikipedia paragraphs under CC BY 4.0. Each example carries what
+the Milestone 19 matrix needs:
+
+| Field | Use here |
+|---|---|
+| `paragraphs` with `is_supporting` | Corpus units and paragraph-level gold evidence |
+| `question_decomposition` (2–4 steps, each tied to a supporting paragraph) | Hop count for stratification, per-hop evidence recall, and a reference for `planned` sub-queries |
+| `answer`, `answer_aliases` | Deterministic answer EM/F1, no judge needed |
+| `answerable` (MuSiQue-Full only) | Refusal behavior (see the caveat below) |
+
+The authors built it to resist disconnected reasoning, reporting a 30-point
+F1 drop for a single-hop model. That matters because a set that one retrieval
+round can solve cannot show an agent's gain. 2WikiMultiHopQA has a similar
+shape and is the fallback if MuSiQue fails phase A.
+
+### What it does and does not measure
+
+- **Measures:** whether extra retrieval rounds or decomposition recover
+  evidence that one round misses (union evidence recall per hop), and whether
+  the final answer is right (EM/F1 against aliases). It also measures
+  refusal only if the Full caveat is resolved.
+- **Closed, pooled corpus, not open-domain.** The corpus is the union of the
+  selected split's paragraphs, far smaller than Wikipedia. Each paragraph was
+  chosen as a hard distractor for its own question, and in the pool every
+  other question's paragraphs become extra distractors. Report results as
+  "MuSiQue-Ans dev, pooled corpus", and never compare them with open-domain
+  leaderboard numbers.
+- **Not the production chunker.** It reuses the phase-1 identity path, as
+  BEIR does.
+- **Probably in training data.** The dataset has been public since 2021.
+  Every answer row needs a closed-book control beside it (see
+  [answer eval](#deferred-pre-embedded-vectors-and-answer-eval)).
+
+### Phase A: pin and inspect
+
+- Pin the release: source URL, archive SHA-256, licence and per-split counts
+  in `data/corpora/musique-ans/manifest.json`. The figures above come from the
+  paper abstract, the repo README and a Hugging Face mirror; phase A replaces
+  them with counts from the pinned files.
+- Inventory paragraphs per question, the hop-count distribution, how often
+  identical paragraphs recur across questions, and how many supporting
+  paragraphs each question has.
+- **Splits.** Test labels are hidden behind a leaderboard, so **dev is the
+  confirmatory set**. Tuning (agent prompts, search caps, fusion depths) uses a
+  fixed, recorded slice of train with its own pooled corpus. Freeze the
+  comparison family on that slice before any dev run, under the same
+  test-access rules as the BEIR phases.
+- **MuSiQue-Full caveat.** Per the paper, unanswerable questions are contrast
+  versions of answerable ones, made by withholding supporting evidence from
+  that question's context. Pooling can put the withheld paragraph back through
+  its answerable twin's context, which makes an "unanswerable" question
+  answerable. Verify this in phase A. If it holds, run Full only with
+  per-question corpora (20 paragraphs each, one index per question or a
+  per-question metadata filter) or leave it out. Until then the pooled
+  experiment is MuSiQue-Ans only.
+
+Exit: a manifest with counts, a split and access log, and a written decision
+on Full.
+
+### Phase B: corpus and eval-set conversion
+
+Builds on phase 1's JSONL loader, cleaning bypass and identity chunker, and
+phase 2's qrels scoring. No new dependencies.
+
+- **Paragraph ids.** MuSiQue paragraphs carry only a per-question index, not
+  a global id. Assign `musique-<sha256(title + "\n" + text)[:16]>` and dedupe
+  identical paragraphs into one `Document`, recording the collapse count. The
+  id is a pure function of content, so the converter is reproducible, and the
+  no-namespacing rule still holds because the corpus is only ever evaluated
+  isolated.
+- **Text recipe.** Title plus body with the same pinned serialization rules as
+  phase 0. MuSiQue has no reference encoder, so pin the one the benchmark
+  config chooses.
+- **Converter** `scripts/musique_to_eval_set.py` writes
+  `data/eval/musique_ans_<split>.json` in the multi-hop set's shape, so
+  `multihop_eval` runs it unchanged where the shapes agree:
+  - `expected_doc_ids`: the supporting paragraph ids, with binary grades for
+    qrels scoring;
+  - `expected_spans`: the full supporting paragraph texts. Under the identity
+    chunker, evidence recall's span matching then reduces to paragraph
+    presence;
+  - `expected_answer` plus aliases;
+  - `hops` and `parts`: one part per decomposition step, holding that step's
+    supporting paragraph and intermediate answer. Parts feed **per-hop
+    evidence recall only**. MuSiQue grades the final answer, so do not score
+    intermediate answers with the per-entity completeness judge, whose rubric
+    assumes every part is a user-facing sub-answer.
+  - Validate that every supporting paragraph resolves to an id in the pooled
+    corpus, and fail on malformed records rather than dropping them.
+- **Registry and config.** Add `musique-ans-dev` and `musique-ans-train-tune`
+  and reuse `rag/config/beir.yaml`, or a `base:` child of it.
+
+Exit: both indexes build, `index-report` shows one chunk per paragraph and a
+synced index, and the converter round-trips counts and ids against the pinned
+files.
+
+### Phase C: scoring
+
+- **Answer EM/F1 with aliases**, ported from the official evaluation script
+  (pin its commit) and checked for agreement to 4 decimal places on a
+  fixture of predictions scored by the reference script. It is deterministic,
+  so the judge's calibration does not bear on the primary metric.
+  An LLM-judge semantic-equivalence score may be reported beside it as
+  secondary, labelled with the judge. Answers are long-form while EM expects a
+  short span, so add an answer-extraction step: either a fixed final-line
+  format in the benchmark prompt or a recorded extraction rule. Validate it on
+  the train slice, because extraction failures would read as retrieval
+  failures.
+- **Evidence:** union evidence recall overall and per hop, plus phase 2's
+  R@100 on the first retrieval round. The gap between the two is the part an
+  agent can recover.
+- **Cost:** searches per turn, cap-hit rate, LLM calls, tokens and
+  wall-clock, as the Milestone 19 matrix already reports.
+- Stratify every metric by hop count (2/3/4). Pool across hops only with the
+  strata shown.
+
+### Phase D: the Milestone 19 rows on outside data
+
+Run the [Milestone 19 matrix](milestone-19-plan.md) variants that matter for
+a default decision: `pipeline / 9b`, `oracle / 9b`, `agentic react / 9b`,
+`agentic planned / 9b` and `agentic react / 27b`, plus `closed-book / 9b`.
+The oracle row feeds the supporting paragraphs directly.
+
+- **Sample size.** Agent runs take hours locally (Milestone 19 phase 4). Run
+  the pipeline and closed-book rows on the full dev set. Run agentic rows on a
+  hop-stratified random sample, sized beforehand from train-slice variance
+  with `rag/eval/paired.py` for the smallest worthwhile EM difference. Record
+  the seed and sample ids.
+- Report paired per-question deltas against `pipeline / 9b` with the
+  `paired.py` uncertainty, per hop stratum. The question to answer is the
+  same as the EDGAR one: does the agent beat the pipeline on multi-hop
+  questions by more than noise, and at what latency?
+- **How it feeds the default decision.** MuSiQue is supporting evidence for
+  the Milestone 19 default-flip criterion, not a replacement for it. That
+  criterion also needs the single-hop and refusal sets held within noise,
+  which MuSiQue-Ans does not measure. A MuSiQue gain that does not appear on
+  EDGAR multi-hop points to a domain difference to investigate; it does not
+  justify a flip.
+
+Cost: local only, no API spend. Record disk, index build time and total agent
+wall-clock.
+
+## Optional: paired BEIR queries (own-authored questions)
+
+A cheaper, weaker complement to MuSiQue. It builds multi-part questions over
+the phase-1 BEIR corpora by **pairing two existing BEIR queries**, the way
+`edgar_multihop_set.json` pairs verified EDGAR samples. It answers a narrower
+question than MuSiQue: does the agent still help outside financial filings?
+Build it only if MuSiQue results leave that question open.
+
+### What stays independent and what does not
+
+| Part | Source | Independent? |
+|---|---|---|
+| Corpus and passages | BEIR, via phase 1 | Yes |
+| Gold evidence | Union of the two source queries' positive qrels | Yes, per source query |
+| The combined question | Us | **No**: the same lineage problem as the EDGAR sets |
+| The gold answer | Derived from source labels where they exist (SciFact below), otherwise none | Only where derived |
+
+Report every result from this set as **"paired BEIR queries, own-authored
+questions"**. It never counts toward the rigor plan's independent evidence,
+and it has no published reference score to validate it.
+
+### Known weaknesses
+
+- **Comparison, not chains.** These corpora do not link one passage to the
+  next through shared entities, so pairing yields questions that name both
+  targets. A single hybrid search can often retrieve both, which understates
+  whatever an agent contributes. Measure this before reading anything into
+  agentic rows: report the pipeline's first-round union evidence recall on
+  the set. If one round already retrieves most of both halves, the set cannot
+  show an agent's gain, and building further on it wastes the run time.
+- **Qrels coverage.** BEIR's labels judge each source query, not the combined
+  question. The wording of the combined question can pull in passages that
+  neither source query's pool judged. Score evidence strictly against the
+  inherited qrels and label unjudged hits as unjudged, not as misses. The
+  set's scores are then a lower bound.
+- **Artificial composition.** Joining two unrelated needs into one question
+  reads unlike real user questions. Pair only within a shared topic (below)
+  and keep the join template fixed.
+
+### Construction
+
+- **Pair source.** Draw both queries from the same split. Use tuning splits
+  for pairs that inform choices, and confirmatory splits only for frozen
+  runs, following the test-access rules in [Datasets](#datasets). Never pair
+  across datasets, and never pair a query with itself or with a query sharing
+  a positive passage, since the two halves must need different evidence.
+- **Topic matching.** Pair queries whose texts are near neighbours under a
+  fixed, recorded encoder, so the combined question has a plausible shared
+  subject. Record the encoder, threshold and seed. The encoder must not be
+  the embedder under test, or pairing would favour it.
+- **Fixed templates, no free-form rewriting.** Combine the two query texts
+  with a small, versioned set of templates ("Answer both: … and …"; for
+  SciFact, "Which of these claims does the literature support: …?").
+  An LLM rewrite would read more naturally but bring back authored wording.
+  If a later version adopts rewrites, keep the template version as a paired
+  control.
+- **Derived answers (SciFact only).** The original
+  [SciFact release](https://github.com/allenai/scifact/blob/master/doc/data.md)
+  labels each claim's evidence `SUPPORT` or `CONTRADICT`. A claim pair then
+  has a gold answer computed from independent labels (which claims are
+  supported, contradicted, or lack evidence), with no authored answer text.
+  First verify that BEIR's SciFact query and corpus ids map one-to-one onto
+  the original claim and document ids, and which original split BEIR's test
+  split came from. FiQA and NFCorpus have no reference answers, so their
+  pairs are **evidence-only**.
+- **Converter** `scripts/beir_pairs_to_eval_set.py` writes
+  `data/eval/beir_<name>_pairs_<split>.json` in the multi-hop shape: one
+  `part` per source query with its qrels, so `multihop_eval`'s union evidence
+  recall and per-part recall apply unchanged. Gitignored, and regenerated
+  from the pinned zip, the template version and the recorded seed.
+
+### Measurement
+
+Run it after MuSiQue phase D, with the same variants on a smaller sample. The
+headline is per-part union evidence recall (inherited qrels only), and for
+SciFact also derived-answer accuracy with a closed-book control. Report it
+per dataset, never averaged into MuSiQue or EDGAR numbers.
+
 ## Deferred: pre-embedded vectors and answer eval
 
 **Importing published vectors into the production pipeline** (Cohere's BEIR
@@ -313,6 +547,9 @@ Revisit only if a benchmark we need is too large to embed locally.
 **Answer eval.** BEIR has no reference answers. Candidates, each with a
 catch to settle before starting:
 
+- MuSiQue, drafted above as the
+  [multi-hop follow-on](#follow-on-multi-hop-and-agentic-retrieval-on-musique):
+  small enough to embed locally, and scored by EM/F1 rather than a judge.
 - FlashRAG's NQ and HotpotQA with gold answers. Their corpus is 21M
   passages, so this depends on the pre-embedded decision above.
 - FinanceBench or FinDER. Nearest to the EDGAR workload, but distributed
@@ -348,6 +585,8 @@ reported beside it.
 | 2 | Explicit qrels mode, linear-gain nDCG@10 / R@100, stage rankings, evaluator checks | Schema agreed with 1; fixtures can proceed in parallel |
 | 3 | `sentence_transformers` embedder; reference reproduction, scoring parity, backend diagnostics | 0, 1, 2 |
 | 4 | Paired measurements recorded in measured results | 3 |
+| MuSiQue A–D (follow-on) | Pooled MuSiQue-Ans corpus, EM/F1 scorer, Milestone 19 rows on outside data | 3; agentic rows also need Milestone 19 phase 3 |
+| Paired BEIR queries (optional) | Own-authored paired questions over the BEIR corpora; SciFact answers derived from its labels | 1, 2; run after MuSiQue D |
 
 Tracked under [Milestone 27](backlog.md#milestone-27--eval-coverage-and-judge-reliability)
 as the "broaden the corpus" step of the rigor plan, limited to the query-time
