@@ -431,6 +431,13 @@ outcome is **"agentic is an opt-in mode for hard questions"**, not a new
 default. If `planned / 9b` wins by more than noise, prefer it over the 27b
 for any default; it is the only agentic variant that runs at 9b speed.
 
+**Outside evidence (proposed).** Every set above was written from this
+repo's own chunks. The public benchmarks plan drafts a
+[MuSiQue follow-on](public-benchmarks-plan.md#follow-on-multi-hop-and-agentic-retrieval-on-musique)
+that runs these rows on a pooled MuSiQue-Ans corpus with gold supporting
+paragraphs and EM/F1 answers. It supports this criterion but does not replace
+it: MuSiQue-Ans has no single-hop or refusal questions.
+
 **Consider Inspect for the agentic rows.** The
 [eval harness plan](eval-harness-plan.md#decisions-and-rejected-alternatives)
 keeps pipeline evals on this repo's own run store, but defers this decision
