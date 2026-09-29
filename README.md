@@ -1,7 +1,10 @@
 # RAG Toolkit
 
 A local-first Retrieval-Augmented Generation (RAG) system in Python. Ollama
-serves both embeddings and chat, and Chroma is the vector store.
+serves both embeddings and chat, and Chroma is the vector store. Local-first
+means it runs end to end on one machine, not that it only runs there: hosted
+providers are selected in config, and the retrieval pipeline is built here
+rather than on a RAG framework so every stage can be measured.
 
 The pipeline runs ingest → clean → chunk → embed → index at index time, and
 hybrid retrieval (dense vector search + BM25, fused with reciprocal rank
