@@ -1,0 +1,583 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+============================================================
+  Answer Eval  (95 evaluated, 0 skipped)
+============================================================
+  Pass rate   0.811  (77/95)
+  Mean latency  11.9s per turn (generation only)
+------------------------------------------------------------
+  By whether the gold span reached the prompt:
+    evidence retrieved  77/82 passed  -> 5 generation/judge failure(s)
+    evidence missed     0/13 passed  -> 13 retrieval failure(s)
+============================================================
+
+[PASS] 'table::AAPL_10-K_2024-09-28.md::t1r2c1'  citations=5  evidence=retrieved
+  query:    "What were Apple Inc.'s net sales for the iPad product category in fiscal 2024?"
+  judge:    'PASS'
+  answer:   Apple Inc.'s net sales for the iPad product category in fiscal 2024 were **$26,694 million** [3]. This figure is also confirmed in the table provided in Passage [2], which lists iPad net sales for 202...
+
+[PASS] 'table::AAPL_10-K_2025-09-27.md::t2r2c3'  citations=5  evidence=retrieved
+  query:    "What was Apple Inc.'s total gross margin in dollars in millions for fiscal 2023?"
+  judge:    'PASS'
+  answer:   Apple Inc.'s total gross margin for fiscal 2023 was **$169,148 million**.  This figure is confirmed in two separate passages: *   Passage [1] lists the "Total gross margin" for 2023 as $169,148 millio...
+
+[PASS] 'table::AAPL_10-Q_2025-12-27.md::t0r3c2'  citations=5  evidence=retrieved
+  query:    "What were Apple Inc.'s net sales in the Japan segment for the three months ended December 28, 2024?"
+  judge:    'PASS'
+  answer:   Apple Inc.'s net sales in the Japan segment for the three months ended December 28, 2024, were **$8,987 million** [1].
+
+[PASS] 'table::AAPL_10-Q_2025-12-27.md::t1r4c3'  citations=5  evidence=retrieved
+  query:    "What was the percentage change in net sales for Apple Inc.'s Services segment during the three months ended December 27, 2025, compared to the same period in the prior year?"
+  judge:    'PASS The system answer correctly identifies the 14% change.'
+  answer:   Based on Passage [1], the net sales for Apple Inc.'s Services segment during the three months ended December 27, 2025, were $30,013 million, compared to $26,340 million in the same period of the prior...
+
+[PASS] 'table::AAPL_10-Q_2025-12-27.md::t4r0c2'  citations=5  evidence=retrieved
+  query:    "What was Apple Inc.'s research and development expense for the three months ended December 28, 2024?"
+  judge:    'PASS'
+  answer:   Apple Inc.'s research and development expense for the three months ended December 28, 2024, was **$8,268 million** [1].
+
+[PASS] 'table::AAPL_10-Q_2026-06-27.md::t0r4c5'  citations=5  evidence=retrieved
+  query:    "What were Apple Inc.'s net sales in the Rest of Asia Pacific segment for the nine months ended June 28, 2025?"
+  judge:    'PASS'
+  answer:   According to Passage [2], Apple Inc.'s net sales in the Rest of Asia Pacific segment for the nine months ended June 28, 2025, were **$25,254 million**.
+
+[PASS] 'table::AAPL_10-Q_2026-06-27.md::t4r3c2'  citations=5  evidence=retrieved
+  query:    "What was Apple Inc.'s selling, general and administrative expenses as a percentage of total net sales for the three months ended June 28, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], Apple Inc.'s selling, general and administrative expenses were **7%** of total net sales for the three months ended June 28, 2025 [1].
+
+[PASS] 'table::COST_10-K_2024-09-01.md::t26r6c1'  citations=5  evidence=retrieved
+  query:    'What were the total future minimum payments for operating leases at Costco Wholesale Corp as of September 1, 2024?'
+  judge:    'PASS The system answer matches the reference answer of $3,312 million.'
+  answer:   Based on Passage [1], as of September 1, 2024, the total future minimum payments for operating leases were **$3,312**. This figure is found in the table detailing future minimum payments during the ne...
+
+[PASS] 'table::COST_10-K_2025-08-31.md::t17r1c1'  citations=5  evidence=retrieved
+  query:    "What was the fair value of Costco Wholesale Corp's forward foreign-exchange contracts in asset position classified as Level 2 for the fiscal year ended August 31, 2025?"
+  judge:    'PASS The system answer matches the reference answer.'
+  answer:   Based on Passage [1], the fair value of Costco Wholesale Corp's forward foreign-exchange contracts in asset position classified as Level 2 for the fiscal year ended August 31, 2025, was **$6 million**...
+
+[FAIL] 'table::COST_10-K_2025-08-31.md::t23r3c2'  citations=5  evidence=retrieved
+  query:    'What were the operating lease assets obtained in exchange for new or modified leases, in millions of dollars, for Costco Wholesale Corp for fiscal 2024?'
+  judge:    'FAIL The system answer provides $202 million, while the reference answer is $125 million.'
+  answer:   Based on Passage [1], which covers the fiscal period ended September 1, 2024, the operating lease assets obtained in exchange for new or modified leases were **$202 million**.  This is confirmed in Pa...
+
+[PASS] 'table::COST_10-K_2025-08-31.md::t2r0c2'  citations=5  evidence=retrieved
+  query:    "What were Costco Wholesale Corp's SG&A expenses for fiscal 2024?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], which covers the fiscal period ended September 1, 2024, Costco Wholesale Corp's SG&A expenses were **$22,810** million [1].
+
+[PASS] 'table::COST_10-K_2025-08-31.md::t32r5c2'  citations=5  evidence=retrieved
+  query:    'What was the amount, in millions, for the lapse of statute of limitations affecting gross unrecognized tax benefits for Costco Wholesale Corp in fiscal 2024?'
+  judge:    'PASS'
+  answer:   Based on Passage [2], which details the reconciliation of gross unrecognized tax benefits for the period ended 2024-09-01 (fiscal 2024), the amount for "Lapse of statute of limitations" is listed as *...
+
+[PASS] 'table::COST_10-Q_2025-11-23.md::t3r0c1'  citations=5  evidence=retrieved
+  query:    "What were Costco Wholesale Corp's selling, general and administrative expenses for the 12 weeks ended November 23, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], Costco Wholesale Corp's Selling, General and Administrative (SG&A) expenses for the 12 weeks ended November 23, 2025, were **$6,334** million [1].
+
+[PASS] 'table::COST_10-Q_2025-11-23.md::t6r1c2'  citations=5  evidence=retrieved
+  query:    'What was the net cash used in investing activities by Costco Wholesale Corp for the 12 weeks ended November 24, 2024?'
+  judge:    'PASS The system answer correctly identifies the amount as $985 million.'
+  answer:   Based on Passage [1], the net cash used in investing activities by Costco Wholesale Corp for the 12 weeks ended November 24, 2024, was **$985 million**.  This is found in the table summarizing sources...
+
+[FAIL] 'table::CVX_10-K_2024-12-31.md::t3r25c1'  citations=5  evidence=retrieved
+  query:    "What was Chevron Corp's net oil-equivalent production in the United Kingdom, measured in thousands of barrels per day, for the fiscal year ended December 31, 2024?"
+  judge:    'FAIL The system answer provides a value of 7 thousand barrels per day, while the reference answer is 12 thousand barrels per day.'
+  answer:   Based on **Passage [4]**, Chevron Corp's net oil-equivalent production in the United Kingdom for the fiscal year ended December 31, 2024, was **7 thousand barrels per day** (listed as "7" under the co...
+
+[PASS] 'table::CVX_10-K_2024-12-31.md::t7r16c2'  citations=5  evidence=retrieved
+  query:    "What was Chevron Corp's share of affiliates' sales included in total worldwide refined products sales volumes, in thousands of barrels per day, for the year ended December 31, 2023?"
+  judge:    "PASS The system answer correctly identifies the share of affiliates' sales as 389 thousand barrels per day."
+  answer:   Based on Passage [1], the Total Worldwide refined products sales volume for the year ended December 31, 2023, was **2,732** thousand barrels per day. The footnote labeled "3" in that same passage indi...
+
+[PASS] 'table::CVX_10-K_2024-12-31.md::t8r0c2'  citations=5  evidence=retrieved
+  query:    'What was the average price paid per share by Chevron Corp for shares purchased during the period from October 1 to October 31, 2024?'
+  judge:    'PASS'
+  answer:   Based on Passage [1], which details Chevron Corporation's Issuer Purchases of Equity Securities for the quarter ended December 31, 2024, the average price paid per share during the period from October...
+
+[FAIL] 'table::CVX_10-K_2025-12-31.md::t1r9c4'  citations=5  evidence=retrieved
+  query:    "How many net multiple completion productive gas wells were included in Chevron Corp's totals at December 31, 2025?"
+  judge:    'FAIL The system answer provides 3,500, while the reference answer is 115.'
+  answer:   Based on Passage [2], which covers the period ended December 31, 2025, the table indicates that for "Total Including Affiliates," there were **3,500** productive gas wells listed under the column corr...
+
+[PASS] 'table::CVX_10-K_2025-12-31.md::t2r5c4'  citations=5  evidence=retrieved
+  query:    "What was Chevron Corp's net developed acreage in Europe, in thousands of acres, at December 31, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [3], which details the geographical distribution of Chevron's acreage at December 31, 2025, the net developed acreage in Europe was **2** thousand acres.  This is found in the table u...
+
+[PASS] 'table::CVX_10-Q_2025-09-30.md::t5r0c5'  citations=5  evidence=retrieved
+  query:    "What were Chevron Corp's All Other Earnings/(Charges) for the nine months ended September 30, 2024?"
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Chevron Corp's All Other Earnings/(Charges) for the nine months ended September 30, 2024, were **$(1,851) million** [4]. This figure is also reflected in the Net Income (Loss) Attributable to Chevron ...
+
+[PASS] 'table::DAL_10-K_2024-12-31.md::t15r1c1'  citations=5  evidence=retrieved
+  query:    "What was Delta Air Lines, Inc.'s net cash used in investing activities, in millions of dollars, for the year ended December 31, 2024?"
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Delta Air Lines, Inc.'s net cash used in investing activities for the year ended December 31, 2024, was **$3,739 million**.  This figure is explicitly stated in the free cash flow reconciliation table...
+
+[PASS] 'table::DAL_10-K_2024-12-31.md::t2r2c5'  citations=5  evidence=retrieved
+  query:    'What was the percentage change in Ancillary businesses other revenue for Delta Air Lines, Inc. between the year ended December 31, 2023 and the year ended December 31, 2024?'
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Based on Passage [2], the percentage change in Ancillary businesses other revenue for Delta Air Lines, Inc. between the year ended December 31, 2023 and the year ended December 31, 2024 was **(8)%**. ...
+
+[PASS] 'table::DAL_10-K_2024-12-31.md::t7r10c1'  citations=5  evidence=retrieved
+  query:    "What was Delta Air Lines, Inc.'s average price per fuel gallon for the year ended December 31, 2024?"
+  judge:    'PASS'
+  answer:   Delta Air Lines, Inc.'s average price per fuel gallon for the year ended December 31, 2024, was **$2.57**.  This figure is reported in multiple passages: *   Passage [1] lists the "Average price per f...
+
+[PASS] 'table::DAL_10-K_2025-12-31.md::t10r3c2'  citations=5  evidence=retrieved
+  query:    "What was Delta Air Lines, Inc.'s total revenue, adjusted (in millions) for the year ended December 31, 2024?"
+  judge:    'PASS'
+  answer:   Delta Air Lines, Inc.'s total revenue, adjusted for the year ended December 31, 2024, was **$57,001 million**.  This figure is confirmed in multiple passages: *   Passage [2] lists "Total revenue, adj...
+
+[PASS] 'table::DAL_10-K_2025-12-31.md::t7r5c3'  citations=5  evidence=retrieved
+  query:    "What was Delta Air Lines, Inc.'s adjusted total revenue per available seat mile (TRASM, adjusted) for the year ended December 31, 2024?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], Delta Air Lines, Inc.'s adjusted total revenue per available seat mile (TRASM, adjusted) for the year ended December 31, 2024, was **19.76¢**. This figure is also confirmed in Pa...
+
+[PASS] 'table::DAL_10-Q_2026-03-31.md::t1r3c7'  citations=5  evidence=retrieved
+  query:    "What was the change in load factor, in points, for Delta Air Lines, Inc.'s Pacific region passenger revenue during the three months ended March 31, 2026, compared to the same period in 2025?"
+  judge:    'PASS The system answer correctly identifies the 1 point increase.'
+  answer:   Based on Passage [1], which covers the three months ended March 31, 2026, the change in load factor for the Pacific region was an increase of **1 point** compared to the same period in 2025. This is f...
+
+[PASS] 'table::DAL_10-Q_2026-03-31.md::t8r0c2'  citations=5  evidence=retrieved
+  query:    'How many CRJ-900 aircraft did Endeavor Air, Inc. operate on behalf of Delta Air Lines, Inc. at March 31, 2026?'
+  judge:    'PASS'
+  answer:   At March 31, 2026, Endeavor Air, Inc. operated **126** CRJ-900 aircraft on behalf of Delta Air Lines, Inc. [1].
+
+[PASS] 'table::DAL_10-Q_2026-06-30.md::t1r2c4'  citations=5  evidence=retrieved
+  query:    "What was the percentage change in Available Seat Miles (ASMs) for Delta Air Lines' Latin America passenger revenue segment for the three months ended June 30, 2026, compared to the same period in 2025?"
+  judge:    'PASS The system answer matches the reference answer.'
+  answer:   Based on Passage [2], the percentage change in Available Seat Miles (ASMs) for Delta Air Lines' Latin America passenger revenue segment for the three months ended June 30, 2026, compared to the same p...
+
+[PASS] 'table::JNJ_10-K_2025-12-28.md::t0r3c2'  citations=5  evidence=retrieved
+  query:    'What was the total percentage increase in worldwide sales for Johnson & Johnson in fiscal 2024?'
+  judge:    'PASS'
+  answer:   Based on Passage [1], the total percentage increase in worldwide sales for Johnson & Johnson in fiscal 2024 was **4.3%**. This figure is derived from a comparison where worldwide sales increased to $8...
+
+[PASS] 'table::JNJ_10-K_2025-12-28.md::t4r5c1'  citations=5  evidence=retrieved
+  query:    "What was Johnson & Johnson's 'Other' component of Other (income) expense, net in billions of dollars for fiscal year 2025?"
+  judge:    'PASS The system answer matches the reference answer.'
+  answer:   Based on Passage [2], which details the "Other (income) expense, net" for the fiscal year ended December 28, 2025, the 'Other' component was **$(0.5)** billion.  This is found in the table row labeled...
+
+[FAIL] 'table::JNJ_10-K_2025-12-28.md::t5r2c4'  citations=5  evidence=MISSED
+  query:    "What was Johnson & Johnson's total segment sales in millions of dollars for fiscal year 2025?"
+  judge:    'FAIL The system answer provides a nine-month total ($69,629 million) instead of the full fiscal year total ($94,193 million).'
+  answer:   Based on the provided passages, Johnson & Johnson's total segment sales for fiscal year 2025 were **$69,629 million** (or $69.6 billion).  This figure is derived from Passage [1], which presents the "...
+
+[FAIL] 'table::JNJ_10-Q_2025-09-28.md::t2r2c4'  citations=5  evidence=MISSED
+  query:    "What was the operations change percentage for Johnson & Johnson's General MedTech franchise sales during the fiscal nine months ended September 28, 2025?"
+  judge:    'FAIL The system answer claims the data is unavailable, but the reference answer provides a specific value (2.3%).'
+  answer:   Based on the provided passages, there is no data available for **General MedTech** franchise sales during the fiscal nine months ended September 28, 2025.  Passage [3] lists "General" under Major MedT...
+
+[PASS] 'table::JNJ_10-Q_2025-09-28.md::t9r0c1'  citations=5  evidence=retrieved
+  query:    "What was Johnson & Johnson's total U.S. income taxes paid net of tax refunds for the fiscal nine months ended September 28, 2025?"
+  judge:    'PASS'
+  answer:   Johnson & Johnson's total U.S. income taxes paid net of tax refunds for the fiscal nine months ended September 28, 2025, was **$3,740 million** (or $3.74 billion).  This figure is found in the table s...
+
+[PASS] 'table::JNJ_10-Q_2026-06-28.md::t4r1c1'  citations=5  evidence=retrieved
+  query:    "What was Johnson & Johnson's MedTech research and development expense in dollars for the fiscal second quarter ended June 28, 2026?"
+  judge:    'PASS'
+  answer:   Johnson & Johnson's MedTech research and development expense for the fiscal second quarter ended June 28, 2026, was **$778 million**.  This figure is found in the table detailing Research and developm...
+
+[PASS] 'table::JNJ_10-Q_2026-06-28.md::t8r0c2'  citations=5  evidence=retrieved
+  query:    "What was Johnson & Johnson's Innovative Medicine segment income before tax for the fiscal second quarter ended June 29, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], Johnson & Johnson's Innovative Medicine segment income before tax for the fiscal second quarter ended June 29, 2025, was **$5,552 million**.  This is found in the table titled "I...
+
+[PASS] 'table::LUV_10-Q_2025-09-30.md::t12r2c2'  citations=5  evidence=retrieved
+  query:    "What was Southwest Airlines Co's mark-to-market impact on deferred compensation plan investment for the nine months ended September 30, 2024?"
+  judge:    'PASS'
+  answer:   Southwest Airlines Co's mark-to-market impact on deferred compensation plan investment for the nine months ended September 30, 2024 was $(40) million [1]. This figure is also confirmed in Passage [3],...
+
+[PASS] 'table::LUV_10-Q_2026-03-31.md::t0r2c3'  citations=5  evidence=retrieved
+  query:    "What was the percentage change in Southwest Airlines Co's revenue passenger miles (RPMs) for the three months ended March 31, 2026 compared to the same period in 2025?"
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Based on Passage [1], Southwest Airlines Co's revenue passenger miles (RPMs) for the three months ended March 31, 2026, increased by **1.7%** compared to the same period in 2025.  The specific data po...
+
+[PASS] 'table::LUV_10-Q_2026-03-31.md::t4r1c1'  citations=5  evidence=retrieved
+  query:    "What was Southwest Airlines Co's fuel hedging premium expense in millions of dollars for the three months ended March 31, 2026?"
+  judge:    'PASS'
+  answer:   Southwest Airlines Co's fuel hedging premium expense for the three months ended March 31, 2026, was **$29 million**.  This figure is explicitly stated in Passage [1], which details the financial data ...
+
+[PASS] 'table::LUV_10-Q_2026-03-31.md::t6r2c3'  citations=5  evidence=retrieved
+  query:    "What was Southwest Airlines Co's aircraft fuel and related taxes, as reported (and economic), in millions of dollars for the three months ended March 31, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [2] and Passage [3], Southwest Airlines Co's aircraft fuel and related taxes, as reported (and economic), for the three months ended March 31, 2025, was **$1,249 million**.  This figu...
+
+[FAIL] 'table::LUV_10-Q_2026-06-30.md::t0r18c2'  citations=5  evidence=retrieved
+  query:    "What was Southwest Airlines Co's operating expenses per available seat mile (ASM), excluding fuel and special items, in cents, for the three months ended June 30, 2025?"
+  judge:    'FAIL The system answer provides 12.42 cents, while the reference answer is 12.07 cents.'
+  answer:   Based on Passage [4], which covers the three months ended June 30, 2026 and compares it to the same period in 2025, Southwest Airlines Co's operating expenses per ASM, excluding fuel and special items...
+
+[FAIL] 'table::LUV_10-Q_2026-06-30.md::t4r9c3'  citations=5  evidence=MISSED
+  query:    'What was the dollar change in other operating expenses for Southwest Airlines Co. between the three months ended June 30, 2025 and the three months ended June 30, 2026?'
+  judge:    'FAIL The system answer states an increase of $64 million, while the reference answer states a decrease of $32 million.'
+  answer:   Based on Passage [3], the dollar change in **Other** operating expenses for the three months ended June 30, 2026 compared to the same period in 2025 was an increase of **$64 million**.  The table in P...
+
+[PASS] 'table::MRK_10-K_2024-12-31.md::t2r1c2'  citations=5  evidence=retrieved
+  query:    "What was the percentage change in Alliance Revenue for Lynparza within Merck & Co., Inc.'s Oncology segment for fiscal 2024 compared to fiscal 2023?"
+  judge:    'PASS The system answer correctly identifies the 9% change.'
+  answer:   Based on Passage [1], the percentage change in Alliance Revenue for Lynparza within Merck & Co., Inc.'s Oncology segment for fiscal 2024 compared to fiscal 2023 was **9%**. This is shown in the table ...
+
+[PASS] 'table::MRK_10-K_2024-12-31.md::t5r2c2'  citations=5  evidence=retrieved
+  query:    'What was the percentage change in Adempas revenue for Merck & Co., Inc. in fiscal 2024 compared to fiscal 2023?'
+  judge:    'PASS The system answer matches the reference answer.'
+  answer:   Based on Passage [3], the percentage change in Adempas revenue for Merck & Co., Inc. in fiscal 2024 compared to fiscal 2023 was **12%**.  This is supported by the table in Passage [3] which lists Adem...
+
+[PASS] 'table::MRK_10-K_2025-12-31.md::t10r8c2'  citations=5  evidence=retrieved
+  query:    "What was Merck & Co., Inc.'s taxes on income as reported under GAAP for fiscal 2024?"
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Based on Passage [3], which covers the period ended 2024-12-31, Merck & Co., Inc.'s taxes on income as reported under GAAP for fiscal 2024 were **$2,803 million**.  This is confirmed by the table in P...
+
+[PASS] 'table::MRK_10-K_2025-12-31.md::t8r0c3'  citations=5  evidence=retrieved
+  query:    "What was Merck & Co., Inc.'s cost of sales in millions of dollars for fiscal 2024?"
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Merck & Co., Inc.'s cost of sales for fiscal 2024 was **$15,193 million** (or $15.2 billion).  This figure is explicitly stated in Passage [2], which notes that "Cost of sales was $15.2 billion in 202...
+
+[PASS] 'table::MRK_10-Q_2026-03-31.md::t1r2c1'  citations=5  evidence=retrieved
+  query:    "What was Merck & Co., Inc.'s revenue from Welireg in the three months ended March 31, 2026?"
+  judge:    'PASS'
+  answer:   Merck & Co., Inc.'s revenue from Welireg in the three months ended March 31, 2026, was **$199 million**. This figure is found in Passage [2], which details the Pharmaceutical Segment's Oncology franch...
+
+[PASS] 'table::MRK_10-Q_2026-03-31.md::t7r2c2'  citations=5  evidence=retrieved
+  query:    "What was Merck & Co., Inc.'s non-segment activity in millions of dollars for the three months ended March 31, 2025?"
+  judge:    'PASS The system answer matches the reference answer.'
+  answer:   Based on Passage [1], Merck & Co., Inc.'s non-segment activity for the three months ended March 31, 2025, was **$(5,443) million**.  This is found in the table under "Segment Profits" where the row "N...
+
+[PASS] 'table::MRK_10-Q_2026-06-30.md::t1r3c2'  citations=5  evidence=retrieved
+  query:    "What was Merck & Co., Inc.'s Alliance Revenue - Reblozyl (in millions of dollars) for the three months ended June 30, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [4], Merck & Co., Inc.'s Alliance Revenue - Reblozyl for the three months ended June 30, 2025, was **$107 million**.  This is found in the table under the "Pharmaceutical Segment" -> ...
+
+[PASS] 'table::MRK_10-Q_2026-06-30.md::t2r3c1'  citations=5  evidence=retrieved
+  query:    "What were the sales in millions of dollars for Merck & Co., Inc.'s Varivax vaccine during the three months ended June 30, 2026?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], the sales for Merck & Co., Inc.'s Varivax vaccine during the three months ended June 30, 2026, were **$260 million**.
+
+[PASS] 'table::MSFT_10-K_2025-06-30.md::t0r3c2'  citations=5  evidence=retrieved
+  query:    "What was Microsoft Corp's net income in millions of dollars for fiscal 2024?"
+  judge:    'PASS The system answer correctly identifies the net income as 88,136 million.'
+  answer:   Based on Passage [1], Microsoft Corp's net income for fiscal year 2024 was **$88,136 million**.  This is confirmed in Passage [3], which also lists the Net Income for Fiscal Year 2024 as **$88,133** (...
+
+[PASS] 'table::MSFT_10-K_2025-06-30.md::t3r0c2'  citations=5  evidence=retrieved
+  query:    "What was Microsoft Corp's sales and marketing expense in millions of dollars for fiscal 2024?"
+  judge:    'PASS'
+  answer:   Based on Passage [2], Microsoft Corp's sales and marketing expense for fiscal year 2024 was **$24,456 million**. This is found in the table comparing Fiscal Year 2025 with Fiscal Year 2024 under the "...
+
+[PASS] 'table::MSFT_10-K_2026-06-30.md::t6r3c1'  citations=5  evidence=retrieved
+  query:    "What was Microsoft Corp's net income for fiscal 2026?"
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Microsoft Corp's net income for fiscal year 2026 was **$133,749 million** (or $133.749 billion) [1]. This figure is reported in accordance with GAAP according to the table provided in Passage [1], whi...
+
+[PASS] 'table::MSFT_10-Q_2025-12-31.md::t0r2c7'  citations=5  evidence=retrieved
+  query:    "What was the percentage change in Microsoft Corp's operating income for the six months ended December 31, 2025, compared to the same period in the prior year?"
+  judge:    'PASS The system answer correctly identifies the 23% change.'
+  answer:   Based on Passage [4], Microsoft Corp's operating income for the six months ended December 31, 2025, was $76,236 million, compared to $62,205 million in the same period of the prior year (2024). This r...
+
+[PASS] 'table::MSFT_10-Q_2025-12-31.md::t3r1c1'  citations=5  evidence=retrieved
+  query:    "What was Microsoft Corp's sales and marketing expense as a percent of revenue for the three months ended December 31, 2025?"
+  judge:    'PASS'
+  answer:   Microsoft Corp's sales and marketing expense as a percent of revenue for the three months ended December 31, 2025 was **8%** [2].
+
+[FAIL] 'table::MSFT_10-Q_2026-03-31.md::t0r2c6'  citations=5  evidence=MISSED
+  query:    "What was Microsoft Corp's operating income for the nine months ended March 31, 2025?"
+  judge:    'FAIL The system answer claims the information cannot be determined, whereas the reference answer provides the specific figure.'
+  answer:   Based on Passage [4], which contains a table comparing periods ended December 31, 2025, and March 31, 2026, Microsoft Corp's operating income for the nine months ended March 31, 2026 was $76,236 milli...
+
+[FAIL] 'table::NVDA_10-K_2025-01-26.md::t6r3c3'  citations=5  evidence=MISSED
+  query:    'What was the dollar change in Other income (expense), net for Nvidia Corp between the fiscal year ended January 28, 2024 and the fiscal year ended January 26, 2025?'
+  judge:    'FAIL The system answer provides $797 million, which contradicts the reference answer of $1,727 million.'
+  answer:   Based on Passage [1], the dollar change in Other income (expense), net for Nvidia Corp between the fiscal year ended January 28, 2024, and the fiscal year ended January 26, 2025, was **$797 million**....
+
+[PASS] 'table::NVDA_10-K_2025-01-26.md::t9r1c1'  citations=5  evidence=retrieved
+  query:    "What was Nvidia Corp's aggregate debt due in five to ten years as of January 26, 2025, in millions?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], which details NVIDIA Corp's outstanding indebtedness as of January 26, 2025, the aggregate debt due in five to ten years was **$2,750 million**.
+
+[FAIL] 'table::NVDA_10-K_2026-01-25.md::t2r1c3'  citations=5  evidence=MISSED
+  query:    "What was the dollar change in revenue for Nvidia Corp's Graphics segment between the fiscal year ended January 26, 2025 and the fiscal year ended January 25, 2026?"
+  judge:    'FAIL The system answer calculates a change of $4,071 million, which contradicts the reference answer of $8,155 million.'
+  answer:   Based on **Passage [2]**, the revenue for Nvidia Corp's Graphics segment was $9,156 million for the fiscal year ended January 25, 2026, and $5,085 million for the fiscal year ended January 26, 2025.  ...
+
+[FAIL] 'table::NVDA_10-K_2026-01-25.md::t3r2c1'  citations=5  evidence=MISSED
+  query:    "What was Nvidia Corp's total operating income for the fiscal year ended January 25, 2026?"
+  judge:    'FAIL The system answer provides $130,387 million, which contradicts the reference answer of $139,297 million.'
+  answer:   Nvidia Corp's total operating income for the fiscal year ended January 25, 2026, was **$130,387 million** (or approximately $130.4 billion). This figure is explicitly stated in Passage [2] within the ...
+
+[PASS] 'table::NVDA_10-Q_2025-07-27.md::t4r1c2'  citations=5  evidence=retrieved
+  query:    "What were Nvidia Corp's sales, general and administrative expenses for the three months ended July 28, 2024?"
+  judge:    'PASS The system answer correctly identifies the amount as $842 million.'
+  answer:   Nvidia Corp's sales, general and administrative expenses for the three months ended July 28, 2024, were **$842 million**. This figure is found in the table under "Operating Expenses" in Passage [1], w...
+
+[PASS] 'table::NVDA_10-Q_2025-07-27.md::t5r0c2'  citations=5  evidence=retrieved
+  query:    "What was Nvidia Corp's interest income for the three months ended July 28, 2024?"
+  judge:    'PASS'
+  answer:   Nvidia Corp's interest income for the three months ended July 28, 2024 was **$444 million** [1].
+
+[FAIL] 'table::NVDA_10-Q_2026-04-26.md::t2r13c2'  citations=5  evidence=MISSED
+  query:    "What was Nvidia Corp's income tax expense as a percentage of revenue for the three months ended April 27, 2025?"
+  judge:    'FAIL The system answer refuses to answer while the reference answer provides a specific value.'
+  answer:   Based on the provided passages, it is **not possible** to answer this question.  The documents contain data for: *   The three months ended **July 27, 2025** (Passage [3] and Passage [4]). *   Fiscal ...
+
+[PASS] 'table::PFE_10-Q_2025-09-28.md::t0r0c3'  citations=5  evidence=retrieved
+  query:    "What were Pfizer Inc's Biopharma segment total revenues in the U.S. for the three months ended September 28, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [4], Pfizer Inc's Biopharma segment total revenues in the U.S. for the three months ended September 28, 2025, were **$10,599 million**.  This figure is found in the table under "Total...
+
+[FAIL] 'table::PFE_10-Q_2025-09-28.md::t10r11c5'  citations=5  evidence=MISSED
+  query:    "What was Pfizer Inc.'s non-GAAP adjusted earnings per common share attributable to Pfizer Inc. common shareholders--diluted for the three months ended September 28, 2025?"
+  judge:    'FAIL The system answer provides $2.56, while the reference answer is $0.87.'
+  answer:   Based on Passage [1], which details the reconciliations of GAAP Reported to Non-GAAP Adjusted information for the three months ended September 28, 2025, Pfizer Inc.'s non-GAAP adjusted earnings per co...
+
+[PASS] 'table::PFE_10-Q_2025-09-28.md::t1r5c1'  citations=5  evidence=retrieved
+  query:    "What was the favorable impact of foreign exchange on Pfizer Inc's worldwide total revenues for the three months ended September 28, 2025, compared to the same period in 2024?"
+  judge:    'PASS The system answer correctly identifies the favorable impact as $203 million.'
+  answer:   Based on Passage [1], the favorable impact of foreign exchange on Pfizer Inc's worldwide total revenues for the third quarter of 2025 compared to the same period in 2024 was **$203 million** (or $0.2 ...
+
+[PASS] 'table::PFE_10-Q_2025-09-28.md::t2r4c3'  citations=5  evidence=retrieved
+  query:    "What was Pfizer Inc.'s operational growth/(decline), net in millions for the International segment during the first nine months of 2025 compared to the first nine months of 2024?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], Pfizer Inc.'s operational growth/(decline), net for the International segment during the first nine months of 2025 compared to the first nine months of 2024 was **$701 million**....
+
+[PASS] 'table::PFE_10-Q_2025-09-28.md::t9r1c1'  citations=5  evidence=retrieved
+  query:    "What was Pfizer Inc's effective tax rate on continuing operations for the three months ended September 28, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [3], Pfizer Inc's effective tax rate on continuing operations for the three months ended September 28, 2025, was **(6.5)%**. This is also confirmed in Passage [1], which states the ra...
+
+[PASS] 'table::TGT_10-K_2025-02-01.md::t2r0c1'  citations=5  evidence=retrieved
+  query:    "What was Target Corp's gross margin rate for fiscal 2024?"
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Based on the provided passages, Target Corp's gross margin rate for fiscal 2024 was **28.2 percent**.  This figure is stated in Passage [1], which notes the rate was 28.2 percent in 2024 compared to 2...
+
+[FAIL] 'table::TGT_10-K_2026-01-31.md::t10r0c3'  citations=5  evidence=MISSED
+  query:    "What was Target Corp's reported GAAP operating income in dollars for fiscal 2025?"
+  judge:    'FAIL The system answer claims the information is not possible to determine, while the reference answer provides a specific value.'
+  answer:   Based on the provided passages, it is **not possible** to determine Target Corp's total reported GAAP operating income for the full fiscal year 2025.  The available documents contain data for specific...
+
+[PASS] 'table::TGT_10-K_2026-01-31.md::t6r0c2'  citations=5  evidence=retrieved
+  query:    "What percentage of Target Corp's merchandise sales came from stores in fiscal 2024?"
+  judge:    'PASS The system answer correctly identifies the percentage as 97.6%.'
+  answer:   Based on Passage [3] and Passage [4], which both cover fiscal year 2024 (period ended 2026-01-31 for the 2025 column and period ended 2025-02-01 for the 2024 column), the percentage of merchandise sal...
+
+[PASS] 'table::TGT_10-Q_2025-08-02.md::t3r0c3'  citations=5  evidence=retrieved
+  query:    "What was Target Corp's comparable sales change for the six months ended August 2, 2025?"
+  judge:    'PASS'
+  answer:   Target Corp's comparable sales change for the six months ended August 2, 2025, was **(2.8)%** [2][3].
+
+[PASS] 'table::TGT_10-Q_2025-08-02.md::t6r1c3'  citations=5  evidence=retrieved
+  query:    "What percentage of Target Corp's merchandise sales came from the Other fulfillment channel during the six months ended August 2, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], under the section "Merchandise Sales by Fulfillment Channel" for the Six Months Ended August 2, 2025, the percentage of merchandise sales from the **Other** fulfillment channel w...
+
+[PASS] 'table::TGT_10-Q_2025-11-01.md::t9r0c6'  citations=5  evidence=retrieved
+  query:    'What was the retail square feet for Target Corp stores of 170,000 or more sq. ft. as of November 2, 2024?'
+  judge:    'PASS'
+  answer:   Based on Passage [1], the retail square feet for Target Corp stores of 170,000 or more sq. ft. as of November 2, 2024, was **48,824** (in thousands).  This is found in the table under the column "Nove...
+
+[PASS] 'table::UAL_10-K_2024-12-31.md::t2r1c3'  citations=5  evidence=retrieved
+  query:    'What was the increase in cargo operating revenue for United Airlines Holdings, Inc. between fiscal 2023 and fiscal 2024?'
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Based on Passage [5], the increase in cargo operating revenue for United Airlines Holdings, Inc. between fiscal 2023 and fiscal 2024 was **$248 million**. This is confirmed by the table showing Cargo ...
+
+[PASS] 'table::UAL_10-K_2024-12-31.md::t7r1c1'  citations=5  evidence=retrieved
+  query:    'What was the cash used in investing activities by United Airlines Holdings, Inc. for the fiscal year ended December 31, 2024?'
+  judge:    'PASS The system answer correctly identifies the amount as $2,651 million.'
+  answer:   Based on Passage [1] and Passage [3], the cash used in investing activities by United Airlines Holdings, Inc. for the fiscal year ended December 31, 2024, was **$2,651 million** (reported as $(2,651)$...
+
+[FAIL] 'table::UAL_10-K_2025-12-31.md::t3r4c2'  citations=5  evidence=retrieved
+  query:    "What was the percentage change in passenger revenue per available seat mile (PRASM) for United Airlines Holdings, Inc.'s Atlantic region from fiscal 2024 to fiscal 2025?"
+  judge:    'FAIL The system answer provides (2.3)% and (5.0)%, whereas the reference answer is (1.6)%.'
+  answer:   Based on **Passage [2]**, which details year-over-year changes for the nine months ended September 30, 2025 compared to the same period in 2024, the percentage change in Passenger revenue per availabl...
+
+[FAIL] 'table::UAL_10-Q_2025-09-30.md::t0r6c2'  citations=5  evidence=MISSED
+  query:    "What was United Airlines Holdings, Inc.'s net income for the three months ended September 30, 2024?"
+  judge:    'FAIL The system answer refuses to answer despite the reference answer providing the specific figure.'
+  answer:   Based on the provided passages, the document does not explicitly state the net income for the three months ended September 30, 2024.  Passage [1] provides a table comparing the third quarter of 2025 t...
+
+[PASS] 'table::UAL_10-Q_2026-03-31.md::t1r7c3'  citations=5  evidence=retrieved
+  query:    'What was the change in cargo revenue ton miles, in millions, for United Airlines Holdings, Inc. between the three months ended March 31, 2025 and the three months ended March 31, 2026?'
+  judge:    'PASS The system answer correctly identifies the change as a decrease of 11 million.'
+  answer:   Based on Passage [2], the change in cargo revenue ton miles ("CTM") between the three months ended March 31, 2025 and 2026 was a decrease of **11 million**.  *   In 2026, CTM was **878 million**. *   ...
+
+[PASS] 'table::UAL_10-Q_2026-06-30.md::t11r3c2'  citations=5  evidence=retrieved
+  query:    "What was United Airlines Holdings, Inc.'s unrealized gains on investments, net (in millions) for the six months ended June 30, 2025?"
+  judge:    'PASS The system answer correctly identifies the value as $5 million.'
+  answer:   Based on Passage [3], United Airlines Holdings, Inc.'s unrealized gains on investments, net for the three months ended June 30, 2025, was $26 million. The passage does not explicitly state the value f...
+
+[PASS] 'table::UAL_10-Q_2026-06-30.md::t7r5c5'  citations=5  evidence=retrieved
+  query:    'What was the percentage change in TRASM (cents) for United Airlines Holdings, Inc. between the six months ended June 30, 2025 and the six months ended June 30, 2026?'
+  judge:    'PASS The system answer correctly identifies the percentage change as 9.7%.'
+  answer:   Based on Passage [1], the Total Revenue per Available Seat Mile (TRASM) for United Airlines Holdings, Inc. was **17.84 cents** for the six months ended June 30, 2025, and **19.57 cents** for the six m...
+
+[PASS] 'table::WMT_10-K_2025-01-31.md::t4r1c1'  citations=5  evidence=retrieved
+  query:    "What were Walmart Inc.'s capital expenditures for store and club remodels, in millions of dollars, for the fiscal year ended January 31, 2025?"
+  judge:    'PASS'
+  answer:   Walmart Inc.'s capital expenditures for store and club remodels for the fiscal year ended January 31, 2025, were **$5,552 million**.  This figure is found in Passage [1], which details the allocation ...
+
+[PASS] 'table::WMT_10-K_2026-01-31.md::t3r2c3'  citations=5  evidence=retrieved
+  query:    "What was Walmart Inc.'s accounts payable as of January 31, 2024?"
+  judge:    'PASS'
+  answer:   Walmart Inc.'s accounts payable as of January 31, 2024, was $56,812 million [1][4].
+
+[PASS] 'table::WMT_10-K_2026-01-31.md::t7r9c3'  citations=5  evidence=retrieved
+  query:    'What was the operating expenses as a percentage of net sales for Walmart U.S. in fiscal 2024?'
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Based on Passage [1], the operating expenses as a percentage of net sales for the Walmart U.S. segment in fiscal 2024 were **22.2%** [1]. This figure is also confirmed in the table within Passage [5],...
+
+[FAIL] 'table::WMT_10-K_2026-01-31.md::t9r6c1'  citations=5  evidence=MISSED
+  query:    "What was Walmart Inc.'s Sam's Club U.S. Segment operating income including fuel for the fiscal year ended January 31, 2026?"
+  judge:    'FAIL The system answer provides an incorrect value ($9,917 million) and fails to reach the reference answer ($2,442 million).'
+  answer:   Based on Passage [1], Walmart Inc.'s Sam's Club U.S. Segment operating income including fuel for the fiscal year ended January 31, 2026, was **$9,917 million** (or $9.917 billion).  This figure is cal...
+
+[PASS] 'table::WMT_10-Q_2025-10-31.md::t8r3c2'  citations=5  evidence=retrieved
+  query:    "What was Walmart International's gross profit in millions of dollars for the three months ended October 31, 2024?"
+  judge:    'PASS'
+  answer:   Based on Passage [1], Walmart International's gross profit for the three months ended October 31, 2024, was **$6,529 million**.  This is confirmed in Passage [2], which lists the same figure of **$6,5...
+
+[PASS] 'table::WMT_10-Q_2026-04-30.md::t5r3c3'  citations=5  evidence=retrieved
+  query:    'What was the net cash used in investing activities for Walmart Inc. for the three months ended April 30, 2025?'
+  judge:    'PASS The system answer matches the reference answer exactly.'
+  answer:   Based on Passage [1], Passage [2], and Passage [3], the net cash used in investing activities for Walmart Inc. for the three months ended April 30, 2025, was **$(5,093) million**.  This figure is expl...
+
+[PASS] 'table::WMT_10-Q_2026-04-30.md::t8r11c1'  citations=5  evidence=retrieved
+  query:    'What was the retail square feet (in millions) at period end for Walmart International as of April 30, 2026?'
+  judge:    'PASS'
+  answer:   Based on Passage [1], the retail square feet at period end for the Walmart International segment as of April 30, 2026, was **278 million**. This is confirmed in the table within Passage [1] which list...
+
+[PASS] 'table::XOM_10-Q_2026-06-30.md::t10r0c2'  citations=5  evidence=retrieved
+  query:    "What were ExxonMobil Holdings Corp's Specialty Products sales in the United States, in thousands of metric tons, for the three months ended June 30, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [2], under the "Specialty Products Operational Results" table, the Specialty Products sales in the United States for the three months ended June 30, 2025, were **504** thousand metric...
+
+[FAIL] 'table::XOM_10-Q_2026-06-30.md::t1r1c4'  citations=5  evidence=MISSED
+  query:    "What were ExxonMobil Holdings Corp's selling, general and administrative expenses, in billions of dollars, for the six months ended June 30, 2026?"
+  judge:    'FAIL The system answer refuses to provide the value found in the reference answer.'
+  answer:   Based on the provided passages, it is **not possible** to determine ExxonMobil Holdings Corp's specific selling, general and administrative (SG&A) expenses for the six months ended June 30, 2026.  Whi...
+
+[PASS] 'table::XOM_10-Q_2026-06-30.md::t2r1c4'  citations=5  evidence=retrieved
+  query:    "What was ExxonMobil Holdings Corp's Non-U.S. upstream earnings (loss) under U.S. GAAP for the six months ended June 30, 2025?"
+  judge:    'PASS'
+  answer:   ExxonMobil Holdings Corp's Non-U.S. upstream earnings under U.S. GAAP for the six months ended June 30, 2025, were **$9,076 million**.  This figure is found in the "Upstream Financial Results" table w...
+
+[PASS] 'table::XOM_10-Q_2026-06-30.md::t3r1c2'  citations=5  evidence=retrieved
+  query:    "What was ExxonMobil Holdings Corp's net production of crude oil, natural gas liquids, bitumen and synthetic oil in thousands of barrels daily for Canada/Other Americas during the three months ended June 30, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [2], ExxonMobil Holdings Corp's net production of crude oil, natural gas liquids, bitumen and synthetic oil for Canada/Other Americas during the three months ended June 30, 2025, was ...
+
+[PASS] 'table::XOM_10-Q_2026-06-30.md::t4r3c2'  citations=5  evidence=retrieved
+  query:    "What was the impact of Government Mandates on ExxonMobil Holdings Corp's oil-equivalent production volumes, in thousands of barrels daily, for the six months ended June 30, 2026?"
+  judge:    'PASS The system answer correctly identifies the value as a decrease of 2 thousand barrels daily, which is equivalent to -2.'
+  answer:   Based on Passage [1], the impact of Government Mandates on ExxonMobil Holdings Corp's oil-equivalent production volumes for the six months ended June 30, 2026, was a decrease of **2** thousand barrels...
+
+[PASS] 'table::XOM_10-Q_2026-06-30.md::t5r2c3'  citations=5  evidence=retrieved
+  query:    "What was ExxonMobil Holdings Corp's total Energy Products earnings (loss) under U.S. GAAP for the six months ended June 30, 2026?"
+  judge:    'PASS'
+  answer:   ExxonMobil Holdings Corp's total Energy Products earnings under U.S. GAAP for the six months ended June 30, 2026, was **$4,203 million**.  This figure is found in the "Energy Products Financial Result...
+
+[PASS] 'table::XOM_10-Q_2026-06-30.md::t6r1c4'  citations=5  evidence=retrieved
+  query:    "What was ExxonMobil Holdings Corp's refinery throughput in Canada, in thousands of barrels daily, for the six months ended June 30, 2025?"
+  judge:    'PASS'
+  answer:   ExxonMobil Holdings Corp's refinery throughput in Canada for the six months ended June 30, 2025, was **387** thousand barrels daily [1].
+
+[PASS] 'table::XOM_10-Q_2026-06-30.md::t8r2c4'  citations=5  evidence=retrieved
+  query:    "What were ExxonMobil Holdings Corp's worldwide Chemical Products sales in thousands of metric tons for the six months ended June 30, 2025?"
+  judge:    'PASS'
+  answer:   Based on Passage [2], under the section "Chemical Products Operational Results," the worldwide Chemical Products sales for the six months ended June 30, 2025, were **10,040** thousand metric tons.
+

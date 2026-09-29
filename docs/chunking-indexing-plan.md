@@ -487,6 +487,11 @@ question and answer. The span is the whole rendered row.
   request, with every judgment and its evidence in the draft file. That is
   a third model, not a person. A human spot-check of the review record is
   the cheap way to close the gap.
+- **Baseline, fixed chunker on `edgar_md`:** retrieval hit 0.863, answer
+  pass 0.811, 0 unmatchable spans. For the 17 rows whose fixed chunk lost the
+  table's header row, answer pass is 0.529 against 0.872. Phase 5 is judged
+  by its paired Δ on this tier
+  ([measured results](measured-results.md#table-tier-baseline-fixed-chunker-on-edgar_md-chunking-plan-before-phase-5)).
 
 ### Phase 1 — Query instruction for the embedder (half a day)
 

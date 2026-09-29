@@ -1161,6 +1161,55 @@ Raw records: `baseline`, `routing=top1` and `routing=top2` in
 `data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`
 (each routed sample carries `routed_to`).
 
+### `table` tier baseline, fixed chunker on `edgar_md` (chunking plan, before Phase 5)
+
+**Setup.** Run on 2026-09-29, tier frozen at commit `b13d8c6` before this
+run. Corpus `edgar_md` (Phase 4's Markdown render; `index-report`: in sync,
+4,159 chunks, 690 starting mid-table). Shipped config otherwise: `fixed`
+chunker 1,000/150 with the deterministic header, hybrid retrieval,
+`bge-reranker-v2-m3`, `top_k 20`, `rerank_top_k 5`, CRAG off, generator
+`qwen3.5:9b-mlx`, judge `gemma4:31b-mlx`. `retrieval_eval -v` and
+`answer_eval -v --judge-model gemma4:31b-mlx`, both with `--corpus edgar_md
+--eval-set data/eval/edgar_table_set.json`. Their output, every answer and
+judge reply included, is in `data/eval/results_chunking/table_baseline_fixed_edgar_md_*.txt`.
+
+| set | n | retrieval hit [95% CI] | MRR | NDCG | answer pass [95% CI] | answer fails: retrieval / generation |
+|---|---|---|---|---|---|---|
+| `table` | 95 | 0.863 [0.780, 0.918] | 0.713 | 0.751 | 0.811 [0.720, 0.877] | 13 / 5 |
+
+`unmatchable_spans` is 0: table rows are short (median 56 characters), so a
+1,000-character window rarely cuts one. The tier was drafted without the
+other tiers' "fits in a fixed chunk" check, so that 0 is the chunker's
+result, not the drafting's.
+
+- **The failure is losing the header, not splitting the row.** For 17 of 95
+  questions, the fixed chunk holding the row doesn't hold the table's header
+  row. Split by that:
+
+  | row's fixed chunk | n | retrieval hit [95% CI] | answer pass [95% CI] |
+  |---|---|---|---|
+  | keeps the header row | 78 | 0.897 [0.810, 0.947] | 0.872 [0.780, 0.929] |
+  | loses it | 17 | 0.706 [0.469, 0.867] | **0.529** [0.310, 0.738] |
+
+  The split is observational. Rows that lose their header may also sit in
+  longer, harder tables, so it doesn't measure what keeping the header would
+  gain. Phase 5's paired comparison on this tier does. It does locate the
+  headroom: the 17 hold 8 of the 18 answer failures.
+- **Right filing, wrong chunk.** In 11 of the 13 retrieval misses, the
+  expected filing is in the top 5 but not the chunk with the row. Only 2
+  (NVDA's tax rate as a percentage of revenue, TGT's GAAP operating income)
+  never reach the filing.
+- **Generation failures read the wrong cell of the right table.** Each of
+  the 5 answers whose row reached the prompt picked another column or row:
+  COST's 2023 column for 2024 ($202M for $125M), CVX's natural-gas column for
+  oil-equivalent, CVX's total-with-affiliates row, and LUV's and UAL's figures
+  for another period. A chunk that keeps its header row is what lets the
+  model tell columns apart.
+- **Not comparable with `edgar`.** The tier's spans are `edgar_md`'s rendered
+  rows, which don't exist in `edgar`'s text, so the parse change alone
+  (`edgar` vs. `edgar_md` under the fixed chunker) can't be measured here.
+  The other tiers can measure it: every span has a quote in both corpora.
+
 ### SQLite FTS5 sparse backend
 
 **Full pipeline.** Run on 2026-09-28 with `scripts/run_matrix.py` at the
