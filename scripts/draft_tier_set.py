@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Draft, review and finalize the `period` and `underspecified` eval tiers.
+"""Draft, review and finalize the `period`, `underspecified` and `table` eval tiers.
 
 Phase 0 step 2 of the chunking and indexing plan. The generated set
 (`edgar_eval_set.json`) has one shape of question: a single span in a single
@@ -32,6 +32,19 @@ separately and never averaged into the generated set's numbers.
     have many correct answers, and a label naming one of them would score the
     others as misses.
 
+`table`
+    Drafted from the Markdown tables of the ``edgar_md`` corpus (chunking plan
+    Phase 4), for Phase 5's structure-aware chunker. The script picks the
+    target cell -- a seeded random figure in a random data row of a random
+    table, round-robin by company -- and the LLM only writes a question whose
+    answer is that cell. The span is the whole rendered row, so it's verbatim
+    by construction and quotes enough to be unique, never a bare number.
+
+    Unlike the other tiers, a draft is *not* required to fit in one chunk of
+    the configured chunker. This tier exists to compare chunkers, and dropping
+    the rows the fixed chunker splits would bias it toward the fixed chunker.
+    Splits show up as ``unmatchable_spans`` in every run instead.
+
 The LLM drafts, a person labels
 -------------------------------
 Nothing drafted here is auto-accepted. ``draft`` writes a file under
@@ -57,11 +70,22 @@ What the reviewer checks, from the label check of the generated set
 * For ``implicit``: the description identifies exactly one of the corpus's
   companies. "The airline" doesn't: there are three.
 * For ``paraphrase``: the rewrite asks for the same fact as the source query.
+* For ``table``: the question pins the row *and* the column: the metric (with
+  the segment or unit the table's context gives it) and the column's period
+  (three months vs. year to date, which year). ``review`` prints the header
+  rows and the target cell. Samples use ``span_and_document``: a row can recur
+  verbatim in another period's filing, where it answers a different
+  question. Rows in the company's other filings with the same label and
+  figure are listed; where one states the *same period* (a 10-K's prior-year
+  column), add it as an ``alternative`` and add its filing to
+  ``expected_doc_ids``. Where the period differs, it's a coincidence.
 
 Usage
 -----
     python scripts/draft_tier_set.py draft period --attempts 150
     python scripts/draft_tier_set.py draft underspecified --per-kind 40
+    python scripts/draft_tier_set.py draft table --attempts 110 \
+        --model qwen3.6:27b-mlx --check-model gemma4:31b-mlx
     python scripts/draft_tier_set.py review data/eval/drafts/edgar_period_draft.json
     python scripts/draft_tier_set.py finalize data/eval/drafts/edgar_period_draft.json
 """
@@ -107,12 +131,16 @@ logger = logging.getLogger(__name__)
 
 REPO = Path(__file__).resolve().parent.parent
 CORPUS = REPO / "data/corpora/edgar/documents"
+# The `table` tier is drafted from, and labeled against, the Markdown render.
+TABLE_CORPUS = REPO / "data/corpora/edgar_md/documents"
 GENERATED_SET = REPO / "data/eval/edgar_eval_set.json"
 DRAFTS = REPO / "data/eval/drafts"
 TIER_FILES = {
     "period": REPO / "data/eval/edgar_period_set.json",
     "underspecified": REPO / "data/eval/edgar_underspecified_set.json",
+    "table": REPO / "data/eval/edgar_table_set.json",
 }
+TIER_CORPORA = {"period": CORPUS, "underspecified": CORPUS, "table": TABLE_CORPUS}
 
 # Spans up to this long. Not `chunking.chunk_overlap`, the generator's cap:
 # that bounded a heuristic Phase 0 step 1 replaced. Every draft is checked to
@@ -611,12 +639,321 @@ def sample_sources(samples: list[EvalSample], per_kind: int, seed: int) -> dict[
 
 
 # ---------------------------------------------------------------------------
+# Drafting: table
+# ---------------------------------------------------------------------------
+
+# A data row's longest acceptable rendering. The median row is 56 characters
+# and the 90th percentile 82; rows past this are wide multi-period tables
+# whose one line is closer to a table than to a quotable fact.
+MAX_ROW_CHARS = 300
+
+_SEPARATOR = re.compile(r"^\|(?:---\|)+$")
+_CELL_FIGURE = re.compile(r"^[($€£¥]*-?[\d,]*\.?\d+[)%]*$")
+_HEADING_LINE = re.compile(r"^(#{2,6}) (.+)$")
+
+
+def table_cells(line: str) -> list[str]:
+    """A rendered table row's cells, unescaping ``\\|``."""
+    inner = line.strip()[1:-1] if line.strip().startswith("|") else line
+    return [c.strip().replace("\\|", "|") for c in re.split(r"(?<!\\)\|", inner)]
+
+
+def figure_key(cell: str) -> str:
+    """A figure without its currency sign, so "$88,136" and "88,136" compare equal."""
+    return cell.replace("$", "").strip()
+
+
+def is_figure(cell: str) -> bool:
+    """A number worth asking for: not a bare year, not a dash."""
+    return bool(_CELL_FIGURE.match(cell)) and not _YEAR.fullmatch(cell) and any(ch.isdigit() for ch in cell)
+
+
+@dataclass(frozen=True)
+class MarkdownTable:
+    """One table of a rendered document, with what a reader sees around it."""
+
+    doc_id: str
+    index: int
+    header_lines: list[str]
+    rows: list[str]
+    #: The heading path above the table, outermost first.
+    headings: list[str]
+    #: The paragraph just before the table: often its caption and units.
+    lead_in: str
+
+    def column_path(self, column: int) -> list[str]:
+        """What the header rows say about ``column``, outermost first.
+
+        A header cell spanning several columns is rendered in its first one,
+        so every header row but the last is filled rightward: "Three Months
+        Ended" then labels the columns to its right until the next label.
+        """
+        path = []
+        header_rows = [table_cells(line) for line in self.header_lines]
+        for depth, cells in enumerate(header_rows):
+            label = cells[column] if column < len(cells) else ""
+            if not label and depth < len(header_rows) - 1:
+                label = next((cells[c] for c in range(min(column, len(cells) - 1), 0, -1) if cells[c]), "")
+            if label and label not in path:
+                path.append(label)
+        return path
+
+
+def markdown_tables(document: Document) -> list[MarkdownTable]:
+    """The data tables in a rendered document: a separator line and two or more rows holding figures."""
+    tables: list[MarkdownTable] = []
+    headings: dict[int, str] = {}
+    previous = ""
+    for block in re.split(r"\n\s*\n", document.text):
+        lines = block.strip().split("\n")
+        heading = _HEADING_LINE.match(lines[0]) if len(lines) == 1 else None
+        if heading:
+            level = len(heading.group(1))
+            headings = {k: v for k, v in headings.items() if k < level}
+            headings[level] = heading.group(2)
+            previous = ""
+            continue
+        separator = next((i for i, line in enumerate(lines) if _SEPARATOR.match(line)), None)
+        if separator is None or not all(line.startswith("|") for line in lines):
+            previous = block.strip()
+            continue
+        rows = lines[separator + 1 :]
+        if sum(1 for row in rows if any(is_figure(c) for c in table_cells(row)[1:])) >= 2:
+            tables.append(MarkdownTable(
+                doc_id=document.id,
+                index=len(tables),
+                header_lines=lines[:separator],
+                rows=rows,
+                headings=[headings[k] for k in sorted(headings)],
+                lead_in=previous,
+            ))
+        previous = ""
+    return tables
+
+
+def table_rows_by_company(documents: list[Document]) -> dict[str, list[tuple[str, str]]]:
+    """``company -> [(doc_id, row line)]`` over every table row, where restated figures are looked up.
+
+    Every row, not only the data tables drafts are drawn from: a figure can be
+    restated in a one-row table or a table with a single figure.
+    """
+    rows: dict[str, list[tuple[str, str]]] = defaultdict(list)
+    for document in documents:
+        company = document.id.split("_")[0]
+        rows[company].extend(
+            (document.id, line) for line in document.text.split("\n")
+            if line.startswith("|") and not _SEPARATOR.match(line)
+        )
+    return rows
+
+
+@dataclass(frozen=True)
+class TableTarget:
+    table: MarkdownTable
+    row: int
+    column: int
+
+    @property
+    def row_line(self) -> str:
+        return self.table.rows[self.row]
+
+    @property
+    def cells(self) -> list[str]:
+        return table_cells(self.row_line)
+
+    @property
+    def value(self) -> str:
+        return self.cells[self.column]
+
+    @property
+    def sample_id(self) -> str:
+        return f"table::{self.table.doc_id}::t{self.table.index}r{self.row}c{self.column}"
+
+
+def sample_table_targets(tables: list[MarkdownTable], count: int, seed: int) -> list[TableTarget]:
+    """Round-robin across companies: a random table each turn, then a random figure in it.
+
+    By company for the same reason as `period`: COST and DAL hold a quarter
+    of the tables. One cell per table, so no table dominates. Only figures
+    under a labeled column count: with no column header, no question can say
+    which period or measure the cell is.
+    """
+    rng = random.Random(seed)
+    by_company: dict[str, list[MarkdownTable]] = defaultdict(list)
+    for table in tables:
+        by_company[table.doc_id.split("_")[0]].append(table)
+    for company_tables in by_company.values():
+        rng.shuffle(company_tables)
+    companies = sorted(by_company)
+    rng.shuffle(companies)
+
+    targets: list[TableTarget] = []
+    while len(targets) < count and any(by_company.values()):
+        for company in companies:
+            if not by_company[company] or len(targets) >= count:
+                continue
+            table = by_company[company].pop()
+            candidates = [
+                (r, c)
+                for r, row in enumerate(table.rows)
+                if len(row) <= MAX_ROW_CHARS
+                for c, cell in enumerate(table_cells(row))
+                if c > 0 and is_figure(cell) and table.column_path(c)
+            ]
+            if candidates:
+                row, column = rng.choice(candidates)
+                targets.append(TableTarget(table, row, column))
+    return targets
+
+
+TABLE_SYSTEM_PROMPT = (
+    "You write evaluation questions for a search system over SEC filings. You "
+    "are given one table from a filing, the section it sits in, and ONE target "
+    "cell. Write the question an analyst would ask whose correct answer is "
+    "exactly the target cell's figure. The question must: name the company; "
+    "name the metric precisely, with the segment, line item or unit the table "
+    "and its caption give it (so no other cell in this table answers it); and "
+    "state the period the target COLUMN covers, in words (for example 'the "
+    "three months ended June 30, 2026' or 'fiscal 2024'), which may differ "
+    "from the filing's own period. If the column is a change or percentage "
+    "change, ask for the change between the periods it compares. Never include "
+    "the figure itself. Also write a one-sentence answer stating the figure "
+    "with its unit. "
+    'Reply with only a JSON object: {"question": "...", "answer": "..."} and nothing else.'
+)
+
+
+def build_table_prompt(target: TableTarget, filing: Filing) -> str:
+    table = target.table
+    separator = "|" + "---|" * len(table_cells(table.header_lines[0])) if table.header_lines else "|---|"
+    shown = [*table.header_lines, separator, *table.rows]
+    return (
+        f"<company>{filing.display_name}</company>\n"
+        f"<filing>{filing.descriptor}</filing>\n"
+        f"<section>{' > '.join(table.headings) or '(none)'}</section>\n"
+        f"<caption>{table.lead_in[:600] or '(none)'}</caption>\n\n"
+        f"<table>\n" + "\n".join(shown) + "\n</table>\n\n"
+        f"<target_row>{target.cells[0]}</target_row>\n"
+        f"<target_column>{' > '.join(table.column_path(target.column)) or '(unlabeled)'}</target_column>\n"
+        f"<target_value>{target.value}</target_value>\nJSON:"
+    )
+
+
+TABLE_VERIFY_SYSTEM_PROMPT = (
+    "You check evaluation labels for a document retrieval benchmark. You are "
+    "given a question, a table from the filing the question names (header rows "
+    "and one row), the column the answer comes from, and a proposed answer. "
+    "Reply GOOD only if the question asks for exactly that row's value in that "
+    "column -- same metric, same segment, same period and same kind of figure "
+    "(an amount, not its change; a quarter, not year to date) -- and the "
+    "proposed answer states that value. Reply BAD if the question could be "
+    "answered by a different cell, asks for something else, or the answer "
+    "disagrees with the cell. Be strict: a label you are unsure about is BAD. "
+    "Reply with one word, GOOD or BAD, and nothing else."
+)
+
+
+def build_table_verify_prompt(sample: EvalSample) -> str:
+    info = sample.extra["review"]
+    return (
+        f"<question>{sample.query}</question>\n"
+        f"<table>\n" + "\n".join(info["header_lines"]) + f"\n{sample.expected_spans[0].text}\n</table>\n"
+        f"<column>{info['column_path']}</column>\n"
+        f"<cell>{info['value']}</cell>\n"
+        f"<answer>{sample.expected_answer}</answer>\n\nGOOD or BAD:"
+    )
+
+
+class TableValidator(Tally):
+    """Mechanical checks on a table draft."""
+
+    def __init__(self, corpus: Corpus, rows_by_company: dict[str, list[tuple[str, str]]]) -> None:
+        super().__init__()
+        self.corpus = corpus
+        #: ``company -> [(doc_id, row line)]``, for restatement candidates.
+        self.rows_by_company = rows_by_company
+
+    def restatement_rows(self, target: TableTarget) -> list[dict[str, str]]:
+        """``{"doc_id", "row"}`` for rows in the company's other filings with the target's label and figure.
+
+        Figures compare by :func:`figure_key`, since one filing's ``$88,136``
+        is the next one's ``88,136`` when it moves off a table's first row.
+        These are leads: a 10-K's prior-year column restating the figure is
+        an alternative, but a short figure (``8%``) also matches rows about
+        other periods by coincidence.
+        """
+        company = target.table.doc_id.split("_")[0]
+        label, value = normalize(target.cells[0]), figure_key(target.value)
+        return [
+            {"doc_id": doc_id, "row": line}
+            for doc_id, line in self.rows_by_company[company]
+            if doc_id != target.table.doc_id
+            and normalize(table_cells(line)[0]) == label
+            and value in {figure_key(cell) for cell in table_cells(line)[1:]}
+        ]
+
+    def validate(self, target: TableTarget, reply: dict[str, Any] | None) -> EvalSample | None:
+        doc_id = target.table.doc_id
+        self._context = {"target": target.sample_id, "row": target.row_line, "value": target.value}
+        if reply is None:
+            return self._reject("generation_failed")
+        question = str(reply.get("question", "")).strip()
+        answer = str(reply.get("answer", "")).strip()
+        self._context.update(question=question, answer=answer)
+        filing = self.corpus.filings[doc_id]
+        if not question:
+            return self._reject("generation_failed")
+        if not names_company(question, filing):
+            return self._reject("question_missing_company")
+        digits = re.sub(r"[^\d.]", "", target.value)
+        if digits and digits in re.sub(r"[^\d.\s]", "", question).split():
+            return self._reject("question_leaks_value")
+        if digits and digits not in re.sub(r"[^\d.]", "", answer):
+            return self._reject("answer_missing_value")
+        column_years = set(_YEAR.findall(" ".join(target.table.column_path(target.column))))
+        if column_years - set(_YEAR.findall(question)):
+            return self._reject("question_missing_column_year")
+        occurrences = self.corpus.text[doc_id].count(normalize(target.row_line))
+        if occurrences != 1:
+            return self._reject("row_not_unique_in_filing")
+        also_in = [d for d in self.corpus.documents_containing(target.row_line) if d != doc_id]
+        restated = self.restatement_rows(target)
+        return EvalSample(
+            id=target.sample_id,
+            query=question,
+            expected_spans=[ExpectedSpan(text=target.row_line)],
+            expected_doc_ids=[doc_id],
+            expected_answer=answer or None,
+            # A row can recur verbatim in another period's filing (unchanged
+            # acreage, store counts), where it answers a different period's
+            # question. As in `period`, only an expected filing's chunk counts;
+            # a genuine restatement joins as an alternative plus its filing.
+            explicit_mode=MODE_SPAN_AND_DOCUMENT,
+            extra={
+                "tier": "table",
+                "review": {
+                    "verdict": "pending",
+                    "note": "",
+                    "header_lines": target.table.header_lines,
+                    "section": " > ".join(target.table.headings),
+                    "lead_in": target.table.lead_in[:600],
+                    "column_path": " > ".join(target.table.column_path(target.column)),
+                    "value": target.value,
+                    "row_also_in": also_in,
+                    "restatement_candidates": sorted({r["doc_id"] for r in restated}),
+                    "restatement_rows": restated,
+                },
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
 
 
 def _load(
-    config_path: str | None, model: str | None, check_model: str | None
+    config_path: str | None, model: str | None, check_model: str | None, corpus_dir: Path = CORPUS
 ) -> tuple[Corpus, Any, Any]:
     """The corpus, the drafting client, and the client for every check call.
 
@@ -626,7 +963,7 @@ def _load(
     config = load_config(config_path)
     draft_llm = config.llm.model_copy(update={"model": model or config.llm.model})
     check_llm = draft_llm.model_copy(update={"model": check_model or draft_llm.model})
-    documents = clean_documents(load_corpus(CORPUS))
+    documents = clean_documents(load_corpus(corpus_dir))
     chunks = get_chunker(config.chunking).chunk(documents)
     logger.info("Corpus: %d document(s) -> %d chunk(s); drafting with %s, checking with %s",
                 len(documents), len(chunks), draft_llm.model, check_llm.model)
@@ -748,6 +1085,41 @@ def draft_underspecified(
     return drafted, validator.rejected
 
 
+def draft_table(args: argparse.Namespace) -> tuple[list[EvalSample], list[dict[str, Any]]]:
+    corpus, llm, checker = _load(args.config, args.model, args.check_model, TABLE_CORPUS)
+    tables = [t for d in corpus.documents for t in markdown_tables(d)]
+    logger.info("%d data table(s) to draw from", len(tables))
+    rows_by_company = table_rows_by_company(corpus.documents)
+    targets = sample_table_targets(tables, args.attempts, args.seed)
+
+    def draft(target: TableTarget) -> dict[str, Any] | None:
+        reply = _generate(llm, build_table_prompt(target, corpus.filings[target.table.doc_id]), TABLE_SYSTEM_PROMPT)
+        return parse_reply(reply) if reply else None
+
+    validator = TableValidator(corpus, rows_by_company)
+    drafted = [
+        s for t, r in zip(targets, _parallel(draft, targets, args.concurrency))
+        if (s := validator.validate(t, r)) is not None
+    ]
+
+    def verify(sample: EvalSample) -> bool:
+        # Fails closed, like `verify_label`.
+        reply = _generate(checker, build_table_verify_prompt(sample), TABLE_VERIFY_SYSTEM_PROMPT)
+        return bool(reply) and reply.upper().startswith("GOOD")
+
+    verdicts = _parallel(verify, drafted, args.concurrency)
+    for sample, ok in zip(drafted, verdicts):
+        if not ok:
+            validator.reasons["failed_verification"] += 1
+            validator.rejected.append({
+                "reason": "failed_verification", "target": sample.id, "question": sample.query,
+                "row": spans_of(sample)[0], "value": sample.extra["review"]["value"],
+                "answer": sample.expected_answer,
+            })
+    _report(len(targets), validator.reasons)
+    return [s for s, ok in zip(drafted, verdicts) if ok], validator.rejected
+
+
 def _report(attempted: int, reasons: Counter[str]) -> None:
     print(f"\n{'=' * 72}\n  {attempted} attempt(s)\n{'=' * 72}")
     for reason, n in sorted(reasons.items()):
@@ -776,10 +1148,22 @@ def review(path: Path, show: str) -> None:
         info = sample.extra["review"]
         if "competing_doc_ids" in sample.extra:
             print(f"  also in:  {', '.join(sample.extra['competing_doc_ids'])}")
-        if info.get("restatement_candidates"):
+        if info.get("restatement_rows"):
+            print("  CHECK restated figure (add as alternative + expected doc if the same period):")
+            for restated in info["restatement_rows"]:
+                print(f"     {restated['doc_id']}: {restated['row']}")
+        elif info.get("restatement_candidates"):
             print(f"  CHECK restated figures in: {', '.join(info['restatement_candidates'])}")
         if "paragraph" in info:
             print(f"  paragraph: {info['paragraph']}")
+        if "header_lines" in info:
+            print(f"  section:  {info['section']}")
+            print(f"  caption:  {info['lead_in'][:300]}")
+            for line in info["header_lines"]:
+                print(f"  header:   {line}")
+            print(f"  cell:     {info['value']!r} in column {info['column_path']!r}")
+            if info.get("row_also_in"):
+                print(f"  row also verbatim in: {', '.join(info['row_also_in'])}")
         if info.get("suggestion"):
             reason = f" -- {info['suggestion_reason']}" if info.get("suggestion_reason") else ""
             print(f"  suggest:  {info['suggestion']}{reason}")
@@ -805,6 +1189,13 @@ def check_accepted(sample: EvalSample, corpus: Corpus) -> list[str]:
             problems.append("span no longer appears in another period's filing")
         if normalize(filing.period_phrase) not in normalize(sample.query):
             problems.append("question doesn't state the period end date")
+    elif sample.extra.get("tier") == "table":
+        if not names_company(sample.query, filing):
+            problems.append("table question doesn't name the company")
+        for doc_id in sample.expected_doc_ids:
+            for span in sample.expected_spans:
+                if corpus.text.get(doc_id, "").count(normalize(span.text)) > 1:
+                    problems.append(f"row appears more than once in {doc_id}: {span.text!r}")
     elif sample.extra.get("kind") == "implicit" and names_company(sample.query, filing):
         problems.append("implicit question names the company")
     elif sample.extra.get("kind") == "paraphrase" and not names_company(sample.query, filing):
@@ -822,9 +1213,10 @@ def finalize(path: Path, out: Path | None, config_path: str | None) -> int:
         return 1
 
     config = load_config(config_path)
-    documents = clean_documents(load_corpus(CORPUS))
-    corpus = Corpus(documents, get_chunker(config.chunking).chunk(documents))
     accepted = [s for s in samples if s.extra["review"]["verdict"] == "accept"]
+    tier = accepted[0].extra["tier"] if accepted else ""
+    documents = clean_documents(load_corpus(TIER_CORPORA.get(tier, CORPUS)))
+    corpus = Corpus(documents, get_chunker(config.chunking).chunk(documents))
     failed = {s.id: p for s in accepted if (p := check_accepted(s, corpus))}
     for sample_id, problems in failed.items():
         for problem in problems:
@@ -833,7 +1225,6 @@ def finalize(path: Path, out: Path | None, config_path: str | None) -> int:
         print(f"Refusing: {len(failed)} accepted sample(s) fail a mechanical check.")
         return 1
 
-    tier = accepted[0].extra["tier"] if accepted else ""
     out = out or TIER_FILES[tier]
     for sample in accepted:
         # The review block is the drafting record; it stays in the draft file.
@@ -850,7 +1241,7 @@ def main() -> int:
 
     draft = sub.add_parser("draft", help="Draft a tier for review")
     draft.add_argument("tier", choices=sorted(TIER_FILES))
-    draft.add_argument("--attempts", type=int, default=150, help="period: paragraphs to try")
+    draft.add_argument("--attempts", type=int, default=150, help="period: paragraphs to try; table: cells")
     draft.add_argument("--per-kind", type=int, default=40,
                        help="underspecified: source questions per kind")
     draft.add_argument("--seed", type=int, default=0)
@@ -883,7 +1274,8 @@ def main() -> int:
     if out.exists():
         print(f"Refusing to overwrite {out}: it may hold review verdicts. Move it or pass --out.")
         return 1
-    samples, rejected = draft_period(args) if args.tier == "period" else draft_underspecified(args)
+    drafters = {"period": draft_period, "underspecified": draft_underspecified, "table": draft_table}
+    samples, rejected = drafters[args.tier](args)
     model = args.model or load_config(args.config).llm.model
     for sample in samples:
         sample.extra["drafted_with"] = model

@@ -1,0 +1,598 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+==============================================================
+  Retrieval Eval  (95 sample(s), span_and_document)
+==============================================================
+  Hit rate    0.863  (95% CI 0.780-0.918)
+  Recall@k    0.863
+  Precision@k 0.244
+  MRR         0.713
+  NDCG@k      0.751
+  Recall curve @1=0.600  @3=0.832  @5=0.863
+--------------------------------------------------------------
+  Unmatchable spans  0 (0 sample(s) that can't score, whatever retrieval does)
+==============================================================
+
+[HIT ] 'table::AAPL_10-K_2024-09-28.md::t1r2c1'  rr=0.333 ndcg=0.500 (span_and_document)
+  query:    "What were Apple Inc.'s net sales for the iPad product category in fiscal 2024?"
+  expected: ['AAPL_10-K_2024-09-28.md', 'AAPL_10-K_2025-09-27.md']
+  retrieved: ['AAPL_10-Q_2025-12-27.md', 'AAPL_10-K_2024-09-28.md', 'AAPL_10-K_2024-09-28.md', 'AAPL_10-K_2025-09-27.md', 'AAPL_10-K_2024-09-28.md']
+
+[HIT ] 'table::AAPL_10-K_2025-09-27.md::t2r2c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Apple Inc.'s total gross margin in dollars in millions for fiscal 2023?"
+  expected: ['AAPL_10-K_2025-09-27.md', 'AAPL_10-K_2024-09-28.md']
+  retrieved: ['AAPL_10-K_2024-09-28.md', 'AAPL_10-K_2025-09-27.md', 'AAPL_10-K_2024-09-28.md', 'AAPL_10-Q_2025-12-27.md', 'AAPL_10-K_2024-09-28.md']
+
+[HIT ] 'table::AAPL_10-Q_2025-12-27.md::t0r3c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What were Apple Inc.'s net sales in the Japan segment for the three months ended December 28, 2024?"
+  expected: ['AAPL_10-Q_2025-12-27.md']
+  retrieved: ['AAPL_10-Q_2025-12-27.md', 'AAPL_10-K_2024-09-28.md', 'AAPL_10-K_2024-09-28.md', 'AAPL_10-Q_2025-12-27.md', 'AAPL_10-K_2025-09-27.md']
+
+[HIT ] 'table::AAPL_10-Q_2025-12-27.md::t1r4c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was the percentage change in net sales for Apple Inc.'s Services segment during the three months ended December 27, 2025, compared to the same period in the prior year?"
+  expected: ['AAPL_10-Q_2025-12-27.md']
+  retrieved: ['AAPL_10-Q_2025-12-27.md', 'AAPL_10-Q_2025-12-27.md', 'AAPL_10-Q_2025-12-27.md', 'AAPL_10-Q_2025-12-27.md', 'AAPL_10-Q_2025-12-27.md']
+
+[HIT ] 'table::AAPL_10-Q_2025-12-27.md::t4r0c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Apple Inc.'s research and development expense for the three months ended December 28, 2024?"
+  expected: ['AAPL_10-Q_2025-12-27.md']
+  retrieved: ['AAPL_10-Q_2025-12-27.md', 'AAPL_10-Q_2025-12-27.md', 'AAPL_10-K_2025-09-27.md', 'AAPL_10-K_2024-09-28.md', 'AAPL_10-K_2024-09-28.md']
+
+[HIT ] 'table::AAPL_10-Q_2026-06-27.md::t0r4c5'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What were Apple Inc.'s net sales in the Rest of Asia Pacific segment for the nine months ended June 28, 2025?"
+  expected: ['AAPL_10-Q_2026-06-27.md']
+  retrieved: ['AAPL_10-Q_2026-06-27.md', 'AAPL_10-Q_2026-06-27.md', 'AAPL_10-K_2025-09-27.md', 'AAPL_10-Q_2026-06-27.md', 'AAPL_10-K_2024-09-28.md']
+
+[HIT ] 'table::AAPL_10-Q_2026-06-27.md::t4r3c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Apple Inc.'s selling, general and administrative expenses as a percentage of total net sales for the three months ended June 28, 2025?"
+  expected: ['AAPL_10-Q_2026-06-27.md']
+  retrieved: ['AAPL_10-Q_2026-06-27.md', 'AAPL_10-K_2025-09-27.md', 'AAPL_10-K_2024-09-28.md', 'AAPL_10-Q_2026-03-28.md', 'AAPL_10-Q_2025-12-27.md']
+
+[HIT ] 'table::COST_10-K_2024-09-01.md::t26r6c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What were the total future minimum payments for operating leases at Costco Wholesale Corp as of September 1, 2024?'
+  expected: ['COST_10-K_2024-09-01.md']
+  retrieved: ['COST_10-K_2024-09-01.md', 'COST_10-K_2025-08-31.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2025-08-31.md']
+
+[HIT ] 'table::COST_10-K_2025-08-31.md::t17r1c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was the fair value of Costco Wholesale Corp's forward foreign-exchange contracts in asset position classified as Level 2 for the fiscal year ended August 31, 2025?"
+  expected: ['COST_10-K_2025-08-31.md']
+  retrieved: ['COST_10-K_2025-08-31.md', 'COST_10-K_2025-08-31.md', 'COST_10-K_2025-08-31.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2025-08-31.md']
+
+[HIT ] 'table::COST_10-K_2025-08-31.md::t23r3c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What were the operating lease assets obtained in exchange for new or modified leases, in millions of dollars, for Costco Wholesale Corp for fiscal 2024?'
+  expected: ['COST_10-K_2025-08-31.md', 'COST_10-K_2024-09-01.md']
+  retrieved: ['COST_10-K_2024-09-01.md', 'COST_10-K_2025-08-31.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2025-08-31.md']
+
+[HIT ] 'table::COST_10-K_2025-08-31.md::t2r0c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What were Costco Wholesale Corp's SG&A expenses for fiscal 2024?"
+  expected: ['COST_10-K_2025-08-31.md', 'COST_10-K_2024-09-01.md']
+  retrieved: ['COST_10-K_2024-09-01.md', 'COST_10-Q_2025-11-23.md', 'COST_10-K_2025-08-31.md', 'COST_10-K_2025-08-31.md', 'COST_10-K_2024-09-01.md']
+
+[HIT ] 'table::COST_10-K_2025-08-31.md::t32r5c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the amount, in millions, for the lapse of statute of limitations affecting gross unrecognized tax benefits for Costco Wholesale Corp in fiscal 2024?'
+  expected: ['COST_10-K_2025-08-31.md', 'COST_10-K_2024-09-01.md']
+  retrieved: ['COST_10-K_2025-08-31.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2025-08-31.md']
+
+[HIT ] 'table::COST_10-Q_2025-11-23.md::t3r0c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What were Costco Wholesale Corp's selling, general and administrative expenses for the 12 weeks ended November 23, 2025?"
+  expected: ['COST_10-Q_2025-11-23.md']
+  retrieved: ['COST_10-Q_2025-11-23.md', 'COST_10-K_2025-08-31.md', 'COST_10-K_2025-08-31.md', 'COST_10-Q_2025-11-23.md', 'COST_10-Q_2026-05-10.md']
+
+[HIT ] 'table::COST_10-Q_2025-11-23.md::t6r1c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the net cash used in investing activities by Costco Wholesale Corp for the 12 weeks ended November 24, 2024?'
+  expected: ['COST_10-Q_2025-11-23.md']
+  retrieved: ['COST_10-Q_2025-11-23.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2024-09-01.md', 'COST_10-K_2024-09-01.md', 'COST_10-Q_2026-05-10.md']
+
+[HIT ] 'table::CVX_10-K_2024-12-31.md::t3r25c1'  rr=0.250 ndcg=0.431 (span_and_document)
+  query:    "What was Chevron Corp's net oil-equivalent production in the United Kingdom, measured in thousands of barrels per day, for the fiscal year ended December 31, 2024?"
+  expected: ['CVX_10-K_2024-12-31.md', 'CVX_10-K_2025-12-31.md']
+  retrieved: ['CVX_10-K_2024-12-31.md', 'CVX_10-Q_2025-09-30.md', 'CVX_10-Q_2025-09-30.md', 'CVX_10-K_2025-12-31.md', 'CVX_10-K_2024-12-31.md']
+
+[HIT ] 'table::CVX_10-K_2024-12-31.md::t7r16c2'  rr=0.250 ndcg=0.431 (span_and_document)
+  query:    "What was Chevron Corp's share of affiliates' sales included in total worldwide refined products sales volumes, in thousands of barrels per day, for the year ended December 31, 2023?"
+  expected: ['CVX_10-K_2024-12-31.md', 'CVX_10-K_2025-12-31.md']
+  retrieved: ['CVX_10-K_2025-12-31.md', 'CVX_10-K_2025-12-31.md', 'CVX_10-K_2024-12-31.md', 'CVX_10-K_2025-12-31.md', 'CVX_10-K_2024-12-31.md']
+
+[HIT ] 'table::CVX_10-K_2024-12-31.md::t8r0c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the average price paid per share by Chevron Corp for shares purchased during the period from October 1 to October 31, 2024?'
+  expected: ['CVX_10-K_2024-12-31.md']
+  retrieved: ['CVX_10-K_2024-12-31.md', 'CVX_10-K_2025-12-31.md', 'CVX_10-K_2025-12-31.md', 'CVX_10-Q_2025-09-30.md', 'CVX_10-Q_2025-09-30.md']
+
+[HIT ] 'table::CVX_10-K_2025-12-31.md::t1r9c4'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "How many net multiple completion productive gas wells were included in Chevron Corp's totals at December 31, 2025?"
+  expected: ['CVX_10-K_2025-12-31.md']
+  retrieved: ['CVX_10-K_2024-12-31.md', 'CVX_10-K_2025-12-31.md', 'CVX_10-K_2025-12-31.md', 'CVX_10-K_2024-12-31.md', 'CVX_10-K_2025-12-31.md']
+
+[HIT ] 'table::CVX_10-K_2025-12-31.md::t2r5c4'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Chevron Corp's net developed acreage in Europe, in thousands of acres, at December 31, 2025?"
+  expected: ['CVX_10-K_2025-12-31.md']
+  retrieved: ['CVX_10-K_2025-12-31.md', 'CVX_10-K_2024-12-31.md', 'CVX_10-K_2025-12-31.md', 'CVX_10-K_2024-12-31.md', 'CVX_10-K_2025-12-31.md']
+
+[HIT ] 'table::CVX_10-Q_2025-09-30.md::t5r0c5'  rr=0.333 ndcg=0.500 (span_and_document)
+  query:    "What were Chevron Corp's All Other Earnings/(Charges) for the nine months ended September 30, 2024?"
+  expected: ['CVX_10-Q_2025-09-30.md']
+  retrieved: ['CVX_10-Q_2025-09-30.md', 'CVX_10-Q_2025-09-30.md', 'CVX_10-Q_2025-09-30.md', 'CVX_10-Q_2025-09-30.md', 'CVX_10-Q_2025-09-30.md']
+
+[HIT ] 'table::DAL_10-K_2024-12-31.md::t15r1c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Delta Air Lines, Inc.'s net cash used in investing activities, in millions of dollars, for the year ended December 31, 2024?"
+  expected: ['DAL_10-K_2024-12-31.md']
+  retrieved: ['DAL_10-K_2024-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2025-12-31.md', 'DAL_10-K_2024-12-31.md']
+
+[HIT ] 'table::DAL_10-K_2024-12-31.md::t2r2c5'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    'What was the percentage change in Ancillary businesses other revenue for Delta Air Lines, Inc. between the year ended December 31, 2023 and the year ended December 31, 2024?'
+  expected: ['DAL_10-K_2024-12-31.md']
+  retrieved: ['DAL_10-K_2024-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2025-12-31.md', 'DAL_10-K_2024-12-31.md']
+
+[HIT ] 'table::DAL_10-K_2024-12-31.md::t7r10c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Delta Air Lines, Inc.'s average price per fuel gallon for the year ended December 31, 2024?"
+  expected: ['DAL_10-K_2024-12-31.md', 'DAL_10-K_2025-12-31.md']
+  retrieved: ['DAL_10-K_2024-12-31.md', 'DAL_10-K_2025-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2025-12-31.md']
+
+[HIT ] 'table::DAL_10-K_2025-12-31.md::t10r3c2'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was Delta Air Lines, Inc.'s total revenue, adjusted (in millions) for the year ended December 31, 2024?"
+  expected: ['DAL_10-K_2025-12-31.md', 'DAL_10-K_2024-12-31.md']
+  retrieved: ['DAL_10-K_2024-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-K_2025-12-31.md']
+
+[HIT ] 'table::DAL_10-K_2025-12-31.md::t7r5c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Delta Air Lines, Inc.'s adjusted total revenue per available seat mile (TRASM, adjusted) for the year ended December 31, 2024?"
+  expected: ['DAL_10-K_2025-12-31.md', 'DAL_10-K_2024-12-31.md']
+  retrieved: ['DAL_10-K_2024-12-31.md', 'DAL_10-K_2025-12-31.md', 'DAL_10-K_2024-12-31.md', 'DAL_10-Q_2025-09-30.md', 'DAL_10-K_2024-12-31.md']
+
+[HIT ] 'table::DAL_10-Q_2026-03-31.md::t1r3c7'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was the change in load factor, in points, for Delta Air Lines, Inc.'s Pacific region passenger revenue during the three months ended March 31, 2026, compared to the same period in 2025?"
+  expected: ['DAL_10-Q_2026-03-31.md']
+  retrieved: ['DAL_10-Q_2026-03-31.md', 'DAL_10-Q_2026-06-30.md', 'DAL_10-Q_2026-03-31.md', 'DAL_10-Q_2025-09-30.md', 'DAL_10-Q_2026-03-31.md']
+
+[HIT ] 'table::DAL_10-Q_2026-03-31.md::t8r0c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'How many CRJ-900 aircraft did Endeavor Air, Inc. operate on behalf of Delta Air Lines, Inc. at March 31, 2026?'
+  expected: ['DAL_10-Q_2026-03-31.md']
+  retrieved: ['DAL_10-Q_2026-03-31.md', 'DAL_10-Q_2026-06-30.md', 'DAL_10-Q_2025-09-30.md', 'DAL_10-Q_2026-03-31.md', 'DAL_10-Q_2026-03-31.md']
+
+[HIT ] 'table::DAL_10-Q_2026-06-30.md::t1r2c4'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was the percentage change in Available Seat Miles (ASMs) for Delta Air Lines' Latin America passenger revenue segment for the three months ended June 30, 2026, compared to the same period in 2025?"
+  expected: ['DAL_10-Q_2026-06-30.md']
+  retrieved: ['DAL_10-Q_2026-06-30.md', 'DAL_10-Q_2026-06-30.md', 'DAL_10-Q_2026-06-30.md', 'DAL_10-Q_2026-06-30.md', 'DAL_10-Q_2026-06-30.md']
+
+[HIT ] 'table::JNJ_10-K_2025-12-28.md::t0r3c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the total percentage increase in worldwide sales for Johnson & Johnson in fiscal 2024?'
+  expected: ['JNJ_10-K_2025-12-28.md', 'JNJ_10-K_2024-12-29.md']
+  retrieved: ['JNJ_10-K_2024-12-29.md', 'JNJ_10-K_2025-12-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-K_2025-12-28.md', 'JNJ_10-Q_2025-09-28.md']
+
+[HIT ] 'table::JNJ_10-K_2025-12-28.md::t4r5c1'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was Johnson & Johnson's 'Other' component of Other (income) expense, net in billions of dollars for fiscal year 2025?"
+  expected: ['JNJ_10-K_2025-12-28.md']
+  retrieved: ['JNJ_10-Q_2025-09-28.md', 'JNJ_10-K_2025-12-28.md', 'JNJ_10-Q_2026-06-28.md', 'JNJ_10-K_2024-12-29.md', 'JNJ_10-Q_2026-03-29.md']
+
+[MISS] 'table::JNJ_10-K_2025-12-28.md::t5r2c4'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was Johnson & Johnson's total segment sales in millions of dollars for fiscal year 2025?"
+  expected: ['JNJ_10-K_2025-12-28.md']
+  retrieved: ['JNJ_10-Q_2025-09-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-K_2025-12-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-K_2025-12-28.md']
+  NOT FOUND: '| Segment earnings before tax(1) | | 26,379 | 22,659 | 94,193 | 88,821 | 28.0...'
+
+[MISS] 'table::JNJ_10-Q_2025-09-28.md::t2r2c4'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was the operations change percentage for Johnson & Johnson's General MedTech franchise sales during the fiscal nine months ended September 28, 2025?"
+  expected: ['JNJ_10-Q_2025-09-28.md']
+  retrieved: ['JNJ_10-Q_2025-09-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-K_2025-12-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-Q_2025-09-28.md']
+  NOT FOUND: '| General | 4,092 | 4,001 | 2.3 | 2.3 | 0.0 |'
+
+[HIT ] 'table::JNJ_10-Q_2025-09-28.md::t9r0c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Johnson & Johnson's total U.S. income taxes paid net of tax refunds for the fiscal nine months ended September 28, 2025?"
+  expected: ['JNJ_10-Q_2025-09-28.md']
+  retrieved: ['JNJ_10-Q_2025-09-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-Q_2025-09-28.md']
+
+[HIT ] 'table::JNJ_10-Q_2026-06-28.md::t4r1c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Johnson & Johnson's MedTech research and development expense in dollars for the fiscal second quarter ended June 28, 2026?"
+  expected: ['JNJ_10-Q_2026-06-28.md']
+  retrieved: ['JNJ_10-Q_2026-06-28.md', 'JNJ_10-Q_2026-06-28.md', 'JNJ_10-Q_2026-06-28.md', 'JNJ_10-Q_2026-06-28.md', 'JNJ_10-Q_2026-06-28.md']
+
+[HIT ] 'table::JNJ_10-Q_2026-06-28.md::t8r0c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Johnson & Johnson's Innovative Medicine segment income before tax for the fiscal second quarter ended June 29, 2025?"
+  expected: ['JNJ_10-Q_2026-06-28.md']
+  retrieved: ['JNJ_10-Q_2026-06-28.md', 'JNJ_10-K_2025-12-28.md', 'JNJ_10-Q_2026-06-28.md', 'JNJ_10-Q_2025-09-28.md', 'JNJ_10-Q_2025-09-28.md']
+
+[HIT ] 'table::LUV_10-Q_2025-09-30.md::t12r2c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Southwest Airlines Co's mark-to-market impact on deferred compensation plan investment for the nine months ended September 30, 2024?"
+  expected: ['LUV_10-Q_2025-09-30.md']
+  retrieved: ['LUV_10-Q_2025-09-30.md', 'LUV_10-K_2025-12-31.md', 'LUV_10-Q_2025-09-30.md', 'LUV_10-K_2024-12-31.md', 'LUV_10-Q_2025-09-30.md']
+
+[HIT ] 'table::LUV_10-Q_2026-03-31.md::t0r2c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was the percentage change in Southwest Airlines Co's revenue passenger miles (RPMs) for the three months ended March 31, 2026 compared to the same period in 2025?"
+  expected: ['LUV_10-Q_2026-03-31.md']
+  retrieved: ['LUV_10-Q_2026-03-31.md', 'LUV_10-Q_2026-03-31.md', 'LUV_10-Q_2026-03-31.md', 'LUV_10-K_2025-12-31.md', 'LUV_10-Q_2026-06-30.md']
+
+[HIT ] 'table::LUV_10-Q_2026-03-31.md::t4r1c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Southwest Airlines Co's fuel hedging premium expense in millions of dollars for the three months ended March 31, 2026?"
+  expected: ['LUV_10-Q_2026-03-31.md']
+  retrieved: ['LUV_10-Q_2026-03-31.md', 'LUV_10-Q_2026-03-31.md', 'LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2025-09-30.md']
+
+[HIT ] 'table::LUV_10-Q_2026-03-31.md::t6r2c3'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was Southwest Airlines Co's aircraft fuel and related taxes, as reported (and economic), in millions of dollars for the three months ended March 31, 2025?"
+  expected: ['LUV_10-Q_2026-03-31.md']
+  retrieved: ['LUV_10-Q_2026-03-31.md', 'LUV_10-Q_2026-03-31.md', 'LUV_10-Q_2026-03-31.md', 'LUV_10-Q_2026-03-31.md', 'LUV_10-Q_2026-06-30.md']
+
+[HIT ] 'table::LUV_10-Q_2026-06-30.md::t0r18c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Southwest Airlines Co's operating expenses per available seat mile (ASM), excluding fuel and special items, in cents, for the three months ended June 30, 2025?"
+  expected: ['LUV_10-Q_2026-06-30.md']
+  retrieved: ['LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2025-09-30.md', 'LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2026-06-30.md']
+
+[MISS] 'table::LUV_10-Q_2026-06-30.md::t4r9c3'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    'What was the dollar change in other operating expenses for Southwest Airlines Co. between the three months ended June 30, 2025 and the three months ended June 30, 2026?'
+  expected: ['LUV_10-Q_2026-06-30.md']
+  retrieved: ['LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2026-06-30.md', 'LUV_10-Q_2026-06-30.md']
+  NOT FOUND: '| Other operating expenses | 1,101 | 1,133 | (32) | (2.8) |'
+
+[HIT ] 'table::MRK_10-K_2024-12-31.md::t2r1c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was the percentage change in Alliance Revenue for Lynparza within Merck & Co., Inc.'s Oncology segment for fiscal 2024 compared to fiscal 2023?"
+  expected: ['MRK_10-K_2024-12-31.md', 'MRK_10-K_2025-12-31.md']
+  retrieved: ['MRK_10-K_2024-12-31.md', 'MRK_10-K_2025-12-31.md', 'MRK_10-K_2024-12-31.md', 'MRK_10-K_2025-12-31.md', 'MRK_10-Q_2026-03-31.md']
+
+[HIT ] 'table::MRK_10-K_2024-12-31.md::t5r2c2'  rr=0.333 ndcg=0.500 (span_and_document)
+  query:    'What was the percentage change in Adempas revenue for Merck & Co., Inc. in fiscal 2024 compared to fiscal 2023?'
+  expected: ['MRK_10-K_2024-12-31.md', 'MRK_10-K_2025-12-31.md']
+  retrieved: ['MRK_10-K_2024-12-31.md', 'MRK_10-K_2025-12-31.md', 'MRK_10-K_2024-12-31.md', 'MRK_10-K_2024-12-31.md', 'MRK_10-K_2024-12-31.md']
+
+[HIT ] 'table::MRK_10-K_2025-12-31.md::t10r8c2'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was Merck & Co., Inc.'s taxes on income as reported under GAAP for fiscal 2024?"
+  expected: ['MRK_10-K_2025-12-31.md', 'MRK_10-K_2024-12-31.md']
+  retrieved: ['MRK_10-K_2024-12-31.md', 'MRK_10-K_2025-12-31.md', 'MRK_10-K_2024-12-31.md', 'MRK_10-K_2025-12-31.md', 'MRK_10-Q_2025-09-30.md']
+
+[HIT ] 'table::MRK_10-K_2025-12-31.md::t8r0c3'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was Merck & Co., Inc.'s cost of sales in millions of dollars for fiscal 2024?"
+  expected: ['MRK_10-K_2025-12-31.md', 'MRK_10-K_2024-12-31.md']
+  retrieved: ['MRK_10-K_2025-12-31.md', 'MRK_10-K_2024-12-31.md', 'MRK_10-Q_2025-09-30.md', 'MRK_10-K_2024-12-31.md', 'MRK_10-K_2024-12-31.md']
+
+[HIT ] 'table::MRK_10-Q_2026-03-31.md::t1r2c1'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was Merck & Co., Inc.'s revenue from Welireg in the three months ended March 31, 2026?"
+  expected: ['MRK_10-Q_2026-03-31.md']
+  retrieved: ['MRK_10-Q_2026-03-31.md', 'MRK_10-Q_2026-03-31.md', 'MRK_10-Q_2026-06-30.md', 'MRK_10-K_2025-12-31.md', 'MRK_10-Q_2026-06-30.md']
+
+[HIT ] 'table::MRK_10-Q_2026-03-31.md::t7r2c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Merck & Co., Inc.'s non-segment activity in millions of dollars for the three months ended March 31, 2025?"
+  expected: ['MRK_10-Q_2026-03-31.md']
+  retrieved: ['MRK_10-Q_2026-03-31.md', 'MRK_10-Q_2025-09-30.md', 'MRK_10-Q_2026-06-30.md', 'MRK_10-Q_2025-09-30.md', 'MRK_10-Q_2025-09-30.md']
+
+[HIT ] 'table::MRK_10-Q_2026-06-30.md::t1r3c2'  rr=0.250 ndcg=0.431 (span_and_document)
+  query:    "What was Merck & Co., Inc.'s Alliance Revenue - Reblozyl (in millions of dollars) for the three months ended June 30, 2025?"
+  expected: ['MRK_10-Q_2026-06-30.md']
+  retrieved: ['MRK_10-K_2025-12-31.md', 'MRK_10-Q_2025-09-30.md', 'MRK_10-Q_2026-03-31.md', 'MRK_10-Q_2026-06-30.md', 'MRK_10-Q_2026-03-31.md']
+
+[HIT ] 'table::MRK_10-Q_2026-06-30.md::t2r3c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What were the sales in millions of dollars for Merck & Co., Inc.'s Varivax vaccine during the three months ended June 30, 2026?"
+  expected: ['MRK_10-Q_2026-06-30.md']
+  retrieved: ['MRK_10-Q_2026-06-30.md', 'MRK_10-Q_2025-09-30.md', 'MRK_10-Q_2026-06-30.md', 'MRK_10-Q_2026-06-30.md', 'MRK_10-Q_2025-09-30.md']
+
+[HIT ] 'table::MSFT_10-K_2025-06-30.md::t0r3c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Microsoft Corp's net income in millions of dollars for fiscal 2024?"
+  expected: ['MSFT_10-K_2025-06-30.md', 'MSFT_10-K_2026-06-30.md']
+  retrieved: ['MSFT_10-K_2025-06-30.md', 'MSFT_10-K_2025-06-30.md', 'MSFT_10-K_2025-06-30.md', 'MSFT_10-Q_2025-12-31.md', 'MSFT_10-K_2025-06-30.md']
+
+[HIT ] 'table::MSFT_10-K_2025-06-30.md::t3r0c2'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was Microsoft Corp's sales and marketing expense in millions of dollars for fiscal 2024?"
+  expected: ['MSFT_10-K_2025-06-30.md']
+  retrieved: ['MSFT_10-K_2025-06-30.md', 'MSFT_10-K_2025-06-30.md', 'MSFT_10-Q_2025-12-31.md', 'MSFT_10-K_2026-06-30.md', 'MSFT_10-K_2025-06-30.md']
+
+[HIT ] 'table::MSFT_10-K_2026-06-30.md::t6r3c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Microsoft Corp's net income for fiscal 2026?"
+  expected: ['MSFT_10-K_2026-06-30.md']
+  retrieved: ['MSFT_10-K_2026-06-30.md', 'MSFT_10-K_2026-06-30.md', 'MSFT_10-K_2026-06-30.md', 'MSFT_10-K_2026-06-30.md', 'MSFT_10-K_2026-06-30.md']
+
+[HIT ] 'table::MSFT_10-Q_2025-12-31.md::t0r2c7'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was the percentage change in Microsoft Corp's operating income for the six months ended December 31, 2025, compared to the same period in the prior year?"
+  expected: ['MSFT_10-Q_2025-12-31.md']
+  retrieved: ['MSFT_10-Q_2025-12-31.md', 'MSFT_10-Q_2025-12-31.md', 'MSFT_10-Q_2025-12-31.md', 'MSFT_10-Q_2025-12-31.md', 'MSFT_10-Q_2025-12-31.md']
+
+[HIT ] 'table::MSFT_10-Q_2025-12-31.md::t3r1c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Microsoft Corp's sales and marketing expense as a percent of revenue for the three months ended December 31, 2025?"
+  expected: ['MSFT_10-Q_2025-12-31.md']
+  retrieved: ['MSFT_10-Q_2025-12-31.md', 'MSFT_10-Q_2025-12-31.md', 'MSFT_10-Q_2025-09-30.md', 'MSFT_10-K_2025-06-30.md', 'MSFT_10-Q_2025-12-31.md']
+
+[MISS] 'table::MSFT_10-Q_2026-03-31.md::t0r2c6'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was Microsoft Corp's operating income for the nine months ended March 31, 2025?"
+  expected: ['MSFT_10-Q_2026-03-31.md']
+  retrieved: ['MSFT_10-Q_2026-03-31.md', 'MSFT_10-Q_2026-03-31.md', 'MSFT_10-Q_2026-03-31.md', 'MSFT_10-Q_2025-12-31.md', 'MSFT_10-Q_2026-03-31.md']
+  NOT FOUND: '| Operating income | | 38,398 | 32,000 | 20% | 114,634 | 94,205 | 22% |'
+
+[MISS] 'table::NVDA_10-K_2025-01-26.md::t6r3c3'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    'What was the dollar change in Other income (expense), net for Nvidia Corp between the fiscal year ended January 28, 2024 and the fiscal year ended January 26, 2025?'
+  expected: ['NVDA_10-K_2025-01-26.md']
+  retrieved: ['NVDA_10-K_2025-01-26.md', 'NVDA_10-K_2025-01-26.md', 'NVDA_10-Q_2025-10-26.md', 'NVDA_10-K_2025-01-26.md', 'NVDA_10-Q_2025-10-26.md']
+  NOT FOUND: '| Other income (expense), net | $2,573 | $846 | $1,727 |'
+
+[HIT ] 'table::NVDA_10-K_2025-01-26.md::t9r1c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Nvidia Corp's aggregate debt due in five to ten years as of January 26, 2025, in millions?"
+  expected: ['NVDA_10-K_2025-01-26.md']
+  retrieved: ['NVDA_10-K_2025-01-26.md', 'NVDA_10-K_2025-01-26.md', 'NVDA_10-K_2026-01-25.md', 'NVDA_10-K_2026-01-25.md', 'NVDA_10-Q_2025-10-26.md']
+
+[MISS] 'table::NVDA_10-K_2026-01-25.md::t2r1c3'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was the dollar change in revenue for Nvidia Corp's Graphics segment between the fiscal year ended January 26, 2025 and the fiscal year ended January 25, 2026?"
+  expected: ['NVDA_10-K_2026-01-25.md']
+  retrieved: ['NVDA_10-K_2026-01-25.md', 'NVDA_10-K_2026-01-25.md', 'NVDA_10-K_2025-01-26.md', 'NVDA_10-K_2025-01-26.md', 'NVDA_10-Q_2026-04-26.md']
+  NOT FOUND: '| Graphics | 22,459 | 14,304 | 8,155 | 57% |'
+
+[MISS] 'table::NVDA_10-K_2026-01-25.md::t3r2c1'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was Nvidia Corp's total operating income for the fiscal year ended January 25, 2026?"
+  expected: ['NVDA_10-K_2026-01-25.md']
+  retrieved: ['NVDA_10-K_2026-01-25.md', 'NVDA_10-K_2026-01-25.md', 'NVDA_10-K_2025-01-26.md', 'NVDA_10-K_2026-01-25.md', 'NVDA_10-K_2026-01-25.md']
+  NOT FOUND: '| Total | $139,297 | $87,960 | $51,337 | 58% |'
+
+[HIT ] 'table::NVDA_10-Q_2025-07-27.md::t4r1c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What were Nvidia Corp's sales, general and administrative expenses for the three months ended July 28, 2024?"
+  expected: ['NVDA_10-Q_2025-07-27.md']
+  retrieved: ['NVDA_10-Q_2025-07-27.md', 'NVDA_10-Q_2025-07-27.md', 'NVDA_10-Q_2025-07-27.md', 'NVDA_10-Q_2025-10-26.md', 'NVDA_10-Q_2025-10-26.md']
+
+[HIT ] 'table::NVDA_10-Q_2025-07-27.md::t5r0c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Nvidia Corp's interest income for the three months ended July 28, 2024?"
+  expected: ['NVDA_10-Q_2025-07-27.md']
+  retrieved: ['NVDA_10-Q_2025-07-27.md', 'NVDA_10-Q_2025-07-27.md', 'NVDA_10-Q_2025-07-27.md', 'NVDA_10-Q_2025-07-27.md', 'NVDA_10-Q_2025-10-26.md']
+
+[MISS] 'table::NVDA_10-Q_2026-04-26.md::t2r13c2'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was Nvidia Corp's income tax expense as a percentage of revenue for the three months ended April 27, 2025?"
+  expected: ['NVDA_10-Q_2026-04-26.md']
+  retrieved: ['NVDA_10-Q_2025-10-26.md', 'NVDA_10-K_2025-01-26.md', 'NVDA_10-Q_2025-07-27.md', 'NVDA_10-Q_2025-07-27.md', 'NVDA_10-K_2025-01-26.md']
+  NOT FOUND: '| Income tax expense | 14.2 | 7.1 |'
+
+[HIT ] 'table::PFE_10-Q_2025-09-28.md::t0r0c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What were Pfizer Inc's Biopharma segment total revenues in the U.S. for the three months ended September 28, 2025?"
+  expected: ['PFE_10-Q_2025-09-28.md']
+  retrieved: ['PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md']
+
+[MISS] 'table::PFE_10-Q_2025-09-28.md::t10r11c5'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was Pfizer Inc.'s non-GAAP adjusted earnings per common share attributable to Pfizer Inc. common shareholders--diluted for the three months ended September 28, 2025?"
+  expected: ['PFE_10-Q_2025-09-28.md']
+  retrieved: ['PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md']
+  NOT FOUND: '| Non-GAAP Adjusted | $3,979 | $3,158 | $257 | $4,949 | $0.87 |'
+
+[HIT ] 'table::PFE_10-Q_2025-09-28.md::t1r5c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was the favorable impact of foreign exchange on Pfizer Inc's worldwide total revenues for the three months ended September 28, 2025, compared to the same period in 2024?"
+  expected: ['PFE_10-Q_2025-09-28.md']
+  retrieved: ['PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2026-06-28.md']
+
+[HIT ] 'table::PFE_10-Q_2025-09-28.md::t2r4c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Pfizer Inc.'s operational growth/(decline), net in millions for the International segment during the first nine months of 2025 compared to the first nine months of 2024?"
+  expected: ['PFE_10-Q_2025-09-28.md']
+  retrieved: ['PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md']
+
+[HIT ] 'table::PFE_10-Q_2025-09-28.md::t9r1c1'  rr=0.333 ndcg=0.500 (span_and_document)
+  query:    "What was Pfizer Inc's effective tax rate on continuing operations for the three months ended September 28, 2025?"
+  expected: ['PFE_10-Q_2025-09-28.md']
+  retrieved: ['PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2025-09-28.md', 'PFE_10-Q_2026-06-28.md', 'PFE_10-Q_2026-06-28.md']
+
+[HIT ] 'table::TGT_10-K_2025-02-01.md::t2r0c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Target Corp's gross margin rate for fiscal 2024?"
+  expected: ['TGT_10-K_2025-02-01.md']
+  retrieved: ['TGT_10-K_2025-02-01.md', 'TGT_10-K_2026-01-31.md', 'TGT_10-K_2026-01-31.md', 'TGT_10-K_2025-02-01.md', 'TGT_10-Q_2025-08-02.md']
+
+[MISS] 'table::TGT_10-K_2026-01-31.md::t10r0c3'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was Target Corp's reported GAAP operating income in dollars for fiscal 2025?"
+  expected: ['TGT_10-K_2026-01-31.md']
+  retrieved: ['TGT_10-Q_2025-08-02.md', 'TGT_10-K_2025-02-01.md', 'TGT_10-Q_2025-11-01.md', 'TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-11-01.md']
+  NOT FOUND: '| Reported, GAAP measure | $21,535 | 20.6% | $5,117 | 4.9% | $21,969 | 20.6% ...'
+
+[HIT ] 'table::TGT_10-K_2026-01-31.md::t6r0c2'  rr=0.333 ndcg=0.500 (span_and_document)
+  query:    "What percentage of Target Corp's merchandise sales came from stores in fiscal 2024?"
+  expected: ['TGT_10-K_2026-01-31.md', 'TGT_10-K_2025-02-01.md']
+  retrieved: ['TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-11-01.md', 'TGT_10-K_2026-01-31.md', 'TGT_10-K_2025-02-01.md', 'TGT_10-K_2026-01-31.md']
+
+[HIT ] 'table::TGT_10-Q_2025-08-02.md::t3r0c3'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was Target Corp's comparable sales change for the six months ended August 2, 2025?"
+  expected: ['TGT_10-Q_2025-08-02.md']
+  retrieved: ['TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-08-02.md']
+
+[HIT ] 'table::TGT_10-Q_2025-08-02.md::t6r1c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What percentage of Target Corp's merchandise sales came from the Other fulfillment channel during the six months ended August 2, 2025?"
+  expected: ['TGT_10-Q_2025-08-02.md']
+  retrieved: ['TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-08-02.md', 'TGT_10-Q_2025-11-01.md']
+
+[HIT ] 'table::TGT_10-Q_2025-11-01.md::t9r0c6'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the retail square feet for Target Corp stores of 170,000 or more sq. ft. as of November 2, 2024?'
+  expected: ['TGT_10-Q_2025-11-01.md']
+  retrieved: ['TGT_10-Q_2025-11-01.md', 'TGT_10-Q_2025-08-02.md', 'TGT_10-K_2025-02-01.md', 'TGT_10-K_2026-01-31.md', 'TGT_10-Q_2026-05-02.md']
+
+[HIT ] 'table::UAL_10-K_2024-12-31.md::t2r1c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the increase in cargo operating revenue for United Airlines Holdings, Inc. between fiscal 2023 and fiscal 2024?'
+  expected: ['UAL_10-K_2024-12-31.md']
+  retrieved: ['UAL_10-K_2024-12-31.md', 'UAL_10-Q_2025-09-30.md', 'UAL_10-K_2024-12-31.md', 'UAL_10-K_2024-12-31.md', 'UAL_10-K_2024-12-31.md']
+
+[HIT ] 'table::UAL_10-K_2024-12-31.md::t7r1c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the cash used in investing activities by United Airlines Holdings, Inc. for the fiscal year ended December 31, 2024?'
+  expected: ['UAL_10-K_2024-12-31.md', 'UAL_10-K_2025-12-31.md']
+  retrieved: ['UAL_10-K_2024-12-31.md', 'UAL_10-K_2024-12-31.md', 'UAL_10-K_2025-12-31.md', 'UAL_10-K_2024-12-31.md', 'UAL_10-K_2025-12-31.md']
+
+[HIT ] 'table::UAL_10-K_2025-12-31.md::t3r4c2'  rr=0.333 ndcg=0.500 (span_and_document)
+  query:    "What was the percentage change in passenger revenue per available seat mile (PRASM) for United Airlines Holdings, Inc.'s Atlantic region from fiscal 2024 to fiscal 2025?"
+  expected: ['UAL_10-K_2025-12-31.md']
+  retrieved: ['UAL_10-Q_2026-03-31.md', 'UAL_10-Q_2025-09-30.md', 'UAL_10-K_2025-12-31.md', 'UAL_10-Q_2025-09-30.md', 'UAL_10-Q_2025-09-30.md']
+
+[MISS] 'table::UAL_10-Q_2025-09-30.md::t0r6c2'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was United Airlines Holdings, Inc.'s net income for the three months ended September 30, 2024?"
+  expected: ['UAL_10-Q_2025-09-30.md']
+  retrieved: ['UAL_10-Q_2025-09-30.md', 'UAL_10-Q_2025-09-30.md', 'UAL_10-Q_2025-09-30.md', 'UAL_10-K_2024-12-31.md', 'UAL_10-Q_2025-09-30.md']
+  NOT FOUND: '| Net income | $949 | $965 | $(16) | (1.7) |'
+
+[HIT ] 'table::UAL_10-Q_2026-03-31.md::t1r7c3'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    'What was the change in cargo revenue ton miles, in millions, for United Airlines Holdings, Inc. between the three months ended March 31, 2025 and the three months ended March 31, 2026?'
+  expected: ['UAL_10-Q_2026-03-31.md']
+  retrieved: ['UAL_10-Q_2026-03-31.md', 'UAL_10-Q_2026-03-31.md', 'UAL_10-Q_2026-03-31.md', 'UAL_10-Q_2026-03-31.md', 'UAL_10-Q_2025-09-30.md']
+
+[HIT ] 'table::UAL_10-Q_2026-06-30.md::t11r3c2'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What was United Airlines Holdings, Inc.'s unrealized gains on investments, net (in millions) for the six months ended June 30, 2025?"
+  expected: ['UAL_10-Q_2026-06-30.md']
+  retrieved: ['UAL_10-K_2025-12-31.md', 'UAL_10-Q_2026-06-30.md', 'UAL_10-Q_2026-06-30.md', 'UAL_10-Q_2026-06-30.md', 'UAL_10-K_2024-12-31.md']
+
+[HIT ] 'table::UAL_10-Q_2026-06-30.md::t7r5c5'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the percentage change in TRASM (cents) for United Airlines Holdings, Inc. between the six months ended June 30, 2025 and the six months ended June 30, 2026?'
+  expected: ['UAL_10-Q_2026-06-30.md']
+  retrieved: ['UAL_10-Q_2026-06-30.md', 'UAL_10-Q_2026-06-30.md', 'UAL_10-Q_2026-06-30.md', 'UAL_10-Q_2026-06-30.md', 'UAL_10-Q_2026-06-30.md']
+
+[HIT ] 'table::WMT_10-K_2025-01-31.md::t4r1c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What were Walmart Inc.'s capital expenditures for store and club remodels, in millions of dollars, for the fiscal year ended January 31, 2025?"
+  expected: ['WMT_10-K_2025-01-31.md', 'WMT_10-K_2026-01-31.md']
+  retrieved: ['WMT_10-K_2025-01-31.md', 'WMT_10-K_2026-01-31.md', 'WMT_10-Q_2025-10-31.md', 'WMT_10-Q_2026-04-30.md', 'WMT_10-Q_2025-07-31.md']
+
+[HIT ] 'table::WMT_10-K_2026-01-31.md::t3r2c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Walmart Inc.'s accounts payable as of January 31, 2024?"
+  expected: ['WMT_10-K_2026-01-31.md', 'WMT_10-K_2025-01-31.md']
+  retrieved: ['WMT_10-K_2025-01-31.md', 'WMT_10-K_2025-01-31.md', 'WMT_10-K_2025-01-31.md', 'WMT_10-K_2026-01-31.md', 'WMT_10-K_2025-01-31.md']
+
+[HIT ] 'table::WMT_10-K_2026-01-31.md::t7r9c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the operating expenses as a percentage of net sales for Walmart U.S. in fiscal 2024?'
+  expected: ['WMT_10-K_2026-01-31.md', 'WMT_10-K_2025-01-31.md']
+  retrieved: ['WMT_10-K_2025-01-31.md', 'WMT_10-K_2025-01-31.md', 'WMT_10-K_2025-01-31.md', 'WMT_10-Q_2025-10-31.md', 'WMT_10-K_2026-01-31.md']
+
+[MISS] 'table::WMT_10-K_2026-01-31.md::t9r6c1'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What was Walmart Inc.'s Sam's Club U.S. Segment operating income including fuel for the fiscal year ended January 31, 2026?"
+  expected: ['WMT_10-K_2026-01-31.md']
+  retrieved: ['WMT_10-K_2026-01-31.md', 'WMT_10-K_2026-01-31.md', 'WMT_10-K_2025-01-31.md', 'WMT_10-Q_2025-07-31.md', 'WMT_10-K_2025-01-31.md']
+  NOT FOUND: '| Operating income | $2,442 | $2,404 | $2,192 |'
+
+[HIT ] 'table::WMT_10-Q_2025-10-31.md::t8r3c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was Walmart International's gross profit in millions of dollars for the three months ended October 31, 2024?"
+  expected: ['WMT_10-Q_2025-10-31.md']
+  retrieved: ['WMT_10-Q_2025-10-31.md', 'WMT_10-Q_2025-10-31.md', 'WMT_10-Q_2025-10-31.md', 'WMT_10-Q_2025-10-31.md', 'WMT_10-Q_2025-10-31.md']
+
+[HIT ] 'table::WMT_10-Q_2026-04-30.md::t5r3c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the net cash used in investing activities for Walmart Inc. for the three months ended April 30, 2025?'
+  expected: ['WMT_10-Q_2026-04-30.md']
+  retrieved: ['WMT_10-Q_2026-04-30.md', 'WMT_10-Q_2026-04-30.md', 'WMT_10-Q_2026-04-30.md', 'WMT_10-K_2025-01-31.md', 'WMT_10-Q_2026-04-30.md']
+
+[HIT ] 'table::WMT_10-Q_2026-04-30.md::t8r11c1'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    'What was the retail square feet (in millions) at period end for Walmart International as of April 30, 2026?'
+  expected: ['WMT_10-Q_2026-04-30.md']
+  retrieved: ['WMT_10-Q_2026-04-30.md', 'WMT_10-Q_2026-04-30.md', 'WMT_10-K_2026-01-31.md', 'WMT_10-Q_2026-04-30.md', 'WMT_10-Q_2026-04-30.md']
+
+[HIT ] 'table::XOM_10-Q_2026-06-30.md::t10r0c2'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What were ExxonMobil Holdings Corp's Specialty Products sales in the United States, in thousands of metric tons, for the three months ended June 30, 2025?"
+  expected: ['XOM_10-Q_2026-06-30.md']
+  retrieved: ['XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md']
+
+[MISS] 'table::XOM_10-Q_2026-06-30.md::t1r1c4'  rr=0.000 ndcg=0.000 (span_and_document)
+  query:    "What were ExxonMobil Holdings Corp's selling, general and administrative expenses, in billions of dollars, for the six months ended June 30, 2026?"
+  expected: ['XOM_10-Q_2026-06-30.md']
+  retrieved: ['XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md']
+  NOT FOUND: '| Selling, general and administrative expenses | 11.4 | 11.1 | 5.1 | 5.2 | |'
+
+[HIT ] 'table::XOM_10-Q_2026-06-30.md::t2r1c4'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was ExxonMobil Holdings Corp's Non-U.S. upstream earnings (loss) under U.S. GAAP for the six months ended June 30, 2025?"
+  expected: ['XOM_10-Q_2026-06-30.md']
+  retrieved: ['XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md']
+
+[HIT ] 'table::XOM_10-Q_2026-06-30.md::t3r1c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was ExxonMobil Holdings Corp's net production of crude oil, natural gas liquids, bitumen and synthetic oil in thousands of barrels daily for Canada/Other Americas during the three months ended June 30, 2025?"
+  expected: ['XOM_10-Q_2026-06-30.md']
+  retrieved: ['XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'CVX_10-K_2025-12-31.md']
+
+[HIT ] 'table::XOM_10-Q_2026-06-30.md::t4r3c2'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was the impact of Government Mandates on ExxonMobil Holdings Corp's oil-equivalent production volumes, in thousands of barrels daily, for the six months ended June 30, 2026?"
+  expected: ['XOM_10-Q_2026-06-30.md']
+  retrieved: ['XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md']
+
+[HIT ] 'table::XOM_10-Q_2026-06-30.md::t5r2c3'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was ExxonMobil Holdings Corp's total Energy Products earnings (loss) under U.S. GAAP for the six months ended June 30, 2026?"
+  expected: ['XOM_10-Q_2026-06-30.md']
+  retrieved: ['XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md']
+
+[HIT ] 'table::XOM_10-Q_2026-06-30.md::t6r1c4'  rr=1.000 ndcg=1.000 (span_and_document)
+  query:    "What was ExxonMobil Holdings Corp's refinery throughput in Canada, in thousands of barrels daily, for the six months ended June 30, 2025?"
+  expected: ['XOM_10-Q_2026-06-30.md']
+  retrieved: ['XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md']
+
+[HIT ] 'table::XOM_10-Q_2026-06-30.md::t8r2c4'  rr=0.500 ndcg=0.631 (span_and_document)
+  query:    "What were ExxonMobil Holdings Corp's worldwide Chemical Products sales in thousands of metric tons for the six months ended June 30, 2025?"
+  expected: ['XOM_10-Q_2026-06-30.md']
+  retrieved: ['XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md', 'XOM_10-Q_2026-06-30.md']
+
