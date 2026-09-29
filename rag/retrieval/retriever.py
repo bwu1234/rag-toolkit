@@ -79,6 +79,12 @@ class RetrievalResult:
     """Every query actually searched, when expansion produced more than the one asked for."""
     routed_to: list[str] = field(default_factory=list)
     """Documents routing restricted retrieval to; empty when it's off, fell back, or a filter was passed."""
+    candidates: list[ScoredChunk] = field(default_factory=list)
+    """The stage-1 ranking itself (post-fusion, pre-rerank), best first.
+
+    Recall at a depth past `rerank_top_k` can only be read from here: `chunks`
+    is already cut to the final width. The qrels eval scores R@100 on it.
+    """
 
 
 class Retriever:
@@ -233,6 +239,7 @@ class Retriever:
             dropped_below_min_score=dropped,
             search_queries=expanded.all_queries() if expanded.is_expanded else [],
             routed_to=routed_to,
+            candidates=candidates,
         )
 
     def _candidates(

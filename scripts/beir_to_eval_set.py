@@ -17,7 +17,8 @@ Public benchmarks plan, phase 1. Reads ``source/queries.jsonl`` and
 The input files must match the hashes pinned in the manifest, and malformed
 data fails the run rather than being dropped: duplicate query ids or
 judgments, a qrels query with no text, a qrels document not in the corpus, a
-non-integer or negative grade. The output is gitignored and regenerated from
+non-integer or negative grade. A query judged only non-relevant is kept (it
+scores 0 and counts, as under ``trec_eval -c``). The output is gitignored and regenerated from
 the pinned archive and this script.
 
 Usage::
@@ -129,9 +130,13 @@ def convert(root: Path, split: str) -> EvalDataset:
         raise ConversionError(f"qrels name {len(unknown_docs)} document id(s) not in the corpus: {unknown_docs[:5]}")
     no_positive = sorted(q for q, judged in qrels.items() if not any(g > 0 for g in judged.values()))
     if no_positive:
-        # The reference policy for such queries has to be decided in phase 2
-        # (trec_eval -c counts them); none of the pinned splits has any.
-        raise ConversionError(f"{len(no_positive)} judged query(ies) have no positive grade: {no_positive[:5]}")
+        # Kept, not dropped: trec_eval -c counts a query judged only
+        # non-relevant, at 0, so dropping it would raise every mean.
+        logger.warning(
+            "%d judged query(ies) have no positive grade; kept, and they score 0: %s",
+            len(no_positive),
+            no_positive[:5],
+        )
 
     benchmark = f"{manifest['name']}/{split}"
     samples = [

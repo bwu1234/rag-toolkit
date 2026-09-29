@@ -189,7 +189,6 @@ def test_legacy_string_doc_ids_are_unchanged() -> None:
         (["d1", {"id": "d1", "grade": 2}], "listed twice"),
         ([{"id": "d1", "grade": -1}], "negative grade"),
         ([{"grade": 1}], "'id' key"),
-        ([{"id": "d1", "grade": 0}], "needs expected_doc_ids"),
     ],
 )
 def test_malformed_doc_labels_are_refused(doc_ids: list, message: str) -> None:
@@ -197,8 +196,25 @@ def test_malformed_doc_labels_are_refused(doc_ids: list, message: str) -> None:
         EvalSample.from_dict(_qrels_sample(expected_doc_ids=doc_ids))
 
 
-def test_qrels_samples_are_refused_by_scoring_until_phase_2() -> None:
-    with pytest.raises(NotImplementedError, match="phase 2"):
+def test_a_qrels_sample_may_hold_only_non_relevant_judgments() -> None:
+    """trec_eval -c counts such a query at 0, so the schema must be able to hold it."""
+    sample = EvalSample.from_dict(_qrels_sample(expected_doc_ids=[{"id": "d1", "grade": 0}]))
+
+    assert sample.expected_doc_ids == [] and sample.doc_grades == {"d1": 0}
+
+
+def test_a_qrels_sample_needs_some_judgment() -> None:
+    with pytest.raises(ValueError, match="needs judged expected_doc_ids"):
+        EvalSample.from_dict(_qrels_sample(expected_doc_ids=[]))
+
+
+def test_a_document_mode_sample_still_needs_a_credited_document() -> None:
+    with pytest.raises(ValueError, match="needs expected_doc_ids"):
+        EvalSample.from_dict(_qrels_sample(expected_doc_ids=[{"id": "d1", "grade": 0}], matching_mode="document"))
+
+
+def test_qrels_samples_are_refused_by_chunk_level_judging() -> None:
+    with pytest.raises(NotImplementedError, match="rag.eval.qrels"):
         judge_ranking(EvalSample.from_dict(_qrels_sample()), [])
 
 
@@ -331,3 +347,16 @@ def test_convert_refuses_unpinned_input(tmp_path: Path) -> None:
 
     with pytest.raises(ConversionError, match="does not match the sha256"):
         convert(root, "test")
+
+
+def test_convert_keeps_a_query_judged_only_non_relevant(tmp_path: Path) -> None:
+    qrels = QRELS + "q2\td1\t0\n"
+    root = _fetched(tmp_path, judgments=4)
+    (root / "source" / "qrels" / "test.tsv").write_text(qrels.replace("q2\td2\t1\n", ""), encoding="utf-8")
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    manifest["inventory"]["qrels"]["test"].update(sha256=_sha(qrels.replace("q2\td2\t1\n", "")), judgments=3)
+    (root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    second = convert(root, "test").samples[1]
+
+    assert (second.id, second.expected_doc_ids, second.doc_grades) == ("q2", [], {"d1": 0})

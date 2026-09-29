@@ -39,11 +39,21 @@ penalized rather than silently scoring lower.
 
 All metrics are computed over whatever ``retrieval.rerank_top_k`` results the
 Retriever returns (i.e. after any configured reranking pass).
+
+Qrels sets (``matching_mode: "qrels"``, converted from public benchmarks by
+``scripts/beir_to_eval_set.py``) take a separate path, :func:`run_qrels_eval`:
+distinct-document nDCG@10 and R@100 scored the ``trec_eval`` way
+(:mod:`rag.eval.qrels`), each on a named stage. R@100 reads the stage-1
+ranking, which is why it needs ``--candidate-depth`` of at least 100; nDCG@10
+reads the final ranking. ``--save-run DIR`` writes both rankings as TREC run
+files plus the unrounded per-query scores, so an external evaluator can score
+the identical rankings.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from collections.abc import Callable
@@ -52,7 +62,7 @@ from pathlib import Path
 
 from rag.chunking.models import Chunk
 from rag.config.settings import RagConfig, load_config
-from rag.eval.dataset import MODE_DOCUMENT, EvalDataset, EvalSample
+from rag.eval.dataset import MODE_DOCUMENT, MODE_QRELS, EvalDataset, EvalSample
 from rag.eval.metrics import (
     hit_rate,
     mean,
@@ -62,6 +72,7 @@ from rag.eval.metrics import (
     reciprocal_rank,
     wilson_interval,
 )
+from rag.eval.qrels import METRICS, DocRanking, QrelsScores, document_ranking, score_rankings, write_run
 from rag.eval.relevance import UnmatchableSpan, find_unmatchable_spans, judge_ranking
 from rag.ingestion.corpora import chunk_selected_corpora
 from rag.logging_config import configure_logging
@@ -233,6 +244,132 @@ def run_retrieval_eval(
     )
 
 
+#: The stages a qrels run saves, and the metric each is read for.
+STAGE_1 = "stage1"
+STAGE_FINAL = "final"
+HEADLINE = {STAGE_FINAL: "nDCG@10", STAGE_1: "R@100"}
+
+
+@dataclass
+class QrelsReport:
+    """A qrels run: both stages' rankings and scores, and the settings that shaped them."""
+
+    candidate_depth: int
+    final_depth: int
+    remove_query: bool
+    rankings: dict[str, dict[str, DocRanking]]
+    scores: dict[str, QrelsScores]
+    #: Chunks collapsed into an already-ranked document, per stage.
+    duplicates_removed: dict[str, int] = field(default_factory=dict)
+    #: Documents dropped as self-matches (id == query id), per stage.
+    self_matches_removed: dict[str, int] = field(default_factory=dict)
+
+    @property
+    def num_samples(self) -> int:
+        return len(self.scores[STAGE_FINAL].per_query)
+
+
+def check_qrels_depths(candidate_depth: int, final_depth: int) -> None:
+    """Refuse depths at which the headline metrics would be silently capped.
+
+    Raises:
+        ValueError: stage 1 keeps fewer than 100 results (R@100) or the final
+            ranking fewer than 10 (nDCG@10).
+    """
+    if candidate_depth < 100:
+        raise ValueError(
+            f"R@100 needs a stage-1 ranking of at least 100; retrieval.top_k is {candidate_depth}. "
+            "Pass --candidate-depth 100 or more."
+        )
+    if final_depth < 10:
+        raise ValueError(
+            f"nDCG@10 needs a final ranking of at least 10; retrieval.rerank_top_k is {final_depth}. "
+            "Pass --final-depth 10 or more."
+        )
+
+
+def run_qrels_eval(dataset: EvalDataset, retriever: Retriever, *, remove_query: bool = True) -> QrelsReport:
+    """Retrieve every qrels sample and score both stages against its graded labels.
+
+    ``remove_query`` applies the reference ``--remove-query`` rule (drop a
+    document whose id equals the query id) to both stages. It is on by
+    default so every variant is scored under the protocol the published
+    numbers used.
+    """
+    samples = list(dataset)
+    if any(s.matching_mode != MODE_QRELS for s in samples):
+        raise ValueError("A qrels run needs every sample to use matching_mode 'qrels'; this set mixes modes.")
+    check_qrels_depths(retriever.top_k, retriever.rerank_top_k)
+
+    rankings: dict[str, dict[str, DocRanking]] = {STAGE_1: {}, STAGE_FINAL: {}}
+    for sample in samples:
+        retrieved = retriever.retrieve(sample.query)
+        for stage, chunks in ((STAGE_1, retrieved.candidates), (STAGE_FINAL, retrieved.chunks)):
+            rankings[stage][sample.id] = document_ranking(
+                ((c.document_id, c.score) for c in chunks), query_id=sample.id, remove_query=remove_query
+            )
+
+    return QrelsReport(
+        candidate_depth=retriever.top_k,
+        final_depth=retriever.rerank_top_k,
+        remove_query=remove_query,
+        rankings=rankings,
+        scores={stage: score_rankings(samples, ranks) for stage, ranks in rankings.items()},
+        duplicates_removed={s: sum(r.duplicates_removed for r in ranks.values()) for s, ranks in rankings.items()},
+        self_matches_removed={
+            s: sum(r.self_matches_removed for r in ranks.values()) for s, ranks in rankings.items()
+        },
+    )
+
+
+def print_qrels_report(report: QrelsReport) -> None:
+    """Print both stages' metrics, marking the one each stage is reported for."""
+    print(f"\n{'=' * 62}")
+    print(f"  Qrels Retrieval Eval  ({report.num_samples} queries, trec_eval -c semantics)")
+    print(f"{'=' * 62}")
+    print(
+        f"  Depths: stage 1 = {report.candidate_depth}, final = {report.final_depth};  "
+        f"remove-query {'on' if report.remove_query else 'off'}"
+    )
+    for stage, label in ((STAGE_FINAL, "final"), (STAGE_1, "stage 1")):
+        cells = []
+        for name in METRICS:
+            value = report.scores[stage].means[name]
+            cells.append(f"{name} {value:.4f}{'*' if HEADLINE[stage] == name else ' '}")
+        print(f"  {label:<8} " + "   ".join(cells))
+    print("  * the reported figure: nDCG@10 on the final ranking, R@100 on stage 1")
+    for stage in (STAGE_1, STAGE_FINAL):
+        short = sum(1 for q in report.scores[stage].per_query if q.returned < (100 if stage == STAGE_1 else 10))
+        print(
+            f"  {stage:<8} {report.duplicates_removed[stage]} duplicate chunk(s) collapsed, "
+            f"{report.self_matches_removed[stage]} self-match(es) removed, {short} short list(s)"
+        )
+    print(f"{'=' * 62}")
+
+
+def save_qrels_run(report: QrelsReport, out_dir: Path, *, tag: str, settings: dict) -> None:
+    """Write ``stage1.trec``, ``final.trec`` and ``scores.json`` (unrounded) to ``out_dir``."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for stage, ranks in report.rankings.items():
+        write_run(out_dir / f"{stage}.trec", ranks, tag=tag)
+    payload = {
+        "settings": {
+            **settings,
+            "candidate_depth": report.candidate_depth,
+            "final_depth": report.final_depth,
+            "remove_query": report.remove_query,
+        },
+        "means": {stage: scores.means for stage, scores in report.scores.items()},
+        "duplicates_removed": report.duplicates_removed,
+        "self_matches_removed": report.self_matches_removed,
+        "per_query": {
+            stage: {q.query_id: {**q.values, "returned": q.returned} for q in scores.per_query}
+            for stage, scores in report.scores.items()
+        },
+    }
+    (out_dir / "scores.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
 def _coverage(sample, chunks) -> tuple[int, int]:
     judgment = judge_ranking(sample, chunks)
     return judgment.covered, judgment.total_expected
@@ -332,6 +469,22 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--candidate-depth", type=int, default=None, metavar="N",
+        help="Stage-1 candidates per retriever, overriding retrieval.top_k (qrels R@100 needs >= 100).",
+    )
+    parser.add_argument(
+        "--final-depth", type=int, default=None, metavar="N",
+        help="Results kept after reranking, overriding retrieval.rerank_top_k.",
+    )
+    parser.add_argument(
+        "--save-run", type=Path, default=None, metavar="DIR",
+        help="Qrels sets: write stage1.trec, final.trec and unrounded scores.json to DIR.",
+    )
+    parser.add_argument(
+        "--keep-self-matches", action="store_true",
+        help="Qrels sets: do not drop documents whose id equals the query id (the reference drops them).",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Print per-sample results in addition to aggregate metrics",
@@ -355,6 +508,41 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     config: RagConfig = load_config(args.config)
+    if args.candidate_depth is not None:
+        config.retrieval.top_k = args.candidate_depth
+    if args.final_depth is not None:
+        config.retrieval.rerank_top_k = args.final_depth
+
+    modes = {s.matching_mode for s in dataset}
+    if MODE_QRELS in modes:
+        if len(modes) > 1:
+            logger.error("Eval set mixes qrels samples with other modes; they cannot be scored together.")
+            return 1
+        try:
+            check_qrels_depths(config.retrieval.top_k, config.retrieval.rerank_top_k)
+        except ValueError as exc:
+            logger.error("%s", exc)
+            return 1
+        retriever = build_retriever(config, corpora=args.corpus)
+        qrels_report = run_qrels_eval(dataset, retriever, remove_query=not args.keep_self_matches)
+        print_qrels_report(qrels_report)
+        if args.save_run is not None:
+            save_qrels_run(
+                qrels_report,
+                args.save_run,
+                tag=f"rag-{config.retrieval.mode}",
+                settings={
+                    "eval_set": str(eval_path),
+                    "config": args.config,
+                    "corpus": args.corpus,
+                    "retrieval_mode": config.retrieval.mode,
+                    "embedding": f"{config.embedding.provider}:{config.embedding.model}",
+                    "reranker": config.reranker.provider,
+                },
+            )
+            logger.info("Saved rankings and scores to %s", args.save_run)
+        return 0
+
     # Chunked here rather than read back from the index so the count reflects
     # the configured chunker even when the index is stale; `rag.cli
     # index-report` says whether the two agree.

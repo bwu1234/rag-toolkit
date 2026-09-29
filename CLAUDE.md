@@ -114,7 +114,11 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   `data/logs/turns.jsonl`); `provider: none` logs nothing. The eval runners
   never do.
 - Retrieval eval: `python -m rag.eval.retrieval_eval` (`-v` for per-sample;
-  `--eval-set data/eval/edgar_eval_set.json --corpus edgar` for EDGAR)
+  `--eval-set data/eval/edgar_eval_set.json --corpus edgar` for EDGAR).
+  A BEIR qrels set (`scripts/beir_to_eval_set.py`) is scored `trec_eval`-style
+  instead: `--config rag/config/beir.yaml --corpus beir-scifact --eval-set
+  data/eval/beir_scifact_test.json`, with `--save-run DIR` to keep the
+  rankings; `scripts/trec_eval_parity.py` checks them against `trec_eval`.
 - Answer eval (LLM-as-judge): `python -m rag.eval.answer_eval`. The judge is
   `eval.judge`, else the generator grading itself (warned); `--judge-model`
   overrides, plus `--judge-provider` when the judge runs on a different

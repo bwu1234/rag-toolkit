@@ -50,7 +50,8 @@ query ids with text identical to `queries.jsonl`. Checked for all three.
 - **Population**: every query in the test qrels (FiQA 648, SciFact 300,
   NFCorpus 323). Every judged test query has at least one positive grade.
   `-c` averages over all of them, so a query missing from a run scores 0.
-  Without `-c`, `trec_eval` silently drops it.
+  Without `-c`, `trec_eval` silently drops it. A query judged only
+  non-relevant would also count, at 0; `rag.eval.qrels` does the same.
 - **Depth**: `--hits 1000`, then `--remove-query` drops any hit whose docid
   equals the query id. A ranking can hold fewer than 1,000 hits.
 - **`--remove-query` is live on FiQA.** Query and document ids share one
@@ -144,7 +145,7 @@ Set before any retrieval run on any test split. Do not widen after a miss.
 
 | Check | Metric | Tolerance |
 |---|---|---|
-| Phase 2: our evaluator vs `trec_eval` on identical rankings | nDCG@10 and R@100, aggregate and per query | ≤ 0.0001 absolute (`trec_eval` prints 4 decimals); tie order must follow the rule above |
+| Phase 2: our evaluator vs `trec_eval` on identical rankings | nDCG@10 and R@100, aggregate and per query | ≤ 0.0001 absolute (`trec_eval` prints 4 decimals); tie order must follow the rule above. Checked by `scripts/trec_eval_parity.py` |
 | Phase 3: each of the six reference runs recreated in the isolated environment | nDCG@10 and R@100 | ≤ 0.0005 absolute, each cell |
 
 Why 0.0005: it is Pyserini 2.4.0's own reproduction bar. Its 2CR checker marks

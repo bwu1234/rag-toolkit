@@ -102,10 +102,12 @@ def judge_ranking(sample: EvalSample, chunks: list[ScoredChunk]) -> Judgment:
     if sample.matching_mode == MODE_QRELS:
         # Refused rather than approximated: document mode would credit every
         # chunk of a judged document and use exponential gains, a number
-        # that looks comparable to published BEIR scores and is not.
+        # that looks comparable to published BEIR scores and is not. Callers
+        # that reach here (run_matrix, the legacy runner path) must route
+        # qrels sets to run_qrels_eval instead.
         raise NotImplementedError(
-            f"Sample {sample.id!r} uses matching_mode 'qrels', whose trec_eval-style "
-            "scoring is phase 2 of docs/public-benchmarks-plan.md and not built yet."
+            f"Sample {sample.id!r} uses matching_mode 'qrels': it is scored per document by "
+            "rag.eval.qrels (retrieval_eval.run_qrels_eval), not by chunk-level judging."
         )
     if sample.matching_mode == MODE_DOCUMENT:
         return _judge_by_document(sample, chunks)
