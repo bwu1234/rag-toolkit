@@ -36,7 +36,7 @@ def config_fingerprint(config: RagConfig) -> str:
 
     `llm.thinking_level` is excluded only while unset, so adding the field
     didn't re-key every turn already logged; setting it changes the hash.
-    `embedding.query_instruction` is handled the same way, as are
+    `embedding.query_instruction` and `embedding.revision` are handled the same way, as are
     `chunking.carry_metadata`, `chunking.header` and `reranker.include_header`
     while each is at its default.
 
@@ -52,8 +52,11 @@ def config_fingerprint(config: RagConfig) -> str:
         exclude["chat"] = {"mode"}
     if config.llm.thinking_level is None:
         exclude["llm"] = {"thinking_level"}
-    if config.embedding.query_instruction is None:
-        exclude["embedding"] = {"query_instruction"}
+    embedding_new = {
+        name for name in ("query_instruction", "revision") if getattr(config.embedding, name) is None
+    }
+    if embedding_new:
+        exclude["embedding"] = embedding_new
     chunking_new = set()
     if tuple(config.chunking.carry_metadata) == DEFAULT_CARRY_METADATA:
         chunking_new.add("carry_metadata")

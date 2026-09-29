@@ -15,6 +15,9 @@ from rag.config.settings import EmbeddingConfig
 from rag.embedding.base import EmbeddingModel
 from rag.embedding.factory import get_embedder
 from rag.embedding.ollama_embedder import OllamaEmbedder
+from rag.embedding.sentence_transformers_embedder import SentenceTransformersEmbedder
+from rag.index_manifest import IndexManifest
+from rag.config.settings import RagConfig
 
 
 def _embedder_with_handler(handler, **kwargs) -> OllamaEmbedder:
@@ -181,7 +184,119 @@ def test_get_embedder_factory_passes_the_query_instruction() -> None:
 
 
 def test_get_embedder_factory_rejects_unknown_provider() -> None:
-    config = EmbeddingConfig.model_construct(provider="sentence_transformers", model="m", base_url="http://x", dimensions=None)
+    config = EmbeddingConfig.model_construct(provider="no_such_provider", model="m", base_url="http://x", dimensions=None)
 
     with pytest.raises(ValueError, match="Unknown embedding provider"):
         get_embedder(config)
+
+
+# --- sentence-transformers adapter ------------------------------------------
+#
+# A stub module stands in for `sentence_transformers`, as in test_reranker.py,
+# so the suite never downloads a model.
+
+
+class _StubSentenceTransformer:
+    constructed: list[tuple[str, str | None]] = []
+
+    def __init__(self, model_name: str, revision: str | None = None) -> None:
+        type(self).constructed.append((model_name, revision))
+        self.device = "cpu"
+        self.max_seq_length = 512
+        self.encoded: list[list[str]] = []
+        self.normalize_flags: list[bool] = []
+
+    def encode(self, texts, *, batch_size, normalize_embeddings, convert_to_numpy, show_progress_bar):
+        import numpy as np
+
+        self.encoded.append(list(texts))
+        self.normalize_flags.append(normalize_embeddings)
+        return np.array([_vector_for(t) for t in texts], dtype=np.float32)
+
+    def get_embedding_dimension(self) -> int:
+        return 768
+
+
+@pytest.fixture
+def stub_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> type[_StubSentenceTransformer]:
+    import sys
+    import types
+
+    _StubSentenceTransformer.constructed = []
+    module = types.ModuleType("sentence_transformers")
+    module.SentenceTransformer = _StubSentenceTransformer  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "sentence_transformers", module)
+    return _StubSentenceTransformer
+
+
+def test_sentence_transformers_loads_lazily_once_at_the_pinned_revision(stub_sentence_transformers) -> None:
+    embedder = SentenceTransformersEmbedder("BAAI/bge-base-en-v1.5", revision="abc123")
+    assert stub_sentence_transformers.constructed == [], "constructing must not load the model"
+
+    embedder.embed_documents(["a"])
+    embedder.embed_query("b")
+
+    assert stub_sentence_transformers.constructed == [("BAAI/bge-base-en-v1.5", "abc123")]
+
+
+def test_sentence_transformers_returns_normalised_vectors_in_order(stub_sentence_transformers) -> None:
+    embedder = SentenceTransformersEmbedder("m")
+
+    vectors = embedder.embed_documents(["alpha", "beta"])
+
+    assert vectors == [_vector_for("alpha"), _vector_for("beta")]
+    assert all(isinstance(x, float) for x in vectors[0])
+    assert embedder._model.normalize_flags == [True]
+
+
+def test_sentence_transformers_query_instruction_is_a_plain_prefix(stub_sentence_transformers) -> None:
+    instruction = "Represent this sentence for searching relevant passages:"
+    embedder = SentenceTransformersEmbedder("m", query_instruction=instruction)
+
+    embedder.embed_query("what is BM25")
+    embedder.embed_documents(["a passage"])
+
+    # BGE's format (and Pyserini's --query-prefix): one space, no template.
+    # Documents never get it.
+    assert embedder._model.encoded == [[f"{instruction} what is BM25"], ["a passage"]]
+
+
+def test_sentence_transformers_empty_batch_loads_nothing(stub_sentence_transformers) -> None:
+    assert SentenceTransformersEmbedder("m").embed_documents([]) == []
+    assert stub_sentence_transformers.constructed == []
+
+
+def test_sentence_transformers_dimensions_come_from_config_or_the_model(stub_sentence_transformers) -> None:
+    assert SentenceTransformersEmbedder("m", dimensions=384).dimensions == 384
+    assert stub_sentence_transformers.constructed == []
+    assert SentenceTransformersEmbedder("m").dimensions == 768
+
+
+def test_get_embedder_factory_selects_sentence_transformers() -> None:
+    config = EmbeddingConfig(
+        provider="sentence_transformers", model="BAAI/bge-base-en-v1.5", revision="abc123", query_instruction="Q:"
+    )
+
+    embedder = get_embedder(config)
+
+    assert isinstance(embedder, SentenceTransformersEmbedder)
+    assert (embedder.model_name, embedder.revision, embedder.query_instruction) == ("BAAI/bge-base-en-v1.5", "abc123", "Q:")
+
+
+def test_revision_is_refused_for_ollama() -> None:
+    with pytest.raises(ValueError, match="revision pins a Hugging Face model"):
+        EmbeddingConfig(provider="ollama", revision="abc123")
+
+
+def test_revision_is_part_of_the_index_manifest_only_when_set() -> None:
+    unpinned = IndexManifest.from_config(RagConfig())
+    pinned = IndexManifest.from_config(
+        RagConfig(embedding=EmbeddingConfig(provider="sentence_transformers", model="m", revision="abc123"))
+    )
+    repinned = IndexManifest.from_config(
+        RagConfig(embedding=EmbeddingConfig(provider="sentence_transformers", model="m", revision="def456"))
+    )
+
+    # Manifests written before the field existed carry no key, and still match.
+    assert "revision" not in unpinned.embedding
+    assert pinned.differences(repinned, sections=("embedding",)) == ["embedding.revision: 'abc123' -> 'def456'"]

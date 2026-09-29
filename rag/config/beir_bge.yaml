@@ -1,0 +1,26 @@
+# BEIR runs with the reference dense encoder (public benchmarks plan, phase 3):
+# BAAI/bge-base-en-v1.5, in process through sentence-transformers, pinned to
+# the revision that reproduced Pyserini's stored vectors
+# (docs/beir-reference-protocol.md, "Text and encoder recipes").
+#
+#   python -m rag.cli --config rag/config/beir_bge.yaml index --corpus beir-scifact
+#   python -m rag.eval.retrieval_eval --config rag/config/beir_bge.yaml --corpus beir-scifact \
+#       --eval-set data/eval/beir_scifact_test.json --save-run data/benchmarks/repo/scifact/bge-dense
+#
+# The checkpoint's own sentence-transformers config supplies the rest of the
+# recipe: CLS pooling, 512-token truncation. The adapter L2-normalises.
+# Runs on Apple-silicon MPS when available, else CPU.
+base: beir.yaml
+
+paths:
+  # Its own index: a different embedder can't share beir.yaml's collections.
+  index_dir: data/index_beir_bge
+
+embedding:
+  provider: sentence_transformers
+  model: BAAI/bge-base-en-v1.5
+  revision: a5beb1e3e68b9ab74eb54cfd186867f64f240e1a
+  dimensions: 768
+  # BGE's retrieval prefix, as Pyserini's reference runs send it (every BEIR
+  # set except Quora and ArguAna). Joined to the query with one space.
+  query_instruction: "Represent this sentence for searching relevant passages:"

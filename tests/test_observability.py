@@ -486,7 +486,7 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
                 "agent": True,
                 "llm": {"thinking_level"},
                 "chat": {"mode"},
-                "embedding": {"query_instruction"},
+                "embedding": {"query_instruction", "revision"},
                 "chunking": {"carry_metadata", "header"},
                 "reranker": {"include_header"},
             }
@@ -511,7 +511,7 @@ def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> N
                 "agent": True,
                 "llm": {"thinking_level"},
                 "chat": {"mode"},
-                "embedding": {"query_instruction"},
+                "embedding": {"query_instruction", "revision"},
                 "chunking": {"carry_metadata", "header"},
                 "reranker": {"include_header"},
             }
@@ -604,3 +604,10 @@ def test_rating_from_feedback_widget() -> None:
     assert rating_from_feedback_widget(1) == "up"
     assert rating_from_feedback_widget(0) == "down"
     assert rating_from_feedback_widget(None) is None
+
+
+def test_config_fingerprint_keys_on_embedding_revision_only_once_it_is_set() -> None:
+    unpinned = RagConfig(embedding=EmbeddingConfig(provider="sentence_transformers", model="m"))
+    pinned = RagConfig(embedding=EmbeddingConfig(provider="sentence_transformers", model="m", revision="abc123"))
+
+    assert config_fingerprint(pinned) != config_fingerprint(unpinned)

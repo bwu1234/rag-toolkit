@@ -1277,6 +1277,107 @@ statistics are unrealistic there -- read those rows for cost, not ranking.
   query word is scored. At 10^6+ chunks, stopword-heavy questions will need
   pruning (or a dedicated engine); this backend doesn't solve that.
 
+### BEIR reference reproduction and this repo's backends (public benchmarks plan, phase 3)
+
+**Setup.** Run on 2026-09-29, test splits of FiQA-2018 (648 queries),
+SciFact (300) and NFCorpus (323), all judged queries, `trec_eval -c`
+semantics, `--remove-query` on everywhere. These are **not tuning results**:
+no parameter, feature or model was chosen from them (see the
+[test-access log](beir-reference-protocol.md#test-access-log)). Runs,
+scores and controls are regenerated into `data/benchmarks/` (gitignored), by
+`scripts/reproduce_beir_reference.py`, `retrieval_eval --save-run` and the two
+scripts in `scripts/experiments/2026-09-beir-reproduction/`. Protocol and pins:
+[BEIR reference protocol](beir-reference-protocol.md).
+
+**The gate: reference runs, recreated.** Pyserini 2.4.0 in an isolated
+environment (Python 3.12.13, Java 21.0.12.1, `faiss-cpu` 1.15.1, `torch`
+2.14.0, `transformers` 5.17.0, M2 Mac, CPU, `OMP_NUM_THREADS=1`), the
+manifests' 2CR commands unchanged, over the downloaded prebuilt indexes whose
+md5s the manifests pin. The BGE query encoder runs locally.
+
+| Dataset | BM25 flat nDCG@10 / R@100 | BGE Faiss nDCG@10 / R@100 |
+|---|---|---|
+| FiQA | 0.2361 / 0.5395 | 0.4065 / 0.7415 |
+| SciFact | 0.6789 / 0.9253 | 0.7408 / 0.9667 |
+| NFCorpus | 0.3218 / 0.2457 | 0.3735 / 0.3368 |
+
+Every cell equals the published score (difference 0.0000; tolerance
+0.0005). `scripts/trec_eval_parity.py` scored all six run files with
+`rag.eval.qrels` and `trec_eval` 9.0.4 against the reference qrels (sha256
+matching the manifests): 0.0000 per query and in aggregate on all six. The
+NFCorpus BM25 run returns nothing for 15 queries, which both evaluators
+score 0. So the scorer and the reference path are validated on the
+complete runs, not only on phase 2's rankings.
+
+**This repo's backends, same data.** Differences, not reproductions: the
+repo's backends are different algorithms, run at their shipped parameters.
+
+| Dataset | Lucene BM25 (ref) | `bm25` (rank_bm25) | `sqlite_fts5` | BGE, exact search over the reference vectors | BGE, exact over this repo's vectors | BGE, this repo's Chroma (shipped path) |
+|---|---|---|---|---|---|---|
+| FiQA | 0.2361 / 0.5395 | 0.2193 / 0.4717 | 0.2351 / 0.5136 | 0.4065 / 0.7415 | 0.4062 / 0.7415 | **0.3952 / 0.7194** |
+| SciFact | 0.6789 / 0.9253 | 0.6535 / 0.8731 | 0.6683 / 0.8859 | 0.7408 / 0.9667 | 0.7404 / 0.9667 | 0.7404 / 0.9667 |
+| NFCorpus | 0.3218 / 0.2457 | 0.3038 / 0.2326 | 0.3045 / 0.2334 | 0.3735 / 0.3368 | 0.3735 / 0.3367 | **0.3670 / 0.3268** |
+
+nDCG@10 / R@100. Sparse runs to depth 1,000 over the repo's own chunks of
+`rag/config/beir.yaml` (one per passage); dense runs through
+`rag/config/beir_bge.yaml` (`sentence_transformers`, BGE-base at the pinned
+revision, stage 1 = final = 100). "Exact" is a numpy inner product, the
+operation Faiss `IndexFlatIP` performs, with this repo's query vectors.
+
+- **The dense integration is right; Chroma's approximate search is what
+  costs.** Our query vectors against the reference document vectors
+  reproduce the published run exactly on all three sets, so the query side
+  (prefix, pooling, truncation) is right. Our document vectors agree with
+  theirs to cosine ≥ 0.999996 on SciFact and NFCorpus and on 99.9% of FiQA
+  (median 0.9999995; FiQA's exceptions are below). Exact search over
+  them lands within 0.0004 of the reference. That is inside the 0.0005
+  reproduction bar, though it is a repo number and makes no reproduction
+  claim. The remaining gap is Chroma's HNSW index, which returns only part
+  of the exact top k:
+
+  | Dataset | share of exact top 10 returned | share of exact top 100 | nDCG@10 lost | R@100 lost |
+  |---|---|---|---|---|
+  | FiQA (57,600 passages) | 0.972 | 0.886 | 0.0110 | 0.0221 |
+  | NFCorpus (3,633) | 0.975 | 0.914 | 0.0065 | 0.0099 |
+  | SciFact (5,183) | 0.998 | 0.966 | 0.0000 | 0.0000 |
+
+  The collections use Chroma 1.5.9's defaults (`hnsw:space: cosine`,
+  nothing else set): 16 neighbours per node, `ef_construction` 100,
+  `ef_search` 100. At k = 100 the search beam is therefore no wider than the
+  result list. See [known limitations](known-limitations.md) for what it means for
+  the shipped pipeline.
+- **Device and batching are not the cause.** SciFact re-encoded on the CPU
+  gives the same scores as the MPS index. The small vector differences move
+  top-10 order only between documents whose reference scores differ by
+  ≤ 1.1e-4: 17 of 300 SciFact queries, 26 of 323 NFCorpus, 57 of 648 FiQA.
+- **One residual is unexplained, and bounded.** Six FiQA document vectors
+  sit at cosine 0.9989–0.99986 against the reference, well below the rest.
+  Their text is identical to the copy in Pyserini's own FiQA BM25 index.
+  Ours is deterministic across CPU, MPS and batch padding, and none has
+  unusual characters or passes 512 tokens. What the 2024 reference build
+  fed the encoder for them is not recorded anywhere found. The effect,
+  bounded by the exact-search control, is −0.0002 nDCG@10 and 0 R@100 on
+  FiQA, all six documents included. The same row also carries FiQA's 38
+  empty passages, which this repo doesn't index (Faiss does). That costs
+  nothing measurable, although one of them is the relevant document for
+  test query `5206`.
+- **Neither BM25 backend is Lucene's BM25.** They trail the reference by
+  0.001–0.025 nDCG@10 and 0.012–0.068 R@100. `sqlite_fts5` is the closer on
+  all three sets and much closer on FiQA's recall (0.5136 against
+  `bm25`'s 0.4717). Documented causes, not separated by experiment: Lucene
+  stems (Porter), drops English stopwords and uses k1 = 0.9, b = 0.4;
+  both repo backends index plain lowercase alphanumeric tokens. rank_bm25
+  uses k1 = 1.5, b = 0.75 and replaces non-positive IDF with a quarter of
+  the mean; FTS5 uses k1 = 1.2, b = 0.75 and floors IDF at 1e-6. The parameters were not tuned on test to close the
+  gap, and per the plan, tuning them belongs on dev splits.
+- **Cost.** Recreating the six reference runs takes 8–37 s each once the
+  indexes are downloaded (277 MB for all six). The Pyserini environment is
+  1.4 GB, and none of it is a repo dependency. Indexing with BGE through
+  `rag.cli index` took 78 s for SciFact, 58 s for NFCorpus and 600 s for FiQA,
+  peaking at 1.2, 1.0 and 2.9 GB resident. The three collections plus
+  their BM25 files take 781 MB. On FiQA, `bm25` answered the 648 queries
+  at depth 1,000 in 96 s and `sqlite_fts5` in 54 s.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a

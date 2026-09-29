@@ -9,7 +9,8 @@ and one recipe probe against the reference vectors. Per-dataset values
 `data/corpora/beir-<name>/manifest.json`. This page holds what the three
 datasets share and why the tolerances are what they are.
 
-Nothing here has been reproduced yet. Reproduction is phase 3.
+Phase 3 (2026-09-29) reproduced all six reference runs exactly, in the
+environment below; see [phase 3 as built](public-benchmarks-plan.md#phase-3-as-built).
 
 ## Reference scores
 
@@ -170,6 +171,8 @@ made because they raise scores.
 |---|---|---|
 | 2026-09-29 | Test qrels and topics inventoried: counts, grade histogram, id collisions, empty-document judgments; compared with the reference qrels and topics | No: no retrieval was run and no score was computed |
 | 2026-09-29 | Eight SciFact *corpus* documents encoded to recover the document recipe | No: corpus only, no queries |
+| 2026-09-29 | Phase 3: the six reference runs recreated and scored on all three test splits; `trec_eval` parity over them | Yes, but nothing was chosen from them: the commands are the pinned 2CR ones, unchanged. Every cell matched exactly |
+| 2026-09-29 | Phase 3: this repo's `bm25` and `sqlite_fts5` backends and its BGE dense integration (Chroma), with exact-search controls, on all three test splits | Yes. Shipped parameters, reported as differences; no parameter, feature or model was chosen from them |
 
 ## Recreating the reference environment
 
@@ -188,6 +191,16 @@ Each is followed by the manifest's two `eval_commands`. `--threads` and
 `--batch-size` do not change results. Record the `faiss-cpu`, `torch` and
 `transformers` versions and the hardware used: the 2CR table does not pin
 them.
+
+`scripts/reproduce_beir_reference.py` runs them and records all of that.
+Two things the 2CR page doesn't say, found in phase 3 on an M2 Mac:
+
+- **Java.** Homebrew's `openjdk@21` works, but `JAVA_HOME` must be
+  `$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home`, where
+  `pyjnius` can find `libjli`; the keg root is not enough.
+- **OpenMP.** `faiss-cpu` and `torch` each bundle a `libomp`, and the dense
+  search dies with SIGSEGV in `__kmp_suspend_64` unless `OMP_NUM_THREADS=1`.
+  Results don't depend on thread count.
 
 ## Not pinned, and why
 

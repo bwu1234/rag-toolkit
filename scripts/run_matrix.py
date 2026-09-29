@@ -90,6 +90,7 @@ FINGERPRINTED = (
 # keep their fingerprint while the field sits at its default (`None`/`False`).
 FINGERPRINTED_WHEN_SET = (
     "embedding.query_instruction",
+    "embedding.revision",
     "chunking.header.template",
     "reranker.include_header",
     "retrieval.document_routing.top_m",
