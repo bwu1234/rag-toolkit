@@ -26,6 +26,16 @@ logger = logging.getLogger(__name__)
 # stashed in Chroma's flat metadata dict.
 _PROVENANCE_FIELDS = ("document_id", "source", "doc_type")
 
+#: Chroma's default `ef_search`, kept in step with `DEFAULT_HNSW_EF_SEARCH`.
+_CHROMA_DEFAULT_EF_SEARCH = 100
+
+# `ef_search` each collection was opened with in this process, keyed by
+# (index directory, collection name). Chroma reads the setting once, when a
+# process first loads the collection's HNSW segment, and ignores a later
+# change until the next process -- so a second, different value in the same
+# process would be silently ignored. See `_apply_ef_search`.
+_EF_SEARCH_IN_PROCESS: dict[tuple[str, str], int] = {}
+
 
 class ChromaVectorStore(VectorStore):
     """Wraps a single persistent Chroma collection.
@@ -36,10 +46,14 @@ class ChromaVectorStore(VectorStore):
     and reconstructing typed `ScoredChunk`s on the way out.
     """
 
-    def __init__(self, persist_dir: Path, collection_name: str) -> None:
+    def __init__(
+        self, persist_dir: Path, collection_name: str, *, hnsw_ef_search: int = _CHROMA_DEFAULT_EF_SEARCH
+    ) -> None:
         persist_dir.mkdir(parents=True, exist_ok=True)
         self._client = chromadb.PersistentClient(path=str(persist_dir))
         self._collection_name = collection_name
+        self._ef_key = (str(persist_dir.resolve()), collection_name)
+        self._ef_search = hnsw_ef_search
         # Cosine similarity is the natural match for normalized text
         # embeddings and is what most embedding models (including Ollama's)
         # are tuned/evaluated against.
@@ -47,6 +61,35 @@ class ChromaVectorStore(VectorStore):
             name=collection_name,
             metadata={"hnsw:space": "cosine"},
         )
+        self._apply_ef_search()
+
+    def _apply_ef_search(self) -> None:
+        """Make the collection search with the configured `ef_search`.
+
+        Chroma persists `ef_search` with the collection, so a value is written
+        whenever it differs from the configured one -- otherwise the setting
+        would depend on whichever process last changed it. It must happen
+        before this process's first query or write, the point at which Chroma
+        loads the HNSW segment and fixes the value for the process's lifetime.
+
+        Raises:
+            ValueError: this process already opened the collection with a
+                different value, which Chroma would silently ignore (e.g. a
+                `run_matrix` variant sweeping `hnsw_ef_search`; run one
+                process per value instead).
+        """
+
+        opened_with = _EF_SEARCH_IN_PROCESS.setdefault(self._ef_key, self._ef_search)
+        if opened_with != self._ef_search:
+            raise ValueError(
+                f"Collection {self._collection_name!r} was already opened in this process with "
+                f"hnsw_ef_search={opened_with}; Chroma ignores a change to {self._ef_search} until the "
+                "process restarts. Use one process per hnsw_ef_search value."
+            )
+        hnsw = (self._collection.configuration or {}).get("hnsw") or {}
+        if hnsw.get("ef_search") != self._ef_search:
+            self._collection.modify(configuration={"hnsw": {"ef_search": self._ef_search}})
+            logger.info("Set hnsw ef_search=%d on collection %r", self._ef_search, self._collection_name)
 
     def upsert(self, chunks: list[Chunk], embeddings: list[list[float]]) -> None:
         if len(chunks) != len(embeddings):
@@ -147,6 +190,10 @@ class ChromaVectorStore(VectorStore):
             name=self._collection_name,
             metadata={"hnsw:space": "cosine"},
         )
+        # A new collection starts at Chroma's default, and has no segment
+        # loaded yet, so the configured value applies afresh.
+        _EF_SEARCH_IN_PROCESS.pop(self._ef_key, None)
+        self._apply_ef_search()
         logger.info("Reset collection %r", self._collection_name)
 
     @staticmethod

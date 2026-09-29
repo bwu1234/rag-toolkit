@@ -1378,6 +1378,59 @@ operation Faiss `IndexFlatIP` performs, with this repo's query vectors.
   their BM25 files take 781 MB. On FiQA, `bm25` answered the 648 queries
   at depth 1,000 in 96 s and `sqlite_fts5` in 54 s.
 
+### HNSW `ef_search`
+
+**Setup.** Run on 2026-09-29 to set `vector_store.hnsw_ef_search`, after
+[phase 3](#beir-reference-reproduction-and-this-repos-backends-public-benchmarks-plan-phase-3)
+traced most of the dense gap to Chroma's approximate search.
+`scripts/experiments/2026-09-hnsw-ef-search/ann_recall.py` measures the
+share of the exact top k (numpy inner product over the collection's own
+vectors) that Chroma returns, with **no relevance labels**, one process per
+value (Chroma fixes `ef_search` when a process first loads the collection).
+Query texts: the BEIR test queries against the `beir_bge.yaml` indexes at
+k = 100, and the 347 questions of the three EDGAR sets against the shipped
+`edgar` index (Qwen 0.6b, 4,236 chunks). Latency is Chroma's median query time
+on this machine, with the embedding excluded.
+
+| Index | k | 100 (Chroma default) | 200 | 400 | 800 | 1600 |
+|---|---|---|---|---|---|---|
+| EDGAR | 20 | 0.9994 (3 q < 1) · 0.9 ms | 0.9999 · 1.3 ms | **1.0000** · 2.0 ms | 1.0000 · 3.4 ms | 1.0000 · 4.8 ms |
+| EDGAR | 100 | 0.9896 · 1.0 ms | 0.9982 · 1.4 ms | 0.9997 · 2.4 ms | 0.9999 · 3.5 ms | 1.0000 · 4.9 ms |
+| FiQA (57,600) | 100 | 0.8857 · 1.5 ms | 0.9484 · 2.4 ms | 0.9801 · 4.0 ms | 0.9936 · 6.3 ms | **0.9978** · 10.1 ms |
+| NFCorpus (3,633) | 100 | 0.9143 · 1.1 ms | 0.9723 · 1.6 ms | 0.9933 · 2.4 ms | 0.9985 · 2.9 ms | **0.9998** · 3.6 ms |
+| SciFact (5,183) | 100 | 0.9659 · 1.3 ms | 0.9928 · 1.8 ms | 0.9991 · 2.6 ms | 0.9998 · 3.5 ms | **1.0000** · 4.5 ms |
+
+Each cell is the share of the exact top k returned, then the median query
+time. The default-column BEIR values reproduce phase 3's (0.886, 0.914,
+0.966).
+
+**Shipped pipeline, 100 vs 400.** `retrieval_eval -v` at the shipped config
+on all three EDGAR sets (174 + 55 + 118 questions), each value in its own
+process. Every per-sample line is identical, and so is every aggregate (hit
+0.977 / 0.836 / 0.822, NDCG 0.892 / 0.761 / 0.698). The dense leg's three
+partial misses at 100 never survived RRF and the reranker.
+
+**BEIR through Chroma at 1600**, reported only (the value was chosen above,
+from recall). `retrieval_eval` with `beir_bge.yaml`, nDCG@10 / R@100:
+SciFact 0.7404 / 0.9667 and NFCorpus 0.3735 / 0.3367, both equal to exact
+search; FiQA 0.4045 / 0.7396 (exact 0.4062 / 0.7415). Against the reference,
+the FiQA gap falls from 0.0113 to 0.0020 nDCG@10.
+
+**Findings.**
+
+- **Shipped default raised to 400.** On EDGAR it makes the dense top 20
+  exact for about 1 ms a query, which is small next to the reranker. This
+  is an approximation fix, not a quality gain: the evals didn't move. The
+  margin matters for what EDGAR doesn't yet test, pooled or larger corpora,
+  where recall at 100 fell furthest (FiQA, 57,600 passages).
+- **`beir.yaml` uses 1600** (≥ 0.998 on all three sets), so phase-4 dense
+  rows measure the retriever rather than HNSW. FiQA's remaining 0.2% is
+  0.0017 nDCG@10; state it beside FiQA dense rows.
+- **One process per value.** A `run_matrix` variant that changed
+  `hnsw_ef_search` would share its process with the baseline, and Chroma
+  would silently keep the first value, so `ChromaVectorStore` refuses a
+  second value for a collection in one process.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a

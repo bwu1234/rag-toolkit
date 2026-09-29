@@ -7,16 +7,14 @@
   facts. Repeated tuning on these sets is not held-out validation. The
   [evaluation rigor plan](evaluation-rigor-plan.md) specifies fresh grouped
   holdouts, task coverage, corpus diversity, and acceptance criteria.
-- **Dense search is approximate, and the loss is measurable.** Chroma's HNSW
-  index runs at its defaults (`ef_search` 100, 16 neighbours). Checked against
-  exact search on BEIR with BGE vectors at k = 100, it returned 88.6% of the
-  exact top 100 on FiQA and 91.4% on NFCorpus, costing up to 0.011 nDCG@10
-  and 0.022 R@100
-  ([phase 3](measured-results.md#beir-reference-reproduction-and-this-repos-backends-public-benchmarks-plan-phase-3)).
-  The shipped EDGAR path (about 4,200 chunks, Qwen vectors, `top_k` 20, so a
-  beam five times k) has not been checked. Measuring it needs no relevance
-  labels: compare Chroma's top k with exact search over the same vectors.
-  Raising `ef_search` is the likely remedy and is not yet a config setting.
+- **Dense search is approximate.** Chroma's HNSW index returns most, not
+  all, of the exact nearest neighbours. `vector_store.hnsw_ef_search` sets the
+  search beam: 400 as shipped, which makes EDGAR's dense top 20 exact, and
+  1600 in `beir.yaml`, which leaves FiQA at 99.8% of the exact top 100
+  ([HNSW `ef_search`](measured-results.md#hnsw-ef_search)). A much larger
+  corpus needs the recall re-measured (`scripts/experiments/2026-09-hnsw-ef-search/ann_recall.py`,
+  which needs no labels). Chroma fixes the value for the lifetime of a
+  process, so a sweep needs one process per value.
 - **A fresh EDGAR fetch doesn't reproduce the corpus.** The committed MD&A
   selection rules (`extract_mda`) postdate the fetch: they select nothing for
   8 of the 61 filings (LUV, TGT and CVX, whose MD&A opens with a table) and a

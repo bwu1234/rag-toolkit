@@ -312,6 +312,11 @@ class ChunkingConfig(BaseModel):
     header: ChunkHeaderConfig = ChunkHeaderConfig()
 
 
+#: Chroma's own default `ef_search`, which every collection used before
+#: `vector_store.hnsw_ef_search` existed.
+DEFAULT_HNSW_EF_SEARCH = 100
+
+
 class VectorStoreConfig(BaseModel):
     """Vector store selection and connection details.
 
@@ -322,6 +327,11 @@ class VectorStoreConfig(BaseModel):
 
     provider: Literal["chroma"] = "chroma"
     collection_name: str = "rag_corpus"
+    # Width of the HNSW search beam: how many candidates the approximate
+    # nearest-neighbour search explores per query (raised to `top_k` if lower).
+    # Wider finds more of the exact top k and costs query time; it changes no
+    # stored vector, so it needs no reindex and stays out of the index manifest.
+    hnsw_ef_search: int = Field(default=DEFAULT_HNSW_EF_SEARCH, ge=1)
 
 
 class SparseIndexConfig(BaseModel):

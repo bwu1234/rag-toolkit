@@ -275,3 +275,13 @@ def test_matrix_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> N
     digest, settings = run_matrix.fingerprint(unset)
     assert "embedding.query_instruction" not in settings
     assert run_matrix.fingerprint(instructed)[0] != digest
+
+
+def test_matrix_fingerprint_keys_on_ef_search_only_off_chromas_default() -> None:
+    """Every row recorded before the setting existed searched at Chroma's default, 100."""
+    at_default = run_matrix.apply_overrides(RagConfig(), {"vector_store.hnsw_ef_search": 100})
+    wider = run_matrix.apply_overrides(RagConfig(), {"vector_store.hnsw_ef_search": 400})
+
+    digest, settings = run_matrix.fingerprint(at_default)
+    assert "vector_store.hnsw_ef_search" not in settings
+    assert run_matrix.fingerprint(wider)[0] != digest

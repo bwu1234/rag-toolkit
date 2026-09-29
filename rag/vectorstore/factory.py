@@ -31,6 +31,7 @@ def get_vector_store(
         return ChromaVectorStore(
             persist_dir=index_dir,
             collection_name=collection_name or config.collection_name,
+            hnsw_ef_search=config.hnsw_ef_search,
         )
 
     raise ValueError(
