@@ -484,7 +484,7 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
                 "observability": True,
                 "eval": True,
                 "agent": True,
-                "llm": {"thinking_level"},
+                "llm": {"thinking_level", "requests_per_day", "requests_per_day_reserve", "daily_request_log"},
                 "chat": {"mode"},
                 "embedding": {"query_instruction", "revision"},
                 "chunking": {"carry_metadata", "header"},
@@ -500,6 +500,18 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
     assert config_fingerprint(minimal) != config_fingerprint(unset)
 
 
+def test_config_fingerprint_ignores_the_daily_request_budget() -> None:
+    # The budget decides whether a turn is sent, never what it says, so turns
+    # logged before and after it was set stay in one bucket -- for the agent too.
+    gemini = LLMConfig(provider="gemini", model="gemini-3.5-flash-lite")
+    budgeted = gemini.model_copy(update={"requests_per_day": 500, "requests_per_day_reserve": 50})
+    assert config_fingerprint(RagConfig(llm=gemini)) == config_fingerprint(RagConfig(llm=budgeted))
+    agentic = ChatConfig(mode="agentic")
+    assert config_fingerprint(RagConfig(chat=agentic, agent=AgentConfig(llm=gemini))) == config_fingerprint(
+        RagConfig(chat=agentic, agent=AgentConfig(llm=budgeted))
+    )
+
+
 def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> None:
     unset = RagConfig()
     # `embedding.query_instruction` and the chunk header fields didn't exist when
@@ -510,7 +522,7 @@ def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> N
                 "observability": True,
                 "eval": True,
                 "agent": True,
-                "llm": {"thinking_level"},
+                "llm": {"thinking_level", "requests_per_day", "requests_per_day_reserve", "daily_request_log"},
                 "chat": {"mode"},
                 "embedding": {"query_instruction", "revision"},
                 "chunking": {"carry_metadata", "header"},

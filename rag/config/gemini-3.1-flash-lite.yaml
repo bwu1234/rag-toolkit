@@ -7,8 +7,9 @@
 # The budget is the free tier: 500 requests/day, 15/min, 250k tokens/min
 # (AI Studio, 2026-09). One pipeline turn is one request, two with history
 # (the condenser); CRAG and query expansion would add more and stay off. The
-# client paces under the per-minute limits; nothing yet stops a caller from
-# spending the whole day, so don't point an eval at this without a --limit.
+# client paces under the per-minute limits, and counts requests per Pacific day
+# in data/logs/llm_daily_requests.json, refusing at 450 so 50 stay for other
+# callers. Still don't point an eval at this without a --limit.
 # Evals grade with the local judge below, so they spend Gemini requests on
 # generation only.
 # Prompts and answers on the free tier may be read by Google.
@@ -26,6 +27,8 @@ llm:
   api_key_env: GEMINI_API_KEY
   requests_per_minute: 15
   tokens_per_minute: 250000
+  requests_per_day: 500
+  requests_per_day_reserve: 50
   # Thinking can't be turned off on these models, and its tokens come out of
   # max_tokens (1024, inherited). Minimal is the cheapest level; pinned in both
   # files so a comparison isn't a comparison of model defaults. The client

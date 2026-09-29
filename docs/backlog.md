@@ -221,7 +221,7 @@ land.
   judge off the local GPU. It paces itself under `requests_per_minute` /
   `tokens_per_minute` and raises `GeminiDailyQuotaExhausted` only when the
   429's `QuotaFailure.quotaId` names a per-day quota. The in-app daily
-  counter below is still open.
+  counter below has shipped too.
   **Flash-Lite as generator:** `rag/config/gemini-3.1-flash-lite.yaml` and
   `gemini-3.5-flash-lite.yaml` overlay `config.yaml` with only the generator
   changed (15/min, 250k tokens/min, 500/day on the free tier). Both are
@@ -236,7 +236,12 @@ land.
   ceiling of a few hundred turns a day on the whole deployment.
   - Keep an in-app daily counter that refuses at a margin below the quota, so
     one caller can't use up everyone's day. Milestone 28's per-key rate limit
-    covers bursts, not this.
+    covers bursts, not this. **Shipped** (`rag/generation/daily_budget.py`):
+    `llm.requests_per_day` and `requests_per_day_reserve` (500 and 50 in both
+    Flash-Lite configs). Every process on one machine shares a count per
+    model per Pacific day, in `data/logs/llm_daily_requests.json`. Replicas
+    that don't share a disk each keep their own count, so Cloud Run still
+    needs a shared counter.
   - **No unbounded evals and no load tests against the Gemini key.** The one
     or two bounded quality runs described below are the sole permitted Gemini
     evals. Do not run `answer_eval` over the 174-sample EDGAR set: generation
