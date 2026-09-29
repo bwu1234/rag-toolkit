@@ -98,10 +98,13 @@ def _cmd_chunk(args: argparse.Namespace) -> None:
 
     sizes = [len(c.text) for c in chunks]
     print(f"\n{len(documents)} document(s) -> {len(chunks)} chunk(s)")
-    print(
-        f"Strategy: {config.chunking.strategy}  "
-        f"(chunk_size={config.chunking.chunk_size}, overlap={config.chunking.chunk_overlap})"
-    )
+    if config.chunking.strategy == "none":
+        print("Strategy: none (one chunk per document)")
+    else:
+        print(
+            f"Strategy: {config.chunking.strategy}  "
+            f"(chunk_size={config.chunking.chunk_size}, overlap={config.chunking.chunk_overlap})"
+        )
     print(f"Chunk size (chars) -- min: {min(sizes)}  max: {max(sizes)}  avg: {sum(sizes) / len(sizes):.0f}")
 
     if args.show:
@@ -279,11 +282,16 @@ def _cmd_index_report(args: argparse.Namespace) -> None:
     selection, documents, chunks = chunk_selected_corpora(config, args.corpus)
     report = build_report(
         corpus=selection.describe(),
-        chunking={
-            "strategy": config.chunking.strategy,
-            "chunk_size": config.chunking.chunk_size,
-            "chunk_overlap": config.chunking.chunk_overlap,
-        },
+        chunking=(
+            {
+                "strategy": config.chunking.strategy,
+                "chunk_size": config.chunking.chunk_size,
+                "chunk_overlap": config.chunking.chunk_overlap,
+            }
+            # `none` ignores the sizes; printing them would suggest they apply.
+            if config.chunking.strategy != "none"
+            else {"strategy": "none"}
+        ),
         documents=documents,
         chunks=chunks,
         min_chars=args.min_chars,

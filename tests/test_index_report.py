@@ -130,3 +130,27 @@ def test_report_says_headers_are_off_without_a_template() -> None:
 
     assert report.headerless_documents is None
     assert "Chunk headers      off" in format_report(report)
+
+
+def test_report_counts_split_documents() -> None:
+    """The check for `chunking.strategy: none`: no document may span several chunks."""
+    documents = [_doc("one two", "a.md"), _doc("three", "b.md")]
+    chunks = [
+        _chunk("a.md::chunk0", "one", document_id="a.md"),
+        _chunk("a.md::chunk1", "two", document_id="a.md", char_start=4),
+        _chunk("b.md::chunk0", "three", document_id="b.md"),
+    ]
+
+    report = _report(documents, chunks)
+
+    assert report.split_documents == 1
+    assert "Split documents    1" in format_report(report)
+
+
+def test_long_zero_chunk_lists_are_truncated() -> None:
+    documents = [_doc("", f"e{i}.md") for i in range(12)]
+
+    lines = format_report(_report(documents, [])).splitlines()
+    line = next(row for row in lines if row.startswith("Zero-chunk"))
+
+    assert line.endswith(", +2 more")

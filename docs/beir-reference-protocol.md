@@ -126,10 +126,11 @@ each manifest under `inventory`.
 - **FiQA's 38 empty documents.** One test judgment (query `5206` →
   document `117276`), 2 dev and 35 train judgments point at them. Lucene
   skips them, so the reference BM25 run can never retrieve that one; the
-  Faiss index includes them. The phase-1 loader has to keep them (dropping
-  them would change the dense candidate set), and phase 1 must decide what
-  the BM25 side does with empty text. The effect is at most one relevant
-  document on one of 648 queries.
+  Faiss index includes them. Phase 1 decided: the loader keeps them, and
+  `chunking.strategy: none` gives them no chunk. So both of this repo's
+  indexes hold the BM25 reference's document set, which differs from the
+  Faiss reference's by at most one relevant document on one of 648 queries. Phase 3 records the difference; it does not affect reproduction
+  in the isolated reference environment.
 - **FiQA has no titles**, so the title/body join yields a leading separator.
   Both reference encoders strip that, and the phase-1 serializer should too.
 - **No duplicate ids, no qrels pointing at missing documents or queries, no

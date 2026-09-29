@@ -3,8 +3,9 @@
 Status: proposed 2026-09-28. Phase 0 done 2026-09-29: the reference scores,
 pins, protocol and frozen tolerances are in
 [BEIR reference protocol](beir-reference-protocol.md), and per-dataset
-provenance is in `data/corpora/beir-<name>/manifest.json`. Phases 1 onward are
-not implemented. Sizes and query counts below come from the BEIR README; the
+provenance is in `data/corpora/beir-<name>/manifest.json`. Phase 1 done
+2026-09-29 ([what shipped](#phase-1-as-built)). Phases 2 onward are not
+implemented. Sizes and query counts below come from the BEIR README; the
 manifests hold the counts measured from the pinned archives.
 
 Every number in [measured results](measured-results.md) comes from a corpus
@@ -163,6 +164,69 @@ builds, and `index-report` with the same config shows one chunk per document
 and a synced index. Counts, ids and serialized text agree with the source;
 record disk/index size. Phases 1 and 2 can proceed in parallel after agreeing
 the qrels schema; converter integration requires that schema to be available.
+
+### Phase 1 as built
+
+Shipped 2026-09-29. Where it differs from the list above, the difference is
+deliberate:
+
+- **`chunking.strategy: none`**, not `chunking.provider: none`: chunkers are
+  selected by `strategy`. `WholeDocumentChunker` keeps each document as one
+  chunk with its text unaltered (not even stripped). A document with no text
+  yields no chunk, as with the fixed chunker. For FiQA that drops the 38 empty
+  passages, which is what the reference BM25 index does; the reference Faiss
+  index keeps them, a difference of at most one relevant document on one of
+  648 test queries (see the [protocol](beir-reference-protocol.md)).
+- **Text contract**: `BeirCorpusLoader` handles `*.jsonl` and builds the text
+  with `beir_passage_text`: `title + " " + text`, or the body alone for an
+  empty title. This is the recipe of the reference BGE vectors. The title
+  goes into `Chunk.text` itself, so embeddings, BM25 and the reranker all see
+  it. It is also carried as metadata.
+- **Cleaning bypass** is a per-corpus registry flag, `clean: false`, not a
+  config-file switch. That way every config (`config.yaml` included) indexes
+  a benchmark corpus the same way.
+- **Provenance**: neither the text recipe nor the cleaning flag is added to
+  the index manifest. Both change `Chunk.text`, so the incremental indexer's
+  content hash re-embeds every affected chunk. That is the same reason chunk
+  sizes are left out of the manifest. Refusing to index until `--reset` would
+  add nothing that the content hash does not already catch.
+- **Schema, agreed now so the converter could ship**: `expected_doc_ids`
+  accepts `{"id", "grade"}` objects (grade 0 kept, never credited), and
+  `matching_mode: "qrels"` marks converted samples. `judge_ranking` refuses
+  qrels samples until phase 2 builds their scoring, so a converted set cannot
+  be scored by the legacy document mode by mistake.
+- **Layout**: `scripts/fetch_beir.py` writes passages to `documents/` and
+  queries and qrels to `source/` (gitignored), checking the archive and
+  every extracted file against the manifest's hashes.
+  `scripts/beir_to_eval_set.py` re-checks those hashes, validates the data,
+  and checks its counts against the manifest inventory.
+- **`index-report`** now prints `Split documents`, the count this phase's
+  exit criterion checks, and leaves `chunk_size` out of the settings line
+  when `strategy: none` ignores it.
+
+#### Phase 1 exit
+
+Met 2026-09-29 on SciFact, embedded with the shipped `qwen3-embedding:0.6b`
+through Ollama. BGE comes in phase 3.
+
+- `python -m rag.cli --config rag/config/beir.yaml index --corpus beir-scifact`
+  built 5,183 vector and 5,183 BM25 chunks in 373 s wall time (this machine,
+  local Ollama). The CLI process peaked at 350 MB resident; Ollama's memory is
+  separate and was not measured. The index is 111 MB on disk
+  (`data/index_beir/`).
+- `index-report` with the same config: 5,183 documents, 5,183 chunks,
+  0 split documents, 0 zero-chunk documents, 0 duplicates. Index 0 missing,
+  0 stale, 0 changed, manifest matches, in sync.
+- Against the source, every `corpus.jsonl` `_id` is a document id with
+  exactly one chunk, and both the chunk text and the text stored in Chroma
+  equal `beir_passage_text(title, text)` for all 5,183 passages.
+- `beir_to_eval_set.py scifact test` wrote 300 qrels samples with 339
+  judgments, matching the manifest inventory.
+
+Not yet exercised: FiQA and NFCorpus indexing. FiQA is 57,638 passages,
+past the ~10^4 chunks where the default `rank_bm25` sparse index degrades
+(`SparseIndexConfig`). Expect it to be slow, and measure it before phase 4
+relies on it.
 
 ## Phase 2: standard retrieval metrics
 

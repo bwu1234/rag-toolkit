@@ -222,6 +222,61 @@ class FixedSizeChunker(Chunker):
         return (min(candidates) + 1) if candidates else target
 
 
+class WholeDocumentChunker(Chunker):
+    """One chunk per document, text unchanged (`chunking.strategy: none`).
+
+    For corpora that arrive already split into retrieval units, such as BEIR
+    passages scored by published relevance labels. Splitting one would let a
+    single document occupy several ranks, which the benchmark's scoring does
+    not allow. The text is not stripped, so the indexed string is exactly the
+    loader's serialisation.
+
+    A document whose text is empty or whitespace yields no chunk, as with
+    `FixedSizeChunker`: there is nothing to embed or match. (FiQA has 38 such
+    passages; Lucene's reference index skips them the same way.)
+    """
+
+    def __init__(
+        self,
+        *,
+        carry_metadata: Iterable[str] = DEFAULT_CARRY_METADATA,
+        header_template: str | None = None,
+    ) -> None:
+        self.carry_metadata = tuple(carry_metadata)
+        if header_template is not None:
+            template_fields(header_template)
+        self.header_template = header_template
+
+    def chunk(self, documents: Iterable[Document]) -> list[Chunk]:
+        chunks: list[Chunk] = []
+        empty = 0
+        for document in documents:
+            if not document.text.strip():
+                empty += 1
+                continue
+            header = render_header(self.header_template, document) if self.header_template else None
+            chunks.append(
+                Chunk(
+                    id=make_chunk_id(document.id, 0),
+                    text=document.text,
+                    document_id=document.id,
+                    source=document.source,
+                    doc_type=document.doc_type,
+                    metadata={
+                        **carried_metadata(document, self.carry_metadata),
+                        "chunk_index": 0,
+                        "char_start": 0,
+                        "char_end": len(document.text),
+                    },
+                    header=header,
+                )
+            )
+        logger.info("Kept %d document(s) whole as chunks", len(chunks))
+        if empty:
+            logger.info("%d document(s) have no text and produced no chunk", empty)
+        return chunks
+
+
 def get_chunker(config: ChunkingConfig) -> Chunker:
     """Instantiate the `Chunker` selected by `config.strategy`.
 
@@ -238,4 +293,13 @@ def get_chunker(config: ChunkingConfig) -> Chunker:
             header_template=config.header.template,
         )
 
-    raise ValueError(f"Unknown chunking strategy: {config.strategy!r}")
+    if config.strategy == "none":
+        return WholeDocumentChunker(
+            carry_metadata=config.carry_metadata,
+            header_template=config.header.template,
+        )
+
+    raise ValueError(
+        f"Unknown chunking strategy: {config.strategy!r}. "
+        "Add a Chunker and register it here to support a new strategy."
+    )
