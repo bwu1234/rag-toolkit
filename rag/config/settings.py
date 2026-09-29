@@ -135,12 +135,28 @@ class EmbeddingConfig(BaseModel):
     # Embedding dimensionality is provider/model-specific; recorded here so the
     # vector store can validate it rather than discovering mismatches at query time.
     dimensions: int | None = None
-    # Task instruction for query vectors only, for instruction-tuned embedders
-    # (Qwen3-Embedding). Sent as `Instruct: {instruction}\nQuery:{query}`, the
-    # model card's format; documents are embedded without it. `null` embeds the
-    # bare query. Query-time only, so changing it needs no reindex and it stays
-    # out of the index manifest.
+    # Task instruction for query vectors only, for instruction-tuned embedders;
+    # documents are embedded without it. Each adapter uses its model family's
+    # format: `ollama` sends `Instruct: {instruction}\nQuery:{query}`
+    # (Qwen3-Embedding), `sentence_transformers` sends `{instruction} {query}`
+    # (BGE). `null` embeds the bare query. Query-time only, so changing it
+    # needs no reindex and it stays out of the index manifest.
     query_instruction: str | None = None
+    # Hugging Face revision (commit) of a `sentence_transformers` model, so a
+    # benchmark run names the exact weights. `null` takes the latest. Part of
+    # the index manifest: different weights mean incomparable vectors.
+    revision: str | None = None
+
+    @model_validator(mode="after")
+    def _revision_is_hugging_face_only(self) -> "EmbeddingConfig":
+        # Ollama pins weights by tag, in `model`; a revision it silently
+        # ignored would make a run look pinned when it isn't.
+        if self.revision is not None and self.provider != "sentence_transformers":
+            raise ValueError(
+                f"embedding.revision pins a Hugging Face model; provider {self.provider!r} ignores it "
+                "(pin an Ollama model by its tag in `model`)"
+            )
+        return self
 
 
 #: Where `provider: gemini` points when `base_url` isn't set explicitly.

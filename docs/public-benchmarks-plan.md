@@ -5,7 +5,8 @@ pins, protocol and frozen tolerances are in
 [BEIR reference protocol](beir-reference-protocol.md), and per-dataset
 provenance is in `data/corpora/beir-<name>/manifest.json`. Phase 1 done
 2026-09-29 ([what shipped](#phase-1-as-built)). Phase 2 done 2026-09-29
-([what shipped](#phase-2-as-built)). Phases 3 onward are not implemented. Sizes and query counts below come from the BEIR README; the
+([what shipped](#phase-2-as-built)). Phase 3 done 2026-09-29: the gate is
+met ([what shipped](#phase-3-as-built)). Phase 4 onward is not implemented. Sizes and query counts below come from the BEIR README; the
 manifests hold the counts measured from the pinned archives.
 
 Every number in [measured results](measured-results.md) comes from a corpus
@@ -375,6 +376,79 @@ phase 4 once scoring and integration checks pass; do not claim that those
 backends reproduced the reference. Do not tune their parameters on test to
 force agreement. Record the gate evidence in [measured results](measured-results.md)
 with links to rankings, qrels, commands and immutable protocol records.
+
+### Phase 3 as built
+
+Shipped 2026-09-29. Numbers, commands and caveats are in
+[measured results](measured-results.md#beir-reference-reproduction-and-this-repos-backends-public-benchmarks-plan-phase-3);
+this section records what was built and decided.
+
+- **`embedding.provider: sentence_transformers`**
+  (`rag/embedding/sentence_transformers_embedder.py`) runs the model in
+  process and loads it lazily. The checkpoint's own sentence-transformers
+  config supplies pooling and truncation (BGE: CLS, 512 tokens), and the
+  adapter always L2-normalises. `query_instruction` is per-adapter as the
+  plan required: `{instruction} {query}` here, Qwen's `Instruct:` template in
+  `OllamaEmbedder`. A new `embedding.revision` pins the Hugging Face commit.
+  It is refused for Ollama, which pins by tag, and it enters the index
+  manifest only when set, so existing manifests still match. No new
+  dependency.
+- **`rag/config/beir_bge.yaml`** inherits `beir.yaml` and selects BGE-base at
+  the revision phase 0 pinned, with Pyserini's query prefix and its own
+  `index_dir`.
+- **Reference runs**: `scripts/reproduce_beir_reference.py` runs each
+  manifest's 2CR command and `trec_eval` commands inside `.venv-pyserini`,
+  with standard library only. It records the downloaded index identity, run
+  hash, timing and environment, and fails outside the frozen tolerance. The
+  indexes were **downloaded**, not rebuilt. Local BGE encoding was checked
+  separately, through this repo's integration (below). Two environment
+  needs the 2CR page doesn't mention (Homebrew `JAVA_HOME`,
+  `OMP_NUM_THREADS=1`) are in the [protocol](beir-reference-protocol.md#recreating-the-reference-environment).
+- **No BM25-only retrieval mode was added.** The plan asks for the repo's
+  BM25 integration, not a product feature, so
+  `scripts/experiments/2026-09-beir-reproduction/sparse_backends.py` drives
+  both sparse backends directly over the repo's own chunks, to depth 1,000,
+  through the phase-2 scorer.
+- **Exact-search control without a Faiss provider**:
+  `scripts/experiments/2026-09-beir-reproduction/dense_control.py` reads the
+  reference Faiss file without Faiss (as the phase-0 probe did) and our
+  vectors from Chroma. It compares them by document id and runs numpy
+  inner-product search with our query vectors over each. That separates the
+  query encoder, the document encoder and Chroma's HNSW, in the plan's
+  diagnosis order.
+- **FiQA indexes**, which phase 1 left unexercised: its 57,600 passages took
+  600 s with BGE on MPS, peaking at 2.9 GB resident. The default `bm25`
+  sparse index copes at this size, at 149 ms per query.
+
+#### Phase 3 exit
+
+**Met 2026-09-29.** Both halves of the gate:
+
+- All six reference runs reproduce with a difference of **0.0000** on both
+  metrics (tolerance 0.0005).
+- `trec_eval` parity on all six complete runs: **0.0000** per query and in
+  aggregate (tolerance 0.0001).
+
+Repo backends, reported as differences (the plan allows proceeding once they
+are documented; none claims reproduction):
+
+- **BGE dense through Chroma** trails the reference by 0.0004–0.0113 nDCG@10.
+  The control attributes almost all of it to Chroma's approximate search:
+  exact search over our own vectors is within 0.0004 of the reference on
+  every set. One residual is unexplained and bounded: six FiQA document
+  vectors (of 57,600) differ from the reference beyond floating-point noise,
+  for −0.0002 nDCG@10 and 0 R@100.
+- **`bm25` and `sqlite_fts5`** trail Lucene by 0.001–0.068 across both
+  metrics. The causes are documented (no stemming or stopwords, different k1,
+  b and IDF floors) and were not tuned away on test.
+
+**Consequence for phase 4.** HNSW loss is as large as the effects phase 4
+sets out to measure: up to 0.011 nDCG@10 and 0.022 R@100 on FiQA, varying by
+dataset. Before the phase-4 family is frozen, either raise Chroma's
+`ef_search` until recall against exact search is near 1 (a vector-store
+setting, fixed without looking at relevance labels), or report every dense
+row with its exact-search control beside it. The first is preferable: it also
+fixes the shipped pipeline ([known limitations](known-limitations.md)).
 
 ## Phase 4: measure the shipped query-time stack
 

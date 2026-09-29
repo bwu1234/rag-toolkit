@@ -70,6 +70,12 @@ corpora:
         labels (~38 relevant each). Pinned in its manifest.
 
 embedding:
+  # `ollama` (a local daemon) or `sentence_transformers` (the model runs in
+  # this process: a Hugging Face download, torch memory, MPS/CPU). The latter
+  # exists for the BEIR reference encoder (rag/config/beir_bge.yaml) and is
+  # unmeasured on EDGAR. For it, `revision` pins the weights to a commit
+  # (null = latest; part of the index manifest), and `query_instruction` is
+  # sent as a plain `{instruction} {query}` prefix.
   provider: ollama
   # 0.6b on evidence: the 4b and 8b sizes (Q8_0) measured no better than noise
   # at this pipeline's settings -- BM25 already finds what they add in dense-only

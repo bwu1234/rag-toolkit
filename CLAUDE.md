@@ -77,8 +77,12 @@ index.
 - `beir-fiqa`, `beir-scifact` and `beir-nfcorpus` are public benchmarks
   (`scripts/fetch_beir.py NAME`). Their registry entries set `clean: false`
   so the text is indexed exactly as published. Index them with
-  `--config rag/config/beir.yaml` (one chunk per passage). Only ever
-  evaluate them isolated.
+  `--config rag/config/beir.yaml` (one chunk per passage), or
+  `rag/config/beir_bge.yaml` for the reference BGE encoder
+  (`embedding.provider: sentence_transformers`). Only ever evaluate them
+  isolated. The Pyserini reference runs are recreated outside the repo's
+  environment by `scripts/reproduce_beir_reference.py`
+  ([protocol](docs/beir-reference-protocol.md)).
 
 Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora-notes-shipped-with-milestone-11).
 

@@ -87,6 +87,10 @@ class IndexManifest:
             "model": config.embedding.model,
             "dimensions": config.embedding.dimensions,
         }
+        # Only when set, so the manifests of existing (and all Ollama) indexes
+        # are written exactly as before the field existed.
+        if config.embedding.revision is not None:
+            embedding["revision"] = config.embedding.revision
         ctx = config.chunking.contextual
         contextual: dict[str, Any] = {"enabled": ctx.enabled}
         if ctx.enabled:

@@ -90,3 +90,19 @@ def test_manifest_matches_protocol_doc(name: str) -> None:
     assert manifest["inventory"]["qrels"]["test"]["judged_queries"] == expected["queries"]
     assert manifest["reference"]["tolerance_abs"] == 0.0005
     assert len(manifest["archive"]["sha256"]) == 64
+
+
+@pytest.mark.parametrize("name", sorted(DATASETS.values()))
+def test_bge_config_matches_the_reference_encoder(name: str) -> None:
+    """rag/config/beir_bge.yaml must encode as the reference dense runs do (phase 3)."""
+    from rag.config.settings import load_config
+
+    embedding = load_config(REPO / "rag" / "config" / "beir_bge.yaml").embedding
+    manifest = json.loads((REPO / "data" / "corpora" / f"beir-{name}" / "manifest.json").read_text(encoding="utf-8"))
+    command = manifest["reference"]["runs"]["bge-base-en-v1.5.faiss"]["command"]
+    protocol = (REPO / "docs" / "beir-reference-protocol.md").read_text(encoding="utf-8")
+
+    assert embedding.provider == "sentence_transformers"
+    assert f"--encoder {embedding.model} " in command
+    assert f'--query-prefix "{embedding.query_instruction}"' in command
+    assert embedding.revision is not None and f"revision `{embedding.revision}`" in protocol
