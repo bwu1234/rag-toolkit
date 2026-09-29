@@ -148,6 +148,8 @@ class MultihopSampleResult:
     llm_ms: float = 0.0
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
+    #: CRAG's groundedness verdict on the answer; None when unchecked or inconclusive.
+    grounded: bool | None = None
 
     @property
     def completeness(self) -> float:
@@ -249,6 +251,7 @@ def run_multihop_eval(
                 llm_ms=answer.llm_ms,
                 prompt_tokens=answer.prompt_tokens,
                 completion_tokens=answer.completion_tokens,
+                grounded=answer.grounded,
             )
         )
         if on_result is not None:

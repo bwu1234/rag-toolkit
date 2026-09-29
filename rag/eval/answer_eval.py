@@ -225,6 +225,13 @@ class AnswerSampleResult:
     evidence_total: int = 0
     #: Gold spans in none of the passages the generator was shown.
     missing_spans: list[str] = field(default_factory=list)
+    #: CRAG's groundedness verdict on the answer; None when unchecked or inconclusive.
+    grounded: bool | None = None
+    #: The answering turn's LLM usage, as in the multi-hop results; the judge's calls are excluded.
+    llm_calls: int = 0
+    llm_ms: float = 0.0
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
 
     @property
     def evidence_retrieved(self) -> bool | None:
@@ -327,6 +334,11 @@ def run_answer_eval(
                 retrieval_rounds=chat_answer.retrieval_attempts,
                 evidence_total=len(sample.expected_spans),
                 missing_spans=sample_unmatched_spans(sample, passages),
+                grounded=chat_answer.grounded,
+                llm_calls=chat_answer.llm_calls,
+                llm_ms=chat_answer.llm_ms,
+                prompt_tokens=chat_answer.prompt_tokens,
+                completion_tokens=chat_answer.completion_tokens,
             )
         )
         if on_result is not None:

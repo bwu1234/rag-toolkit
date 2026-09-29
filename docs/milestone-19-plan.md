@@ -410,6 +410,18 @@ Matrix, one factor at a time, on all three sets:
 | `agentic react / 27b, think=low` | whether reasoning improves search planning enough to justify its tokens |
 | `agentic react / 27b + groundedness` | whether CRAG's checker catches the leakage cases |
 
+*Runner, shipped:* `scripts/run_answer_matrix.py --family m19` defines these
+rows as written and writes to `data/eval/results_m19/`, apart from the CRAG
+rows on the old labels. Every row pins its generator. The agent rows pin the
+agent model's `max_tokens` (4096) and timeout (600 s), so 9b vs 27b is the
+model alone. `--repeat N` runs each row N times as separate rows and reports
+the spread. The groundedness row saves each verdict next to the judge's
+outcome, because the agent's checker changes no answers. What that row
+measures is whether the flags fall on the failures. Answerable and refusal
+results now carry per-turn LLM calls and tokens, as multi-hop results already
+did. Run order: `pipeline / 9b` first, since the table pairs every row against
+the first one.
+
 **The oracle row** feeds the generator the indexed chunks that contain each
 question's gold spans, found by the same `unmatched_spans` matching that
 evidence recall uses, in place of retrieval. It separates two failures that
