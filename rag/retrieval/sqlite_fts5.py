@@ -15,6 +15,12 @@ identical: FTS5 fixes k1 = 1.2 (rank_bm25's `BM25Okapi` defaults to 1.5), and
 floors a non-positive IDF at 1e-6 where rank_bm25 substitutes a quarter of the
 mean IDF. Rankings therefore differ on terms common to most chunks, so treat a
 switch as a retrieval change and measure it.
+
+The FTS5 table is *contentless* (`content=''`): it keeps the inverted index
+but not a copy of the token string, which nothing reads back -- results come
+from the `chunks` table. That is about a third of the file at 10^5 chunks.
+Deleting from a contentless table needs `contentless_delete=1`, which arrived
+in SQLite 3.43.0, so this backend requires it.
 """
 
 from __future__ import annotations
@@ -34,6 +40,23 @@ from rag.vectorstore.base import ScoredChunk
 
 logger = logging.getLogger(__name__)
 
+#: `contentless_delete=1` needs it. On Linux Python links the system library,
+#: so this is the OS's SQLite, not something pip can upgrade.
+MIN_SQLITE_VERSION = (3, 43, 0)
+
+#: Stored as `PRAGMA user_version`. 0 is either a new file or layout 1, which
+#: kept a copy of the tokens in the FTS table and is migrated on open.
+LAYOUT_VERSION = 2
+
+_FTS_TABLE = """
+CREATE VIRTUAL TABLE {name} USING fts5(
+    tokens,
+    content = '',
+    contentless_delete = 1,
+    tokenize = "unicode61 tokenchars ''''"
+)
+"""
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS chunks (
     rowid INTEGER PRIMARY KEY,
@@ -45,10 +68,6 @@ CREATE TABLE IF NOT EXISTS chunks (
     context TEXT,
     header TEXT,
     text TEXT NOT NULL
-);
-CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
-    tokens,
-    tokenize = "unicode61 tokenchars ''''"
 );
 """
 
@@ -65,6 +84,7 @@ class SqliteFts5Index(SparseIndex):
     """
 
     def __init__(self, path: Path) -> None:
+        check_sqlite_version()
         self._path = path
         path.parent.mkdir(parents=True, exist_ok=True)
         # The API serves requests from a thread pool; one connection shared
@@ -72,11 +92,53 @@ class SqliteFts5Index(SparseIndex):
         # local index.
         self._lock = threading.Lock()
         self._conn = sqlite3.connect(path, check_same_thread=False)
-        with self._lock, self._conn:
+        with self._lock:
             # WAL lets a running API read while `cli index` writes.
             self._conn.execute("PRAGMA journal_mode=WAL")
-            self._conn.executescript(_SCHEMA)
+            self._prepare_layout()
         logger.info("Opened FTS5 sparse index at %s (%d chunks)", path, self.count())
+
+    def _prepare_layout(self) -> None:
+        """Create a new file's tables, or bring an older layout up to `LAYOUT_VERSION`.
+
+        Runs under `BEGIN IMMEDIATE` and re-reads the version inside it, so two
+        processes opening the same old file migrate it once.
+        """
+
+        self._conn.execute("BEGIN IMMEDIATE")
+        try:
+            version = self._conn.execute("PRAGMA user_version").fetchone()[0]
+            has_fts = self._conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'chunks_fts'"
+            ).fetchone() is not None
+            if version > LAYOUT_VERSION:
+                raise RuntimeError(
+                    f"{self._path} has FTS5 index layout {version}; this code reads up to "
+                    f"{LAYOUT_VERSION}. Upgrade, or rebuild it with `python -m rag.cli index --reset`."
+                )
+            migrated = version == 0 and has_fts
+            if migrated:
+                # Layout 1 kept the token string in the FTS table; it is the
+                # only copy, so copy it across before dropping the old table.
+                self._conn.execute(_FTS_TABLE.format(name="chunks_fts_v2"))
+                self._conn.execute("INSERT INTO chunks_fts_v2 (rowid, tokens) SELECT rowid, tokens FROM chunks_fts")
+                self._conn.execute("DROP TABLE chunks_fts")
+                self._conn.execute("ALTER TABLE chunks_fts_v2 RENAME TO chunks_fts")
+            elif not has_fts:
+                for statement in _SCHEMA.split(";"):
+                    if statement.strip():
+                        self._conn.execute(statement)
+                self._conn.execute(_FTS_TABLE.format(name="chunks_fts"))
+            self._conn.execute(f"PRAGMA user_version = {LAYOUT_VERSION}")
+            self._conn.execute("COMMIT")
+        except BaseException:
+            self._conn.execute("ROLLBACK")
+            raise
+        if migrated:
+            # Hand the dropped token copy back to the filesystem. Outside the
+            # transaction, since VACUUM can't run inside one.
+            self._conn.execute("VACUUM")
+            logger.warning("Migrated FTS5 index at %s to layout %d (contentless)", self._path, LAYOUT_VERSION)
 
     def upsert(self, chunks: list[Chunk]) -> None:
         if not chunks:
@@ -193,6 +255,23 @@ class SqliteFts5Index(SparseIndex):
 
     def _count_locked(self) -> int:
         return int(self._conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0])
+
+
+def check_sqlite_version(version: tuple[int, int, int] = sqlite3.sqlite_version_info) -> None:
+    """Raise a clear error if the linked SQLite predates `contentless_delete`.
+
+    Otherwise an old library fails later, at table creation, with an FTS5
+    option error that doesn't say what to fix.
+    """
+
+    if version < MIN_SQLITE_VERSION:
+        found = ".".join(map(str, version))
+        needed = ".".join(map(str, MIN_SQLITE_VERSION))
+        raise RuntimeError(
+            f"sparse_index.provider: sqlite_fts5 needs SQLite >= {needed}, but Python is linked "
+            f"against {found}. Use a newer OS image (e.g. Debian 13 / Ubuntu 24.04), or "
+            "sparse_index.provider: bm25."
+        )
 
 
 def _scored_chunk(row: tuple[Any, ...], score: float) -> ScoredChunk:

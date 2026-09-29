@@ -8,6 +8,7 @@ and query escaping.
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -18,8 +19,8 @@ from rag.chunking.models import Chunk
 from rag.config.settings import SparseIndexConfig
 from rag.query_filter import QueryFilter
 from rag.retrieval.factory import get_sparse_index, sparse_index_path
-from rag.retrieval.sparse import BM25Index, SparseIndex
-from rag.retrieval.sqlite_fts5 import SqliteFts5Index
+from rag.retrieval.sparse import BM25Index, SparseIndex, tokenize
+from rag.retrieval.sqlite_fts5 import LAYOUT_VERSION, SqliteFts5Index, check_sqlite_version
 
 OpenIndex = Callable[[], SparseIndex]
 
@@ -262,3 +263,73 @@ def test_factory_selects_the_backend_and_gives_each_its_own_file(tmp_path: Path)
     assert sparse_index_path(fts5, tmp_path, "edgar").name == "fts5_index__edgar.sqlite3"
     assert sparse_index_path(bm25, tmp_path, "edgar") != sparse_index_path(fts5, tmp_path, "edgar")
     assert sparse_index_path(fts5, tmp_path, "edgar") != sparse_index_path(fts5, tmp_path, "baseline+edgar")
+
+
+# ---------------------------------------------------------------------------
+# Contentless layout, its SQLite floor, and migration from layout 1
+# ---------------------------------------------------------------------------
+
+# Layout 1 as shipped in PR #46: the FTS table kept its own copy of the tokens.
+_LAYOUT_1 = """
+CREATE TABLE chunks (
+    rowid INTEGER PRIMARY KEY, chunk_id TEXT NOT NULL UNIQUE, document_id TEXT NOT NULL,
+    source TEXT NOT NULL, doc_type TEXT NOT NULL, metadata TEXT NOT NULL,
+    context TEXT, header TEXT, text TEXT NOT NULL
+);
+CREATE VIRTUAL TABLE chunks_fts USING fts5(tokens, tokenize = "unicode61 tokenchars ''''");
+"""
+
+
+def _write_layout_1(path: Path, rows: list[tuple[str, str, str]]) -> None:
+    conn = sqlite3.connect(path)
+    conn.executescript(_LAYOUT_1)
+    with conn:
+        for rowid, (chunk_id, document_id, text) in enumerate(rows, start=1):
+            conn.execute(
+                "INSERT INTO chunks VALUES (?, ?, ?, ?, 'markdown', '{}', NULL, NULL, ?)",
+                (rowid, chunk_id, document_id, f"/tmp/{document_id}", text),
+            )
+            conn.execute("INSERT INTO chunks_fts (rowid, tokens) VALUES (?, ?)", (rowid, " ".join(tokenize(text))))
+    conn.close()
+
+
+def test_fts_table_stores_no_copy_of_the_tokens(tmp_path: Path) -> None:
+    path = tmp_path / "fts.sqlite3"
+    SqliteFts5Index(path).upsert([_chunk("a", "revenue grew")])
+
+    conn = sqlite3.connect(path)
+    assert conn.execute("SELECT tokens FROM chunks_fts").fetchall() == [(None,)], "contentless: nothing to read back"
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == LAYOUT_VERSION
+
+
+def test_layout_1_file_is_migrated_in_place_without_losing_chunks(tmp_path: Path) -> None:
+    path = tmp_path / "fts.sqlite3"
+    _write_layout_1(path, [("a", "AAPL.md", "revenue grew on services"), ("b", "MSFT.md", "cloud margins")])
+
+    index = SqliteFts5Index(path)
+
+    assert index.ids() == {"a", "b"}
+    assert [r.chunk_id for r in index.query("services revenue", top_k=5)] == ["a"]
+    # And the migrated table accepts the writes layout 1 needed content for.
+    index.upsert([_chunk("a", "rewritten entirely", "AAPL.md")])
+    index.delete(["b"])
+    assert index.query("services", top_k=5) == [] and index.query("cloud", top_k=5) == []
+    assert [r.chunk_id for r in SqliteFts5Index(path).query("rewritten", top_k=5)] == ["a"], "reopening is a no-op"
+
+
+def test_refuses_a_layout_newer_than_it_reads(tmp_path: Path) -> None:
+    path = tmp_path / "fts.sqlite3"
+    SqliteFts5Index(path).close()
+    conn = sqlite3.connect(path)
+    conn.execute(f"PRAGMA user_version = {LAYOUT_VERSION + 1}")
+    conn.close()
+
+    with pytest.raises(RuntimeError, match="--reset"):
+        SqliteFts5Index(path)
+
+
+def test_sqlite_older_than_3_43_is_refused_with_what_to_do() -> None:
+    check_sqlite_version((3, 43, 0))
+
+    with pytest.raises(RuntimeError, match=r"needs SQLite >= 3\.43\.0.*3\.40\.1.*bm25"):
+        check_sqlite_version((3, 40, 1))

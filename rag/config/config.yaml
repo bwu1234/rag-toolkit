@@ -115,7 +115,8 @@ vector_store:
 
 # Keyword index kept beside the vector store (used by retrieval.mode: hybrid).
 # bm25 = rank_bm25 + one JSON file; rebuilds on every change, fine to ~10^4
-# chunks. sqlite_fts5 = SQLite FTS5, updated in place, for larger corpora.
+# chunks. sqlite_fts5 = SQLite FTS5, updated in place, for larger corpora;
+# needs SQLite >= 3.43 (on Linux, the OS's: Debian 13 / Ubuntu 24.04 or newer).
 # Its BM25 parameters differ slightly (k1 1.2 vs 1.5, IDF floor); on EDGAR
 # the full pipeline measured no difference (1W/3L of 347, p=0.63), so bm25
 # stays the default at this size (docs/measured-results.md, "SQLite FTS5

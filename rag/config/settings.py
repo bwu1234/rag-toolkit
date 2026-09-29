@@ -301,6 +301,7 @@ class SparseIndexConfig(BaseModel):
     - ``sqlite_fts5``: an SQLite FTS5 table, updated in place and ranked by
       SQLite's `bm25()`. Scales to large corpora, but its BM25 parameters
       differ slightly from rank_bm25's, so rankings are not identical.
+      Needs SQLite >= 3.43, which on Linux is the OS's library.
 
     Each backend keeps its own file, so switching needs no `--reset`: the next
     `index` run fills the new one (re-embedding every chunk, because the skip
