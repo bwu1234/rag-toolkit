@@ -55,7 +55,9 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import statistics
 import sys
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,6 +76,7 @@ from rag.eval.metrics import (
 )
 from rag.eval.qrels import METRICS, DocRanking, QrelsScores, document_ranking, score_rankings, write_run
 from rag.eval.relevance import UnmatchableSpan, find_unmatchable_spans, judge_ranking
+from rag.events import PipelineEvent
 from rag.ingestion.corpora import chunk_selected_corpora
 from rag.logging_config import configure_logging
 from rag.query_filter import QueryFilter
@@ -263,10 +266,27 @@ class QrelsReport:
     duplicates_removed: dict[str, int] = field(default_factory=dict)
     #: Documents dropped as self-matches (id == query id), per stage.
     self_matches_removed: dict[str, int] = field(default_factory=dict)
+    #: Per query id, milliseconds per retrieval stage (``embed``, ``vector_search``,
+    #: ``sparse_search``, ``fusion``, ``rerank``) plus ``total``, the whole call.
+    latency_ms: dict[str, dict[str, float]] = field(default_factory=dict)
 
     @property
     def num_samples(self) -> int:
         return len(self.scores[STAGE_FINAL].per_query)
+
+    def latency_summary(self) -> dict[str, dict[str, float]]:
+        """Median and 95th percentile per stage, over the queries that ran it.
+
+        The first query carries any lazy model load, so the mean would mislead;
+        the median doesn't see it.
+        """
+        stages = sorted({s for per_query in self.latency_ms.values() for s in per_query})
+        summary: dict[str, dict[str, float]] = {}
+        for stage in stages:
+            values = sorted(q[stage] for q in self.latency_ms.values() if stage in q)
+            p95 = statistics.quantiles(values, n=20)[-1] if len(values) > 1 else values[0]
+            summary[stage] = {"p50": statistics.median(values), "p95": p95}
+        return summary
 
 
 def check_qrels_depths(candidate_depth: int, final_depth: int) -> None:
@@ -302,8 +322,17 @@ def run_qrels_eval(dataset: EvalDataset, retriever: Retriever, *, remove_query: 
     check_qrels_depths(retriever.top_k, retriever.rerank_top_k)
 
     rankings: dict[str, dict[str, DocRanking]] = {STAGE_1: {}, STAGE_FINAL: {}}
+    latency_ms: dict[str, dict[str, float]] = {}
     for sample in samples:
-        retrieved = retriever.retrieve(sample.query)
+        stages: dict[str, float] = {}
+
+        def record(event: PipelineEvent, stages: dict[str, float] = stages) -> None:
+            stages[event.stage] = stages.get(event.stage, 0.0) + (event.elapsed_ms or 0.0)
+
+        start = time.perf_counter()
+        retrieved = retriever.retrieve(sample.query, on_event=record)
+        stages["total"] = (time.perf_counter() - start) * 1000
+        latency_ms[sample.id] = stages
         for stage, chunks in ((STAGE_1, retrieved.candidates), (STAGE_FINAL, retrieved.chunks)):
             rankings[stage][sample.id] = document_ranking(
                 ((c.document_id, c.score) for c in chunks), query_id=sample.id, remove_query=remove_query
@@ -319,6 +348,7 @@ def run_qrels_eval(dataset: EvalDataset, retriever: Retriever, *, remove_query: 
         self_matches_removed={
             s: sum(r.self_matches_removed for r in ranks.values()) for s, ranks in rankings.items()
         },
+        latency_ms=latency_ms,
     )
 
 
@@ -344,6 +374,9 @@ def print_qrels_report(report: QrelsReport) -> None:
             f"  {stage:<8} {report.duplicates_removed[stage]} duplicate chunk(s) collapsed, "
             f"{report.self_matches_removed[stage]} self-match(es) removed, {short} short list(s)"
         )
+    if report.latency_ms:
+        cells = [f"{stage} {v['p50']:.0f}/{v['p95']:.0f}" for stage, v in report.latency_summary().items()]
+        print("  ms p50/p95  " + "  ".join(cells))
     print(f"{'=' * 62}")
 
 
@@ -362,6 +395,8 @@ def save_qrels_run(report: QrelsReport, out_dir: Path, *, tag: str, settings: di
         "means": {stage: scores.means for stage, scores in report.scores.items()},
         "duplicates_removed": report.duplicates_removed,
         "self_matches_removed": report.self_matches_removed,
+        "latency_ms": report.latency_summary(),
+        "latency_ms_per_query": report.latency_ms,
         "per_query": {
             stage: {q.query_id: {**q.values, "returned": q.returned} for q in scores.per_query}
             for stage, scores in report.scores.items()

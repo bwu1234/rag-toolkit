@@ -174,6 +174,7 @@ made because they raise scores.
 | 2026-09-29 | Phase 3: the six reference runs recreated and scored on all three test splits; `trec_eval` parity over them | Yes, but nothing was chosen from them: the commands are the pinned 2CR ones, unchanged. Every cell matched exactly |
 | 2026-09-29 | Phase 3: this repo's `bm25` and `sqlite_fts5` backends and its BGE dense integration (Chroma), with exact-search controls, on all three test splits | Yes. Shipped parameters, reported as differences; no parameter, feature or model was chosen from them |
 | 2026-09-29 | `hnsw_ef_search`: the test query *texts* embedded to measure Chroma's recall against exact search; then the BGE dense run re-scored at the chosen 1600 | Recall reads no labels, and it chose the value. The re-scoring read labels only to report the result, after the value was fixed |
+| 2026-09-29 | Phase 4: test qrels read to group related queries (shared relevant documents) and query texts inspected for duplicates, before the family was frozen | No: no retrieval was run and no score was computed. The grouping rule is in the [phase-4 protocol](beir-phase4-protocol.md#dependence-between-queries) |
 
 ## Recreating the reference environment
 

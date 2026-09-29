@@ -182,5 +182,8 @@ Design rationale, history, and planning live in `docs/`, read on demand:
   Pyserini reference scores, the scoring and encoder protocol behind them,
   dataset findings and the frozen reproduction tolerances. Read before
   building phases 1–3.
+- **`docs/beir-phase4-protocol.md`** — the frozen phase-4 comparison family,
+  decision rules and reranker cap, fixed before the test runs. Read before
+  re-running or extending `scripts/run_beir_stack.py`.
 - **`docs/mcp-server.md`** — the MCP tool contract, both transports, how to
   point an external agent at it, and why indexing is not exposed as a tool.

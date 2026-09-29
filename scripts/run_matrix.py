@@ -93,6 +93,7 @@ FINGERPRINTED_WHEN_SET = (
     "embedding.revision",
     "chunking.header.template",
     "reranker.include_header",
+    "reranker.max_length",
     "retrieval.document_routing.top_m",
 )
 

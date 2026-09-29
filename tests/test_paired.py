@@ -13,14 +13,72 @@ from rag.eval.paired import (
     Z_95,
     compare_by_id,
     format_difference,
+    grouped_difference,
     paired_difference,
     sign_test_p,
+    z_for,
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import run_answer_matrix  # noqa: E402
 import run_matrix  # noqa: E402
+
+# ---------------------------------------------------------------------------
+# Confidence level and grouped samples
+# ---------------------------------------------------------------------------
+
+
+def test_z_for_matches_the_95_constant_and_widens_for_bonferroni() -> None:
+    assert z_for(0.95) == Z_95
+    # 15 comparisons at a family-wise 0.05: two-sided 1 - 0.05/15.
+    assert z_for(1 - 0.05 / 15) == pytest.approx(2.935, abs=1e-3)
+    with pytest.raises(ValueError):
+        z_for(1.0)
+
+
+def test_a_higher_confidence_widens_the_interval_around_the_same_mean() -> None:
+    base, cand = [0.1, 0.4, 0.2, 0.5], [0.3, 0.5, 0.2, 0.9]
+    narrow = paired_difference(base, cand)
+    wide = paired_difference(base, cand, confidence=0.99)
+
+    assert wide.mean_diff == narrow.mean_diff
+    assert wide.ci_high - wide.ci_low > narrow.ci_high - narrow.ci_low
+
+
+def test_singleton_groups_give_the_plain_interval_up_to_the_small_sample_factor() -> None:
+    base, cand = [0.1, 0.4, 0.2, 0.5, 0.3], [0.3, 0.5, 0.2, 0.9, 0.1]
+    plain = paired_difference(base, cand)
+    grouped = grouped_difference(base, cand, ["a", "b", "c", "d", "e"])
+
+    # Cluster-robust with n singletons: variance n/(n-1) * sum(r^2) / n^2, which
+    # equals the plain s^2 / n exactly.
+    assert grouped.ci_high - grouped.ci_low == pytest.approx(plain.ci_high - plain.ci_low)
+    assert (grouped.wins, grouped.losses, grouped.p_value) == (plain.wins, plain.losses, plain.p_value)
+
+
+def test_duplicated_samples_in_one_group_count_once() -> None:
+    """Two copies of each question are no more evidence than one."""
+    base, cand = [0.1, 0.4, 0.2, 0.5], [0.3, 0.5, 0.2, 0.9]
+    once = grouped_difference(base, cand, ["a", "b", "c", "d"])
+    twice = grouped_difference(base * 2, cand * 2, ["a", "b", "c", "d"] * 2)
+
+    assert twice.mean_diff == pytest.approx(once.mean_diff)
+    assert twice.ci_high - twice.ci_low == pytest.approx(once.ci_high - once.ci_low)
+    # The per-sample interval would have shrunk by sqrt(2) on the duplicates.
+    plain_twice = paired_difference(base * 2, cand * 2)
+    assert plain_twice.ci_high - plain_twice.ci_low < twice.ci_high - twice.ci_low
+
+
+def test_compare_by_id_pairs_groups_by_sample_id() -> None:
+    base = {"q1": 0.1, "q2": 0.4, "q3": 0.2}
+    cand = {"q3": 0.6, "q1": 0.3, "q2": 0.5}
+    groups = {"q1": "g", "q2": "g", "q3": "h"}
+
+    assert compare_by_id(base, cand, groups=groups) == grouped_difference(
+        [0.1, 0.4, 0.2], [0.3, 0.5, 0.6], ["g", "g", "h"]
+    )
+
 
 # ---------------------------------------------------------------------------
 # Sign test / McNemar

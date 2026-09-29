@@ -38,6 +38,15 @@ retrieval:
   top_k: 100
   rerank_top_k: 100
 
+reranker:
+  # Read only by the reranked phase-4 variants (this file's own reranker is
+  # `none`). 512 tokens per (query, passage) pair: about twice the longest
+  # shipped chunk (1,000 chars plus its header), so the reranker is used as the
+  # shipped pipeline uses it. At the model's 8,192 limit, FiQA's long tail (up
+  # to 17k chars) exhausted memory on dev. Chosen on dev, before any test run
+  # (docs/beir-phase4-protocol.md).
+  max_length: 512
+
 vector_store:
   # Near-exact dense search, so a benchmark row measures the retriever and not
   # HNSW's approximation. Chosen by recall against exact search, with no

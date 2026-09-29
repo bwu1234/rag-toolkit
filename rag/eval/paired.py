@@ -29,16 +29,30 @@ What is reported
   It is exact where the normal interval is not: with a handful of discordant
   pairs, trust the p-value over the interval.
 
+The interval assumes the samples are independent. When they come in related
+groups (several questions written from one source), :func:`grouped_difference`
+widens it with a cluster-robust variance, and ``confidence`` sets a wider level
+when several comparisons are read together (Bonferroni: ``1 - 0.05 / m``).
+
 Pure functions, stdlib only, like :mod:`rag.eval.metrics`.
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from math import comb, sqrt
+from statistics import NormalDist
 
 #: Two-sided 95% normal quantile.
 Z_95 = 1.959964
+
+
+def z_for(confidence: float) -> float:
+    """Two-sided normal quantile for ``confidence`` (0.95 -> 1.96)."""
+    if not 0.0 < confidence < 1.0:
+        raise ValueError(f"confidence must be in (0, 1), got {confidence}")
+    return Z_95 if confidence == 0.95 else NormalDist().inv_cdf(0.5 + confidence / 2)
 
 
 @dataclass(frozen=True)
@@ -71,7 +85,9 @@ def sign_test_p(wins: int, losses: int) -> float:
     return min(1.0, 2.0 * tail)
 
 
-def paired_difference(baseline: list[float], candidate: list[float]) -> PairedDifference:
+def paired_difference(
+    baseline: list[float], candidate: list[float], *, confidence: float = 0.95
+) -> PairedDifference:
     """Compare two equal-length score lists, position ``i`` being the same sample in both."""
     if len(baseline) != len(candidate):
         raise ValueError(
@@ -87,7 +103,7 @@ def paired_difference(baseline: list[float], candidate: list[float]) -> PairedDi
     # interval of zero width would read as certainty, so it is left unbounded.
     if n > 1:
         variance = sum((d - mean_diff) ** 2 for d in diffs) / (n - 1)
-        half_width = Z_95 * sqrt(variance / n)
+        half_width = z_for(confidence) * sqrt(variance / n)
     else:
         half_width = float("inf")
 
@@ -104,15 +120,54 @@ def paired_difference(baseline: list[float], candidate: list[float]) -> PairedDi
     )
 
 
+def grouped_difference(
+    baseline: list[float], candidate: list[float], groups: list[str], *, confidence: float = 0.95
+) -> PairedDifference:
+    """Like :func:`paired_difference`, with the interval widened for grouped samples.
+
+    ``groups[i]`` names the group sample ``i`` belongs to. The variance of the
+    mean difference is the cluster-robust (sandwich) one: residuals are summed
+    within each group before squaring, with the ``G / (G - 1)`` small-sample
+    correction. All-singleton groups give the plain interval, up to that
+    correction. Wins, losses and the sign test stay per sample.
+    """
+    plain = paired_difference(baseline, candidate, confidence=confidence)
+    if len(groups) != plain.n:
+        raise ValueError(f"Need one group per sample, got {len(groups)} for {plain.n}")
+    sums: dict[str, float] = {}
+    for b, c, g in zip(baseline, candidate, groups):
+        sums[g] = sums.get(g, 0.0) + (c - b - plain.mean_diff)
+    g_count = len(sums)
+    if g_count < 2:
+        half_width = float("inf")
+    else:
+        variance = g_count / (g_count - 1) * sum(v * v for v in sums.values()) / plain.n**2
+        half_width = z_for(confidence) * sqrt(variance)
+    return PairedDifference(
+        n=plain.n,
+        mean_diff=plain.mean_diff,
+        ci_low=plain.mean_diff - half_width,
+        ci_high=plain.mean_diff + half_width,
+        wins=plain.wins,
+        losses=plain.losses,
+        p_value=plain.p_value,
+    )
+
+
 def compare_by_id(
-    baseline: dict[str, float], candidate: dict[str, float]
+    baseline: dict[str, float],
+    candidate: dict[str, float],
+    *,
+    confidence: float = 0.95,
+    groups: Mapping[str, str] | None = None,
 ) -> PairedDifference:
     """Pair two runs' per-sample scores by sample id, then compare them.
 
     Refuses rather than silently comparing on the intersection when the sample
     sets differ: that happens when two runs used different eval sets or
     ``--limit`` values, and a difference over a quietly shrunk set is not the
-    comparison anyone asked for.
+    comparison anyone asked for. ``groups`` (sample id -> group) switches to
+    :func:`grouped_difference`.
     """
     if baseline.keys() != candidate.keys():
         only_base = sorted(baseline.keys() - candidate.keys())
@@ -123,7 +178,10 @@ def compare_by_id(
             f"{len(only_cand)} only in candidate, e.g. {only_cand[:3]})"
         )
     ids = sorted(baseline)
-    return paired_difference([baseline[i] for i in ids], [candidate[i] for i in ids])
+    base, cand = [baseline[i] for i in ids], [candidate[i] for i in ids]
+    if groups is None:
+        return paired_difference(base, cand, confidence=confidence)
+    return grouped_difference(base, cand, [groups[i] for i in ids], confidence=confidence)
 
 
 def format_difference(diff: PairedDifference, *, binary: bool = False) -> str:

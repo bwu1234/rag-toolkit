@@ -36,6 +36,7 @@ def get_reranker(config: RerankerConfig) -> Reranker:
             query_prefix=config.query_prefix,
             document_prefix=config.document_prefix,
             include_header=config.include_header,
+            max_length=config.max_length,
         )
 
     raise ValueError(
