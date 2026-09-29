@@ -1,0 +1,140 @@
+{
+  "name": "beir-scifact",
+  "description": "SciFact claim verification as packaged by BEIR v1.0.0: scientific claims retrieving supporting or refuting abstracts. A different domain, used only as a transfer check (no dev split).",
+  "source": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/scifact.zip",
+  "homepage": "https://github.com/allenai/scifact",
+  "license": "Hugging Face BeIR/scifact card: CC BY-SA 4.0. Upstream (allenai/scifact LICENSE.md): claims CC BY 4.0; abstracts from S2ORC under ODC-By 1.0. Fetched at build time, never committed or redistributed.",
+  "fetcher": "scripts/fetch_beir.py (public benchmarks plan, phase 1; not yet implemented)",
+  "protocol": "docs/beir-reference-protocol.md",
+  "archive": {
+    "sha256": "536e14446a0ba56ed1398ab1055f39fe852686ecad24a6306c80c490fa8e0165",
+    "md5": "5f7d1de60b170fc8027bb7898e2efca1",
+    "md5_source": "BEIR wiki, Datasets-available (matches)",
+    "bytes": 2816079,
+    "last_modified": "Tue, 20 Apr 2021 14:21:44 GMT",
+    "etag": "607ee378-2af84f",
+    "release": "BEIR v1.0.0 (the archive has no version marker; Pyserini names this release beir-v1.0.0)",
+    "inventoried": "2026-09-29 with scripts/inventory_beir.py"
+  },
+  "inventory": {
+    "corpus": {
+      "documents": 5183,
+      "duplicate_ids": [],
+      "empty_title": 0,
+      "missing_title_key": 0,
+      "empty_text": 0,
+      "empty_title_and_text": 0,
+      "empty_title_and_text_ids": [],
+      "text_with_leading_or_trailing_whitespace": 0,
+      "text_with_newline": 0,
+      "max_chars": 10126,
+      "sha256": "dec31c8182f3d744c7d2c09423756fd1d17cbef75808db13ba01cc0aab4d1ac6"
+    },
+    "queries": {
+      "total": 1109,
+      "duplicate_ids": [],
+      "empty_text": 0,
+      "ids_that_are_doc_ids": 0,
+      "unjudged_in_any_split": 0,
+      "sha256": "8ff84a7c903f722981cd8d595c022660140c51867b27608a6d4910db86080313"
+    },
+    "qrels": {
+      "test": {
+        "header": [
+          "query-id",
+          "corpus-id",
+          "score"
+        ],
+        "judgments": 339,
+        "judged_queries": 300,
+        "queries_with_positive": 300,
+        "judged_queries_without_positive": [],
+        "grade_histogram": {
+          "1": 339
+        },
+        "mean_positive_per_query": 1.13,
+        "duplicate_pairs": 0,
+        "qrels_docs_missing_from_corpus": 0,
+        "qrels_queries_missing_from_queries": [],
+        "judged_queries_that_are_doc_ids": 0,
+        "self_judgments": 0,
+        "judgments_on_empty_documents": 0,
+        "sha256": "0864bb985e0ca2367ba217977e72004d549054b2b06666ed9d4825ac7c21284c"
+      },
+      "train": {
+        "header": [
+          "query-id",
+          "corpus-id",
+          "score"
+        ],
+        "judgments": 919,
+        "judged_queries": 809,
+        "queries_with_positive": 809,
+        "judged_queries_without_positive": [],
+        "grade_histogram": {
+          "1": 919
+        },
+        "mean_positive_per_query": 1.136,
+        "duplicate_pairs": 0,
+        "qrels_docs_missing_from_corpus": 0,
+        "qrels_queries_missing_from_queries": [],
+        "judged_queries_that_are_doc_ids": 0,
+        "self_judgments": 0,
+        "judgments_on_empty_documents": 0,
+        "sha256": "a53f2114831916c096b6c37d9e54da68cef4efdcdbd5ed46533601af972acf1d"
+      }
+    }
+  },
+  "reference": {
+    "pyserini": {
+      "release": "pyserini 2.4.0 (PyPI sdist sha256 45979fa5fc8d54a35dce15cfd59d4d3dc4b4b29d8f0442e1e1f3a9ab0a303541)",
+      "commit": "fbfe965fce10960029c7c616165c657704b63050",
+      "anserini": "2.3.0 (tag anserini-2.3.0, 7ed69af0daf02be3c0cf17f0324c2954cec4c989), Lucene 10.5.0",
+      "trec_eval": "9.0.4, bundled in the Anserini 2.3.0 jar",
+      "eval_data_commit": "castorini/eval 0b4acbd929edd11edfd16250457fb70ff69e9b4f",
+      "prebuilt_indexes_commit": "castorini/prebuilt-indexes 367560b4de7d9c3486f666dcc2df7783ca7758f2",
+      "scores_source": "pyserini/2cr/beir.yaml at the commit above"
+    },
+    "qrels": {
+      "name": "beir-v1.0.0-scifact-test",
+      "file": "qrels/qrels.beir-v1.0.0-scifact.test.txt",
+      "sha256": "8b7315286f8dc823956025a1fc9c9ff0bfe142d7b409458ccd758cfa0713ccba",
+      "matches": "identical judgments to qrels/test.tsv in the archive"
+    },
+    "topics": {
+      "name": "beir-v1.0.0-scifact-test",
+      "file": "topics/topics.beir-v1.0.0-scifact.test.tsv.gz",
+      "sha256": "a624d39fa2a41da44b0148ac2b1c2cb9856ece2c4afbb6ac9360e8e524d66b4f",
+      "matches": "same ids as the judged test queries, text identical to queries.jsonl"
+    },
+    "runs": {
+      "bm25-flat": {
+        "nDCG@10": 0.6789,
+        "R@100": 0.9253,
+        "index": {
+          "name": "beir-v1.0.0-scifact.flat",
+          "filename": "lucene-inverted.beir-v1.0.0-scifact.flat.20221116.505594.tar.gz",
+          "md5": "59777038fe0539e600658591e322ea57",
+          "documents": 5183
+        },
+        "command": "python -m pyserini.search.lucene --threads 16 --batch-size 128 --index beir-v1.0.0-scifact.flat --topics beir-v1.0.0-scifact-test --output run.beir.bm25-flat.scifact.txt --output-format trec --hits 1000 --bm25 --remove-query"
+      },
+      "bge-base-en-v1.5.faiss": {
+        "nDCG@10": 0.7408,
+        "R@100": 0.9667,
+        "index": {
+          "name": "beir-v1.0.0-scifact.bge-base-en-v1.5",
+          "filename": "faiss-flat.beir-v1.0.0-scifact.bge-base-en-v1.5.20240107.tar.gz",
+          "md5": "248b6db6e61d18f17674219aecd8b41d",
+          "documents": 5183
+        },
+        "command": "python -m pyserini.search.faiss --threads 16 --batch-size 512 --encoder-class auto --encoder BAAI/bge-base-en-v1.5 --l2-norm --query-prefix \"Represent this sentence for searching relevant passages:\" --index beir-v1.0.0-scifact.bge-base-en-v1.5 --topics beir-v1.0.0-scifact-test --output run.beir.bge-base-en-v1.5.faiss.scifact.txt --hits 1000 --remove-query"
+      }
+    },
+    "eval_commands": [
+      "python -m pyserini.eval.trec_eval -c -m ndcg_cut.10 beir-v1.0.0-scifact-test RUN",
+      "python -m pyserini.eval.trec_eval -c -m recall.100 beir-v1.0.0-scifact-test RUN"
+    ],
+    "tolerance_abs": 0.0005
+  }
+}

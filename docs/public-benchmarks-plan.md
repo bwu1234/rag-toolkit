@@ -1,8 +1,11 @@
 # Public benchmarks plan
 
-Status: proposed, 2026-09-28. Nothing below is implemented. Sizes and query
-counts come from the BEIR README; the reference scores are to be copied from
-Pyserini's reproduction docs in phase 0, not quoted from memory.
+Status: proposed 2026-09-28. Phase 0 done 2026-09-29: the reference scores,
+pins, protocol and frozen tolerances are in
+[BEIR reference protocol](beir-reference-protocol.md), and per-dataset
+provenance is in `data/corpora/beir-<name>/manifest.json`. Phases 1 onward are
+not implemented. Sizes and query counts below come from the BEIR README; the
+manifests hold the counts measured from the pinned archives.
 
 Every number in [measured results](measured-results.md) comes from a corpus
 this repo extracted, chunked and embedded itself, graded by questions written
@@ -107,6 +110,12 @@ also do not establish that pretrained models have never seen these examples.
 
 Exit: a table of both reference metrics for all six dataset/system pairs,
 with commit-pinned sources, commands, protocol records and frozen tolerances.
+**Met 2026-09-29**, recorded in [BEIR reference protocol](beir-reference-protocol.md).
+Phase 0 also found three things later phases must handle: FiQA's 38 empty
+documents (one judged relevant on test; the reference BM25 index skips them),
+FiQA query ids that collide with document ids (so `--remove-query` can change
+FiQA rankings), and a document-side BGE recipe that Pyserini never wrote
+down (recovered from the vectors: CLS pooling, 512 tokens).
 Use the [Pyserini BEIR reproduction page](https://castorini.github.io/pyserini/2cr/beir.html)
 and [BEIR dataset inventory](https://github.com/beir-cellar/beir/wiki/Datasets-available)
 as starting points; choose the exact reference run before filling the table.

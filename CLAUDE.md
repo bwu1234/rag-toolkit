@@ -159,5 +159,9 @@ Design rationale, history, and planning live in `docs/`, read on demand:
 - **`docs/public-benchmarks-plan.md`** — using pre-split public corpora (BEIR)
   with published reference scores to validate the retrieval eval and measure
   the query-time stack on outside data. Read before adding a public dataset.
+- **`docs/beir-reference-protocol.md`** — phase 0 of that plan: pinned
+  Pyserini reference scores, the scoring and encoder protocol behind them,
+  dataset findings and the frozen reproduction tolerances. Read before
+  building phases 1–3.
 - **`docs/mcp-server.md`** — the MCP tool contract, both transports, how to
   point an external agent at it, and why indexing is not exposed as a tool.

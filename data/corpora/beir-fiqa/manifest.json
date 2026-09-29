@@ -1,0 +1,201 @@
+{
+  "name": "beir-fiqa",
+  "description": "FiQA-2018 financial opinion QA as packaged by BEIR v1.0.0: StackExchange-style answer passages and questions. The closest public neighbour to EDGAR.",
+  "source": "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/fiqa.zip",
+  "homepage": "https://sites.google.com/view/fiqa/",
+  "license": "Hugging Face BeIR/fiqa card: CC BY-SA 4.0. The upstream FiQA-2018 site states no license. Fetched at build time, never committed or redistributed.",
+  "fetcher": "scripts/fetch_beir.py (public benchmarks plan, phase 1; not yet implemented)",
+  "protocol": "docs/beir-reference-protocol.md",
+  "archive": {
+    "sha256": "32c7df99ed21252fdfb2cf3f5673502a8d245ee0c44c4a133570d92ce2b3ad02",
+    "md5": "17918ed23cd04fb15047f73e6c3bd9d9",
+    "md5_source": "BEIR wiki, Datasets-available (matches)",
+    "bytes": 17948027,
+    "last_modified": "Tue, 02 Mar 2021 17:24:22 GMT",
+    "etag": "603e74c6-111dd7b",
+    "release": "BEIR v1.0.0 (the archive has no version marker; Pyserini names this release beir-v1.0.0)",
+    "inventoried": "2026-09-29 with scripts/inventory_beir.py"
+  },
+  "inventory": {
+    "corpus": {
+      "documents": 57638,
+      "duplicate_ids": [],
+      "empty_title": 57638,
+      "missing_title_key": 0,
+      "empty_text": 38,
+      "empty_title_and_text": 38,
+      "empty_title_and_text_ids": [
+        "115636",
+        "117276",
+        "12229",
+        "126502",
+        "138418",
+        "14135",
+        "153104",
+        "167128",
+        "169220",
+        "189754",
+        "206368",
+        "207473",
+        "215635",
+        "237392",
+        "248226",
+        "254541",
+        "290110",
+        "319894",
+        "325407",
+        "33445",
+        "356535",
+        "358213",
+        "360125",
+        "399083",
+        "40982",
+        "414219",
+        "441462",
+        "447488",
+        "470232",
+        "486245",
+        "528558",
+        "54960",
+        "552533",
+        "572451",
+        "587667",
+        "597929",
+        "66248",
+        "7915"
+      ],
+      "text_with_leading_or_trailing_whitespace": 0,
+      "text_with_newline": 0,
+      "max_chars": 16990,
+      "sha256": "ff593e4df9933955dc3af83be0c3fa28ac7465f627e08c2e53593e734d506517"
+    },
+    "queries": {
+      "total": 6648,
+      "duplicate_ids": [],
+      "empty_text": 0,
+      "ids_that_are_doc_ids": 621,
+      "unjudged_in_any_split": 0,
+      "sha256": "eede1e61d4a0188940239b53ebc2da91f577a6a34679c812d1eb9090c29877bc"
+    },
+    "qrels": {
+      "dev": {
+        "header": [
+          "query-id",
+          "corpus-id",
+          "score"
+        ],
+        "judgments": 1238,
+        "judged_queries": 500,
+        "queries_with_positive": 500,
+        "judged_queries_without_positive": [],
+        "grade_histogram": {
+          "1": 1238
+        },
+        "mean_positive_per_query": 2.476,
+        "duplicate_pairs": 0,
+        "qrels_docs_missing_from_corpus": 0,
+        "qrels_queries_missing_from_queries": [],
+        "judged_queries_that_are_doc_ids": 52,
+        "self_judgments": 0,
+        "judgments_on_empty_documents": 2,
+        "sha256": "03b27e547cd29dc721c3b93ce8ddd70df6b2d0ce954d8ef3659d386e8cd72c11"
+      },
+      "test": {
+        "header": [
+          "query-id",
+          "corpus-id",
+          "score"
+        ],
+        "judgments": 1706,
+        "judged_queries": 648,
+        "queries_with_positive": 648,
+        "judged_queries_without_positive": [],
+        "grade_histogram": {
+          "1": 1706
+        },
+        "mean_positive_per_query": 2.633,
+        "duplicate_pairs": 0,
+        "qrels_docs_missing_from_corpus": 0,
+        "qrels_queries_missing_from_queries": [],
+        "judged_queries_that_are_doc_ids": 55,
+        "self_judgments": 0,
+        "judgments_on_empty_documents": 1,
+        "sha256": "6adc2a640dcdd22bb8b3858f89107adef2a7c3db20a63550dfa7a0f71e379e44"
+      },
+      "train": {
+        "header": [
+          "query-id",
+          "corpus-id",
+          "score"
+        ],
+        "judgments": 14166,
+        "judged_queries": 5500,
+        "queries_with_positive": 5500,
+        "judged_queries_without_positive": [],
+        "grade_histogram": {
+          "1": 14166
+        },
+        "mean_positive_per_query": 2.576,
+        "duplicate_pairs": 0,
+        "qrels_docs_missing_from_corpus": 0,
+        "qrels_queries_missing_from_queries": [],
+        "judged_queries_that_are_doc_ids": 514,
+        "self_judgments": 0,
+        "judgments_on_empty_documents": 35,
+        "sha256": "e46a99529aa61b12e086a5c057e4e0ecaeda9502e53d5fe855efce778f1ec59a"
+      }
+    }
+  },
+  "reference": {
+    "pyserini": {
+      "release": "pyserini 2.4.0 (PyPI sdist sha256 45979fa5fc8d54a35dce15cfd59d4d3dc4b4b29d8f0442e1e1f3a9ab0a303541)",
+      "commit": "fbfe965fce10960029c7c616165c657704b63050",
+      "anserini": "2.3.0 (tag anserini-2.3.0, 7ed69af0daf02be3c0cf17f0324c2954cec4c989), Lucene 10.5.0",
+      "trec_eval": "9.0.4, bundled in the Anserini 2.3.0 jar",
+      "eval_data_commit": "castorini/eval 0b4acbd929edd11edfd16250457fb70ff69e9b4f",
+      "prebuilt_indexes_commit": "castorini/prebuilt-indexes 367560b4de7d9c3486f666dcc2df7783ca7758f2",
+      "scores_source": "pyserini/2cr/beir.yaml at the commit above"
+    },
+    "qrels": {
+      "name": "beir-v1.0.0-fiqa-test",
+      "file": "qrels/qrels.beir-v1.0.0-fiqa.test.txt",
+      "sha256": "424164b5418f5e537fd19b97383c7301166e5738cbfa8e249bc9c10f6b6cd926",
+      "matches": "identical judgments to qrels/test.tsv in the archive"
+    },
+    "topics": {
+      "name": "beir-v1.0.0-fiqa-test",
+      "file": "topics/topics.beir-v1.0.0-fiqa.test.tsv.gz",
+      "sha256": "35a21f6e7c509e945c110a4e5224cd9e86038662c353edc1e890c8a02f5ef685",
+      "matches": "same ids as the judged test queries, text identical to queries.jsonl"
+    },
+    "runs": {
+      "bm25-flat": {
+        "nDCG@10": 0.2361,
+        "R@100": 0.5395,
+        "index": {
+          "name": "beir-v1.0.0-fiqa.flat",
+          "filename": "lucene-inverted.beir-v1.0.0-fiqa.flat.20221116.505594.tar.gz",
+          "md5": "d98ee6ebfc234657ecbd04226e8a7849",
+          "documents": 57600
+        },
+        "command": "python -m pyserini.search.lucene --threads 16 --batch-size 128 --index beir-v1.0.0-fiqa.flat --topics beir-v1.0.0-fiqa-test --output run.beir.bm25-flat.fiqa.txt --output-format trec --hits 1000 --bm25 --remove-query"
+      },
+      "bge-base-en-v1.5.faiss": {
+        "nDCG@10": 0.4065,
+        "R@100": 0.7415,
+        "index": {
+          "name": "beir-v1.0.0-fiqa.bge-base-en-v1.5",
+          "filename": "faiss-flat.beir-v1.0.0-fiqa.bge-base-en-v1.5.20240107.tar.gz",
+          "md5": "b57027c48f0b31c53fca034a1f773541",
+          "documents": 57638
+        },
+        "command": "python -m pyserini.search.faiss --threads 16 --batch-size 512 --encoder-class auto --encoder BAAI/bge-base-en-v1.5 --l2-norm --query-prefix \"Represent this sentence for searching relevant passages:\" --index beir-v1.0.0-fiqa.bge-base-en-v1.5 --topics beir-v1.0.0-fiqa-test --output run.beir.bge-base-en-v1.5.faiss.fiqa.txt --hits 1000 --remove-query"
+      }
+    },
+    "eval_commands": [
+      "python -m pyserini.eval.trec_eval -c -m ndcg_cut.10 beir-v1.0.0-fiqa-test RUN",
+      "python -m pyserini.eval.trec_eval -c -m recall.100 beir-v1.0.0-fiqa-test RUN"
+    ],
+    "tolerance_abs": 0.0005
+  }
+}
