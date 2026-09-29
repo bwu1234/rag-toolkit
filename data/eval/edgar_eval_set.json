@@ -1615,7 +1615,12 @@
       "TGT_10-K_2025-02-01.md"
     ],
     "expected_spans": [
-      "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A"
+      {
+        "text": "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A",
+        "alternatives": [
+          "As of February 1, 2025, our credit ratings were as follows:\n\n| Credit Ratings | Moody's | Standard and Poor's | Fitch |\n|---|---|---|---|\n| Long-term debt | A2 | A | A |"
+        ]
+      }
     ],
     "expected_answer": "A2 | A | A",
     "tier": "generated",
@@ -1784,7 +1789,12 @@
       "TGT_10-Q_2026-05-02.md"
     ],
     "expected_spans": [
-      "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A"
+      {
+        "text": "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A",
+        "alternatives": [
+          "As of May 2, 2026, our credit ratings were as follows:\n\n| Credit Ratings | Moody's | S&P |\n|---|---|---|\n| Long-term debt | A2 | A |"
+        ]
+      }
     ],
     "expected_answer": "A2",
     "tier": "generated",
@@ -2047,7 +2057,12 @@
       "WMT_10-K_2025-01-31.md"
     ],
     "expected_spans": [
-      "Net sales percentage change from comparable period | | 4.7 | %"
+      {
+        "text": "Net sales percentage change from comparable period | | 4.7 | %",
+        "alternatives": [
+          "| Net sales percentage change from comparable period | 4.7% |"
+        ]
+      }
     ],
     "expected_answer": "4.7 | %",
     "tier": "generated",

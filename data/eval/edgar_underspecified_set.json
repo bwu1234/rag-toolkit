@@ -852,7 +852,12 @@
       "WMT_10-K_2025-01-31.md"
     ],
     "expected_spans": [
-      "Net sales percentage change from comparable period | | 4.7 | %"
+      {
+        "text": "Net sales percentage change from comparable period | | 4.7 | %",
+        "alternatives": [
+          "| Net sales percentage change from comparable period | 4.7% |"
+        ]
+      }
     ],
     "expected_answer": "4.7 | %",
     "tier": "underspecified",

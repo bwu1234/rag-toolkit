@@ -9,6 +9,8 @@ venv/
 # documents they reproduce are not (keeps the repo small, and avoids
 # redistributing third-party content).
 data/corpora/*/documents/
+# The raw source a fetcher caches so re-rendering needs no new requests.
+data/corpora/*/raw/
 # ...except `baseline`, the small hand-written sample corpus: it's committed
 # content, not fetched, so it's exempt from the rule above.
 !data/corpora/baseline/documents/

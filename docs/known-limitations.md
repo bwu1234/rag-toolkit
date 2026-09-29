@@ -7,6 +7,18 @@
   facts. Repeated tuning on these sets is not held-out validation. The
   [evaluation rigor plan](evaluation-rigor-plan.md) specifies fresh grouped
   holdouts, task coverage, corpus diversity, and acceptance criteria.
+- **A fresh EDGAR fetch doesn't reproduce the corpus.** The committed MD&A
+  selection rules (`extract_mda`) postdate the fetch: they select nothing for
+  8 of the 61 filings (LUV, TGT and CVX, whose MD&A opens with a table) and a
+  longer span for 2 JNJ 10-Ks. Re-running `fetch_edgar.py` would build 53
+  documents and invalidate eval labels. Use `--cache-raw`, which pins the
+  corpus on disk and warns about the drift, and don't re-fetch until
+  `extract_mda` is fixed to match
+  ([chunking plan, Phase 4](chunking-indexing-plan.md#phase-4--recover-structure-at-parse-time-23-days--done-2026-09-29)).
+- **Some EDGAR documents run past MD&A.** COST 10-Ks continue into Part III,
+  CVX 10-Ks include risk factors, and JNJ 10-Qs include Part II. The eval
+  sets were labeled against this text, so it stays, but it adds off-topic
+  distractor chunks that a clean MD&A corpus wouldn't have.
 - **Answer pass does not establish citation support.** The answer judge sees
   a reference answer rather than retrieved evidence. A wrong-period passage
   with identical wording can yield a passing answer, and a manual multi-hop

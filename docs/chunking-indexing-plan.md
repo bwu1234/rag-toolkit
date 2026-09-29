@@ -167,8 +167,9 @@ then:* stage 3's gap is closed by Phase 2 (typed front-matter fields via
 closed by Phase 2 (`Chunk.index_text` = header + context + text, on by
 default). Stage 6 was measured in Phases 1 and 1b: the instruction stays off.
 Stage 7's filtering gap is closed by Phase 3 (`QueryFilter`), with Phase 3b's
-routing off by default. Stage 8 has `index-report` but no gate. Stages 1, 2
-and 4 are Phases 4–5, not started.
+routing off by default. Stage 8 has `index-report` but no gate. Stages 1 and
+2 are closed by Phase 4 in a separate corpus, `edgar_md` (headings, Markdown
+tables, no page furniture). Stage 4 is Phase 5, not started.
 
 Two more corpus facts that shape the plan:
 
@@ -200,8 +201,10 @@ Two more corpus facts that shape the plan:
   Filtering (Phase 3) is different: it removes the wrong-period and
   wrong-company chunks competing for the top 20, which BM25 can't do.
 - **The generated set can't see two of the defects this plan targets.**
-  **None of its 174 spans quotes a table row,** though 32% of chunks hold
-  table rows, so the 543 mid-table chunks never show up as misses. And
+  **Only 3 of its 175 spans quote table rows,** though 32% of chunks hold
+  table rows, so the 543 mid-table chunks barely show up as misses. (This
+  said none until Phase 4's span check found the three: TGT's credit-rating
+  rows and a WMT sales-growth row.) And
   `generate_eval_set.py` drops any span that appears in more than one filing,
   which removes by construction the repeated-across-periods case that
   filtering exists for. Phase 0 adds question sets for both. Until they exist,
@@ -656,9 +659,77 @@ gate was chosen on the same questions, so it stays off. `top_m: 2` is
 dominated. See
 [measured results](measured-results.md#document-routing-chunking-plan-phase-3b).
 
-### Phase 4 — Recover structure at parse time (2–3 days)
+### Phase 4 — Recover structure at parse time (2–3 days) — *done 2026-09-29*
 
 The chunker can only split on structure the parser kept.
+
+*Shipped as a separate corpus, `edgar_md`: the same 61 filings, ids and text,
+rendered as Markdown. `edgar` is unchanged. The plan as written follows the
+results.*
+
+- **Raw HTML cached, pinned by accession.** `fetch_edgar.py --cache-raw`
+  reads each document's `accession` from its front matter and downloads
+  exactly that filing into `data/corpora/edgar/raw/` (gitignored). It never
+  selects "most recent", so `expected_doc_ids` can't drift. One-time cost: 76
+  SEC requests (1 ticker map, 14 submissions, 61 documents), 152 MB. Every
+  later render is offline.
+- **Finding: today's MD&A selection doesn't reproduce the corpus.** Every
+  document's body occurs exactly once in `html_to_text` of its cached
+  filing, so the cache and the flattener are right. But `extract_mda` picks a
+  different span for 10 of 61 documents. It picks none for LUV (4), TGT (3)
+  and CVX (1), whose sections open with a table and fail
+  `MAX_LEADING_PIPE_RATIO` (0.05–0.11 against 0.02). For the JNJ 10-Ks (2)
+  it picks a span about 4.5k characters longer. The corpus was fetched
+  before that check was added. A fresh fetch would build a 53-document
+  corpus. The renderer therefore never re-selects: `pinned_span` locates
+  the body on disk, and `--cache-raw` logs the drift as a warning. Fixing
+  `extract_mda` so a fresh fetch reproduces the corpus is a separate change.
+- **One flattener, with origins.** `scripts/edgar_markdown.py` builds an
+  element tree whose text nodes know their offset in the flattened stream,
+  and `html_to_text` is now that tree's text, byte-identical on all 61
+  filings. Any span of the flattened text maps back to the HTML behind it,
+  and `render_span` renders exactly that, clipped at the character.
+- **Headings** are detected per filing, relative to its body style (the
+  style most of its text is set in): a short, non-sentence block set
+  entirely in a more prominent style (larger, capitals, bold, colour,
+  underline, italic). Filers almost never use `<h*>`. Levels rank those
+  styles, clamped at `####`. **Precision: 58 of a seeded random sample of 60
+  (97%)**, drawn from 2,047 headings. Both misses are captions: a JNJ chart
+  title and a JNJ table title. Levels are best-effort. UAL sets its section
+  and subsection headings in one font, so they come out at the same level.
+- **Tables** keep `colspan`, glue `$`/`)`/`%` cells onto their figures,
+  collapse the columns a spanning cell covers wherever no row fills more
+  than one of them, and get a `|---|` line after the header rows. A row is a
+  header until a cell after the label is a figure (bare years don't count).
+  Two-column bullet and footnote tables render as lines. This also fixes
+  MSFT, whose `<p>`-wrapped cells flattened to one cell per line in `edgar`.
+  Some empty spacer columns remain.
+- **Furniture dropped:** page numbers, "Table of Contents" links, and running
+  headers/footers, meaning a block that sits beside three or more page
+  breaks with only its numbers varying and isn't a sentence. 5–102 blocks
+  per filing.
+- **Span presence, every tier:** all 423 spans are present in their
+  rendered documents. The 3 table-row spans quote the old pipe format, which
+  no table renderer can keep, so each got an `alternatives` quote of the same
+  row as rendered. The original quote stays, so `edgar` scores as before.
+  That's 3 spans in `edgar_eval_set.json`, 1 in `underspecified`, and
+  2 in `multihop` (rebuilt by `build_multihop_set.py`, not hand-edited). With
+  the fixed chunker on `edgar_md`, 2 `period` spans (prose) are cut by a
+  window boundary, the chance effect Phase 5's packing removes.
+- **`index-report --corpus edgar_md`:** section headings min 8, median 28,
+  max 106 per document (0 in `edgar`). **Under the fixed chunker, mid-table
+  starts rise from 543 to 690 (16.6%)**, because a Markdown table is denser
+  than blank-line-separated pipe rows. Phase 4 alone makes the fixed
+  chunker's table cuts worse, which is why `edgar_md` doesn't replace
+  `edgar` until Phase 5 ships.
+- **Also found:** some pinned spans run past MD&A. COST 10-Ks reach Part III
+  ("Item 11--Executive Compensation"), CVX 10-Ks include "GENERAL RISK
+  FACTORS", and JNJ 10-Qs include Part II. The eval sets were labeled on that
+  text, so it stays. See [known limitations](known-limitations.md).
+- **Next:** the `table` tier on `edgar_md`, and the `fixed` baseline on it,
+  then Phase 5.
+
+*The plan as written:*
 
 - **EDGAR:** `_TextExtractor` in `fetch_edgar.py` already walks the HTML.
   Have it emit Markdown headings from what filings use as headings (bold or
