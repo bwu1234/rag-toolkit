@@ -302,6 +302,17 @@ that decides whether the agent is worth having, is next. The cost bullets
 below were written before the interface change; `LLMClient` was kept, and
 tool calling was added as a `ToolCallingLLM` subclass instead.
 
+**Proposed enhancement follow-ups:** tracked in
+[Milestone 19 phase 5](milestone-19-plan.md#enhancement-follow-ups), after the
+phase 4 comparison identifies failures worth addressing. Prioritize calibrated
+claim/citation scoring, then an opt-in bounded draft-check/repair loop; evaluate
+dynamic retriever routing separately. Scoring stays owned by
+[eval harness Phase 4a](eval-harness-plan.md#phase-4a--grounding-completeness-and-citation-scoring-estimate-pending)
+and trace export by [Milestone 26](#milestone-26--opentelemetry-trace-export).
+Durable evidence memory, SQL/graph tools and learned retrieval policies remain
+deferred pending a concrete workload. These follow-ups do not change defaults
+or delay measurement of the shipped loop.
+
 Expose search as a **tool the answering model calls**, rather than a stage that
 always runs before it. Unlike the rest of this list, this one *replaces* shipped
 behavior — it's the largest item here and the only one that can make the system

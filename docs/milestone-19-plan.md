@@ -475,10 +475,11 @@ leave the agentic rows on the run store with the rest.
   the front-matter fields (`company`, `ticker`, `form`, `period_end`, …), and
   a company + period filter measured +10.9pp hit on the `period` tier and
   +7.6pp on `underspecified`. The agent currently pins `filters` to the
-  turn's. Unpinning it is a one-line change (`PINNED_ARGUMENTS` in
-  `rag/generation/agent.py`) plus a matrix row, `agentic react / 9b +
-  filters`, to see whether the model writes filters that help or ones that
-  exclude the answer.
+  turn's. Add an explicit tool argument and execution path for model-proposed
+  filters; removing it from `PINNED_ARGUMENTS` alone does not apply it in
+  `AgentService._search`. Intersect proposed filters with the caller's scope,
+  never replace or widen it. Add a matrix row, `agentic react / 9b + filters`,
+  to measure helpful narrowing versus filters that exclude the answer.
 - **Streaming the agent's intermediate steps**, which is Milestone 21's SSE work.
 - **A `planned_refine` strategy: a planned turn with one forced gap check.**
   After the planned searches, make one structured call ("which sub-question is
@@ -493,6 +494,84 @@ leave the agentic rows on the run store with the rest.
   that was never searched for. Build it after the two pure strategies are
   measured, so that a win can be credited to either the plan or the extra
   round.
+
+#### Enhancement follow-ups
+
+These are proposed experiments, not shipped capabilities or prerequisites for
+phase 4. Keep the current baseline and defaults unchanged. Implement one
+intervention at a time after failure analysis identifies its target; adopt it
+only with paired quality and cost evidence on the same corpus and questions.
+The priorities below order this additional work, not the existing structural
+tools and `planned_refine` experiments above.
+
+1. **Measure grounding and citation failures before adding runtime gates.**
+   Reuse [eval harness Phase 4a](eval-harness-plan.md#phase-4a--grounding-completeness-and-citation-scoring-estimate-pending)
+   for claim-level faithfulness, answer-point coverage and citation support,
+   and its Phase 4 judge calibration. This is the existing owner, not a second
+   scoring implementation. Preserve the exact passages shown, citation mapping,
+   draft and verdict so a wrong citation can be distinguished from missing
+   evidence or incorrect synthesis. A whole-answer boolean is insufficient to
+   target a repair. Include correct answers wrongly rejected by the checker
+   and incomplete answers whose individual claims are all supported.
+
+2. **Bounded repair after a failed draft check.** Today's optional agent
+   checker only reports `grounded`; it neither blocks the answer nor restarts
+   retrieval. Pipeline CRAG's regeneration uses the same passages, and its
+   retrieval retry addresses rejected passages, not unsupported draft claims.
+   Add an opt-in experiment that identifies the unsupported claim or missing
+   answer point, searches for missing evidence when needed, and revises the
+   draft. Repair synthesis or citation mappings from existing evidence when
+   retrieval is already sufficient. Compare no check, report-only checking,
+   and checking plus repair separately. Keep searches under the existing
+   per-turn cap and deadline; also bound judge/revision calls and meter all of
+   them. A repair must not reset budgets or widen caller corpus/filter scope.
+   Specify outcomes for exhausted budgets and inconclusive/failed checks;
+   evaluate explicit partial answers/refusals rather than silently deleting
+   claims to improve faithfulness. Acceptance requires fewer unsupported or
+   incorrectly cited claims without an unacceptable loss of completeness,
+   correct answers or refusal accuracy. Report false rejection, repair success,
+   latency and tokens alongside quality. Runtime gating remains off until the
+   calibrated checker and these tradeoffs justify it.
+
+3. **Dynamic retriever routing, only for demonstrated routing failures.**
+   The agent currently gets one `rag_search` with configured dense/hybrid
+   retrieval and optional web fusion; document routing selects documents, not
+   tools. First compare the fixed hybrid baseline with agent-selected existing
+   retrieval paths on exact-term, semantic and freshness cases. Reuse the shared
+   `RagTools`/MCP tool surface and provider interfaces. Make every route and its
+   results inspectable, and define fallbacks for an unavailable source or an
+   invalid choice. Preserve caller scope; web must be explicitly configured and
+   must not bypass metadata filters or an isolated-corpus evaluation. Evaluate
+   web-enabled cases separately with captured source evidence. Measure route
+   errors and end-answer quality/cost, not just tool-call success. SQL and graph
+   tools are deferred until a real structured corpus, tool contract and labeled
+   workload require them; SQLite FTS5 is not a structured-data query tool.
+
+4. **Extend observability through its existing owner.** Local JSONL already
+   records searches, passages, citations, events, timings, tokens and optional
+   verdicts. [Milestone 26](backlog.md#milestone-26--opentelemetry-trace-export)
+   owns OTel export; add agent steps, routing and repair/judge calls to that
+   adapter when built. Reuse harness scoring rather than adding a vendor-specific
+   evaluator stack. Report retrieval calls and token/cost usage per correct,
+   grounded answer with explicit denominators, plus latency distributions;
+   preserve separate correctness, grounding and completeness scores. On
+   answerable questions, a refusal or vacuously faithful empty answer must not
+   count as success; score appropriate refusals separately on unanswerable cases.
+
+**Deferred: durable evidence memory and learned retrieval policies.** Recent
+history and per-turn deduplication already exist. Require reviewed multi-turn
+failures showing that cross-session evidence reuse would help before adding a
+memory store; define source freshness, invalidation, corpus isolation and
+provenance first. Similarly, agent-selected top-k, reranking depth or chunk size
+needs a separate budget-controlled experiment, not an expansion of the initial
+tool-routing scope.
+
+Motivation: the [Hugging Face cookbook](https://huggingface.co/learn/cookbook/en/agent_rag)
+and [retrieval-agents course](https://huggingface.co/learn/agents-course/en/unit2/smolagents/retrieval_agents)
+describe query refinement and enhanced retrieval; most of those components
+already exist here. The [FutureAGI article](https://futureagi.com/blog/agentic-rag-systems-2025/)
+(updated May 2026) motivates the routing, draft-check/repair and tracing gaps.
+These are design references, not evidence that the additions improve this repo.
 
 ## Open questions
 
