@@ -24,6 +24,7 @@ from rag.observability.factory import config_fingerprint
 from rag.observability.sink import TurnSink
 from rag.observability.usage import metered_client
 from rag.retrieval.builder import build_retriever
+from rag.retrieval.retriever import PassageRetriever
 from rag.tools import RagTools
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ def build_chat_service(
     corpora: Sequence[str] | None = None,
     *,
     turn_sink: TurnSink | None = None,
+    retriever: PassageRetriever | None = None,
 ) -> ChatResponder:
     """Construct the chat responder `config.chat.mode` selects, all components per `config`.
 
@@ -47,9 +49,16 @@ def build_chat_service(
     parameter rather than read from `config.observability` here so that only
     the entrypoints people talk to opt in (see `get_turn_sink`); the eval
     runners call this without one and their traffic stays out of the log.
+
+    `retriever`, if given, replaces the configured one, and with it expansion,
+    routing and web search; everything after retrieval is built as usual. Only
+    the eval oracle passes one (`rag.eval.oracle`). The agent searches through
+    its own tools, so this raises under `chat.mode: agentic`.
     """
 
     if config.chat.mode == "agentic":
+        if retriever is not None:
+            raise ValueError("A replacement retriever applies to chat.mode: pipeline only")
         return build_agent_service(config, corpora, turn_sink=turn_sink)
 
     # Wrapped once, before it's shared, so every component's calls -- not just
@@ -58,7 +67,8 @@ def build_chat_service(
     # Share the one client: query expansion (HyDE / multi-query) generates
     # text too, and it should talk to the same daemon over the same connection
     # rather than opening a parallel one.
-    retriever = build_retriever(config, llm_client, corpora)
+    if retriever is None:
+        retriever = build_retriever(config, llm_client, corpora)
 
     # The condenser shares the chat client rather than getting its own: same
     # provider, same model, one connection. Building it is free (no I/O), and

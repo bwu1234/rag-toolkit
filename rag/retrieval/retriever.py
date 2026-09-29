@@ -38,7 +38,7 @@ import logging
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Protocol
 
 from rag.config.settings import DEFAULT_CARRY_METADATA
 from rag.embedding.base import EmbeddingModel
@@ -55,6 +55,24 @@ from rag.vectorstore.base import ScoredChunk, VectorStore
 logger = logging.getLogger(__name__)
 
 RetrievalMode = Literal["dense", "hybrid"]
+
+
+class PassageRetriever(Protocol):
+    """What `ChatService` needs from retrieval: one query in, one `RetrievalResult` out.
+
+    `Retriever` is the implementation every entrypoint uses. The protocol exists
+    so an eval can put something else in its place -- the oracle
+    (`rag.eval.oracle`) returns each question's gold chunks -- and still run the
+    pipeline's own prompt, generation and citations.
+    """
+
+    def retrieve(
+        self,
+        query: str,
+        *,
+        query_filter: QueryFilter | None = None,
+        on_event: EventSink | None = None,
+    ) -> RetrievalResult: ...
 
 
 @dataclass(frozen=True)

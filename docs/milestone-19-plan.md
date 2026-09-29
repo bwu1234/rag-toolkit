@@ -419,9 +419,19 @@ which it can't). In a 2026 multi-hop study
 ([arXiv 2601.19827](https://arxiv.org/abs/2601.19827)), 87% of errors were
 composition failures on evidence that had been retrieved. If `oracle / 9b` is
 not much above `pipeline / 9b` on multi-hop completeness, the headroom is in
-the generator, not in searching. It needs an `--oracle` flag on
-`multihop_eval`. It runs on the multi-hop and single-hop sets only, because
-refusal questions have no gold evidence. It is never a candidate default.
+the generator, not in searching. It runs on the multi-hop and single-hop sets
+only, because refusal questions have no gold evidence. It is never a candidate
+default.
+
+*Shipped:* `--oracle` on `multihop_eval` and `answer_eval`
+(`rag/eval/oracle.py`). It swaps the retriever for one that returns the gold
+chunks, so the prompt, generation and citations are the pipeline's own. It
+refuses CRAG and the agent. On the current index every gold span is found:
+1 chunk per single-hop question, 2–4 per multi-hop question. That is fewer
+passages than the pipeline's 5, and none of them distractors, so the ceiling
+is "gold evidence alone". If the oracle and the pipeline rows are close, a
+padded variant (gold plus retrieved fill to `rerank_top_k`) would show whether
+distractors are what costs the pipeline.
 
 **Default-flip criterion:** agentic beats pipeline on multi-hop
 completeness by more than noise, while holding single-hop and refusal within
