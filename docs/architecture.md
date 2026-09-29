@@ -287,3 +287,30 @@ Two consequences worth knowing:
   carry what the pipeline did that the answer text can't show (rewritten query,
   expansion queries, dropped/graded-out counts, retry queries, groundedness), so
   every caller sees it, not just the one passing `on_event`.
+
+## Build vs. adopt
+
+Which layers this repo implements and which it takes from established tools.
+The rule: **build what the evals measure, adopt the plumbing.** A stage whose
+behavior shows up in [measured results](measured-results.md) is written here,
+so the numbers reflect this pipeline's own choices and not a framework's
+defaults. Everything else uses a standard tool behind one of the interfaces
+above, so it can be swapped in config.
+
+| Layer | Built or adopted | Notes |
+|---|---|---|
+| Chunking, headers, contextual enrichment | Built | Measured in the chunking plan; a framework splitter would hide the offsets citations depend on |
+| Retrieval, fusion, metadata filters, document routing | Built | Hybrid fusion and routing are measured decisions |
+| Reranking policy | Built on an adopted model | `sentence-transformers` cross-encoder; when and how many to rerank is ours |
+| Chat loop, CRAG, groundedness, agent | Built | LangGraph rejected ([CRAG notes](milestone-notes.md#corrective-rag-notes-milestone-10)) |
+| Eval runners, scoring, paired comparison | Built | Inspect deferred, MLflow an optional tracking export ([eval harness decisions](eval-harness-plan.md#decisions-and-rejected-alternatives)) |
+| Embedding and generation models | Adopted | Ollama for both; Gemini for generation; behind `EmbeddingModel` / `LLMClient` |
+| Vector index, sparse index | Adopted | Chroma; `rank-bm25` or SQLite FTS5 |
+| HTTP API, config validation, MCP transport | Adopted | FastAPI, pydantic, the `mcp` SDK (optional) |
+| Tracing, IaC, hosting, auth at scale | Adopted (planned) | OpenTelemetry, Terraform, Cloud Run, an OIDC proxy ([backlog](backlog.md)) |
+
+A new dependency still needs the justification in `CLAUDE.md` (what it replaces,
+and why the existing tools don't cover it). "A framework does this" is not
+enough on its own. A framework can still be useful at the edges, for example
+as an eval comparator (its default pipeline run as one variant) or as a
+client of the MCP server, without becoming a dependency of the pipeline.

@@ -1,8 +1,10 @@
 # RAG_Project
 
 Retrieval-Augmented Generation system, built up milestone by
-milestone. Local-first by default: Ollama serves both embeddings and chat;
-Chroma is the vector store. Model names live in `rag/config/config.yaml`.
+milestone. Local-first, not local-only: Ollama serves both embeddings and
+chat and Chroma is the vector store, so everything runs on one machine; hosted
+providers (Gemini today) are a config swap, not a separate code path. Model
+names live in `rag/config/config.yaml`.
 
 ## Status
 
@@ -117,6 +119,11 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 - Keep dependencies minimal — justify any new dependency against what's
   already available (e.g. don't add a second HTTP client, a second YAML
   parser, etc.).
+- Build what the evals measure, adopt the plumbing: retrieval, reranking
+  policy, the chat loop and eval scoring are ours; HTTP, vector indexes,
+  tracing, IaC and hosting use established tools behind the interfaces. No
+  framework (LangChain, LlamaIndex, LangGraph, Inspect) at the core — see
+  [Build vs. adopt](docs/architecture.md#build-vs-adopt).
 
 ## Documentation
 
