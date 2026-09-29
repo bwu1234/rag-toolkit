@@ -68,6 +68,12 @@ index.
   Files fetched before that need `scripts/fetch_edgar.py
   --backfill-front-matter`; `index-report` shows how many documents have a
   header.
+- `edgar_md` is the same filings and text as `edgar`, rendered as Markdown
+  (headings, tables, no page furniture) for the structure-aware chunker.
+  Build it offline: `scripts/fetch_edgar.py --cache-raw` once (SEC requests,
+  pinned to the accessions on disk), then `--render-markdown
+  data/corpora/edgar_md/documents`. Same document ids, so never pool it with
+  `edgar`.
 - `beir-fiqa`, `beir-scifact` and `beir-nfcorpus` are public benchmarks
   (`scripts/fetch_beir.py NAME`). Their registry entries set `clean: false`
   so the text is indexed exactly as published. Index them with

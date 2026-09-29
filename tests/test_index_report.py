@@ -154,3 +154,14 @@ def test_long_zero_chunk_lists_are_truncated() -> None:
     line = next(row for row in lines if row.startswith("Zero-chunk"))
 
     assert line.endswith(", +2 more")
+
+
+def test_report_counts_section_headings_but_not_the_title() -> None:
+    documents = [
+        _doc("# Title\n\n## Overview\n\nText.\n\n### Detail\n\nMore.\n\n#hashtag, not a heading", "a.md"),
+        _doc("# Title\n\nFlat text only.", "b.md"),
+    ]
+    report = _report(documents, [_chunk("a:0", "Text.", document_id="a.md"), _chunk("b:0", "Flat", document_id="b.md")])
+
+    assert report.headings == {"a.md": 2, "b.md": 0}
+    assert "Section headings   min=0  p50=1  max=2 per document; 1 of 2 document(s) have none" in format_report(report)

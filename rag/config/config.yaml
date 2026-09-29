@@ -37,6 +37,14 @@ corpora:
         SEC 10-K/10-Q MD&A sections (61 filings, ~3.6M chars, ~4,200 chunks).
         Built by scripts/fetch_edgar.py; documents are gitignored and
         reproduced from data/corpora/edgar/manifest.json.
+    edgar_md:
+      documents_dir: data/corpora/edgar_md/documents
+      description: >
+        The same 61 filings and text as `edgar`, re-rendered as Markdown:
+        section headings, tables with a header row, no page furniture
+        (chunking plan Phase 4). Same document ids, so every EDGAR eval set
+        runs against it; don't pool it with `edgar`. Built offline by
+        `scripts/fetch_edgar.py --cache-raw` then `--render-markdown`.
     # Public benchmarks (docs/public-benchmarks-plan.md): pre-split passages
     # with published relevance labels. `clean: false` indexes the text exactly
     # as published; pair them with rag/config/beir.yaml, which keeps each

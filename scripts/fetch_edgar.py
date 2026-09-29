@@ -52,6 +52,13 @@ Usage
     # (offline; reads the title and source lines this script wrote):
     python scripts/fetch_edgar.py --manifest ... --backfill-front-matter
 
+    # Cache the raw HTML of exactly the filings on disk (pinned by accession),
+    # and check each document's body is found in it:
+    python scripts/fetch_edgar.py --manifest ... --cache-raw
+
+    # Re-render those documents as Markdown from the cache (offline):
+    python scripts/fetch_edgar.py --manifest ... --render-markdown data/corpora/edgar_md/documents
+
 The SEC requires a User-Agent identifying the requester.  Override the default
 with ``--user-agent`` or the ``SEC_USER_AGENT`` environment variable.
 """
@@ -65,15 +72,16 @@ import os
 import re
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date
-from html.parser import HTMLParser
 from pathlib import Path
 
 import httpx
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from edgar_markdown import Rendered, parse, render_span  # noqa: E402
 
 from rag.logging_config import configure_logging  # noqa: E402
 
@@ -187,73 +195,18 @@ class FilingRef:
 # HTML -> text
 # --------------------------------------------------------------------------
 
-_BLOCK_TAGS = {
-    "p", "div", "br", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6",
-    "table", "section", "article", "header", "footer",
-}
-_SKIP_TAGS = {"script", "style", "head", "title"}
-
-
-class _TextExtractor(HTMLParser):
-    """Collapse an EDGAR HTML filing into plain text.
-
-    Inline-XBRL filings are mostly presentational markup wrapping short text
-    runs, so a tag-stripper gets very close to clean prose.  Table cells are
-    joined with ``|`` rather than dropped so that a row label stays attached to
-    its figure -- strictly better than the whitespace soup ``pypdf`` produces,
-    though still not structured table extraction (that is Milestone 14).
-    """
-
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self._parts: list[str] = []
-        self._skip_depth = 0
-
-    def handle_starttag(self, tag: str, attrs: object) -> None:
-        if tag in _SKIP_TAGS:
-            self._skip_depth += 1
-        elif tag in _BLOCK_TAGS:
-            self._parts.append("\n")
-        elif tag in ("td", "th"):
-            self._parts.append(" | ")
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag in _SKIP_TAGS:
-            self._skip_depth = max(0, self._skip_depth - 1)
-        elif tag in _BLOCK_TAGS:
-            self._parts.append("\n")
-
-    def handle_data(self, data: str) -> None:
-        if self._skip_depth == 0:
-            self._parts.append(data)
-
-    def text(self) -> str:
-        return "".join(self._parts)
-
-
 def html_to_text(html: str) -> str:
-    """Extract normalized plain text from an EDGAR HTML filing."""
-    parser = _TextExtractor()
-    parser.feed(html)
-    text = parser.text()
+    """Extract normalized plain text from an EDGAR HTML filing.
 
-    # Non-breaking spaces are pervasive in EDGAR markup and would otherwise
-    # survive into chunk text and defeat whitespace-boundary chunk snapping.
-    # Normalize the typographic punctuation EDGAR filings are full of. Left as
-    # smart quotes it reaches BM25's tokenizer, where "Company's" and
-    # "Company’s" are different terms and only one of them matches a query.
-    for fancy, plain in (
-        ("\xa0", " "), ("’", "'"), ("‘", "'"),
-        ("“", '"'), ("”", '"'),
-        ("—", "--"), ("–", "-"), ("…", "..."),
-    ):
-        text = text.replace(fancy, plain)
-    text = re.sub(r"[ \t]+", " ", text)
-    text = re.sub(r" *\n *", "\n", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    # Empty table rows left behind by layout-only cells.
-    text = re.sub(r"\n(?:\s*\|\s*)+\n", "\n", text)
-    return text.strip()
+    Block elements become line breaks, table cells are joined with `` | `` so
+    a row label stays attached to its figure, typographic punctuation is
+    folded to ASCII (left as smart quotes it reaches BM25's tokenizer, where
+    "Company's" and "Company’s" are different terms), and whitespace is
+    collapsed. ``edgar_markdown.parse`` does the work: it also maps every
+    output character back to the HTML, which is what lets
+    ``edgar_markdown.render_span`` re-render exactly this text as Markdown.
+    """
+    return parse(html)[1].text
 
 
 # --------------------------------------------------------------------------
@@ -297,7 +250,7 @@ def digit_ratio(text: str) -> float:
 def pipe_ratio(text: str) -> float:
     """Density of table-cell separators -- the table-dump discriminator.
 
-    ``_TextExtractor`` joins table cells with ``|``, so this measures how much
+    ``html_to_text`` joins table cells with ``|``, so this measures how much
     of a span is tabular. See ``MAX_PIPE_RATIO`` for measured values.
     """
     if not text:
@@ -415,11 +368,16 @@ class EdgarClient:
             for row in data.values()
         }
 
+    def recent_submissions(self, cik: int) -> dict[str, list]:
+        """The company's recent filings as parallel column arrays (``form``, ``accessionNumber``, ...)."""
+        recent: dict[str, list] = self._get(SUBMISSIONS_URL.format(cik=cik)).json()["filings"]["recent"]
+        return recent
+
     def recent_filings(
         self, ticker: str, cik: int, company: str, forms: dict[str, int]
     ) -> list[FilingRef]:
         """Most recent ``count`` filings per form type, newest first."""
-        recent = self._get(SUBMISSIONS_URL.format(cik=cik)).json()["filings"]["recent"]
+        recent = self.recent_submissions(cik)
         remaining = dict(forms)
         selected: list[FilingRef] = []
 
@@ -534,6 +492,235 @@ def backfill_front_matter(out_dir: Path) -> int:
     return changed
 
 
+# --------------------------------------------------------------------------
+# Raw HTML cache, pinned to the corpus on disk
+# --------------------------------------------------------------------------
+
+# Written next to the cached HTML: one FilingRef per accession, so rendering
+# from the cache needs no network call.
+RAW_INDEX_NAME = "index.json"
+
+
+def read_front_matter(text: str) -> dict | None:
+    """The YAML front matter ``render_document`` writes, or ``None`` if the file has none."""
+    if not text.startswith("---\n"):
+        return None
+    end = text.index("\n---\n", 3)
+    fields: dict = yaml.safe_load(text[4:end])
+    return fields
+
+
+def pinned_accessions(out_dir: Path) -> dict[str, dict[str, str]]:
+    """``ticker -> {accession: filename}`` for every fetched document in ``out_dir``.
+
+    The corpus is defined by what is on disk, not by the manifest: the manifest
+    selects each ticker's *most recent* filings, so re-running it later returns
+    a different set and invalidates every eval set's ``expected_doc_ids``.
+
+    Raises:
+        ValueError: a document has no front matter (run
+            ``--backfill-front-matter`` first).
+    """
+    pinned: dict[str, dict[str, str]] = {}
+    for path in sorted(out_dir.glob("*.md")):
+        fields = read_front_matter(path.read_text(encoding="utf-8"))
+        if fields is None:
+            raise ValueError(f"{path.name}: no front matter; run --backfill-front-matter first")
+        pinned.setdefault(str(fields["ticker"]), {})[str(fields["accession"])] = path.name
+    return pinned
+
+
+def filing_ref_for(recent: dict[str, list], *, ticker: str, company: str, cik: int, accession: str) -> FilingRef | None:
+    """The ``FilingRef`` for one accession in a submissions listing, or ``None`` if it isn't listed."""
+    for i, listed in enumerate(recent["accessionNumber"]):
+        if listed == accession:
+            return FilingRef(
+                ticker=ticker,
+                company=company,
+                cik=cik,
+                form=recent["form"][i],
+                filing_date=recent["filingDate"][i],
+                report_date=recent["reportDate"][i],
+                accession=accession,
+                document=recent["primaryDocument"][i],
+            )
+    return None
+
+
+def load_raw_index(raw_dir: Path) -> dict[str, FilingRef]:
+    """The cached ``accession -> FilingRef`` index, empty if nothing is cached yet."""
+    path = raw_dir / RAW_INDEX_NAME
+    if not path.exists():
+        return {}
+    return {accession: FilingRef(**fields) for accession, fields in json.loads(path.read_text(encoding="utf-8")).items()}
+
+
+def raw_html_path(raw_dir: Path, accession: str) -> Path:
+    return raw_dir / f"{accession}.htm"
+
+
+def cache_raw_filings(out_dir: Path, raw_dir: Path, user_agent: str) -> int:
+    """Download the HTML of exactly the filings already in ``out_dir``. Returns the count downloaded.
+
+    Idempotent and resumable: a filing already cached is not requested again,
+    and when every filing is cached no request is made at all. Each filing is
+    matched by accession, and its ``FilingRef.filename`` must equal the file on
+    disk, which pins form and period as well.
+
+    Raises:
+        ValueError: an accession isn't in its company's recent submissions, or
+            resolves to a different filename than the one on disk.
+    """
+    pinned = pinned_accessions(out_dir)
+    index = load_raw_index(raw_dir)
+    missing = {
+        ticker: {acc: name for acc, name in filings.items() if acc not in index or not raw_html_path(raw_dir, acc).exists()}
+        for ticker, filings in pinned.items()
+    }
+    missing = {ticker: filings for ticker, filings in missing.items() if filings}
+    if not missing:
+        logger.info("All %d filing(s) already cached in %s", len(index), raw_dir)
+        return 0
+
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    downloaded = 0
+    with EdgarClient(user_agent) as client:
+        lookup = client.ticker_to_cik()
+        for ticker, filings in missing.items():
+            cik, company = lookup[ticker]
+            recent = client.recent_submissions(cik)
+            for accession, filename in filings.items():
+                ref = filing_ref_for(recent, ticker=ticker, company=company, cik=cik, accession=accession)
+                if ref is None:
+                    raise ValueError(f"{filename}: accession {accession} not in {ticker}'s recent submissions")
+                if ref.filename != filename:
+                    raise ValueError(f"{filename}: accession {accession} resolves to {ref.filename}")
+                destination = raw_html_path(raw_dir, accession)
+                # Write-then-rename, so an interrupted download never leaves a
+                # truncated file that the next run would take as cached.
+                partial = destination.with_suffix(".partial")
+                partial.write_text(client.fetch_document(ref), encoding="utf-8")
+                partial.replace(destination)
+                index[accession] = ref
+                downloaded += 1
+                logger.info("cached %-34s %s", filename, ref.document)
+                # The index is rewritten after each filing for the same reason.
+                (raw_dir / RAW_INDEX_NAME).write_text(
+                    json.dumps({acc: asdict(r) for acc, r in sorted(index.items())}, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+    return downloaded
+
+
+def pinned_body(ref: FilingRef, document: str) -> str:
+    """The extracted body inside a document ``render_document`` wrote for ``ref``.
+
+    Raises:
+        ValueError: the front matter, title or source line differ from what
+            ``render_document`` writes for ``ref``.
+    """
+    head = render_document(ref, "")[:-1]  # everything up to the body, which ends "\n"
+    if not (document.startswith(head) and document.endswith("\n")):
+        raise ValueError(f"{ref.filename}: header lines differ from what render_document writes")
+    return document[len(head) : -1]
+
+
+def pinned_span(ref: FilingRef, document: str, text: str) -> tuple[int, int]:
+    """Where the on-disk body sits in ``text`` (``html_to_text`` of the filing), as ``(start, end)``.
+
+    This, not ``extract_mda``, is what fixes the section a re-render covers.
+    The corpus was fetched by an earlier version of the selection rules, and
+    today's rules pick a different span, or none, for 10 of the 61 filings
+    (see ``selection_drift``). Every eval set was labeled against the corpus
+    as fetched, so a re-render has to cover exactly that text.
+
+    Raises:
+        ValueError: the body doesn't occur in ``text`` exactly once, so the
+            cache doesn't hold the filing the document came from.
+    """
+    body = pinned_body(ref, document)
+    count = text.count(body)
+    if count != 1:
+        raise ValueError(f"{ref.filename}: extracted body occurs {count} times in the cached filing, expected 1")
+    start = text.index(body)
+    return start, start + len(body)
+
+
+def verify_raw_cache(out_dir: Path, raw_dir: Path) -> list[str]:
+    """Filenames the cache can't reproduce: not cached, or ``pinned_span`` fails.
+
+    An empty result proves the cache holds the same filings, extracted by the
+    same ``html_to_text``, as the corpus every eval set was labeled against.
+    """
+    index = load_raw_index(raw_dir)
+    failed: list[str] = []
+    for filings in pinned_accessions(out_dir).values():
+        for accession, filename in filings.items():
+            ref = index.get(accession)
+            path = raw_html_path(raw_dir, accession)
+            if ref is None or not path.exists():
+                failed.append(filename)
+                continue
+            try:
+                pinned_span(ref, (out_dir / filename).read_text(encoding="utf-8"), html_to_text(path.read_text(encoding="utf-8")))
+            except ValueError as exc:
+                logger.warning("%s", exc)
+                failed.append(filename)
+    return sorted(failed)
+
+
+def selection_drift(out_dir: Path, raw_dir: Path) -> list[str]:
+    """Filenames where today's ``extract_mda`` would select a different section, or none.
+
+    A fresh fetch would drop or change these documents. Rendering is
+    unaffected, since it goes through ``pinned_span``. Assumes a verified cache.
+    """
+    index = load_raw_index(raw_dir)
+    drifted: list[str] = []
+    for filings in pinned_accessions(out_dir).values():
+        for accession, filename in filings.items():
+            ref = index[accession]
+            body = extract_mda(html_to_text(raw_html_path(raw_dir, accession).read_text(encoding="utf-8")), ref.form)
+            if body != pinned_body(ref, (out_dir / filename).read_text(encoding="utf-8")):
+                drifted.append(filename)
+    return sorted(drifted)
+
+
+def render_markdown_corpus(out_dir: Path, raw_dir: Path, dest_dir: Path) -> dict[str, Rendered]:
+    """Re-render every document in ``out_dir`` as Markdown into ``dest_dir``, from the cache. Offline.
+
+    Each document keeps its filename (so its ``Document.id`` and every eval
+    set's ``expected_doc_ids``), its front matter and title, and covers exactly
+    the text it covers today (``pinned_span``). Only the body's form changes:
+    headings, Markdown tables, no page furniture. See ``edgar_markdown``.
+
+    Raises:
+        ValueError: a document isn't cached, or its body isn't found in the
+            cached filing (run ``--cache-raw`` first).
+    """
+    index = load_raw_index(raw_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    results: dict[str, Rendered] = {}
+    for filings in pinned_accessions(out_dir).values():
+        for accession, filename in filings.items():
+            ref = index.get(accession)
+            if ref is None or not raw_html_path(raw_dir, accession).exists():
+                raise ValueError(f"{filename}: not in the raw cache; run --cache-raw first")
+            html = raw_html_path(raw_dir, accession).read_text(encoding="utf-8")
+            start, end = pinned_span(ref, (out_dir / filename).read_text(encoding="utf-8"), html_to_text(html))
+            rendered = render_span(html, start, end)
+            (dest_dir / filename).write_text(render_document(ref, rendered.markdown), encoding="utf-8")
+            results[filename] = rendered
+            logger.info(
+                "rendered %-34s %3d headings  %3d tables  %3d furniture dropped",
+                filename,
+                len(rendered.headings),
+                rendered.tables,
+                rendered.dropped_furniture,
+            )
+    return results
+
+
 def fetch_corpus(
     manifest: dict, out_dir: Path, user_agent: str, *, dry_run: bool = False
 ) -> int:
@@ -640,6 +827,31 @@ def main() -> int:
         action="store_true",
         help="Add YAML front matter to already-fetched files that lack it. Offline.",
     )
+    parser.add_argument(
+        "--cache-raw",
+        action="store_true",
+        help=(
+            "Download the HTML of exactly the filings already in the output directory "
+            "(pinned by accession) into --raw-dir, then check each document's body is "
+            "found in it exactly once."
+        ),
+    )
+    parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=None,
+        help="Raw HTML cache (default: the manifest's directory + /raw).",
+    )
+    parser.add_argument(
+        "--render-markdown",
+        type=Path,
+        metavar="DEST_DIR",
+        default=None,
+        help=(
+            "Re-render every document as Markdown (headings, tables, no page furniture) "
+            "from the raw cache into DEST_DIR. Offline; needs --cache-raw first."
+        ),
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -651,6 +863,32 @@ def main() -> int:
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     out_dir = args.out_dir or args.manifest.parent / "documents"
+
+    raw_dir = args.raw_dir or args.manifest.parent / "raw"
+    if args.render_markdown:
+        if args.render_markdown.resolve() == out_dir.resolve():
+            logger.error("--render-markdown would overwrite the documents it renders from; pick another directory")
+            return 1
+        results = render_markdown_corpus(out_dir, raw_dir, args.render_markdown)
+        logger.info("Rendered %d document(s) into %s", len(results), args.render_markdown)
+        return 0
+
+    if args.cache_raw:
+        downloaded = cache_raw_filings(out_dir, raw_dir, args.user_agent)
+        logger.info("Downloaded %d filing(s) into %s", downloaded, raw_dir)
+        failed = verify_raw_cache(out_dir, raw_dir)
+        if failed:
+            logger.error("%d document(s) not reproduced from the cache: %s", len(failed), ", ".join(failed))
+            return 1
+        logger.info("Every document's extracted body found exactly once in its cached filing")
+        drifted = selection_drift(out_dir, raw_dir)
+        if drifted:
+            logger.warning(
+                "Today's MD&A selection differs for %d document(s); a fresh fetch would drop or change them: %s",
+                len(drifted),
+                ", ".join(drifted),
+            )
+        return 0
 
     if args.backfill_front_matter:
         changed = backfill_front_matter(out_dir)

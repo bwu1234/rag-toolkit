@@ -14,6 +14,7 @@ what the change did without paying for embeddings.
 
 from __future__ import annotations
 
+import re
 import statistics
 from collections import Counter
 from dataclasses import dataclass, field
@@ -77,7 +78,18 @@ class IndexReport:
     duplicate_chunks: int = 0
     #: Documents whose chunks got no header, or None when `chunking.header` is off.
     headerless_documents: list[str] | None = None
+    #: Section headings (`##` and deeper) per document, keyed by document id.
+    headings: dict[str, int] = field(default_factory=dict)
     index: IndexState | None = None
+
+
+# `##` to `######`: `#` is the title a loader writes for the document itself.
+_SECTION_HEADING = re.compile(r"^#{2,6} \S", re.MULTILINE)
+
+
+def count_headings(text: str) -> int:
+    """Markdown section headings in ``text`` -- what a structure-aware chunker can split on."""
+    return len(_SECTION_HEADING.findall(text))
 
 
 def is_table_row(line: str) -> bool:
@@ -154,6 +166,7 @@ def build_report(
             if header_template
             else None
         ),
+        headings={document.id: count_headings(document.text) for document in documents},
         index=index,
     )
 
@@ -192,6 +205,18 @@ def _sample_ids(ids: list[str], shown: int = 10) -> str:
     return f": {', '.join(ids[:shown])}{more}"
 
 
+def _format_headings(report: IndexReport) -> str:
+    """Headings per document: whether the parser kept any structure to split on."""
+    counts = sorted(report.headings.values())
+    if not counts:
+        return "Section headings   n/a"
+    without = sum(1 for count in counts if count == 0)
+    return (
+        f"Section headings   min={counts[0]}  p50={round(statistics.median(counts))}  max={counts[-1]} "
+        f"per document; {without} of {len(counts)} document(s) have none"
+    )
+
+
 def format_report(report: IndexReport) -> str:
     """Human-readable rendering, one fact per line."""
     pct = lambda part: f"{part / report.chunks:.1%}" if report.chunks else "n/a"  # noqa: E731
@@ -214,6 +239,7 @@ def format_report(report: IndexReport) -> str:
         f"Split documents    {report.split_documents}",
         f"Duplicate chunks   {report.duplicate_chunks} ({report.duplicate_groups} distinct text(s))",
         _format_headers(report),
+        _format_headings(report),
         "",
     ]
     state = report.index

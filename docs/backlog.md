@@ -644,7 +644,8 @@ the harness plan's publication.
   baselined in [Chunking and indexing plan](chunking-indexing-plan.md)
   Phase 0 (2026-09-27): `edgar_underspecified_set.json`, 118 questions,
   retrieval hit 0.833 `implicit` / 0.500 `paraphrase` against 0.908 on the
-  generated set. The `period` tier shipped with it; `table` waits for Phase 4.
+  generated set. The `period` tier shipped with it; `table` is next, built on
+  Phase 4's `edgar_md` corpus (shipped 2026-09-29).
   Every chunking-plan phase since has been judged on all three sets. Contextual
   chunking is not currently prioritized for re-measurement: Phase 2's
   deterministic header replaced it (+14.4pp answer pass on this tier).

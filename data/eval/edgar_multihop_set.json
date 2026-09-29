@@ -666,8 +666,18 @@
       "TGT_10-Q_2026-05-02.md"
     ],
     "expected_spans": [
-      "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A",
-      "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A"
+      {
+        "text": "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A",
+        "alternatives": [
+          "As of February 1, 2025, our credit ratings were as follows:\n\n| Credit Ratings | Moody's | Standard and Poor's | Fitch |\n|---|---|---|---|\n| Long-term debt | A2 | A | A |"
+        ]
+      },
+      {
+        "text": "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A",
+        "alternatives": [
+          "As of May 2, 2026, our credit ratings were as follows:\n\n| Credit Ratings | Moody's | S&P |\n|---|---|---|\n| Long-term debt | A2 | A |"
+        ]
+      }
     ],
     "expected_answer": "Target, as of February 1, 2025: A2; Target, as of May 2, 2026: A2",
     "tier": "multihop",
@@ -677,7 +687,12 @@
         "label": "Target, as of February 1, 2025",
         "answer": "A2",
         "spans": [
-          "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A"
+          {
+            "text": "As of February 1, 2025, our credit ratings were as follows:\n| Credit Ratings | Moody's | Standard and Poor's | Fitch\n\n| Long-term debt | A2 | A | A",
+            "alternatives": [
+              "As of February 1, 2025, our credit ratings were as follows:\n\n| Credit Ratings | Moody's | Standard and Poor's | Fitch |\n|---|---|---|---|\n| Long-term debt | A2 | A | A |"
+            ]
+          }
         ],
         "source_id": "TGT_10-K_2025-02-01.md::chunk30"
       },
@@ -685,7 +700,12 @@
         "label": "Target, as of May 2, 2026",
         "answer": "A2",
         "spans": [
-          "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A"
+          {
+            "text": "As of May 2, 2026, our credit ratings were as follows:\n| Credit Ratings | Moody's |\nS&P\n\n| Long-term debt | A2 | A",
+            "alternatives": [
+              "As of May 2, 2026, our credit ratings were as follows:\n\n| Credit Ratings | Moody's | S&P |\n|---|---|---|\n| Long-term debt | A2 | A |"
+            ]
+          }
         ],
         "source_id": "TGT_10-Q_2026-05-02.md::chunk28"
       }
