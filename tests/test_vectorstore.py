@@ -250,3 +250,81 @@ def test_filter_applies_before_top_k_so_results_are_not_short(tmp_path: Path) ->
     results = store.query(_AXIS_X, top_k=3, query_filter=QueryFilter(equals={"ticker": "AAPL"}))
 
     assert [r.chunk_id for r in results] == ["c6", "c7", "c8"]
+
+
+# ---------------------------------------------------------------------------
+# HNSW `ef_search`: applied before Chroma loads the segment, fixed per process
+# ---------------------------------------------------------------------------
+
+
+def _ef_search(store: ChromaVectorStore) -> int:
+    return store._collection.configuration["hnsw"]["ef_search"]
+
+
+def test_configured_ef_search_is_written_to_the_collection(tmp_path: Path) -> None:
+    assert _ef_search(ChromaVectorStore(tmp_path / "index", "ef-default")) == 100
+    assert _ef_search(ChromaVectorStore(tmp_path / "index", "ef-wide", hnsw_ef_search=400)) == 400
+
+
+def test_the_factory_passes_ef_search(tmp_path: Path) -> None:
+    store = get_vector_store(VectorStoreConfig(collection_name="ef-factory", hnsw_ef_search=300), tmp_path / "index")
+
+    assert isinstance(store, ChromaVectorStore)
+    assert _ef_search(store) == 300
+
+
+def test_a_new_process_takes_the_configured_value_over_the_stored_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import rag.vectorstore.chroma_store as chroma_store
+
+    ChromaVectorStore(tmp_path / "index", "ef-persisted", hnsw_ef_search=400)
+    # A later process has no record of what this one opened.
+    monkeypatch.setattr(chroma_store, "_EF_SEARCH_IN_PROCESS", {})
+
+    # Chroma persisted 400, but the config now says 100, and config wins.
+    assert _ef_search(ChromaVectorStore(tmp_path / "index", "ef-persisted")) == 100
+
+
+def test_a_second_value_in_one_process_is_refused(tmp_path: Path) -> None:
+    ChromaVectorStore(tmp_path / "index", "ef-once", hnsw_ef_search=200)
+    ChromaVectorStore(tmp_path / "index", "ef-once", hnsw_ef_search=200)  # same value: fine
+
+    # Chroma would keep searching with 200 until the process restarts.
+    with pytest.raises(ValueError, match="already opened in this process"):
+        ChromaVectorStore(tmp_path / "index", "ef-once", hnsw_ef_search=800)
+
+
+def test_reset_keeps_the_configured_ef_search(tmp_path: Path) -> None:
+    store = ChromaVectorStore(tmp_path / "index", "ef-reset", hnsw_ef_search=250)
+    store.reset()
+
+    assert _ef_search(store) == 250
+
+
+def test_a_wider_beam_finds_more_of_the_exact_top_k(tmp_path: Path) -> None:
+    """The value takes effect: set after Chroma loads the segment, it would be silently ignored."""
+    import random
+
+    rng = random.Random(0)
+    dims, n, k = 32, 3000, 10
+    vectors = [[rng.gauss(0, 1) for _ in range(dims)] for _ in range(n)]
+    queries = [[rng.gauss(0, 1) for _ in range(dims)] for _ in range(40)]
+    chunks = [_chunk(f"c{i}") for i in range(n)]
+
+    def cosine(a: list[float], b: list[float]) -> float:
+        return sum(x * y for x, y in zip(a, b)) / (sum(x * x for x in a) * sum(y * y for y in b)) ** 0.5
+
+    def recall(ef: int) -> float:
+        store = ChromaVectorStore(tmp_path / "index", f"ef-recall-{ef}", hnsw_ef_search=ef)
+        store.upsert(chunks, vectors)
+        found = 0
+        for q in queries:
+            exact = sorted(range(n), key=lambda i: -cosine(q, vectors[i]))[:k]
+            got = {r.chunk_id for r in store.query(q, top_k=k)}
+            found += len(got & {f"c{i}" for i in exact})
+        return found / (k * len(queries))
+
+    narrow, wide = recall(1), recall(500)
+    assert wide > narrow
+    assert wide > 0.99

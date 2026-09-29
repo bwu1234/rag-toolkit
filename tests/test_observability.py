@@ -489,6 +489,7 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
                 "embedding": {"query_instruction", "revision"},
                 "chunking": {"carry_metadata", "header"},
                 "reranker": {"include_header"},
+                "vector_store": {"hnsw_ef_search"},
             }
         ).encode()
     ).hexdigest()[:12]
@@ -514,6 +515,7 @@ def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> N
                 "embedding": {"query_instruction", "revision"},
                 "chunking": {"carry_metadata", "header"},
                 "reranker": {"include_header"},
+                "vector_store": {"hnsw_ef_search"},
             }
         ).encode()
     ).hexdigest()[:12]
@@ -611,3 +613,14 @@ def test_config_fingerprint_keys_on_embedding_revision_only_once_it_is_set() -> 
     pinned = RagConfig(embedding=EmbeddingConfig(provider="sentence_transformers", model="m", revision="abc123"))
 
     assert config_fingerprint(pinned) != config_fingerprint(unpinned)
+
+
+def test_config_fingerprint_keys_on_ef_search_only_off_chromas_default() -> None:
+    from rag.config.settings import VectorStoreConfig
+
+    default = RagConfig(vector_store=VectorStoreConfig(hnsw_ef_search=100))
+    wider = RagConfig(vector_store=VectorStoreConfig(hnsw_ef_search=400))
+
+    # 100 is what every turn logged before the setting existed searched with.
+    assert config_fingerprint(default) == config_fingerprint(RagConfig())
+    assert config_fingerprint(wider) != config_fingerprint(default)

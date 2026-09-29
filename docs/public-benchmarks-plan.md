@@ -450,6 +450,13 @@ setting, fixed without looking at relevance labels), or report every dense
 row with its exact-search control beside it. The first is preferable: it also
 fixes the shipped pipeline ([known limitations](known-limitations.md)).
 
+**Done 2026-09-29, the first way.** `vector_store.hnsw_ef_search` is now a
+setting, chosen from recall against exact search with no labels read:
+`beir.yaml` uses 1600, which gives 0.998–1.000 of the exact top 100 and
+matches exact search on SciFact and NFCorpus. On FiQA it leaves
+0.0017 nDCG@10. The shipped config uses 400
+([HNSW `ef_search`](measured-results.md#hnsw-ef_search)).
+
 ## Phase 4: measure the shipped query-time stack
 
 With the harness validated, use the `measure-change` skill for paired runs on

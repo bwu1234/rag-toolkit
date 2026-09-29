@@ -149,6 +149,16 @@ chunking:
 vector_store:
   provider: chroma
   collection_name: rag_corpus
+  # HNSW search beam per query (Chroma's `ef_search`; raised to `top_k` if
+  # lower). Dense search is approximate: at Chroma's default of 100 it missed
+  # a dense candidate on 3 of 347 EDGAR questions, and returned only 88.6% of
+  # the exact top 100 on BEIR FiQA. 400 makes EDGAR's dense top 20 exact for
+  # about 1 ms a query; the eval results were identical, sample for sample
+  # (docs/measured-results.md, "HNSW `ef_search`"). The margin is for larger
+  # or pooled corpora. Query time only; no reindex. Chroma reads it when a
+  # process first opens the collection, so one process can't use two values --
+  # the store refuses rather than silently ignoring the second.
+  hnsw_ef_search: 400
 
 # Keyword index kept beside the vector store (used by retrieval.mode: hybrid).
 # bm25 = rank_bm25 + one JSON file; rebuilds on every change, fine to ~10^4

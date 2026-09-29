@@ -50,7 +50,7 @@ from typing import Any, Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from rag.config.settings import RagConfig, load_config  # noqa: E402
+from rag.config.settings import DEFAULT_HNSW_EF_SEARCH, RagConfig, load_config  # noqa: E402
 from rag.eval.dataset import EvalDataset, EvalSample  # noqa: E402
 from rag.eval.metrics import wilson_interval  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
@@ -385,6 +385,9 @@ def fingerprint(config: RagConfig) -> tuple[str, dict[str, Any]]:
         # Fingerprinted only off its default, so rows recorded before the
         # setting existed (all on bm25) keep their fingerprint.
         settings["sparse_index.provider"] = config.sparse_index.provider
+    if config.vector_store.hnsw_ef_search != DEFAULT_HNSW_EF_SEARCH:
+        # Likewise: every row before the setting existed ran at Chroma's default.
+        settings["vector_store.hnsw_ef_search"] = config.vector_store.hnsw_ef_search
     if config.retrieval.document_routing.top_m is not None:
         # The template shapes routing only while routing is on.
         settings["retrieval.document_routing.record_template"] = config.retrieval.document_routing.record_template

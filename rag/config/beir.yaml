@@ -37,3 +37,11 @@ retrieval:
   # is for retrieval scoring, not chat.
   top_k: 100
   rerank_top_k: 100
+
+vector_store:
+  # Near-exact dense search, so a benchmark row measures the retriever and not
+  # HNSW's approximation. Chosen by recall against exact search, with no
+  # relevance labels read: >= 0.998 of the exact top 100 on all three sets
+  # (Chroma's default of 100 returned 0.886 on FiQA). About 10 ms a query on
+  # FiQA. docs/measured-results.md, "HNSW `ef_search`".
+  hnsw_ef_search: 1600
