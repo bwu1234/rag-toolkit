@@ -68,6 +68,11 @@ index.
   Files fetched before that need `scripts/fetch_edgar.py
   --backfill-front-matter`; `index-report` shows how many documents have a
   header.
+- `beir-fiqa`, `beir-scifact` and `beir-nfcorpus` are public benchmarks
+  (`scripts/fetch_beir.py NAME`). Their registry entries set `clean: false`
+  so the text is indexed exactly as published. Index them with
+  `--config rag/config/beir.yaml` (one chunk per passage). Only ever
+  evaluate them isolated.
 
 Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora-notes-shipped-with-milestone-11).
 

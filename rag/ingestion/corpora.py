@@ -22,9 +22,13 @@ logger = logging.getLogger(__name__)
 
 
 def load_selected_corpora(
-    config: RagConfig, corpora: list[str] | None
+    config: RagConfig, corpora: list[str] | None, *, clean: bool = False
 ) -> tuple[CorpusSelection, list[Document]]:
     """Load every document in the selected corpora, refusing id collisions.
+
+    With ``clean=True`` each corpus's documents are cleaned as they load,
+    unless its registry entry sets ``clean: false`` (benchmark text that must
+    be indexed exactly as published).
 
     `Document.id` is a corpus-relative path, so pooling two corpora that each
     contain `faq.txt` produces two documents with the same id -- and therefore
@@ -44,7 +48,14 @@ def load_selected_corpora(
 
     for name, directory in zip(selection.names, selection.document_dirs):
         logger.info("Loading corpus %r from %s", name, directory)
-        for document in load_corpus(directory):
+        loaded = load_corpus(directory)
+        if clean:
+            entry = config.corpora.registry.get(name)
+            if entry is None or entry.clean:
+                loaded = clean_documents(loaded)
+            else:
+                logger.info("Corpus %r: cleaning skipped (clean: false), text kept as loaded", name)
+        for document in loaded:
             if document.id in origin:
                 raise ValueError(
                     f"Document id {document.id!r} appears in both corpus "
@@ -62,10 +73,11 @@ def chunk_selected_corpora(
 ) -> tuple[CorpusSelection, list[Document], list[Chunk]]:
     """Load, clean and chunk the selected corpora with the configured chunker.
 
+    Cleaning follows each corpus's ``clean`` setting.
+
     Returns the *cleaned* documents, since chunk offsets index into their text.
     """
 
-    selection, documents = load_selected_corpora(config, corpora)
-    documents = clean_documents(documents)
+    selection, documents = load_selected_corpora(config, corpora, clean=True)
     chunks = get_chunker(config.chunking).chunk(documents) if documents else []
     return selection, documents, chunks

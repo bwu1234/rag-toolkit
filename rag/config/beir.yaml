@@ -1,0 +1,39 @@
+# Public benchmark runs (docs/public-benchmarks-plan.md): BEIR passages scored
+# against their published relevance labels.
+#
+#   python scripts/fetch_beir.py scifact
+#   python -m rag.cli --config rag/config/beir.yaml index --corpus beir-scifact
+#   python -m rag.cli --config rag/config/beir.yaml index-report --corpus beir-scifact
+#
+# Inherits vanilla.yaml (dense only, no reranker, no chunk header) and changes
+# only what the benchmark representation needs. The corpora's own registry
+# entries set `clean: false`, so their text is indexed as published whichever
+# config indexes them. Phase 4 variants (hybrid, reranker) should inherit this
+# file so every variant sees the same passages.
+base: vanilla.yaml
+
+paths:
+  # Its own index, so benchmark collections never share a directory with the
+  # EDGAR ones.
+  index_dir: data/index_beir
+
+chunking:
+  # One chunk per passage, text unchanged. The default 1,000-char chunker would
+  # split long passages and let one document fill several of the top 10 ranks,
+  # which BEIR scoring does not allow.
+  strategy: none
+  # The title is already in the text (rag.ingestion.loaders.beir_passage_text);
+  # carrying it too keeps it visible in results.
+  carry_metadata: [title]
+  header:
+    template: null
+  contextual:
+    enabled: false
+
+retrieval:
+  # Explicit depths: R@100 needs at least 100 results per query, and with no
+  # reranker `rerank_top_k` is the final truncation, so both are 100. nDCG@10
+  # reads the first 10. Far too many to hand an answering model -- this config
+  # is for retrieval scoring, not chat.
+  top_k: 100
+  rerank_top_k: 100

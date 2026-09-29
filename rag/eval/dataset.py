@@ -51,6 +51,17 @@ the topic).  The object form also takes ``"alternatives": [...]``: other
 verbatim quotes of the same fact, for a fact the corpus states more than once
 in different words.
 
+Document ids can be graded the same way: ``expected_doc_ids: ["id", {"id":
+"...", "grade": 2}]``.  A bare string is worth ``DEFAULT_GRADE``.  A grade of
+0 is kept (a judged non-relevant document, as qrels record them) but gives no
+credit, so it is not in :attr:`EvalSample.expected_doc_ids`.
+
+``"matching_mode": "qrels"`` marks a sample converted from a public benchmark's
+relevance labels (``scripts/beir_to_eval_set.py``): scored per distinct
+document against the graded labels, the way ``trec_eval`` scores it, not by
+the legacy document mode.  The scoring itself is phase 2 of
+``docs/public-benchmarks-plan.md``; until then the runner refuses such a set.
+
 After a set is committed it changes only to fix a label error, and each fix is
 recorded on the sample as a ``label_fixes`` entry (date, reason, old values),
 which round-trips through ``extra`` like any other annotation.
@@ -72,7 +83,8 @@ DEFAULT_GRADE = 1
 MODE_SPAN = "span"
 MODE_DOCUMENT = "document"
 MODE_SPAN_AND_DOCUMENT = "span_and_document"
-MATCHING_MODES = (MODE_SPAN, MODE_DOCUMENT, MODE_SPAN_AND_DOCUMENT)
+MODE_QRELS = "qrels"
+MATCHING_MODES = (MODE_SPAN, MODE_DOCUMENT, MODE_SPAN_AND_DOCUMENT, MODE_QRELS)
 
 
 @dataclass(frozen=True)
@@ -138,6 +150,10 @@ class EvalSample:
     expected_doc_ids: list[str] = field(default_factory=list)
     # Reference answer or answer-quality criteria for the answer eval.
     expected_answer: str | None = None
+    # Grades given explicitly in object form, including 0 (judged
+    # non-relevant). A document in `expected_doc_ids` but not here has
+    # DEFAULT_GRADE; a grade-0 document is here but not in `expected_doc_ids`.
+    doc_grades: dict[str, int] = field(default_factory=dict)
     # Any extra fields from the JSON file are preserved here.
     extra: dict = field(default_factory=dict)
     # Explicit matching mode from the JSON file, or None to infer it. Only
@@ -153,8 +169,10 @@ class EvalSample:
                 f"Sample {self.id!r}: unknown matching_mode {self.explicit_mode!r}; "
                 f"expected one of {', '.join(MATCHING_MODES)}"
             )
+        if self.explicit_mode == MODE_QRELS and self.expected_spans:
+            raise ValueError(f"Sample {self.id!r}: matching_mode 'qrels' is graded by documents, not spans")
         needs_spans = self.explicit_mode in (MODE_SPAN, MODE_SPAN_AND_DOCUMENT)
-        needs_docs = self.explicit_mode in (MODE_DOCUMENT, MODE_SPAN_AND_DOCUMENT)
+        needs_docs = self.explicit_mode in (MODE_DOCUMENT, MODE_SPAN_AND_DOCUMENT, MODE_QRELS)
         # Refused rather than degraded: a span_and_document sample with no doc
         # ids would silently become plain span matching, which is the exact
         # wrong-period credit the mode exists to prevent.
@@ -180,11 +198,26 @@ class EvalSample:
             return self.explicit_mode
         return MODE_SPAN if self.expected_spans else MODE_DOCUMENT
 
+    def doc_grade(self, doc_id: str) -> int:
+        """The relevance grade of ``doc_id``: 0 when it is unjudged or judged non-relevant."""
+        if doc_id in self.doc_grades:
+            return self.doc_grades[doc_id]
+        return DEFAULT_GRADE if doc_id in self.expected_doc_ids else 0
+
+    def _doc_ids_json(self) -> list[str | dict]:
+        """`expected_doc_ids` in the shortest accepted form, grade-0 labels last."""
+        out: list[str | dict] = []
+        for doc_id in self.expected_doc_ids:
+            grade = self.doc_grades.get(doc_id, DEFAULT_GRADE)
+            out.append(doc_id if grade == DEFAULT_GRADE else {"id": doc_id, "grade": grade})
+        out.extend({"id": d, "grade": 0} for d, g in self.doc_grades.items() if g == 0)
+        return out
+
     def to_dict(self) -> dict:
         d: dict = {
             "id": self.id,
             "query": self.query,
-            "expected_doc_ids": self.expected_doc_ids,
+            "expected_doc_ids": self._doc_ids_json(),
         }
         if self.expected_spans:
             d["expected_spans"] = [s.to_json() for s in self.expected_spans]
@@ -199,17 +232,50 @@ class EvalSample:
     def from_dict(cls, data: dict) -> "EvalSample":
         known = {"id", "query", "expected_doc_ids", "expected_spans", "expected_answer", "matching_mode"}
         extra = {k: v for k, v in data.items() if k not in known}
+        doc_ids, doc_grades = _parse_doc_ids(data.get("expected_doc_ids") or [], str(data["id"]))
         return cls(
             id=str(data["id"]),
             query=str(data["query"]),
             expected_spans=[
                 ExpectedSpan.from_json(s) for s in (data.get("expected_spans") or [])
             ],
-            expected_doc_ids=list(data.get("expected_doc_ids") or []),
+            expected_doc_ids=doc_ids,
+            doc_grades=doc_grades,
             expected_answer=data.get("expected_answer"),
             extra=extra,
             explicit_mode=data.get("matching_mode"),
         )
+
+
+def _parse_doc_ids(raw: list, sample_id: str) -> tuple[list[str], dict[str, int]]:
+    """Split ``expected_doc_ids`` entries into credited ids and explicit grades.
+
+    Raises on a malformed entry, a negative grade or a repeated id: a qrels
+    file with two labels for one document has no single right grade.
+    """
+    ids: list[str] = []
+    grades: dict[str, int] = {}
+    seen: set[str] = set()
+    for entry in raw:
+        if isinstance(entry, str):
+            doc_id, grade, explicit = entry, DEFAULT_GRADE, False
+        elif isinstance(entry, dict) and "id" in entry:
+            doc_id, grade, explicit = str(entry["id"]), int(entry.get("grade", DEFAULT_GRADE)), True
+        else:
+            raise ValueError(
+                f"Sample {sample_id!r}: an expected_doc_ids entry must be a string or an "
+                f"object with an 'id' key, got {entry!r}"
+            )
+        if grade < 0:
+            raise ValueError(f"Sample {sample_id!r}: negative grade {grade} for document {doc_id!r}")
+        if doc_id in seen:
+            raise ValueError(f"Sample {sample_id!r}: document {doc_id!r} is listed twice")
+        seen.add(doc_id)
+        if explicit and grade != DEFAULT_GRADE:
+            grades[doc_id] = grade
+        if grade > 0:
+            ids.append(doc_id)
+    return ids, grades
 
 
 @dataclass

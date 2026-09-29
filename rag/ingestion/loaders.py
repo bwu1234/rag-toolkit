@@ -8,6 +8,7 @@ depend on the `Loader` interface.
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -103,10 +104,67 @@ class TextLoader(Loader):
         ]
 
 
+def beir_passage_text(title: str, text: str) -> str:
+    """The one string a BEIR passage is indexed, embedded and reranked as.
+
+    ``title + " " + text``, or the body alone when the title is empty (every
+    FiQA passage). This is the document recipe of the pinned BGE reference
+    vectors; the pinned BM25 index joins with ``"\n"``, which its analyzer
+    treats the same as a space (docs/beir-reference-protocol.md). Neither
+    part is otherwise altered. The title must be *in* the text: carried
+    metadata alone never reaches the embedder, BM25 or the reranker.
+    """
+
+    return f"{title} {text}" if title else text
+
+
+class BeirCorpusLoader(Loader):
+    """Loads a BEIR ``corpus.jsonl``: one `Document` per line, id taken verbatim.
+
+    ``Document.id`` is the passage's ``_id`` unchanged, so BEIR qrels match
+    retrieved documents with no mapping table. The text is
+    `beir_passage_text`; the title is also kept as metadata. Queries and qrels
+    live outside the corpus directory (see ``scripts/fetch_beir.py``), so only
+    passages can reach an index.
+
+    Raises on a line without ``_id`` or ``text``, or on a repeated ``_id``,
+    rather than skipping it: a benchmark corpus that silently loses passages
+    scores against labels it no longer contains.
+    """
+
+    extensions = (".jsonl",)
+
+    def load(self, path: Path, *, corpus_root: Path) -> list[Document]:
+        documents: list[Document] = []
+        seen: set[str] = set()
+        with path.open(encoding="utf-8") as f:
+            for line_number, line in enumerate(f, start=1):
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                if not isinstance(row, dict) or "_id" not in row or "text" not in row:
+                    raise ValueError(f"{path.name}:{line_number}: a BEIR passage needs '_id' and 'text'")
+                doc_id = str(row["_id"])
+                if doc_id in seen:
+                    raise ValueError(f"{path.name}:{line_number}: duplicate _id {doc_id!r}")
+                seen.add(doc_id)
+                title = str(row.get("title") or "")
+                documents.append(
+                    Document(
+                        id=doc_id,
+                        text=beir_passage_text(title, str(row["text"])),
+                        source=path,
+                        doc_type="beir",
+                        metadata={"title": title},
+                    )
+                )
+        return documents
+
+
 # Extension -> loader instance. Loaders are stateless, so one shared instance
 # per format is enough; `get_loader_for` looks them up case-insensitively.
 _LOADERS: dict[str, Loader] = {}
-for _loader in (PdfLoader(), MarkdownLoader(), TextLoader()):
+for _loader in (PdfLoader(), MarkdownLoader(), TextLoader(), BeirCorpusLoader()):
     for _ext in _loader.extensions:
         _LOADERS[_ext] = _loader
 

@@ -50,10 +50,20 @@ class PathsConfig(BaseModel):
 
 
 class CorpusConfig(BaseModel):
-    """One named body of documents."""
+    """One named body of documents.
+
+    `clean: false` skips `rag.ingestion.cleaners.clean_text` for this corpus.
+    For benchmark corpora whose text arrives already split and normalised
+    (BEIR), where dehyphenation or whitespace rewriting would index a text the
+    published scores were not computed on. It is a property of the corpus, not
+    of a config file, so every config indexes that corpus the same way.
+    Toggling it changes chunk text, which the incremental indexer's content
+    hash already detects.
+    """
 
     documents_dir: Path
     description: str = ""
+    clean: bool = True
 
 
 class CorporaConfig(BaseModel):
@@ -267,9 +277,14 @@ class ChunkingConfig(BaseModel):
     `fixed` = simple character-based windows with overlap. Deliberately the
     simplest strategy that could work; structure-aware/semantic chunking is a
     later milestone once the end-to-end pipeline is proven out.
+
+    `none` = no splitting: each document becomes exactly one chunk with its
+    text unchanged, and `chunk_size`/`chunk_overlap` are ignored. For corpora
+    that arrive pre-split into retrieval units (BEIR), where splitting a
+    passage would let one document fill several ranks.
     """
 
-    strategy: Literal["fixed"] = "fixed"
+    strategy: Literal["fixed", "none"] = "fixed"
     chunk_size: int = Field(default=1000, gt=0, description="Target characters per chunk")
     chunk_overlap: int = Field(default=150, ge=0, description="Characters of overlap between consecutive chunks")
     contextual: ContextualChunkingConfig = ContextualChunkingConfig()

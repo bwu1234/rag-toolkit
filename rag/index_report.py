@@ -69,6 +69,8 @@ class IndexReport:
     mid_row_starts: int
     #: Documents that produced no chunks (empty after cleaning).
     empty_documents: list[str] = field(default_factory=list)
+    #: Documents split into more than one chunk (0 is the check for `strategy: none`).
+    split_documents: int = 0
     #: Distinct chunk texts that occur more than once.
     duplicate_groups: int = 0
     #: Chunks whose exact text occurs more than once, counting every copy.
@@ -127,6 +129,7 @@ def build_report(
     )
     copies = Counter(chunk.text for chunk in chunks)
     chunked_docs = {chunk.document_id for chunk in chunks}
+    chunks_per_doc = Counter(chunk.document_id for chunk in chunks)
 
     return IndexReport(
         corpus=corpus,
@@ -143,6 +146,7 @@ def build_report(
         mid_table_starts=positions["mid_row"] + positions["later_row"],
         mid_row_starts=positions["mid_row"],
         empty_documents=sorted(document.id for document in documents if document.id not in chunked_docs),
+        split_documents=sum(1 for count in chunks_per_doc.values() if count > 1),
         duplicate_groups=sum(1 for count in copies.values() if count > 1),
         duplicate_chunks=sum(count for count in copies.values() if count > 1),
         headerless_documents=(
@@ -180,6 +184,14 @@ def _format_headers(report: IndexReport) -> str:
     return line
 
 
+def _sample_ids(ids: list[str], shown: int = 10) -> str:
+    """``": a, b, c"`` for a short list, truncated with a count for a long one."""
+    if not ids:
+        return ""
+    more = f", +{len(ids) - shown} more" if len(ids) > shown else ""
+    return f": {', '.join(ids[:shown])}{more}"
+
+
 def format_report(report: IndexReport) -> str:
     """Human-readable rendering, one fact per line."""
     pct = lambda part: f"{part / report.chunks:.1%}" if report.chunks else "n/a"  # noqa: E731
@@ -198,8 +210,8 @@ def format_report(report: IndexReport) -> str:
         f"Start mid-table    {report.mid_table_starts} ({pct(report.mid_table_starts)}): "
         f"{report.mid_row_starts} partway through a row, "
         f"{report.mid_table_starts - report.mid_row_starts} at a later row",
-        f"Zero-chunk docs    {len(report.empty_documents)}"
-        + (f": {', '.join(report.empty_documents)}" if report.empty_documents else ""),
+        f"Zero-chunk docs    {len(report.empty_documents)}" + _sample_ids(report.empty_documents),
+        f"Split documents    {report.split_documents}",
         f"Duplicate chunks   {report.duplicate_chunks} ({report.duplicate_groups} distinct text(s))",
         _format_headers(report),
         "",

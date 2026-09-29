@@ -37,6 +37,29 @@ corpora:
         SEC 10-K/10-Q MD&A sections (61 filings, ~3.6M chars, ~4,200 chunks).
         Built by scripts/fetch_edgar.py; documents are gitignored and
         reproduced from data/corpora/edgar/manifest.json.
+    # Public benchmarks (docs/public-benchmarks-plan.md): pre-split passages
+    # with published relevance labels. `clean: false` indexes the text exactly
+    # as published; pair them with rag/config/beir.yaml, which keeps each
+    # passage whole. Fetch with scripts/fetch_beir.py <name>; only ever
+    # evaluated isolated, never pooled.
+    beir-fiqa:
+      documents_dir: data/corpora/beir-fiqa/documents
+      clean: false
+      description: >
+        BEIR FiQA-2018: 57,638 financial Q&A passages, 648 test queries.
+        Pinned in data/corpora/beir-fiqa/manifest.json.
+    beir-scifact:
+      documents_dir: data/corpora/beir-scifact/documents
+      clean: false
+      description: >
+        BEIR SciFact: 5,183 scientific abstracts, 300 test claims; no dev
+        split, so a transfer check only. Pinned in its manifest.
+    beir-nfcorpus:
+      documents_dir: data/corpora/beir-nfcorpus/documents
+      clean: false
+      description: >
+        BEIR NFCorpus: 3,633 medical abstracts, 323 test queries with graded
+        labels (~38 relevant each). Pinned in its manifest.
 
 embedding:
   provider: ollama

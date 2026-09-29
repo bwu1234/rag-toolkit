@@ -38,6 +38,7 @@ from dataclasses import dataclass, field
 from rag.chunking.models import Chunk
 from rag.eval.dataset import (
     MODE_DOCUMENT,
+    MODE_QRELS,
     MODE_SPAN_AND_DOCUMENT,
     EvalDataset,
     EvalSample,
@@ -98,6 +99,14 @@ class Judgment:
 
 def judge_ranking(sample: EvalSample, chunks: list[ScoredChunk]) -> Judgment:
     """Grade a ranked result list against a sample's ground truth."""
+    if sample.matching_mode == MODE_QRELS:
+        # Refused rather than approximated: document mode would credit every
+        # chunk of a judged document and use exponential gains, a number
+        # that looks comparable to published BEIR scores and is not.
+        raise NotImplementedError(
+            f"Sample {sample.id!r} uses matching_mode 'qrels', whose trec_eval-style "
+            "scoring is phase 2 of docs/public-benchmarks-plan.md and not built yet."
+        )
     if sample.matching_mode == MODE_DOCUMENT:
         return _judge_by_document(sample, chunks)
     return _judge_by_span(sample, chunks)
