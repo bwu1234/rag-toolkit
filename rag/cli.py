@@ -34,7 +34,7 @@ from rag.logging_config import configure_logging
 from rag.observability.factory import get_turn_sink, turn_log_path
 from rag.observability.sink import read_turn_log, turns_with_feedback
 from rag.retrieval.builder import build_retriever
-from rag.retrieval.sparse import BM25Index, bm25_index_path
+from rag.retrieval.factory import get_sparse_index, sparse_index_path
 from rag.vectorstore.factory import get_vector_store
 
 logger = logging.getLogger(__name__)
@@ -161,9 +161,9 @@ def _cmd_index(args: argparse.Namespace) -> None:
     store = get_vector_store(
         config.vector_store, selection.index_dir, collection_name=selection.collection_name
     )
-    # Always maintain the BM25 text index alongside the vector store so
+    # Always maintain the keyword index alongside the vector store so
     # switching retrieval.mode to hybrid later does not require re-embedding.
-    sparse = BM25Index(bm25_index_path(selection.index_dir, selection.slug))
+    sparse = get_sparse_index(config.sparse_index, selection.index_dir, selection.slug)
 
     if args.reset:
         logger.info("Resetting collection %r before indexing", selection.collection_name)
@@ -182,7 +182,8 @@ def _cmd_index(args: argparse.Namespace) -> None:
     print(f"{len(documents)} document(s) -> {len(chunks)} chunk(s) to index")
     print(f"Embedder: {config.embedding.provider}:{config.embedding.model} ({config.embedding.base_url})")
     print(f"Vector store: {config.vector_store.provider} (collection={selection.collection_name!r}, dir={selection.index_dir})")
-    print(f"Sparse index: BM25 ({bm25_index_path(selection.index_dir, selection.slug).name})")
+    sparse_path = sparse_index_path(config.sparse_index, selection.index_dir, selection.slug)
+    print(f"Sparse index: {config.sparse_index.provider} ({sparse_path.name})")
     if contextualizer is not None:
         print(
             f"Contextual chunking: on ({config.llm.provider}:{config.llm.model}) "
@@ -261,7 +262,7 @@ def _cmd_index(args: argparse.Namespace) -> None:
         context_cache.close()
     print(
         f"\nIndex now holds {store.count()} vector chunk(s) "
-        f"+ {sparse.count()} BM25 chunk(s) (dimensions={embedder.dimensions})"
+        f"+ {sparse.count()} sparse chunk(s) (dimensions={embedder.dimensions})"
     )
 
 
@@ -299,15 +300,15 @@ def _cmd_index_report(args: argparse.Namespace) -> None:
 def _index_state(config: RagConfig, selection: CorpusSelection, chunks: list[Chunk]) -> IndexState | None:
     """Compare the built index for `selection` with `chunks`, or None if it isn't built.
 
-    Keyed on the BM25 file because it is always written alongside the vector
+    Keyed on the sparse index file because it is always written alongside the vector
     collection, and checking it first keeps this command read-only: opening the
     vector store would create an empty collection where there was none.
     """
 
-    sparse_path = bm25_index_path(selection.index_dir, selection.slug)
+    sparse_path = sparse_index_path(config.sparse_index, selection.index_dir, selection.slug)
     if not sparse_path.exists():
         return None
-    sparse = BM25Index(sparse_path)
+    sparse = get_sparse_index(config.sparse_index, selection.index_dir, selection.slug)
     store = get_vector_store(config.vector_store, selection.index_dir, collection_name=selection.collection_name)
 
     corpus_ids = {chunk.id for chunk in chunks}

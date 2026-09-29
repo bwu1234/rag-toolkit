@@ -5,9 +5,11 @@
 
 | variant | hit | hit 95% CI | recall | prec | MRR | NDCG | Δ hit [95% CI] | Δ NDCG [95% CI] | unmatch. | s |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `baseline` | 0.822 | [0.743, 0.881] | 0.822 | 0.188 | 0.657 | 0.698 | — | — | 0 | 121 |
+| `baseline` | 0.822 | [0.743, 0.881] | 0.822 | 0.188 | 0.657 | 0.698 | — | — | 0 | 122 |
 | | | | | | | | | | | |
 | `mode=dense` | 0.619 | [0.529, 0.701] | 0.619 | 0.134 | 0.469 | 0.535 | -0.203 [-0.284, -0.123]* 2W/26L p=3e-06 | -0.163 [-0.244, -0.082]* | 0 | 115 |
+| | | | | | | | | | | |
+| `rerank_top_k=20` | 0.873 | [0.801, 0.921] | 0.873 | 0.050 | 0.664 | 0.715 | +0.051 [+0.011, +0.091]* 6W/0L p=0.031 | +0.016 [+0.003, +0.029]* | 0 | 119 |
 | | | | | | | | | | | |
 | `stage1_top_k=20` | 0.686 | [0.598, 0.763] | 0.686 | 0.038 | 0.497 | 0.578 | -0.136 [-0.217, -0.054]* 5W/21L p=0.0025 | -0.121 [-0.199, -0.042]* | 0 | 114 |
 | | | | | | | | | | | |
@@ -35,6 +37,9 @@
 | | | | | | | | | | | |
 | `routing=top1` | 0.856 | [0.781, 0.908] | 0.856 | 0.197 | 0.691 | 0.732 | +0.034 [+0.001, +0.067]* 4W/0L p=0.12 | +0.034 [+0.006, +0.062]* | 0 | 128 |
 | `routing=top2` | 0.856 | [0.781, 0.908] | 0.856 | 0.198 | 0.688 | 0.730 | +0.034 [+0.001, +0.067]* 4W/0L p=0.12 | +0.032 [+0.001, +0.062]* | 0 | 126 |
+| | | | | | | | | | | |
+| `sparse=sqlite_fts5` | 0.805 | [0.724, 0.866] | 0.805 | 0.185 | 0.648 | 0.687 | -0.017 [-0.040, +0.006] 0W/2L p=0.5 | -0.011 [-0.029, +0.007] | 0 | 120 |
+| `sparse=sqlite_fts5 rerank_top_k=20` | 0.864 | [0.791, 0.915] | 0.864 | 0.050 | 0.655 | 0.706 | +0.042 [-0.001, +0.086] 6W/1L p=0.12 | +0.008 [-0.014, +0.029] | 0 | 119 |
 
 By kind, each reported on its own (the rows above mix them):
 
@@ -44,6 +49,8 @@ By kind, each reported on its own (the rows above mix them):
 | `baseline` | paraphrase | 64 | 0.797 | [0.683, 0.877] | 0.685 | — |
 | `mode=dense` | implicit | 54 | 0.704 | [0.572, 0.809] | 0.640 | -0.148 [-0.257, -0.039]* 1W/9L p=0.021 |
 | `mode=dense` | paraphrase | 64 | 0.547 | [0.426, 0.663] | 0.447 | -0.250 [-0.365, -0.135]* 1W/17L p=0.00014 |
+| `rerank_top_k=20` | implicit | 54 | 0.889 | [0.778, 0.948] | 0.726 | +0.037 [-0.014, +0.088] 2W/0L p=0.5 |
+| `rerank_top_k=20` | paraphrase | 64 | 0.859 | [0.754, 0.924] | 0.705 | +0.062 [+0.003, +0.122]* 4W/0L p=0.12 |
 | `stage1_top_k=20` | implicit | 54 | 0.870 | [0.756, 0.936] | 0.765 | +0.019 [-0.063, +0.100] 3W/2L p=1 |
 | `stage1_top_k=20` | paraphrase | 64 | 0.531 | [0.411, 0.648] | 0.419 | -0.266 [-0.391, -0.140]* 2W/19L p=0.00022 |
 | `query_instruction=retrieval` | implicit | 54 | 0.833 | [0.713, 0.910] | 0.754 | -0.019 [-0.115, +0.078] 3W/4L p=1 |
@@ -86,5 +93,9 @@ By kind, each reported on its own (the rows above mix them):
 | `routing=top1` | paraphrase | 64 | 0.859 | [0.754, 0.924] | 0.745 | +0.062 [+0.003, +0.122]* 4W/0L p=0.12 |
 | `routing=top2` | implicit | 54 | 0.852 | [0.734, 0.923] | 0.717 | +0.000 [+0.000, +0.000] 0W/0L p=1 |
 | `routing=top2` | paraphrase | 64 | 0.859 | [0.754, 0.924] | 0.741 | +0.062 [+0.003, +0.122]* 4W/0L p=0.12 |
+| `sparse=sqlite_fts5` | implicit | 54 | 0.852 | [0.734, 0.923] | 0.714 | +0.000 [+0.000, +0.000] 0W/0L p=1 |
+| `sparse=sqlite_fts5` | paraphrase | 64 | 0.766 | [0.649, 0.853] | 0.664 | -0.031 [-0.074, +0.012] 0W/2L p=0.5 |
+| `sparse=sqlite_fts5 rerank_top_k=20` | implicit | 54 | 0.889 | [0.778, 0.948] | 0.725 | +0.037 [-0.014, +0.088] 2W/0L p=0.5 |
+| `sparse=sqlite_fts5 rerank_top_k=20` | paraphrase | 64 | 0.844 | [0.736, 0.913] | 0.690 | +0.047 [-0.021, +0.115] 4W/1L p=0.38 |
 
 `hit 95% CI` is a Wilson interval on that rate alone, the noise floor of one run on this many questions. Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval that excludes zero; `W/L` counts the questions the variant gained / lost and `p` is McNemar's exact test on them -- trust it over the CI when W+L is small. `(no CI)` rows predate per-sample scores and need a re-run to be tested. `unmatch.` counts expected spans no chunk contains under that variant's chunking (`—` predates the count).

@@ -293,6 +293,23 @@ class VectorStoreConfig(BaseModel):
     collection_name: str = "rag_corpus"
 
 
+class SparseIndexConfig(BaseModel):
+    """Keyword (BM25) index backend, maintained beside the vector store by `index`.
+
+    - ``bm25``: rank_bm25 in memory, persisted as one JSON file. Rebuilds the
+      whole model after any change, so it degrades beyond ~10^4 chunks.
+    - ``sqlite_fts5``: an SQLite FTS5 table, updated in place and ranked by
+      SQLite's `bm25()`. Scales to large corpora, but its BM25 parameters
+      differ slightly from rank_bm25's, so rankings are not identical.
+
+    Each backend keeps its own file, so switching needs no `--reset`: the next
+    `index` run fills the new one (re-embedding every chunk, because the skip
+    check requires a chunk in both stores).
+    """
+
+    provider: Literal["bm25", "sqlite_fts5"] = "bm25"
+
+
 class RerankerConfig(BaseModel):
     """Reranker selection. `none` disables reranking (pure vector retrieval)."""
 
@@ -602,6 +619,7 @@ class RagConfig(BaseModel):
     llm: LLMConfig = LLMConfig()
     chunking: ChunkingConfig = ChunkingConfig()
     vector_store: VectorStoreConfig = VectorStoreConfig()
+    sparse_index: SparseIndexConfig = SparseIndexConfig()
     reranker: RerankerConfig = RerankerConfig()
     retrieval: RetrievalConfig = RetrievalConfig()
     chat: ChatConfig = ChatConfig()

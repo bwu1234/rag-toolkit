@@ -50,6 +50,18 @@ def build_bm25(corpus: list[list[str]]) -> BM25Okapi:
     return bm25
 
 
+def min_max_normalize(raw_scores: list[float]) -> list[float]:
+    """Min-max scale raw scores into ``[0, 1]`` within one result set.
+
+    Division by the max alone fails when every score is negative. When all
+    scores are equal, every hit is still a match, so each gets 1.0.
+    """
+
+    lo, hi = min(raw_scores), max(raw_scores)
+    span = hi - lo
+    return [(raw - lo) / span if span > 0 else 1.0 for raw in raw_scores]
+
+
 def bm25_index_path(index_dir: Path, slug: str | None = None) -> Path:
     """Return the on-disk path for the BM25 index under ``index_dir``.
 
@@ -144,6 +156,12 @@ class SparseIndex(ABC):
         """Delete all indexed chunks."""
         raise NotImplementedError
 
+    def flush(self) -> None:
+        """Persist pending writes; the indexer calls it once at the end of a run.
+
+        A no-op by default, for backends that commit on every write.
+        """
+
 
 class BM25Index(SparseIndex):
     """In-memory BM25Okapi index with JSON persistence under the vector index dir.
@@ -218,21 +236,11 @@ class BM25Index(SparseIndex):
         if not ranked:
             return []
 
-        # Min-max normalize raw BM25 into [0, 1] within this result set.
-        # (Division by max alone fails when all scores are negative.)
-        raw_scores = [raw for raw, _ in ranked]
-        lo, hi = min(raw_scores), max(raw_scores)
-        span = hi - lo
-
         results: list[ScoredChunk] = []
-        for raw_score, idx in ranked:
+        norms = min_max_normalize([raw for raw, _ in ranked])
+        for (_raw, idx), norm in zip(ranked, norms, strict=True):
             chunk_id = self._ordered_ids[idx]
             record = self._records[chunk_id]
-            if span > 0:
-                norm = (raw_score - lo) / span
-            else:
-                # Every hit scored identically — still a match; give them 1.0.
-                norm = 1.0
             results.append(
                 ScoredChunk(
                     chunk_id=chunk_id,

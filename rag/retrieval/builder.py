@@ -5,9 +5,9 @@ Construction needs four config sections (`embedding`, `vector_store`,
 wiring here means the CLI and the chat API both get an identically configured
 retriever from one call, instead of duplicating factory plumbing.
 
-The BM25 sparse index is always opened from disk (cheap: JSON load + lazy
-rebuild) so ``retrieval.mode: hybrid`` works without a second code path;
-dense mode simply ignores it.
+The sparse index (``sparse_index.provider``) is always opened from disk so
+``retrieval.mode: hybrid`` works without a second code path; dense mode
+simply ignores it.
 """
 
 from __future__ import annotations
@@ -20,9 +20,8 @@ from rag.generation.factory import get_llm_client
 from rag.generation.llm import LLMClient
 from rag.index_manifest import check_queryable, index_manifest_path
 from rag.retrieval.document_router import DocumentRouter, check_record_template
-from rag.retrieval.factory import get_query_expander, get_reranker
+from rag.retrieval.factory import get_query_expander, get_reranker, get_sparse_index
 from rag.retrieval.retriever import Retriever
-from rag.retrieval.sparse import BM25Index, bm25_index_path
 from rag.retrieval.websearch import SearxNGWebSearch
 from rag.vectorstore.factory import get_vector_store
 
@@ -41,7 +40,7 @@ def build_retriever(
     `get_llm_client` does no I/O.
 
     `corpora` overrides `config.corpora.active`, selecting which index this
-    retriever reads. Both the vector collection and the BM25 file are named
+    retriever reads. Both the vector collection and the sparse index file are named
     after the selection, so a retriever built for one corpus can never
     accidentally read an index built from another.
     """
@@ -55,7 +54,7 @@ def build_retriever(
         config.vector_store, selection.index_dir, collection_name=selection.collection_name
     )
     reranker = get_reranker(config.reranker)
-    sparse_index = BM25Index(bm25_index_path(selection.index_dir, selection.slug))
+    sparse_index = get_sparse_index(config.sparse_index, selection.index_dir, selection.slug)
     web_search = SearxNGWebSearch(embedder, config.retrieval.web_search) if config.retrieval.web_search.enabled else None
 
     expander_client = llm_client if llm_client is not None else get_llm_client(config.llm)
