@@ -440,7 +440,9 @@ bare number. Commit it under the same freeze rule, then record a `fixed`
 chunker baseline on it before Phase 5 is measured. Phase 4 itself is judged
 by heading precision and span presence, not by this tier.
 
-*Drafted 2026-09-29; in review, not frozen, nothing measured on it.*
+*Frozen 2026-09-29: `edgar_table_set.json`, 95 of 96 drafts, all 14
+companies. Reviewed by Claude at the user's request, not by a person,
+unlike the other tiers (see below). Nothing was measured before the commit.*
 `scripts/draft_tier_set.py draft table` draws from the 726 data tables in
 `edgar_md` (a separator line and two or more rows holding figures). The
 script picks the target, not the LLM: round-robin by company, a random table,
@@ -469,9 +471,22 @@ question and answer. The span is the whole rendered row.
   query edit. One of those is a wrong period: JNJ income taxes paid is year
   to date, not "three months". Six drafts whose column labels looked
   doubtful were checked against their tables and are right.
-- **Next:** human review → `finalize` → commit → the `fixed` baseline on
-  `edgar_md` (retrieval and answers, with `unmatchable_spans` and mid-table
-  starts).
+- **Review.** Every draft was read against its table. The review added a
+  check the first pass skipped: the draft's figure searched for across its own
+  filing. 14 drafts had the same figure stated elsewhere in the filing: a
+  second table (the income statement beside an MD&A table) or an MD&A
+  sentence ("Cargo revenue increased $248 million, or 16.6%"). Scored against
+  the row alone, a chunk holding only that sentence would count as a miss.
+  Seven more figure matches were coincidences (Mac and Japan both 8,987).
+  Result: 32 samples carry alternatives, 21 of them with a second expected
+  filing, 3 queries edited, 1 rejected. Each sample's `review.note` in the
+  draft file records what changed and why.
+- **Who reviewed.** The plan's rule is that the LLM drafts and a person
+  labels. This tier was drafted by `qwen3.6:27b-mlx`, checked by
+  `gemma4:31b-mlx`, and reviewed by Claude (`claude-opus-5-5`) at the user's
+  request, with every judgment and its evidence in the draft file. That is
+  a third model, not a person. A human spot-check of the review record is
+  the cheap way to close the gap.
 
 ### Phase 1 — Query instruction for the embedder (half a day)
 

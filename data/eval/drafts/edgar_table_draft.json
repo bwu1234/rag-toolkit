@@ -1,19 +1,25 @@
 [
   {
     "id": "table::AAPL_10-K_2024-09-28.md::t1r2c1",
-    "query": "What were Apple Inc.'s net sales for the iPad segment in fiscal 2024?",
+    "query": "What were Apple Inc.'s net sales for the iPad product category in fiscal 2024?",
     "expected_doc_ids": [
-      "AAPL_10-K_2024-09-28.md"
+      "AAPL_10-K_2024-09-28.md",
+      "AAPL_10-K_2025-09-27.md"
     ],
     "expected_spans": [
-      "| iPad | 26,694 | (6)% | 28,300 | (3)% | 29,292 |"
+      {
+        "text": "| iPad | 26,694 | (6)% | 28,300 | (3)% | 29,292 |",
+        "alternatives": [
+          "| iPad | 28,023 | 5% | 26,694 | (6)% | 28,300 |"
+        ]
+      }
     ],
-    "expected_answer": "Apple Inc.'s net sales for the iPad segment in fiscal 2024 were $26,694 million.",
+    "expected_answer": "Apple Inc.'s net sales for the iPad product category in fiscal 2024 were $26,694 million.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added AAPL_10-K_2025-09-27.md's comparative row as an alternative (same period's figure). Edited query: 'iPad segment' -> 'iPad product category'.",
       "header_lines": [
         "| | 2024 | Change | 2023 | Change | 2022 |"
       ],
@@ -41,17 +47,23 @@
     "id": "table::AAPL_10-K_2025-09-27.md::t2r2c3",
     "query": "What was Apple Inc.'s total gross margin in dollars in millions for fiscal 2023?",
     "expected_doc_ids": [
-      "AAPL_10-K_2025-09-27.md"
+      "AAPL_10-K_2025-09-27.md",
+      "AAPL_10-K_2024-09-28.md"
     ],
     "expected_spans": [
-      "| Total gross margin | $195,201 | $180,683 | $169,148 |"
+      {
+        "text": "| Total gross margin | $195,201 | $180,683 | $169,148 |",
+        "alternatives": [
+          "| Total gross margin | $180,683 | $169,148 | $170,782 |"
+        ]
+      }
     ],
     "expected_answer": "$169,148 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added AAPL_10-K_2024-09-28.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| | 2025 | 2024 | 2023 |",
         "| Gross margin: | | | |"
@@ -89,8 +101,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | | |",
         "| | December 27, 2025 | December 28, 2024 | Change |"
@@ -121,8 +133,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | | |",
         "| | December 27, 2025 | December 28, 2024 | Change |"
@@ -160,8 +172,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | | |",
         "| | December 27, 2025 | December 28, 2024 | Change |"
@@ -192,8 +204,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | | | Nine Months Ended | | |",
         "| | June 27, 2026 | June 28, 2025 | Change | June 27, 2026 | June 28, 2025 | Change |"
@@ -224,8 +236,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | | | Nine Months Ended | | |",
         "| | June 27, 2026 | June 28, 2025 | Change | June 27, 2026 | June 28, 2025 | Change |"
@@ -282,8 +294,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Operating Leases(1) | Finance Leases |"
       ],
@@ -313,8 +325,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Level 2 | |",
         "| | 2025 | 2024 |"
@@ -336,17 +348,23 @@
     "id": "table::COST_10-K_2025-08-31.md::t23r3c2",
     "query": "What were the operating lease assets obtained in exchange for new or modified leases, in millions of dollars, for Costco Wholesale Corp for fiscal 2024?",
     "expected_doc_ids": [
-      "COST_10-K_2025-08-31.md"
+      "COST_10-K_2025-08-31.md",
+      "COST_10-K_2024-09-01.md"
     ],
     "expected_spans": [
-      "| Operating lease assets obtained in exchange for new or modified leases | 294 | 125 | 202 |"
+      {
+        "text": "| Operating lease assets obtained in exchange for new or modified leases | 294 | 125 | 202 |",
+        "alternatives": [
+          "| Operating lease assets obtained in exchange for new or modified leases | 125 | 202 | 231 |"
+        ]
+      }
     ],
     "expected_answer": "The operating lease assets obtained in exchange for new or modified leases were $125 million.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added COST_10-K_2024-09-01.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| | 2025 | 2024 | 2023 |",
         "| Cash paid for amounts included in the measurement of lease liabilities: | | | |"
@@ -375,17 +393,25 @@
     "id": "table::COST_10-K_2025-08-31.md::t2r0c2",
     "query": "What were Costco Wholesale Corp's SG&A expenses for fiscal 2024?",
     "expected_doc_ids": [
-      "COST_10-K_2025-08-31.md"
+      "COST_10-K_2025-08-31.md",
+      "COST_10-K_2024-09-01.md"
     ],
     "expected_spans": [
-      "| SG&A expenses | $24,966 | $22,810 | $21,590 |"
+      {
+        "text": "| SG&A expenses | $24,966 | $22,810 | $21,590 |",
+        "alternatives": [
+          "| SG&A expenses | $22,810 | $21,590 | $19,779 |",
+          "| Selling, general and administrative | 24,966 | 22,810 | 21,590 |",
+          "| Selling, general and administrative expenses | 24,966 | 22,810 | 21,590 |"
+        ]
+      }
     ],
     "expected_answer": "$22,810",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added COST_10-K_2024-09-01.md's comparative row as an alternative (same period's figure). Added 2 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| | 2025 | 2024 | 2023 |"
       ],
@@ -413,17 +439,23 @@
     "id": "table::COST_10-K_2025-08-31.md::t32r5c2",
     "query": "What was the amount, in millions, for the lapse of statute of limitations affecting gross unrecognized tax benefits for Costco Wholesale Corp in fiscal 2024?",
     "expected_doc_ids": [
-      "COST_10-K_2025-08-31.md"
+      "COST_10-K_2025-08-31.md",
+      "COST_10-K_2024-09-01.md"
     ],
     "expected_spans": [
-      "| Lapse of statute of limitations | -- | (2) |"
+      {
+        "text": "| Lapse of statute of limitations | -- | (2) |",
+        "alternatives": [
+          "| Lapse of statute of limitations | (2) | (1) |"
+        ]
+      }
     ],
     "expected_answer": "(2) million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added COST_10-K_2024-09-01.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| | 2025 | 2024 |"
       ],
@@ -460,8 +492,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | 12 Weeks Ended | |",
         "| | November 23, 2025 | November 24, 2024 |"
@@ -486,14 +518,19 @@
       "COST_10-Q_2025-11-23.md"
     ],
     "expected_spans": [
-      "| Net cash used in investing activities | (1,398) | (985) |"
+      {
+        "text": "| Net cash used in investing activities | (1,398) | (985) |",
+        "alternatives": [
+          "Net cash used in investing activities totaled $1,398 in the first quarter of 2026, compared to $985 in the first quarter of 2025"
+        ]
+      }
     ],
     "expected_answer": "$985 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added the MD&A sentence stating the same figure.",
       "header_lines": [
         "| | 12 Weeks Ended | |",
         "| | November 23, 2025 | November 24, 2024 |"
@@ -515,17 +552,23 @@
     "id": "table::CVX_10-K_2024-12-31.md::t3r25c1",
     "query": "What was Chevron Corp's net oil-equivalent production in the United Kingdom, measured in thousands of barrels per day, for the fiscal year ended December 31, 2024?",
     "expected_doc_ids": [
-      "CVX_10-K_2024-12-31.md"
+      "CVX_10-K_2024-12-31.md",
+      "CVX_10-K_2025-12-31.md"
     ],
     "expected_spans": [
-      "| United Kingdom | 12 | 14 | 11 | 12 | -- | -- | 7 | 11 |"
+      {
+        "text": "| United Kingdom | 12 | 14 | 11 | 12 | -- | -- | 7 | 11 |",
+        "alternatives": [
+          "| United Kingdom | 12 | 12 | 11 | 11 | | -- | 7 | 7 |"
+        ]
+      }
     ],
     "expected_answer": "12 thousand barrels per day",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added CVX_10-K_2025-12-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| | | | Components of Oil-Equivalent | | | | | |",
         "| | Oil-Equivalent | | Crude Oil | | Natural Gas Liquids | | Natural Gas | |",
@@ -556,17 +599,23 @@
     "id": "table::CVX_10-K_2024-12-31.md::t7r16c2",
     "query": "What was Chevron Corp's share of affiliates' sales included in total worldwide refined products sales volumes, in thousands of barrels per day, for the year ended December 31, 2023?",
     "expected_doc_ids": [
-      "CVX_10-K_2024-12-31.md"
+      "CVX_10-K_2024-12-31.md",
+      "CVX_10-K_2025-12-31.md"
     ],
     "expected_spans": [
-      "| 3 Includes share of affiliates' sales: | 386 | 389 | 389 |"
+      {
+        "text": "| 3 Includes share of affiliates' sales: | 386 | 389 | 389 |",
+        "alternatives": [
+          "| 3 Includes share of affiliates' sales: | 384 | 386 | 389 |"
+        ]
+      }
     ],
     "expected_answer": "389 thousand barrels per day",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added CVX_10-K_2025-12-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| Refined Products Sales Volumes | | | |",
         "| Thousands of barrels per day | 2024 | 2023 | 2022 |",
@@ -605,8 +654,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Total Number | Average | Total Number of Shares | Approximate Dollar Values of Shares that |",
         "| | of Shares | Price Paid | Purchased as Part of Publicly | May Yet be Purchased Under the Program |",
@@ -638,8 +687,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | At December 31, 2025 | | | |",
         "| | Productive Oil Wells1 | | Productive Gas Wells1 | |",
@@ -678,8 +727,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Undeveloped2 | | Developed | | Developed and Undeveloped | |",
         "| Thousands of acres1 | Gross | Net | Gross | Net | Gross | Net |"
@@ -713,14 +762,19 @@
       "CVX_10-Q_2025-09-30.md"
     ],
     "expected_spans": [
-      "| Earnings/(Charges)* | $MM | $(900) | $(697) | $(2,457) | $(1,851) |"
+      {
+        "text": "| Earnings/(Charges)* | $MM | $(900) | $(697) | $(2,457) | $(1,851) |",
+        "alternatives": [
+          "| All Other | (900) | (697) | (2,457) | (1,851) |"
+        ]
+      }
     ],
     "expected_answer": "$(1,851) million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added 1 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| | | Three Months Ended September 30 | | Nine Months Ended September 30 | |",
         "| | Unit | 2025 | 2024 | 2025 | 2024 |",
@@ -752,8 +806,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Free cash flow reconciliation | |",
         "| | Year Ended December 31, |",
@@ -785,8 +839,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Year Ended December 31, | | Increase (Decrease) | % Increase (Decrease) | |",
         "| (in millions) | 2024 | 2023 | | | |"
@@ -808,17 +862,25 @@
     "id": "table::DAL_10-K_2024-12-31.md::t7r10c1",
     "query": "What was Delta Air Lines, Inc.'s average price per fuel gallon for the year ended December 31, 2024?",
     "expected_doc_ids": [
-      "DAL_10-K_2024-12-31.md"
+      "DAL_10-K_2024-12-31.md",
+      "DAL_10-K_2025-12-31.md"
     ],
     "expected_spans": [
-      "| Average price per fuel gallon(3) | $2.57 | | $2.82 | |"
+      {
+        "text": "| Average price per fuel gallon(3) | $2.57 | | $2.82 | |",
+        "alternatives": [
+          "| Average price per fuel gallon(3) | $2.30 | | $2.57 | |",
+          "| Total fuel expense | $10,566 | $11,069 | $(503) | | $2.57 | $2.82 | $(0.25) |",
+          "| Total fuel expense | $10,566 | $11,069 | | $2.57 | $2.82 |"
+        ]
+      }
     ],
     "expected_answer": "$2.57",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added DAL_10-K_2025-12-31.md's comparative row as an alternative (same period's figure). Added 2 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| | Year Ended December 31, | | | |",
         "| Consolidated (1) | 2024 | | 2023 | |"
@@ -847,17 +909,23 @@
     "id": "table::DAL_10-K_2025-12-31.md::t10r3c2",
     "query": "What was Delta Air Lines, Inc.'s total revenue, adjusted (in millions) for the year ended December 31, 2024?",
     "expected_doc_ids": [
-      "DAL_10-K_2025-12-31.md"
+      "DAL_10-K_2025-12-31.md",
+      "DAL_10-K_2024-12-31.md"
     ],
     "expected_spans": [
-      "| Total revenue, adjusted | $58,287 | $57,001 |"
+      {
+        "text": "| Total revenue, adjusted | $58,287 | $57,001 |",
+        "alternatives": [
+          "| Total revenue, adjusted | $57,001 | $54,669 |"
+        ]
+      }
     ],
     "expected_answer": "$57,001 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added DAL_10-K_2024-12-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| Total revenue, adjusted reconciliation | | |",
         "| | Year Ended December 31, | |",
@@ -887,17 +955,25 @@
     "id": "table::DAL_10-K_2025-12-31.md::t7r5c3",
     "query": "What was Delta Air Lines, Inc.'s adjusted total revenue per available seat mile (TRASM, adjusted) for the year ended December 31, 2024?",
     "expected_doc_ids": [
-      "DAL_10-K_2025-12-31.md"
+      "DAL_10-K_2025-12-31.md",
+      "DAL_10-K_2024-12-31.md"
     ],
     "expected_spans": [
-      "| TRASM, adjusted(2) | 19.56 | ¢ | 19.76 | ¢ |"
+      {
+        "text": "| TRASM, adjusted(2) | 19.56 | ¢ | 19.76 | ¢ |",
+        "alternatives": [
+          "| TRASM, adjusted(2) | 19.76 | ¢ | 20.10 | ¢ |",
+          "| TRASM, adjusted (cents) | 19.56 | ¢ | 19.76 | ¢ | | (0.20) | ¢ | (1)% |",
+          "| TRASM, adjusted | 19.56 | ¢ | 19.76 | ¢ |"
+        ]
+      }
     ],
     "expected_answer": "19.76 cents",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added DAL_10-K_2024-12-31.md's comparative row as an alternative (same period's figure). Added 2 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| | Year Ended December 31, | | | |",
         "| Consolidated (1) | 2025 | | 2024 | |"
@@ -935,8 +1011,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | | Increase (Decrease) vs. Three Months Ended March 31, 2025 | | | | | | |",
         "| (in millions) | Three Months Ended March 31, 2026 | Passenger Revenue | RPMs (Traffic) | ASMs (Capacity) | Passenger Mile Yield | PRASM | Load Factor | |"
@@ -974,8 +1050,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Regional aircraft information by fleet type and carrier | | | | | |",
         "| | Fleet Type(1) | | | | |",
@@ -1007,8 +1083,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | | Increase (Decrease) vs. Three Months Ended June 30, 2025 | | | | | | |",
         "| (in millions) | Three Months Ended June 30, 2026 | Passenger Revenue | RPMs (Traffic) | ASMs (Capacity) | Passenger Mile Yield | PRASM | Load Factor | |"
@@ -1030,17 +1106,23 @@
     "id": "table::JNJ_10-K_2025-12-28.md::t0r3c2",
     "query": "What was the total percentage increase in worldwide sales for Johnson & Johnson in fiscal 2024?",
     "expected_doc_ids": [
-      "JNJ_10-K_2025-12-28.md"
+      "JNJ_10-K_2025-12-28.md",
+      "JNJ_10-K_2024-12-29.md"
     ],
     "expected_spans": [
-      "| Total | 6.0% | 4.3% |"
+      {
+        "text": "| Total | 6.0% | 4.3% |",
+        "alternatives": [
+          "| Total | 4.3% | 6.5% |"
+        ]
+      }
     ],
     "expected_answer": "The total percentage increase in worldwide sales for Johnson & Johnson in fiscal 2024 was 4.3%.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added JNJ_10-K_2024-12-29.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| Sales increase/(decrease) due to: | 2025 | 2024 |"
       ],
@@ -1077,8 +1159,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| (Dollars in Billions)(Income)/Expense | 2025 | 2024 | Change |"
       ],
@@ -1116,14 +1198,19 @@
       "JNJ_10-K_2025-12-28.md"
     ],
     "expected_spans": [
-      "| Segment earnings before tax(1) | | 26,379 | 22,659 | 94,193 | 88,821 | 28.0 | 25.5 |"
+      {
+        "text": "| Segment earnings before tax(1) | | 26,379 | 22,659 | 94,193 | 88,821 | 28.0 | 25.5 |",
+        "alternatives": [
+          "| Worldwide income before tax | | $32,581 | 16,687 | 94,193 | 88,821 | 34.6% | 18.8 |"
+        ]
+      }
     ],
     "expected_answer": "94,193 million dollars",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added 1 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| | Income Before Tax | | | Segment Sales | | Percent of Segment Sales | |",
         "| (Dollars in Millions) | | 2025 | 2024 | 2025 | 2024 | 2025 | 2024 |"
@@ -1154,8 +1241,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| (Dollars in Millions) | September 28, 2025 | September 29, 2024 | Total Change | Operations Change | Currency Change |"
       ],
@@ -1174,7 +1261,7 @@
   },
   {
     "id": "table::JNJ_10-Q_2025-09-28.md::t9r0c1",
-    "query": "What was Johnson & Johnson's total U.S. income taxes paid net of tax refunds for the three months ended September 28, 2025?",
+    "query": "What was Johnson & Johnson's total U.S. income taxes paid net of tax refunds for the fiscal nine months ended September 28, 2025?",
     "expected_doc_ids": [
       "JNJ_10-Q_2025-09-28.md"
     ],
@@ -1185,8 +1272,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Edited query: 'for the three months ended September 28, 2025' -> 'for the fiscal nine months ended September 28, 2025'.",
       "header_lines": [
         "| (Dollars in Millions) | September 28, 2025 | December 29, 2024 |"
       ],
@@ -1216,8 +1303,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Fiscal Second Quarter Ended | | | Fiscal Six Months Ended | | | | |",
         "| | 2026 | | 2025 | 2026 | | 2025 | | |",
@@ -1249,8 +1336,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Income Before Tax | | Segment Sales | | Percent of Segment Sales | |",
         "| (Dollars in Millions) | June 28, 2026 | June 29, 2025 | June 28, 2026 | June 29, 2025 | June 28, 2026 | June 29, 2025 |"
@@ -1281,8 +1368,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Nine months ended September 30, | |",
         "| (in millions) | 2025 | 2024 |"
@@ -1313,8 +1400,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three months ended March 31, | | | |",
         "| | 2026 | 2025 | Change | |"
@@ -1345,8 +1432,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three months ended March 31, | | |",
         "| | 2026 | | 2025 |"
@@ -1378,14 +1465,19 @@
       "LUV_10-Q_2026-03-31.md"
     ],
     "expected_spans": [
-      "| | Aircraft fuel and related taxes, as reported (and economic) | $1,356 | $1,249 | 8.6 |"
+      {
+        "text": "| | Aircraft fuel and related taxes, as reported (and economic) | $1,356 | $1,249 | 8.6 |",
+        "alternatives": [
+          "| Aircraft fuel and related taxes | 1,356 | 1,249 | 107 | 8.6 |"
+        ]
+      }
     ],
     "expected_answer": "$1,249 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added 1 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| | | Three months ended March 31, | | Percent |",
         "| | | 2026 | 2025 | Change |"
@@ -1416,8 +1508,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three months ended June 30, | | | |",
         "| | 2026 | 2025 | Change | |"
@@ -1448,8 +1540,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three months ended June 30, | | Increase (Decrease) | Percent change |",
         "| (in millions) | 2026 | 2025 | | |"
@@ -1471,17 +1563,23 @@
     "id": "table::MRK_10-K_2024-12-31.md::t2r1c2",
     "query": "What was the percentage change in Alliance Revenue for Lynparza within Merck & Co., Inc.'s Oncology segment for fiscal 2024 compared to fiscal 2023?",
     "expected_doc_ids": [
-      "MRK_10-K_2024-12-31.md"
+      "MRK_10-K_2024-12-31.md",
+      "MRK_10-K_2025-12-31.md"
     ],
     "expected_spans": [
-      "| Alliance Revenue - Lynparza (1) | 1,311 | 9% | 11% | 1,199 | 7% | 9% | 1,116 |"
+      {
+        "text": "| Alliance Revenue - Lynparza (1) | 1,311 | 9% | 11% | 1,199 | 7% | 9% | 1,116 |",
+        "alternatives": [
+          "| Alliance Revenue - Lynparza (1) | 1,450 | 11% | 10% | 1,311 | 9% | 11% | 1,199 |"
+        ]
+      }
     ],
     "expected_answer": "The percentage change in Alliance Revenue for Lynparza was 9%.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added MRK_10-K_2025-12-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| ($ in millions) | 2024 | % Change | % Change Excluding Foreign Exchange | 2023 | % Change | % Change Excluding Foreign Exchange | 2022 |"
       ],
@@ -1514,17 +1612,23 @@
     "id": "table::MRK_10-K_2024-12-31.md::t5r2c2",
     "query": "What was the percentage change in Adempas revenue for Merck & Co., Inc. in fiscal 2024 compared to fiscal 2023?",
     "expected_doc_ids": [
-      "MRK_10-K_2024-12-31.md"
+      "MRK_10-K_2024-12-31.md",
+      "MRK_10-K_2025-12-31.md"
     ],
     "expected_spans": [
-      "| Adempas | 287 | 12% | 14% | 255 | 7% | 8% | 238 |"
+      {
+        "text": "| Adempas | 287 | 12% | 14% | 255 | 7% | 8% | 238 |",
+        "alternatives": [
+          "| Adempas | 312 | 9% | 6% | 287 | 12% | 14% | 255 |"
+        ]
+      }
     ],
     "expected_answer": "The percentage change in Adempas revenue for fiscal 2024 was 12%.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added MRK_10-K_2025-12-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| ($ in millions) | 2024 | % Change | % Change Excluding Foreign Exchange | 2023 | % Change | % Change Excluding Foreign Exchange | 2022 |"
       ],
@@ -1552,17 +1656,23 @@
     "id": "table::MRK_10-K_2025-12-31.md::t10r8c2",
     "query": "What was Merck & Co., Inc.'s taxes on income as reported under GAAP for fiscal 2024?",
     "expected_doc_ids": [
-      "MRK_10-K_2025-12-31.md"
+      "MRK_10-K_2025-12-31.md",
+      "MRK_10-K_2024-12-31.md"
     ],
     "expected_spans": [
-      "| Taxes on income as reported under GAAP | 2,804 | 2,803 | 1,512 |"
+      {
+        "text": "| Taxes on income as reported under GAAP | 2,804 | 2,803 | 1,512 |",
+        "alternatives": [
+          "| Taxes on income as reported under GAAP | 2,803 | 1,512 | 1,918 |"
+        ]
+      }
     ],
     "expected_answer": "$2,803 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added MRK_10-K_2024-12-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| ($ in millions except per share amounts) | 2025 | 2024 | 2023 |"
       ],
@@ -1590,17 +1700,23 @@
     "id": "table::MRK_10-K_2025-12-31.md::t8r0c3",
     "query": "What was Merck & Co., Inc.'s cost of sales in millions of dollars for fiscal 2024?",
     "expected_doc_ids": [
-      "MRK_10-K_2025-12-31.md"
+      "MRK_10-K_2025-12-31.md",
+      "MRK_10-K_2024-12-31.md"
     ],
     "expected_spans": [
-      "| Cost of sales | $16,382 | 8% | $15,193 | (6)% | $16,126 |"
+      {
+        "text": "| Cost of sales | $16,382 | 8% | $15,193 | (6)% | $16,126 |",
+        "alternatives": [
+          "| Cost of sales | $15,193 | (6)% | $16,126 | (7)% | $17,411 |"
+        ]
+      }
     ],
     "expected_answer": "$15,193 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added MRK_10-K_2024-12-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| ($ in millions) | 2025 | % Change | 2024 | % Change | 2023 |"
       ],
@@ -1637,8 +1753,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended March 31, | | | % Change Excluding Foreign Exchange |",
         "| ($ in millions) | 2026 | 2025 | % Change | |"
@@ -1669,8 +1785,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Segment Profits | | |",
         "| | Three Months Ended March 31, | |",
@@ -1702,8 +1818,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended June 30, | | | % Change Excluding Foreign Exchange | | Six Months Ended June 30, | | | | | % Change Excluding Foreign Exchange |",
         "| ($ in millions) | 2026 | 2025 | % Change | | 2026 | | 2025 | | % Change | | |"
@@ -1734,8 +1850,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended June 30, | | | % Change Excluding Foreign Exchange | | Six Months Ended June 30, | | | | | % Change Excluding Foreign Exchange |",
         "| ($ in millions) | 2026 | 2025 | % Change | | 2026 | | 2025 | | % Change | | |"
@@ -1757,17 +1873,23 @@
     "id": "table::MSFT_10-K_2025-06-30.md::t0r3c2",
     "query": "What was Microsoft Corp's net income in millions of dollars for fiscal 2024?",
     "expected_doc_ids": [
-      "MSFT_10-K_2025-06-30.md"
+      "MSFT_10-K_2025-06-30.md",
+      "MSFT_10-K_2026-06-30.md"
     ],
     "expected_spans": [
-      "| Net income | 101,832 | 88,136 | 16% |"
+      {
+        "text": "| Net income | 101,832 | 88,136 | 16% |",
+        "alternatives": [
+          "| Net income | $133,749 | $101,832 | $88,136 | 31% | 16% |"
+        ]
+      }
     ],
     "expected_answer": "88,136 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added MSFT_10-K_2026-06-30.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| (In millions, except percentages and per share amounts) | 2025 | 2024 | Percentage Change |"
       ],
@@ -1804,8 +1926,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| (In millions, except percentages) | 2025 | 2024 | Percentage Change |"
       ],
@@ -1829,14 +1951,19 @@
       "MSFT_10-K_2026-06-30.md"
     ],
     "expected_spans": [
-      "| Net income | $133,749 | $101,832 | $88,136 | 31% | 16% |"
+      {
+        "text": "| Net income | $133,749 | $101,832 | $88,136 | 31% | 16% |",
+        "alternatives": [
+          "| Net income | 133,749 | 101,832 | 31% |"
+        ]
+      }
     ],
     "expected_answer": "$133,749 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added 1 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| (In millions, except percentages and per share amounts) | 2026 | 2025 | 2024 | Percentage Change 2026 Versus 2025 | Percentage Change 2025 Versus 2024 |"
       ],
@@ -1866,8 +1993,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| (In millions, except percentages and per share amounts) | Three Months Ended December 31, | | | Percentage Change | Six Months Ended December 31, | | Percentage Change |",
         "| | | 2025 | 2024 | | 2025 | 2024 | |"
@@ -1898,8 +2025,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| (In millions, except percentages) | Three Months Ended December 31, | | Percentage Change | Six Months Ended December 31, | | Percentage Change |",
         "| | 2025 | 2024 | | 2025 | 2024 | |"
@@ -1938,14 +2065,19 @@
       "MSFT_10-Q_2026-03-31.md"
     ],
     "expected_spans": [
-      "| Operating income | | 38,398 | 32,000 | 20% | 114,634 | 94,205 | 22% |"
+      {
+        "text": "| Operating income | | 38,398 | 32,000 | 20% | 114,634 | 94,205 | 22% |",
+        "alternatives": [
+          "| Operating income | $38,398 | $32,000 | 20% | $114,634 | $94,205 | 22% |"
+        ]
+      }
     ],
     "expected_answer": "Microsoft Corp's operating income for the nine months ended March 31, 2025, was $94,205 million.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added 1 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| (In millions, except percentages and per share amounts) | Three Months Ended March 31, | | | Percentage Change | Nine Months Ended March 31, | | Percentage Change |",
         "| | | 2026 | 2025 | | 2026 | 2025 | |"
@@ -1976,8 +2108,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Year Ended | | |",
         "| | Jan 26, 2025 | Jan 28, 2024 | $ Change |",
@@ -2009,8 +2141,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Jan 26, 2025 |",
         "| | (In millions) |",
@@ -2042,8 +2174,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Year Ended | | | |",
         "| | Jan 25, 2026 | Jan 26, 2025 | $ Change | % Change |",
@@ -2075,8 +2207,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Year Ended | | | |",
         "| | Jan 25, 2026 | Jan 26, 2025 | $ Change | % Change |",
@@ -2108,8 +2240,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | | | | Six Months Ended | | | |",
         "| | Jul 27, 2025 | Jul 28, 2024 | $ Change | % Change | Jul 27, 2025 | Jul 28, 2024 | $ Change | % Change |",
@@ -2141,8 +2273,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | | | Six Months Ended | | |",
         "| | Jul 27, 2025 | Jul 28, 2024 | $ Change | Jul 27, 2025 | Jul 28, 2024 | $ Change |",
@@ -2174,8 +2306,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "reject",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Rejected: degenerate: revenue as a percentage of revenue is always 100.0%.",
       "header_lines": [
         "| | Three Months Ended | | Nine Months Ended | |",
         "| | Oct 26, 2025 | Oct 27, 2024 | Oct 26, 2025 | Oct 27, 2024 |"
@@ -2230,8 +2362,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | |",
         "| | Apr 26, 2026 | Apr 27, 2025 |"
@@ -2262,8 +2394,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| The following presents worldwide Total revenues by geography: | | | | | | | | | |",
         "| | Three Months Ended | | | | | | | | |",
@@ -2297,8 +2429,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended September 28, 2025 | | | | |",
         "| Data presented will not (in all cases) aggregate to totals. (MILLIONS, EXCEPT PER SHARE DATA) | Cost of sales(a) | Selling, informational and administrative expenses(a) | Other (income)/deductions--net(a) | Net income attributable to Pfizer Inc. common shareholders(a), (b) | Earnings per common share attributable to Pfizer Inc. common shareholders--diluted |"
@@ -2323,14 +2455,19 @@
       "PFE_10-Q_2025-09-28.md"
     ],
     "expected_spans": [
-      "| Favorable impact of foreign exchange | 203 | -- | 203 |"
+      {
+        "text": "| Favorable impact of foreign exchange | 203 | -- | 203 |",
+        "alternatives": [
+          "Total revenues decreased $1.0 billion, or 6%, in the third quarter of 2025 to $16.7 billion from $17.7 billion in the third quarter of 2024, reflecting an operational decrease of $1.3 billion, or 7%, partially offset by a favorable impact of foreign exchange of $203 million, or 1%"
+        ]
+      }
     ],
     "expected_answer": "The favorable impact of foreign exchange was $203 million.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added the MD&A sentence stating the same figure.",
       "header_lines": [
         "| The following provides an analysis of the worldwide change in Total revenues by geographic areas in the third quarter of 2025 compared to the third quarter of 2024: | | | |",
         "| (MILLIONS) | Worldwide | U.S. | International |",
@@ -2362,8 +2499,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| The following provides an analysis of the worldwide change in Total revenues by geographic areas in the first nine months of 2025 compared to the first nine months of 2024: | | | |",
         "| (MILLIONS) | Worldwide | U.S. | International |",
@@ -2395,8 +2532,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended | | | Nine Months Ended | | |",
         "| (MILLIONS) | September 28, 2025 | September 29, 2024 | % Change | September 28, 2025 | September 29, 2024 | % Change |"
@@ -2421,14 +2558,19 @@
       "TGT_10-K_2025-02-01.md"
     ],
     "expected_spans": [
-      "| Gross margin rate (a) | 28.2% | 27.5% | 24.6% |"
+      {
+        "text": "| Gross margin rate (a) | 28.2% | 27.5% | 24.6% |",
+        "alternatives": [
+          "Our gross margin rate was 28.2 percent in 2024 and 27.5 percent in 2023."
+        ]
+      }
     ],
     "expected_answer": "Target Corp's gross margin rate for fiscal 2024 was 28.2%.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added the MD&A sentence stating the same figure.",
       "header_lines": [
         "| Rate Analysis | 2024 | 2023 | 2022 |"
       ],
@@ -2459,14 +2601,20 @@
       "TGT_10-K_2026-01-31.md"
     ],
     "expected_spans": [
-      "| Reported, GAAP measure | $21,535 | 20.6% | $5,117 | 4.9% | $21,969 | 20.6% | $5,566 | 5.2% | $21,462 | 20.0% | $5,707 | 5.3% |"
+      {
+        "text": "| Reported, GAAP measure | $21,535 | 20.6% | $5,117 | 4.9% | $21,969 | 20.6% | $5,566 | 5.2% | $21,462 | 20.0% | $5,707 | 5.3% |",
+        "alternatives": [
+          "| Operating income | $5,117 | $5,566 | $5,707 | (8.1)% | (2.5)% |",
+          "| Operating income | $5,117 | $5,566 |"
+        ]
+      }
     ],
     "expected_answer": "$5,117 million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added 2 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| | 2025 | | | | 2024 | | | | 2023 | | | |",
         "| | SG&A Expenses | | Operating Income | | SG&A Expenses | | Operating Income | | SG&A Expenses | | Operating Income | |",
@@ -2489,17 +2637,23 @@
     "id": "table::TGT_10-K_2026-01-31.md::t6r0c2",
     "query": "What percentage of Target Corp's merchandise sales came from stores in fiscal 2024?",
     "expected_doc_ids": [
-      "TGT_10-K_2026-01-31.md"
+      "TGT_10-K_2026-01-31.md",
+      "TGT_10-K_2025-02-01.md"
     ],
     "expected_spans": [
-      "| Stores | 97.6% | 97.6% | 97.4% |"
+      {
+        "text": "| Stores | 97.6% | 97.6% | 97.4% |",
+        "alternatives": [
+          "| Stores | 97.6% | 97.4% | 96.7% |"
+        ]
+      }
     ],
     "expected_answer": "97.6%",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added TGT_10-K_2025-02-01.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| Merchandise Sales by Fulfillment Channel | 2025 | 2024 | 2023 |"
       ],
@@ -2541,8 +2695,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Comparable Sales | Three Months Ended | | Six Months Ended | |",
         "| | August 2, 2025 | August 3, 2024 | August 2, 2025 | August 3, 2024 |"
@@ -2580,8 +2734,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Merchandise Sales by Fulfillment Channel | Three Months Ended | | Six Months Ended | |",
         "| | August 2, 2025 | August 3, 2024 | August 2, 2025 | August 3, 2024 |"
@@ -2619,8 +2773,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Number of Stores and | Number of Stores | | | Retail Square Feet (a) | | |",
         "| Retail Square Feet | November 1, 2025 | February 1, 2025 | November 2, 2024 | November 1, 2025 | February 1, 2025 | November 2, 2024 |"
@@ -2669,14 +2823,19 @@
       "UAL_10-K_2024-12-31.md"
     ],
     "expected_spans": [
-      "| Cargo | 1,743 | 1,495 | 248 | 16.6 |"
+      {
+        "text": "| Cargo | 1,743 | 1,495 | 248 | 16.6 |",
+        "alternatives": [
+          "Cargo revenue increased $248 million, or 16.6%, in 2024 as compared to 2023"
+        ]
+      }
     ],
     "expected_answer": "The increase in cargo operating revenue was $248 million.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added the MD&A sentence stating the same figure.",
       "header_lines": [
         "| | 2024 | 2023 | Increase (Decrease) | % Change |"
       ],
@@ -2697,17 +2856,23 @@
     "id": "table::UAL_10-K_2024-12-31.md::t7r1c1",
     "query": "What was the cash used in investing activities by United Airlines Holdings, Inc. for the fiscal year ended December 31, 2024?",
     "expected_doc_ids": [
-      "UAL_10-K_2024-12-31.md"
+      "UAL_10-K_2024-12-31.md",
+      "UAL_10-K_2025-12-31.md"
     ],
     "expected_spans": [
-      "| Investing activities | (2,651) | (6,106) | (13,829) |"
+      {
+        "text": "| Investing activities | (2,651) | (6,106) | (13,829) |",
+        "alternatives": [
+          "| Investing activities | (6,350) | (2,651) | (6,106) |"
+        ]
+      }
     ],
     "expected_answer": "The cash used in investing activities was $2,651 million.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added UAL_10-K_2025-12-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| | 2024 | 2023 | 2022 |",
         "| Total cash provided by (used in): | | | |"
@@ -2745,8 +2910,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Increase (decrease) from 2024: | | | | |",
         "| | Domestic | Atlantic | Pacific | Latin | Total |"
@@ -2777,8 +2942,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | 2025 | 2024 | Increase (Decrease) | % Change |"
       ],
@@ -2808,8 +2973,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | 2026 | 2025 | Increase (Decrease) | % Change |"
       ],
@@ -2839,8 +3004,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | 2026 | 2025 | Increase (Decrease) | % Change |"
       ],
@@ -2870,8 +3035,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | 2026 | 2025 | Increase (Decrease) | | % Change |"
       ],
@@ -2892,17 +3057,23 @@
     "id": "table::WMT_10-K_2025-01-31.md::t4r1c1",
     "query": "What were Walmart Inc.'s capital expenditures for store and club remodels, in millions of dollars, for the fiscal year ended January 31, 2025?",
     "expected_doc_ids": [
-      "WMT_10-K_2025-01-31.md"
+      "WMT_10-K_2025-01-31.md",
+      "WMT_10-K_2026-01-31.md"
     ],
     "expected_spans": [
-      "| Store and club remodels | 5,552 | 5,792 |"
+      {
+        "text": "| Store and club remodels | 5,552 | 5,792 |",
+        "alternatives": [
+          "| Store and club remodels | 5,571 | 5,552 |"
+        ]
+      }
     ],
     "expected_answer": "Walmart Inc.'s capital expenditures for store and club remodels were $5,552 million for the fiscal year ended January 31, 2025.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added WMT_10-K_2026-01-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| (Amounts in millions) | Fiscal Years Ended January 31, | |",
         "| Allocation of Capital Expenditures | 2025 | 2024 |"
@@ -2931,17 +3102,23 @@
     "id": "table::WMT_10-K_2026-01-31.md::t3r2c3",
     "query": "What was Walmart Inc.'s accounts payable as of January 31, 2024?",
     "expected_doc_ids": [
-      "WMT_10-K_2026-01-31.md"
+      "WMT_10-K_2026-01-31.md",
+      "WMT_10-K_2025-01-31.md"
     ],
     "expected_spans": [
-      "| Accounts payable | 63,061 | 58,666 | 56,812 |"
+      {
+        "text": "| Accounts payable | 63,061 | 58,666 | 56,812 |",
+        "alternatives": [
+          "| Accounts payable | 58,666 | 56,812 | 53,742 |"
+        ]
+      }
     ],
     "expected_answer": "Walmart Inc.'s accounts payable as of January 31, 2024, was $56,812 million.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added WMT_10-K_2025-01-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| | As of January 31, | | |",
         "| | 2026 | 2025 | 2024 |",
@@ -2971,17 +3148,23 @@
     "id": "table::WMT_10-K_2026-01-31.md::t7r9c3",
     "query": "What was the operating expenses as a percentage of net sales for Walmart U.S. in fiscal 2024?",
     "expected_doc_ids": [
-      "WMT_10-K_2026-01-31.md"
+      "WMT_10-K_2026-01-31.md",
+      "WMT_10-K_2025-01-31.md"
     ],
     "expected_spans": [
-      "| Operating expenses | 22.8% | 22.6% | 22.2% |"
+      {
+        "text": "| Operating expenses | 22.8% | 22.6% | 22.2% |",
+        "alternatives": [
+          "| Operating expenses | 22.6% | 22.2% | 22.1% |"
+        ]
+      }
     ],
     "expected_answer": "The operating expenses were 22.2% of net sales.",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added WMT_10-K_2025-01-31.md's comparative row as an alternative (same period's figure).",
       "header_lines": [
         "| | Fiscal Years Ended January 31, | | |",
         "| (Dollar amounts and retail square feet in millions) | 2026 | 2025 | 2024 |"
@@ -3019,8 +3202,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Fiscal Years Ended January 31, | | |",
         "| (Dollar amounts and retail square feet in millions) | 2026 | 2025 | 2024 |",
@@ -3052,8 +3235,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| | Three Months Ended October 31, | | Nine Months Ended October 31, | |",
         "| (Dollar amounts and retail square feet in millions) | 2025 | 2024 | 2025 | 2024 |"
@@ -3078,14 +3261,19 @@
       "WMT_10-Q_2026-04-30.md"
     ],
     "expected_spans": [
-      "| Net cash used in investing activities(1) | | $(6,737) | $(5,093) |"
+      {
+        "text": "| Net cash used in investing activities(1) | | $(6,737) | $(5,093) |",
+        "alternatives": [
+          "| Net cash used in investing activities | $(6,737) | $(5,093) |"
+        ]
+      }
     ],
     "expected_answer": "$(5,093) million",
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Added 1 other row(s) of this filing stating the same figure.",
       "header_lines": [
         "| | Three Months Ended April 30, | | |",
         "| (Amounts in millions) | | 2026 | 2025 |"
@@ -3105,7 +3293,7 @@
   },
   {
     "id": "table::WMT_10-Q_2026-04-30.md::t8r11c1",
-    "query": "What was the retail square feet (in millions) at period end for Walmart International during the three months ended April 30, 2026?",
+    "query": "What was the retail square feet (in millions) at period end for Walmart International as of April 30, 2026?",
     "expected_doc_ids": [
       "WMT_10-Q_2026-04-30.md"
     ],
@@ -3116,8 +3304,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements. Edited query: 'during the three months ended April 30, 2026' -> 'as of April 30, 2026'.",
       "header_lines": [
         "| | Three Months Ended April 30, | |",
         "| (Dollar amounts and retail square feet in millions) | 2026 | 2025 |"
@@ -3157,8 +3345,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Specialty Products Operational Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
         "| (thousands of metric tons) | 2026 | 2025 | 2026 | 2025 |",
@@ -3190,8 +3378,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Dollars in billions (unless otherwise noted) | Twelve Months Ended December 31, | | Six Months Ended June 30, | | |",
         "| 2019 | 2025 | 2025 | 2026 | | |",
@@ -3224,8 +3412,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Upstream Financial Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
         "| (millions of dollars) | 2026 | 2025 | 2026 | 2025 |",
@@ -3257,8 +3445,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Upstream Operational Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
         "| | 2026 | 2025 | 2026 | 2025 |",
@@ -3290,8 +3478,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Upstream Additional Information (thousands of barrels daily) | Three Months Ended June 30, | Six Months Ended June 30, |",
         "| Volumes reconciliation (Oil-equivalent production) (1) | | |"
@@ -3322,8 +3510,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Energy Products Financial Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
         "| (millions of dollars) | 2026 | 2025 | 2026 | 2025 |",
@@ -3355,8 +3543,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Energy Products Operational Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
         "| (thousands of barrels daily) | 2026 | 2025 | 2026 | 2025 |",
@@ -3388,8 +3576,8 @@
     "matching_mode": "span_and_document",
     "tier": "table",
     "review": {
-      "verdict": "pending",
-      "note": "",
+      "verdict": "accept",
+      "note": "Reviewed 2026-09-29 by Claude (claude-opus-5-5) at the user's request, not by a person: every draft read against its table; column labels checked in the table for the doubtful ones; figure searched across the company's filings and in its own filing for restatements.",
       "header_lines": [
         "| Chemical Products Operational Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
         "| (thousands of metric tons) | 2026 | 2025 | 2026 | 2025 |",
