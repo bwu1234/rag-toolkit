@@ -209,7 +209,7 @@ def format_report(report: IndexReport) -> str:
         lines.append("Index: not built")
         return "\n".join(lines)
     lines += [
-        f"Index              {state.vector_chunks} vector / {state.sparse_chunks} BM25 chunk(s)",
+        f"Index              {state.vector_chunks} vector / {state.sparse_chunks} sparse chunk(s)",
         f"  vs. corpus       {state.missing} missing, {state.stale} stale, {state.changed} changed text",
     ]
     if state.manifest is None:

@@ -428,7 +428,10 @@ graph LR
   `VectorStore`/`SparseIndex` gained `ids()`/`delete(ids)`, and `index`
   purges chunks the corpus no longer produces
   ([notes](milestone-notes.md#index-maintenance-notes)).
-- **Scalable sparse backend**, only once corpus scale demands it. `BM25Index`
+- **Scalable sparse backend** *(shipped as opt-in: `sparse_index.provider:
+  sqlite_fts5`. [Measured](measured-results.md#sqlite-fts5-sparse-backend) as
+  no different on EDGAR through the full pipeline, and far cheaper to open
+  and hold at 10^5 chunks; `bm25` stays the default at EDGAR's size)*. `BM25Index`
   holds every chunk's text in a Python dict, persists as one JSON blob, and
   rebuilds the whole index after any upsert — workable to roughly 10⁴ chunks,
   degrades beyond. SQLite FTS5 or Tantivy behind the existing `SparseIndex`

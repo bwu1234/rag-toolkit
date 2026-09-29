@@ -242,6 +242,17 @@ VARIANTS: list[Variant] = [
     Variant("routing=top1", "routing", {"retrieval.document_routing.top_m": 1}),
     Variant("routing=top2", "routing", {"retrieval.document_routing.top_m": 2}),
 
+    # Sparse backend: SQLite FTS5 in place of rank_bm25. Same tokens, slightly
+    # different BM25 (k1 1.2 vs 1.5, IDF floor), so the keyword leg ranks
+    # differently. Needs `fts5_index__<slug>.sqlite3` built for the corpus.
+    # The rerank_top_k=20 pair reranks nothing, so it compares stage 1 alone
+    # against the existing `rerank_top_k=20` row.
+    Variant("sparse=sqlite_fts5", "sparse", {"sparse_index.provider": "sqlite_fts5"},
+            requires="index"),
+    Variant("sparse=sqlite_fts5 rerank_top_k=20", "sparse",
+            {"sparse_index.provider": "sqlite_fts5", "retrieval.rerank_top_k": 20},
+            requires="index"),
+
     # The payoff question the stage-1 axis raises: retrieval can surface the
     # right chunk far more often with a bigger candidate pool, but that is only
     # useful if the reranker promotes it into the handful the LLM actually sees.
@@ -369,6 +380,10 @@ def fingerprint(config: RagConfig) -> tuple[str, dict[str, Any]]:
             if (value := read_path(config, path)) is not None and value is not False
         }
     )
+    if config.sparse_index.provider != "bm25":
+        # Fingerprinted only off its default, so rows recorded before the
+        # setting existed (all on bm25) keep their fingerprint.
+        settings["sparse_index.provider"] = config.sparse_index.provider
     if config.retrieval.document_routing.top_m is not None:
         # The template shapes routing only while routing is on.
         settings["retrieval.document_routing.record_template"] = config.retrieval.document_routing.record_template

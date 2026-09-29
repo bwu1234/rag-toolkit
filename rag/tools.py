@@ -40,7 +40,7 @@ from rag.query_filter import QueryFilter
 from rag.generation.llm import LLMClient, ToolDefinition
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.retriever import RetrievalResult, Retriever
-from rag.retrieval.sparse import BM25Index, bm25_index_path
+from rag.retrieval.factory import get_sparse_index, sparse_index_path
 
 logger = logging.getLogger(__name__)
 
@@ -328,16 +328,16 @@ class RagTools:
             if description:
                 entry["description"] = " ".join(description.split())
 
-            # Read the BM25 sidecar rather than opening the vector collection:
+            # Read the sparse index sidecar rather than opening the vector collection:
             # `get_vector_store` uses get_or_create, so probing it here would
             # litter the store with empty collections just from listing. The
             # indexer always writes both, so the sidecar is a faithful signal.
-            sidecar = bm25_index_path(selection.index_dir, selection.slug)
+            sidecar = sparse_index_path(config.sparse_index, selection.index_dir, selection.slug)
             if sidecar.exists():
                 try:
-                    entry["indexed_chunks"] = BM25Index(sidecar).count()
+                    entry["indexed_chunks"] = get_sparse_index(config.sparse_index, selection.index_dir, selection.slug).count()
                 except Exception:  # pragma: no cover - corrupt sidecar
-                    logger.warning("Could not read BM25 index at %s", sidecar, exc_info=True)
+                    logger.warning("Could not read sparse index at %s", sidecar, exc_info=True)
                     entry["indexed_chunks"] = None
             else:
                 entry["indexed_chunks"] = 0

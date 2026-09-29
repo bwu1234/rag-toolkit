@@ -5,9 +5,11 @@
 
 | variant | hit | hit 95% CI | recall | prec | MRR | NDCG | Δ hit [95% CI] | Δ NDCG [95% CI] | unmatch. | s |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `baseline` | 0.836 | [0.717, 0.911] | 0.836 | 0.182 | 0.735 | 0.761 | — | — | 0 | 55 |
+| `baseline` | 0.836 | [0.717, 0.911] | 0.836 | 0.182 | 0.735 | 0.761 | — | — | 0 | 56 |
 | | | | | | | | | | | |
 | `mode=dense` | 0.509 | [0.381, 0.636] | 0.509 | 0.102 | 0.307 | 0.357 | -0.327 [-0.472, -0.183]* 2W/20L p=0.00012 | -0.404 [-0.525, -0.282]* | 0 | 52 |
+| | | | | | | | | | | |
+| `rerank_top_k=20` | 0.946 | [0.851, 0.981] | 0.946 | 0.051 | 0.751 | 0.798 | +0.109 [+0.026, +0.192]* 6W/0L p=0.031 | +0.037 [+0.009, +0.065]* | 0 | 52 |
 | | | | | | | | | | | |
 | `stage1_top_k=20` | 0.709 | [0.579, 0.812] | 0.709 | 0.036 | 0.348 | 0.440 | -0.127 [-0.262, +0.008] 4W/11L p=0.12 | -0.321 [-0.430, -0.212]* | 0 | 51 |
 | | | | | | | | | | | |
@@ -35,5 +37,8 @@
 | | | | | | | | | | | |
 | `routing=top1` | 0.927 | [0.827, 0.971] | 0.927 | 0.200 | 0.813 | 0.841 | +0.091 [+0.014, +0.168]* 5W/0L p=0.062 | +0.080 [+0.026, +0.135]* | 0 | 60 |
 | `routing=top2` | 0.891 | [0.782, 0.949] | 0.891 | 0.193 | 0.767 | 0.798 | +0.055 [-0.006, +0.115] 3W/0L p=0.25 | +0.037 [+0.005, +0.069]* | 0 | 60 |
+| | | | | | | | | | | |
+| `sparse=sqlite_fts5` | 0.855 | [0.738, 0.924] | 0.855 | 0.185 | 0.726 | 0.759 | +0.018 [-0.017, +0.054] 1W/0L p=1 | -0.002 [-0.022, +0.018] | 0 | 52 |
+| `sparse=sqlite_fts5 rerank_top_k=20` | 0.946 | [0.851, 0.981] | 0.946 | 0.051 | 0.740 | 0.789 | +0.109 [+0.026, +0.192]* 6W/0L p=0.031 | +0.028 [-0.004, +0.061] | 0 | 53 |
 
 `hit 95% CI` is a Wilson interval on that rate alone, the noise floor of one run on this many questions. Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval that excludes zero; `W/L` counts the questions the variant gained / lost and `p` is McNemar's exact test on them -- trust it over the CI when W+L is small. `(no CI)` rows predate per-sample scores and need a re-run to be tested. `unmatch.` counts expected spans no chunk contains under that variant's chunking (`—` predates the count).

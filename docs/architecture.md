@@ -36,7 +36,7 @@ flowchart LR
     E -- yes --> F[ChunkContextualizer<br/><i>optional</i>]
     F --> G[EmbeddingModel<br/>embed index_text]
     G --> H[(VectorStore<br/>Chroma)]
-    F --> I[(BM25Index<br/>JSON)]
+    F --> I[(SparseIndex<br/>BM25 JSON or FTS5)]
     H & I --> P[purge ids the<br/>corpus no longer produces]
 ```
 
@@ -84,8 +84,9 @@ service.
 ### Storage naming
 
 Everything a selection writes is named after its slug (sorted, `+`-joined
-corpus names): Chroma collection `<base>__<slug>`, BM25 file
-`bm25_index__<slug>.json`, manifest `index_manifest__<slug>.json`. Isolated
+corpus names): Chroma collection `<base>__<slug>`, sparse index file
+`bm25_index__<slug>.json` (or `fts5_index__<slug>.sqlite3` with
+`sparse_index.provider: sqlite_fts5`), manifest `index_manifest__<slug>.json`. Isolated
 and pooled indexes therefore sit side by side in `data/index/`, and a
 query-time component built for one selection cannot read another's index.
 `build_retriever` also refuses an index whose manifest names a different

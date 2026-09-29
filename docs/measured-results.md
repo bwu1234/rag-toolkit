@@ -1161,6 +1161,68 @@ Raw records: `baseline`, `routing=top1` and `routing=top2` in
 `data/eval/results/retrieval_edgar_edgar_{eval,period,underspecified}_set.json`
 (each routed sample carries `routed_to`).
 
+### SQLite FTS5 sparse backend
+
+**Full pipeline.** Run on 2026-09-28 with `scripts/run_matrix.py` at the
+shipped config (hybrid, RRF, `bge-v2-m3`, header on) on all three EDGAR sets.
+The FTS5 index was loaded from the `edgar` BM25 index's records, so both
+backends hold the same 4,236 chunks as Chroma (`index-report`: in sync). The
+re-run `baseline` reproduced the committed rows sample for sample. Paired
+FTS5 − BM25, hit W/L with McNemar's exact p:
+
+| set | n | at `rerank_top_k` 5 (shipped) | at `rerank_top_k` 20 (stage 1 only) |
+|---|---|---|---|
+| eval | 174 | 0W/1L, p=1; Δ NDCG +0.000 | 0W/0L; Δ NDCG +0.002 |
+| period | 55 | 1W/0L, p=1; Δ NDCG −0.002 | 0W/0L; Δ NDCG −0.009 |
+| underspecified | 118 | 0W/2L, p=0.5; Δ NDCG −0.011 | 1W/2L, p=1; Δ NDCG −0.009 |
+| all three | 347 | 1W/3L, p=0.63 | 1W/2L, p=1 |
+
+Query time was equal (within ±4 s across 55–174 questions); the reranker dominates it.
+
+**Keyword leg alone.** The earlier probe, with no embedder or reranker:
+the `edgar` BM25 index's 4,236 records were loaded into `SqliteFts5Index`,
+and both backends answered the 174 EDGAR eval questions at top-20. Scale was
+simulated by replicating those chunks under new ids (10× and 35×), so term
+statistics are unrealistic there -- read those rows for cost, not ranking.
+
+| | `bm25` | `sqlite_fts5` |
+|---|---|---|
+| gold-document hit@20 (keyword leg) | 173/174 | 173/174 |
+| same top-1 chunk | -- | 138/174 |
+| mean top-20 overlap with `bm25` | -- | 0.79 |
+| median query, 4,236 chunks | 9 ms | 8 ms |
+| query, 148k chunks | ~470 ms | ~270 ms |
+| open + first query, 148k chunks | 9.7 s | 0.3 s |
+| peak RSS, 148k chunks | 3.3 GB | 52 MB |
+| on disk, 148k chunks | 247 MB JSON | 540 MB |
+
+**Findings.**
+
+- **No difference shown at EDGAR scale.** Through the full pipeline, 4 of
+  347 questions flip (1 gained, 3 lost, p=0.63), and NDCG moves by at most
+  0.011 on a set, with no set's interval excluding zero. The losses lean
+  toward FTS5, but four discordant questions can't separate that from noise.
+  This is "not shown", not "proven equal".
+- Why they differ at all: FTS5 fixes k1 = 1.2 (rank_bm25's `BM25Okapi` uses
+  1.5) and floors a non-positive IDF at 1e-6 where rank_bm25 substitutes a
+  quarter of the mean IDF. Tokens are identical. A fifth of each keyword-leg
+  top-20 differs, but RRF and the reranker absorb nearly all of it: at most
+  10 of 118 questions change NDCG at all.
+- **Default stays `bm25`** for corpora it handles, since switching buys
+  nothing measurable at this size. Use `sqlite_fts5` when the corpus outgrows
+  `bm25`'s memory and startup cost (below). A pooled or larger corpus should
+  get its own comparison, since the k1 and IDF differences act on term
+  statistics, and those change with the corpus.
+- `bm25`'s real cost at scale is state, not query time: every process loads
+  and re-tokenizes the whole corpus, holds it in memory, and any change
+  rewrites the full JSON and rebuilds the model. FTS5 opens lazily, holds
+  almost nothing, and commits each indexing batch.
+- FTS5's file is about twice the JSON, because it stores the token string
+  beside the chunk text as well as the inverted index.
+- Query time grows roughly linearly on both, since every chunk sharing any
+  query word is scored. At 10^6+ chunks, stopword-heavy questions will need
+  pruning (or a dedicated engine); this backend doesn't solve that.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a
