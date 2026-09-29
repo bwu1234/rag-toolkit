@@ -27,6 +27,7 @@ from rag.eval.qrels import (
     write_run,
 )
 from rag.eval.relevance import judge_ranking
+from rag.events import PipelineEvent
 from rag.eval.retrieval_eval import STAGE_1, STAGE_FINAL, run_qrels_eval, save_qrels_run
 from rag.retrieval.retriever import RetrievalResult
 from rag.vectorstore.base import ScoredChunk
@@ -242,6 +243,23 @@ def test_run_qrels_eval_scores_each_stage_on_its_own_ranking(tmp_path: Path) -> 
     save_qrels_run(report, tmp_path, tag="test", settings={"note": "fixture"})
     assert read_run(tmp_path / "stage1.trec")["q1"].doc_ids == ["a", "x", "b"]
     assert (tmp_path / "final.trec").exists() and (tmp_path / "scores.json").exists()
+
+
+def test_run_qrels_eval_times_each_query_and_each_stage_it_reports() -> None:
+    class _Staged(_FakeRetriever):
+        def retrieve(self, query: str, **kwargs: object) -> RetrievalResult:
+            on_event = kwargs["on_event"]
+            on_event(PipelineEvent(stage="embed", message="", elapsed_ms=2.0))  # type: ignore[operator]
+            on_event(PipelineEvent(stage="rerank", message="", elapsed_ms=5.0))  # type: ignore[operator]
+            return super().retrieve(query)
+
+    retriever = _Staged(candidates={"query q1": [_chunk("a", 0.9)], "query a": [_chunk("b", 0.5)]})
+    report = run_qrels_eval(_dataset(), retriever)  # type: ignore[arg-type]
+
+    assert set(report.latency_ms) == {"q1", "a"}
+    assert report.latency_ms["q1"]["embed"] == 2.0 and report.latency_ms["q1"]["rerank"] == 5.0
+    assert report.latency_ms["q1"]["total"] >= 0.0
+    assert report.latency_summary()["rerank"] == {"p50": 5.0, "p95": 5.0}
 
 
 def test_run_qrels_eval_refuses_a_stage_1_too_shallow_for_r_at_100() -> None:

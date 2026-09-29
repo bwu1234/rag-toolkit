@@ -212,6 +212,32 @@ def test_cross_encoder_is_loaded_with_raw_logits(monkeypatch: pytest.MonkeyPatch
     )
 
 
+@pytest.mark.parametrize(("max_length", "expected"), [(None, {}), (512, {"max_length": 512})])
+def test_max_length_reaches_the_model_only_when_set(
+    monkeypatch: pytest.MonkeyPatch, max_length: int | None, expected: dict[str, int]
+) -> None:
+    seen: dict[str, object] = {}
+
+    class _StubCrossEncoder:
+        def __init__(self, model_name: str, activation_fn=None, **kwargs) -> None:  # type: ignore[no-untyped-def]
+            seen.update(kwargs)
+
+        def predict(self, pairs):  # type: ignore[no-untyped-def]
+            return [0.0 for _ in pairs]
+
+    import sys
+    import types
+
+    fake_module = types.ModuleType("sentence_transformers")
+    fake_module.CrossEncoder = _StubCrossEncoder  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+
+    get_reranker(RerankerConfig(provider="cross_encoder", model="m", max_length=max_length)).rerank(
+        ["q"], [_scored("a", "ta")], top_k=1
+    )
+    assert seen == expected
+
+
 def test_prefixes_default_to_leaving_pairs_untouched() -> None:
     """Models trained on bare pairs (ms-marco, BGE) must see exactly the pair."""
     reranker = CrossEncoderReranker(model="m")

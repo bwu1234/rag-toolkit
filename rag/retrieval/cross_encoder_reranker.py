@@ -24,17 +24,18 @@ logger = logging.getLogger(__name__)
 RerankAggregation = Literal["max", "mean"]
 
 
-def _load_with_raw_logits(cross_encoder_cls, model_name: str, identity):  # type: ignore[no-untyped-def]
+def _load_with_raw_logits(cross_encoder_cls, model_name: str, identity, **kwargs):  # type: ignore[no-untyped-def]
     """Construct a `CrossEncoder` whose `predict()` returns unactivated logits.
 
     The keyword was renamed (`default_activation_function` -> `activation_fn`)
     in sentence-transformers 4, so try the current name and fall back rather
-    than pinning a version for one argument.
+    than pinning a version for one argument. `kwargs` go to the constructor
+    as they are.
     """
 
     for keyword in ("activation_fn", "default_activation_function"):
         try:
-            return cross_encoder_cls(model_name, **{keyword: identity})
+            return cross_encoder_cls(model_name, **{keyword: identity}, **kwargs)
         except TypeError:
             continue
     # Neither keyword accepted: fall back to the default and set the attribute
@@ -64,8 +65,10 @@ class CrossEncoderReranker(Reranker):
         query_prefix: str = "",
         document_prefix: str = "",
         include_header: bool = False,
+        max_length: int | None = None,
     ) -> None:
         self.model_name = model
+        self.max_length = max_length
         self.aggregate: RerankAggregation = aggregate
         self.query_prefix = query_prefix
         self.document_prefix = document_prefix
@@ -187,5 +190,7 @@ class CrossEncoderReranker(Reranker):
             # Normalizing in exactly one place is what makes the documented score
             # convention ("[0, 1], this reranker's own judgment") hold for every
             # model rather than for the one it was written against.
-            self._model = _load_with_raw_logits(CrossEncoder, self.model_name, nn.Identity())
+            # Passed only when set, so the model's own limit applies otherwise.
+            extra = {"max_length": self.max_length} if self.max_length is not None else {}
+            self._model = _load_with_raw_logits(CrossEncoder, self.model_name, nn.Identity(), **extra)
         return self._model

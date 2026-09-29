@@ -29,6 +29,9 @@ _PROVENANCE_FIELDS = ("document_id", "source", "doc_type")
 #: Chroma's default `ef_search`, kept in step with `DEFAULT_HNSW_EF_SEARCH`.
 _CHROMA_DEFAULT_EF_SEARCH = 100
 
+#: Ids per `get` in `get_metadatas`, well under SQLite's 32,766-variable limit.
+GET_BATCH_SIZE = 5000
+
 # `ef_search` each collection was opened with in this process, keyed by
 # (index directory, collection name). Chroma reads the setting once, when a
 # process first loads the collection's HNSW segment, and ignores a later
@@ -121,23 +124,25 @@ class ChromaVectorStore(VectorStore):
         `content_hash` (if present) against a freshly computed hash to detect
         unchanged chunks.
         """
-        if not ids:
-            return {}
-
-        result = self._collection.get(ids=ids, include=["metadatas", "documents"])
         out: dict[str, dict[str, Any]] = {}
-        # `result` contains parallel arrays under keys 'ids', 'metadatas', 'documents'.
-        # Chroma types each as optional even though we always requested them;
-        # `or []` narrows away the `None` case for mypy.
-        result_ids = result.get("ids") or []
-        result_metadatas = result.get("metadatas") or []
-        result_documents = result.get("documents") or []
-        for cid, meta, doc in zip(result_ids, result_metadatas, result_documents):
-            # Chroma stores only primitive metadata values; return as-is.
-            out[cid] = dict(meta or {})
-            # also expose stored document text under a well-known key for callers
-            # that might want to sanity-check or diff text (optional).
-            out[cid]["_document_text"] = doc
+        # One `get` binds every id as an SQL variable, and SQLite refuses more
+        # than 32,766: `index-report` over BEIR FiQA (57,600 chunks) failed
+        # with "too many SQL variables". Batching keeps any id count safe.
+        for start in range(0, len(ids), GET_BATCH_SIZE):
+            batch = ids[start : start + GET_BATCH_SIZE]
+            result = self._collection.get(ids=batch, include=["metadatas", "documents"])
+            # `result` contains parallel arrays under keys 'ids', 'metadatas', 'documents'.
+            # Chroma types each as optional even though we always requested them;
+            # `or []` narrows away the `None` case for mypy.
+            result_ids = result.get("ids") or []
+            result_metadatas = result.get("metadatas") or []
+            result_documents = result.get("documents") or []
+            for cid, meta, doc in zip(result_ids, result_metadatas, result_documents):
+                # Chroma stores only primitive metadata values; return as-is.
+                out[cid] = dict(meta or {})
+                # also expose stored document text under a well-known key for callers
+                # that might want to sanity-check or diff text (optional).
+                out[cid]["_document_text"] = doc
         return out
 
     def query(

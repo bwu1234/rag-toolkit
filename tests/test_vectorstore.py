@@ -142,6 +142,18 @@ def test_metadata_round_trips_with_provenance_split_out(tmp_path: Path) -> None:
     assert result.metadata == {"title": "Handbook", "page": 2, "chunk_index": 0}
 
 
+def test_get_metadatas_batches_ids_past_the_sql_variable_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = _store(tmp_path)
+    store.upsert([_chunk(f"c{i}") for i in range(5)], [[1.0, float(i)] for i in range(5)])
+    monkeypatch.setattr("rag.vectorstore.chroma_store.GET_BATCH_SIZE", 2)
+
+    stored = store.get_metadatas([f"c{i}" for i in range(5)] + ["missing"])
+
+    assert sorted(stored) == [f"c{i}" for i in range(5)]
+
+
 def test_get_vector_store_factory_selects_chroma(tmp_path: Path) -> None:
     store = get_vector_store(
         VectorStoreConfig(provider="chroma", collection_name="c-collection"),

@@ -384,6 +384,12 @@ class RerankerConfig(BaseModel):
     # changes what every reranker measurement means. No effect on chunks
     # without a header.
     include_header: bool = False
+    # Tokens per (query, passage) pair; longer pairs are truncated. null uses
+    # the model's own limit (8,192 for bge-reranker-v2-m3), which the shipped
+    # 1,000-char chunks never approach. Set it for corpora of long passages:
+    # attention memory grows with the square of the length, and scoring 100
+    # long BEIR FiQA passages at the full limit exhausted memory.
+    max_length: int | None = Field(default=None, gt=0)
 
 
 class QueryExpansionConfig(BaseModel):
