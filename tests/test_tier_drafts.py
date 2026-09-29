@@ -21,15 +21,20 @@ from draft_tier_set import (  # noqa: E402
     Filing,
     PeriodTarget,
     PeriodValidator,
+    TableTarget,
+    TableValidator,
     UnderspecifiedValidator,
     check_accepted,
     content_overlap,
     figures,
     finalize,
+    markdown_tables,
     names_company,
     repeated_paragraphs,
     sample_period_targets,
     sample_sources,
+    sample_table_targets,
+    table_rows_by_company,
 )
 
 from rag.chunking.models import Chunk  # noqa: E402
@@ -269,3 +274,96 @@ def test_finalize_refuses_while_any_draft_is_pending(tmp_path: Path) -> None:
     assert not out.exists()
     # The draft file is plain JSON a reviewer edits by hand.
     assert json.loads(path.read_text())[0]["review"]["verdict"] == "pending"
+
+
+# ---------------------------------------------------------------------------
+# Table
+# ---------------------------------------------------------------------------
+
+TABLE_TEXT = """# Costco Wholesale Corp (COST) 10-K -- period ended 2025-08-31
+
+## RESULTS OF OPERATIONS
+
+### Net Sales
+
+The following table summarizes net sales (dollars in millions).
+
+| | 52 Weeks Ended | | |
+| | 2025 | 2024 | Change |
+|---|---|---|---|
+| Net sales | $269,912 | $249,625 | 8.1% |
+| Membership fees | 5,323 | 4,828 | 10.3% |
+
+## LIQUIDITY
+
+| Not a data table | text |
+|---|---|
+| Only | words |"""
+
+TABLE_DOC = _doc("COST_10-K_2025-08-31.md", TABLE_TEXT)
+# The prior year's 10-K has the figure without its "$" (it's no longer the first row).
+PRIOR = _doc("COST_10-K_2024-09-01.md", "| | 2024 | 2023 |\n|---|---|---|\n| Net sales | 249,625 | 237,710 |")
+
+
+def test_markdown_tables_keep_headings_caption_and_data_tables_only() -> None:
+    [table] = markdown_tables(TABLE_DOC)
+
+    assert table.headings == ["RESULTS OF OPERATIONS", "Net Sales"]
+    assert table.lead_in.startswith("The following table summarizes net sales")
+    assert table.rows[0] == "| Net sales | $269,912 | $249,625 | 8.1% |"
+
+
+def test_a_spanning_header_labels_the_columns_to_its_right() -> None:
+    [table] = markdown_tables(TABLE_DOC)
+
+    assert table.column_path(2) == ["52 Weeks Ended", "2024"]
+    assert table.column_path(3) == ["52 Weeks Ended", "Change"]
+
+
+def test_table_targets_are_seeded_figures_under_labeled_columns() -> None:
+    tables = markdown_tables(TABLE_DOC)
+
+    first = sample_table_targets(tables, 5, seed=3)
+    assert [t.sample_id for t in first] == [t.sample_id for t in sample_table_targets(tables, 5, seed=3)]
+    assert all(t.column > 0 and t.table.column_path(t.column) for t in first)
+
+
+def _table_sample(question: str, answer: str = "Net sales were $249,625 million.", column: int = 2):
+    corpus = _corpus(TABLE_DOC, PRIOR)
+    [table] = markdown_tables(TABLE_DOC)
+    validator = TableValidator(corpus, table_rows_by_company([TABLE_DOC, PRIOR]))
+    return validator.validate(TableTarget(table, 0, column), {"question": question, "answer": answer}), validator
+
+
+def test_good_table_draft_quotes_the_whole_row_and_lists_restatements() -> None:
+    sample, _ = _table_sample("What were Costco's net sales for fiscal 2024?")
+
+    assert sample is not None
+    assert sample.expected_spans[0].text == "| Net sales | $269,912 | $249,625 | 8.1% |"
+    assert sample.expected_doc_ids == ["COST_10-K_2025-08-31.md"]
+    review = sample.extra["review"]
+    assert review["column_path"] == "52 Weeks Ended > 2024"
+    assert review["value"] == "$249,625"
+    # The prior year's 10-K reports the same row and figure.
+    assert review["restatement_candidates"] == ["COST_10-K_2024-09-01.md"]
+    assert review["restatement_rows"] == [
+        {"doc_id": "COST_10-K_2024-09-01.md", "row": "| Net sales | 249,625 | 237,710 |"}
+    ]
+    assert sample.matching_mode == "span_and_document"
+    assert check_accepted(sample, _corpus(TABLE_DOC, PRIOR)) == []
+
+
+@pytest.mark.parametrize(
+    ("question", "answer", "reason"),
+    [
+        ("What were net sales in fiscal 2024?", "Net sales were $249,625 million.", "question_missing_company"),
+        ("Were Costco's fiscal 2024 net sales $249,625 million?", "Yes, $249,625 million.", "question_leaks_value"),
+        ("What were Costco's net sales for fiscal 2024?", "Net sales rose.", "answer_missing_value"),
+        ("What were Costco's net sales last year?", "Net sales were $249,625 million.", "question_missing_column_year"),
+    ],
+)
+def test_table_draft_rejections_are_counted(question: str, answer: str, reason: str) -> None:
+    sample, validator = _table_sample(question, answer)
+
+    assert sample is None
+    assert validator.reasons == {reason: 1}

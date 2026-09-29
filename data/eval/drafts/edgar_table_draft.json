@@ -1,0 +1,3411 @@
+[
+  {
+    "id": "table::AAPL_10-K_2024-09-28.md::t1r2c1",
+    "query": "What were Apple Inc.'s net sales for the iPad segment in fiscal 2024?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2024-09-28.md"
+    ],
+    "expected_spans": [
+      "| iPad | 26,694 | (6)% | 28,300 | (3)% | 29,292 |"
+    ],
+    "expected_answer": "Apple Inc.'s net sales for the iPad segment in fiscal 2024 were $26,694 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2024 | Change | 2023 | Change | 2022 |"
+      ],
+      "section": "Products and Services Performance",
+      "lead_in": "The following table shows net sales by category for 2024, 2023 and 2022 (dollars in millions):",
+      "column_path": "2024",
+      "value": "26,694",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "AAPL_10-K_2025-09-27.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "AAPL_10-K_2025-09-27.md",
+          "row": "| iPad | 28,023 | 5% | 26,694 | (6)% | 28,300 |"
+        }
+      ],
+      "suggestion": "edit query: 'iPad segment' -> 'iPad product category', add alternative(s) '| iPad | 28,023 | 5% | 26,694 | (6)% | 28,300 |' and doc AAPL_10-K_2025-09-27.md, then accept",
+      "suggestion_reason": "Apple reports iPad as a product category; its segments are geographic; that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::AAPL_10-K_2025-09-27.md::t2r2c3",
+    "query": "What was Apple Inc.'s total gross margin in dollars in millions for fiscal 2023?",
+    "expected_doc_ids": [
+      "AAPL_10-K_2025-09-27.md"
+    ],
+    "expected_spans": [
+      "| Total gross margin | $195,201 | $180,683 | $169,148 |"
+    ],
+    "expected_answer": "$169,148 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2025 | 2024 | 2023 |",
+        "| Gross margin: | | | |"
+      ],
+      "section": "Gross Margin",
+      "lead_in": "Products and Services gross margin and gross margin percentage for 2025, 2024 and 2023 were as follows (dollars in millions):",
+      "column_path": "2023",
+      "value": "$169,148",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "AAPL_10-K_2024-09-28.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "AAPL_10-K_2024-09-28.md",
+          "row": "| Total gross margin | $180,683 | $169,148 | $170,782 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Total gross margin | $180,683 | $169,148 | $170,782 |' and doc AAPL_10-K_2024-09-28.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::AAPL_10-Q_2025-12-27.md::t0r3c2",
+    "query": "What were Apple Inc.'s net sales in the Japan segment for the three months ended December 28, 2024?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2025-12-27.md"
+    ],
+    "expected_spans": [
+      "| Japan | 9,413 | 8,987 | 5% |"
+    ],
+    "expected_answer": "$8,987 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | |",
+        "| | December 27, 2025 | December 28, 2024 | Change |"
+      ],
+      "section": "Segment Operating Performance",
+      "lead_in": "The following table shows net sales by reportable segment for the three months ended December 27, 2025 and December 28, 2024 (dollars in millions):",
+      "column_path": "Three Months Ended > December 28, 2024",
+      "value": "8,987",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::AAPL_10-Q_2025-12-27.md::t1r4c3",
+    "query": "What was the percentage change in net sales for Apple Inc.'s Services segment during the three months ended December 27, 2025, compared to the same period in the prior year?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2025-12-27.md"
+    ],
+    "expected_spans": [
+      "| Services | 30,013 | 26,340 | 14% |"
+    ],
+    "expected_answer": "The percentage change in net sales for the Services segment was 14%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | |",
+        "| | December 27, 2025 | December 28, 2024 | Change |"
+      ],
+      "section": "Products and Services Performance",
+      "lead_in": "The following table shows net sales by category for the three months ended December 27, 2025 and December 28, 2024 (dollars in millions):",
+      "column_path": "Three Months Ended > Change",
+      "value": "14%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "AAPL_10-Q_2026-06-27.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "AAPL_10-Q_2026-06-27.md",
+          "row": "| Services | 30,739 | 27,423 | 12% | 91,728 | 80,408 | 14% |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::AAPL_10-Q_2025-12-27.md::t4r0c2",
+    "query": "What was Apple Inc.'s research and development expense for the three months ended December 28, 2024?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2025-12-27.md"
+    ],
+    "expected_spans": [
+      "| Research and development | $10,887 | $8,268 | 32% |"
+    ],
+    "expected_answer": "$8,268 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | |",
+        "| | December 27, 2025 | December 28, 2024 | Change |"
+      ],
+      "section": "Operating Expenses",
+      "lead_in": "Operating expenses for the three months ended December 27, 2025 and December 28, 2024, were as follows (dollars in millions):",
+      "column_path": "Three Months Ended > December 28, 2024",
+      "value": "$8,268",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::AAPL_10-Q_2026-06-27.md::t0r4c5",
+    "query": "What were Apple Inc.'s net sales in the Rest of Asia Pacific segment for the nine months ended June 28, 2025?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-06-27.md"
+    ],
+    "expected_spans": [
+      "| Rest of Asia Pacific | 8,871 | 7,673 | 16% | 30,151 | 25,254 | 19% |"
+    ],
+    "expected_answer": "Apple Inc.'s net sales in the Rest of Asia Pacific segment for the nine months ended June 28, 2025 were $25,254 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | | Nine Months Ended | | |",
+        "| | June 27, 2026 | June 28, 2025 | Change | June 27, 2026 | June 28, 2025 | Change |"
+      ],
+      "section": "Segment Operating Performance",
+      "lead_in": "The following table shows net sales by reportable segment for the three- and nine-month periods ended June 27, 2026 and June 28, 2025 (dollars in millions):",
+      "column_path": "Nine Months Ended > June 28, 2025",
+      "value": "25,254",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::AAPL_10-Q_2026-06-27.md::t4r3c2",
+    "query": "What was Apple Inc.'s selling, general and administrative expenses as a percentage of total net sales for the three months ended June 28, 2025?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-06-27.md"
+    ],
+    "expected_spans": [
+      "| Percentage of total net sales | 7% | 7% | | 6% | 7% | |"
+    ],
+    "expected_answer": "7%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | | Nine Months Ended | | |",
+        "| | June 27, 2026 | June 28, 2025 | Change | June 27, 2026 | June 28, 2025 | Change |"
+      ],
+      "section": "Operating Expenses",
+      "lead_in": "Operating expenses for the three- and nine-month periods ended June 27, 2026 and June 28, 2025, were as follows (dollars in millions):",
+      "column_path": "Three Months Ended > June 28, 2025",
+      "value": "7%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "AAPL_10-K_2024-09-28.md",
+        "AAPL_10-K_2025-09-27.md",
+        "AAPL_10-Q_2025-12-27.md",
+        "AAPL_10-Q_2026-03-28.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "AAPL_10-K_2024-09-28.md",
+          "row": "| Percentage of total net sales | 8% | | 8% | | 7% |"
+        },
+        {
+          "doc_id": "AAPL_10-K_2024-09-28.md",
+          "row": "| Percentage of total net sales | 7% | | 7% | | 6% |"
+        },
+        {
+          "doc_id": "AAPL_10-K_2025-09-27.md",
+          "row": "| Percentage of total net sales | 7% | | 7% | | 7% |"
+        },
+        {
+          "doc_id": "AAPL_10-Q_2025-12-27.md",
+          "row": "| Percentage of total net sales | 8% | 7% | |"
+        },
+        {
+          "doc_id": "AAPL_10-Q_2026-03-28.md",
+          "row": "| Percentage of total net sales | 7% | 7% | | 6% | 6% | |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::COST_10-K_2024-09-01.md::t26r6c1",
+    "query": "What were the total future minimum payments for operating leases at Costco Wholesale Corp as of September 1, 2024?",
+    "expected_doc_ids": [
+      "COST_10-K_2024-09-01.md"
+    ],
+    "expected_spans": [
+      "| Total(2) | 3,312 | 2,347 |"
+    ],
+    "expected_answer": "$3,312 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Operating Leases(1) | Finance Leases |"
+      ],
+      "section": "NOTES TO CONSOLIDATED FINANCIAL STATEMENTS > Note 5--Leases",
+      "lead_in": "As of September 1, 2024, future minimum payments during the next five fiscal years and thereafter are as follows:",
+      "column_path": "Operating Leases(1)",
+      "value": "3,312",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::COST_10-K_2025-08-31.md::t17r1c1",
+    "query": "What was the fair value of Costco Wholesale Corp's forward foreign-exchange contracts in asset position classified as Level 2 for the fiscal year ended August 31, 2025?",
+    "expected_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "expected_spans": [
+      "| Forward foreign-exchange contracts, in asset position(1) | 6 | 1 |"
+    ],
+    "expected_answer": "$6 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Level 2 | |",
+        "| | 2025 | 2024 |"
+      ],
+      "section": "NOTES TO CONSOLIDATED FINANCIAL STATEMENTS > Assets and Liabilities Measured at Fair Value on a Recurring Basis",
+      "lead_in": "The following table presents information regarding the Company's financial assets and liabilities that are measured at fair value on a recurring basis and indicates the level within the hierarchy reflecting the valuation techniques utilized to determine such fair value:",
+      "column_path": "Level 2 > 2025",
+      "value": "6",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::COST_10-K_2025-08-31.md::t23r3c2",
+    "query": "What were the operating lease assets obtained in exchange for new or modified leases, in millions of dollars, for Costco Wholesale Corp for fiscal 2024?",
+    "expected_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "expected_spans": [
+      "| Operating lease assets obtained in exchange for new or modified leases | 294 | 125 | 202 |"
+    ],
+    "expected_answer": "The operating lease assets obtained in exchange for new or modified leases were $125 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2025 | 2024 | 2023 |",
+        "| Cash paid for amounts included in the measurement of lease liabilities: | | | |"
+      ],
+      "section": "NOTES TO CONSOLIDATED FINANCIAL STATEMENTS > Note 5--Leases",
+      "lead_in": "Supplemental cash flow information related to leases were as follows:",
+      "column_path": "2024",
+      "value": "125",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "COST_10-K_2024-09-01.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "COST_10-K_2024-09-01.md",
+          "row": "| Operating lease assets obtained in exchange for new or modified leases | 125 | 202 | 231 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Operating lease assets obtained in exchange for new or modified leases | 125 | 202 | 231 |' and doc COST_10-K_2024-09-01.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::COST_10-K_2025-08-31.md::t2r0c2",
+    "query": "What were Costco Wholesale Corp's SG&A expenses for fiscal 2024?",
+    "expected_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "expected_spans": [
+      "| SG&A expenses | $24,966 | $22,810 | $21,590 |"
+    ],
+    "expected_answer": "$22,810",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2025 | 2024 | 2023 |"
+      ],
+      "section": "RESULTS OF OPERATIONS > Selling, General and Administrative Expenses",
+      "lead_in": "",
+      "column_path": "2024",
+      "value": "$22,810",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "COST_10-K_2024-09-01.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "COST_10-K_2024-09-01.md",
+          "row": "| SG&A expenses | $22,810 | $21,590 | $19,779 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| SG&A expenses | $22,810 | $21,590 | $19,779 |' and doc COST_10-K_2024-09-01.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::COST_10-K_2025-08-31.md::t32r5c2",
+    "query": "What was the amount, in millions, for the lapse of statute of limitations affecting gross unrecognized tax benefits for Costco Wholesale Corp in fiscal 2024?",
+    "expected_doc_ids": [
+      "COST_10-K_2025-08-31.md"
+    ],
+    "expected_spans": [
+      "| Lapse of statute of limitations | -- | (2) |"
+    ],
+    "expected_answer": "(2) million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2025 | 2024 |"
+      ],
+      "section": "NOTES TO CONSOLIDATED FINANCIAL STATEMENTS > Income Taxes",
+      "lead_in": "A reconciliation of the beginning and ending amount of gross unrecognized tax benefits for 2025 and 2024 is as follows:",
+      "column_path": "2024",
+      "value": "(2)",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "COST_10-K_2024-09-01.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "COST_10-K_2024-09-01.md",
+          "row": "| Lapse of statute of limitations | (2) | (1) |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Lapse of statute of limitations | (2) | (1) |' and doc COST_10-K_2024-09-01.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::COST_10-Q_2025-11-23.md::t3r0c1",
+    "query": "What were Costco Wholesale Corp's selling, general and administrative expenses for the 12 weeks ended November 23, 2025?",
+    "expected_doc_ids": [
+      "COST_10-Q_2025-11-23.md"
+    ],
+    "expected_spans": [
+      "| SG&A expenses | $6,334 | $5,846 |"
+    ],
+    "expected_answer": "$6,334 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 12 Weeks Ended | |",
+        "| | November 23, 2025 | November 24, 2024 |"
+      ],
+      "section": "RESULTS OF OPERATIONS > Selling, General and Administrative Expenses",
+      "lead_in": "",
+      "column_path": "12 Weeks Ended > November 23, 2025",
+      "value": "$6,334",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::COST_10-Q_2025-11-23.md::t6r1c2",
+    "query": "What was the net cash used in investing activities by Costco Wholesale Corp for the 12 weeks ended November 24, 2024?",
+    "expected_doc_ids": [
+      "COST_10-Q_2025-11-23.md"
+    ],
+    "expected_spans": [
+      "| Net cash used in investing activities | (1,398) | (985) |"
+    ],
+    "expected_answer": "$985 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 12 Weeks Ended | |",
+        "| | November 23, 2025 | November 24, 2024 |"
+      ],
+      "section": "LIQUIDITY AND CAPITAL RESOURCES",
+      "lead_in": "The following table summarizes our significant sources and uses of cash and cash equivalents:",
+      "column_path": "12 Weeks Ended > November 24, 2024",
+      "value": "(985)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::CVX_10-K_2024-12-31.md::t3r25c1",
+    "query": "What was Chevron Corp's net oil-equivalent production in the United Kingdom, measured in thousands of barrels per day, for the fiscal year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| United Kingdom | 12 | 14 | 11 | 12 | -- | -- | 7 | 11 |"
+    ],
+    "expected_answer": "12 thousand barrels per day",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | | | Components of Oil-Equivalent | | | | | |",
+        "| | Oil-Equivalent | | Crude Oil | | Natural Gas Liquids | | Natural Gas | |",
+        "| Thousands of barrels per day (MBD) | (MBD)1 | | (MBD)2 | | (MBD) | | (MMCFD) | |",
+        "| Millions of cubic feet per day (MMCFD) | 2024 | 2023 | 2024 | 2023 | 2024 | 2023 | 2024 | 2023 |"
+      ],
+      "section": "Net Production of Crude Oil, Natural Gas Liquids and Natural Gas",
+      "lead_in": "The following table summarizes the net production of crude oil, NGLs and natural gas for 2024 and 2023 by the company and its affiliates. Worldwide oil-equivalent production of 3.3 million barrels per day in 2024 was up approximately seven percent from 2023, mainly due to the full-year of legacy PDC Energy, Inc. (PDC) production and growth in the Permian Basin. Refer to the Results of Operations section for a detailed discussion of the factors explaining the changes in production for liquids (including crude oil, condensate, NGLs and synthetic oil) and natural gas, and refer to Table V for inf",
+      "column_path": "Oil-Equivalent > (MBD)1 > 2024",
+      "value": "12",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "CVX_10-K_2025-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "CVX_10-K_2025-12-31.md",
+          "row": "| United Kingdom | 12 | 12 | 11 | 11 | | -- | 7 | 7 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| United Kingdom | 12 | 12 | 11 | 11 | | -- | 7 | 7 |' and doc CVX_10-K_2025-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::CVX_10-K_2024-12-31.md::t7r16c2",
+    "query": "What was Chevron Corp's share of affiliates' sales included in total worldwide refined products sales volumes, in thousands of barrels per day, for the year ended December 31, 2023?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| 3 Includes share of affiliates' sales: | 386 | 389 | 389 |"
+    ],
+    "expected_answer": "389 thousand barrels per day",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Refined Products Sales Volumes | | | |",
+        "| Thousands of barrels per day | 2024 | 2023 | 2022 |",
+        "| United States | | | |"
+      ],
+      "section": "Marketing Operations",
+      "lead_in": "The company markets petroleum products under the principal brands of \"Chevron,\" \"Texaco\" and \"Caltex\" throughout many parts of the world. The following table identifies the company's and its affiliates' refined products sales volumes, excluding intercompany sales, for the three years ended December 31, 2024.",
+      "column_path": "2023",
+      "value": "389",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "CVX_10-K_2025-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "CVX_10-K_2025-12-31.md",
+          "row": "| 3 Includes share of affiliates' sales: | 384 | 386 | 389 |"
+        }
+      ],
+      "suggestion": "add alternative(s) \"| 3 Includes share of affiliates' sales: | 384 | 386 | 389 |\" and doc CVX_10-K_2025-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::CVX_10-K_2024-12-31.md::t8r0c2",
+    "query": "What was the average price paid per share by Chevron Corp for shares purchased during the period from October 1 to October 31, 2024?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| October 1 - October 31, 2024 | 9,521,027 | $150.02 | 9,520,248 | $51.7 |"
+    ],
+    "expected_answer": "$150.02",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Total Number | Average | Total Number of Shares | Approximate Dollar Values of Shares that |",
+        "| | of Shares | Price Paid | Purchased as Part of Publicly | May Yet be Purchased Under the Program |",
+        "| Period | Purchased 1, 2 | per Share | Announced Program | (Billions of dollars)2 |"
+      ],
+      "section": "PART II > Chevron Corporation Issuer Purchases of Equity Securities for Quarter Ended December 31, 2024",
+      "lead_in": "",
+      "column_path": "Average > Price Paid > per Share",
+      "value": "$150.02",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::CVX_10-K_2025-12-31.md::t1r9c4",
+    "query": "How many net multiple completion productive gas wells were included in Chevron Corp's totals at December 31, 2025?",
+    "expected_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| Multiple completion wells included above | 703 | 395 | 147 | 115 |"
+    ],
+    "expected_answer": "115",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | At December 31, 2025 | | | |",
+        "| | Productive Oil Wells1 | | Productive Gas Wells1 | |",
+        "| | Gross | Net | Gross | Net |"
+      ],
+      "section": "Gross and Net Productive Wells",
+      "lead_in": "The following table summarizes gross and net productive wells at year-end 2025 for the company and its affiliates:",
+      "column_path": "At December 31, 2025 > Productive Gas Wells1 > Net",
+      "value": "115",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "CVX_10-K_2024-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "CVX_10-K_2024-12-31.md",
+          "row": "| Multiple completion wells included above | 659 | 355 | 147 | 115 |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::CVX_10-K_2025-12-31.md::t2r5c4",
+    "query": "What was Chevron Corp's net developed acreage in Europe, in thousands of acres, at December 31, 2025?",
+    "expected_doc_ids": [
+      "CVX_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| Europe | 106 | 21 | 12 | 2 | 118 | 23 |"
+    ],
+    "expected_answer": "2 thousand acres",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Undeveloped2 | | Developed | | Developed and Undeveloped | |",
+        "| Thousands of acres1 | Gross | Net | Gross | Net | Gross | Net |"
+      ],
+      "section": "Acreage",
+      "lead_in": "At December 31, 2025, the company owned or had under lease or similar agreements undeveloped and developed crude oil and natural gas properties throughout the world. The geographical distribution of the company's acreage is shown in the following table:",
+      "column_path": "Developed > Net",
+      "value": "2",
+      "row_also_in": [
+        "CVX_10-K_2024-12-31.md"
+      ],
+      "restatement_candidates": [
+        "CVX_10-K_2024-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "CVX_10-K_2024-12-31.md",
+          "row": "| Europe | 106 | 21 | 12 | 2 | 118 | 23 |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::CVX_10-Q_2025-09-30.md::t5r0c5",
+    "query": "What were Chevron Corp's All Other Earnings/(Charges) for the nine months ended September 30, 2024?",
+    "expected_doc_ids": [
+      "CVX_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "| Earnings/(Charges)* | $MM | $(900) | $(697) | $(2,457) | $(1,851) |"
+    ],
+    "expected_answer": "$(1,851) million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | | Three Months Ended September 30 | | Nine Months Ended September 30 | |",
+        "| | Unit | 2025 | 2024 | 2025 | 2024 |",
+        "| All Other | | | | | |"
+      ],
+      "section": "All Other",
+      "lead_in": "",
+      "column_path": "Nine Months Ended September 30 > 2024",
+      "value": "$(1,851)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::DAL_10-K_2024-12-31.md::t15r1c1",
+    "query": "What was Delta Air Lines, Inc.'s net cash used in investing activities, in millions of dollars, for the year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| Net cash used in investing activities | (3,739) |"
+    ],
+    "expected_answer": "Net cash used in investing activities was $3,739 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Free cash flow reconciliation | |",
+        "| | Year Ended December 31, |",
+        "| (in millions) | 2024 |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Free Cash Flow",
+      "lead_in": "•Net cash flows related to certain airport construction projects and other. Cash flows related to certain airport construction projects are included in our GAAP operating activities and capital expenditures. We have adjusted for these items, which were primarily funded by cash restricted for airport construction, to provide investors a better understanding of the company's free cash flow that is core to our operations.",
+      "column_path": "Year Ended December 31, > 2024",
+      "value": "(3,739)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::DAL_10-K_2024-12-31.md::t2r2c5",
+    "query": "What was the percentage change in Ancillary businesses other revenue for Delta Air Lines, Inc. between the year ended December 31, 2023 and the year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| Ancillary businesses | 772 | 840 | | (68) | (8)% |"
+    ],
+    "expected_answer": "(8)%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Year Ended December 31, | | Increase (Decrease) | % Increase (Decrease) | |",
+        "| (in millions) | 2024 | 2023 | | | |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Other Revenue",
+      "lead_in": "",
+      "column_path": "% Increase (Decrease)",
+      "value": "(8)%",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::DAL_10-K_2024-12-31.md::t7r10c1",
+    "query": "What was Delta Air Lines, Inc.'s average price per fuel gallon for the year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| Average price per fuel gallon(3) | $2.57 | | $2.82 | |"
+    ],
+    "expected_answer": "$2.57",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Year Ended December 31, | | | |",
+        "| Consolidated (1) | 2024 | | 2023 | |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Operating Expense > Operating Statistics",
+      "lead_in": "",
+      "column_path": "Year Ended December 31, > 2024",
+      "value": "$2.57",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "DAL_10-K_2025-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "DAL_10-K_2025-12-31.md",
+          "row": "| Average price per fuel gallon(3) | $2.30 | | $2.57 | |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Average price per fuel gallon(3) | $2.30 | | $2.57 | |' and doc DAL_10-K_2025-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::DAL_10-K_2025-12-31.md::t10r3c2",
+    "query": "What was Delta Air Lines, Inc.'s total revenue, adjusted (in millions) for the year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| Total revenue, adjusted | $58,287 | $57,001 |"
+    ],
+    "expected_answer": "$57,001 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Total revenue, adjusted reconciliation | | |",
+        "| | Year Ended December 31, | |",
+        "| (in millions) | 2025 | 2024 |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Recent Accounting Standards > Supplemental Information",
+      "lead_in": "",
+      "column_path": "Year Ended December 31, > 2024",
+      "value": "$57,001",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "DAL_10-K_2024-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "DAL_10-K_2024-12-31.md",
+          "row": "| Total revenue, adjusted | $57,001 | $54,669 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Total revenue, adjusted | $57,001 | $54,669 |' and doc DAL_10-K_2024-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::DAL_10-K_2025-12-31.md::t7r5c3",
+    "query": "What was Delta Air Lines, Inc.'s adjusted total revenue per available seat mile (TRASM, adjusted) for the year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "DAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| TRASM, adjusted(2) | 19.56 | ¢ | 19.76 | ¢ |"
+    ],
+    "expected_answer": "19.76 cents",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Year Ended December 31, | | | |",
+        "| Consolidated (1) | 2025 | | 2024 | |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Operating Expense > Operating Statistics",
+      "lead_in": "",
+      "column_path": "Year Ended December 31, > 2024",
+      "value": "19.76",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "DAL_10-K_2024-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "DAL_10-K_2024-12-31.md",
+          "row": "| TRASM, adjusted(2) | 19.76 | ¢ | 20.10 | ¢ |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| TRASM, adjusted(2) | 19.76 | ¢ | 20.10 | ¢ |' and doc DAL_10-K_2024-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::DAL_10-Q_2026-03-31.md::t1r3c7",
+    "query": "What was the change in load factor, in points, for Delta Air Lines, Inc.'s Pacific region passenger revenue during the three months ended March 31, 2026, compared to the same period in 2025?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| Pacific | 740 | 10% | 5% | 3% | 4% | 6% | 1 | pt |"
+    ],
+    "expected_answer": "The load factor increased by 1 point.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | | Increase (Decrease) vs. Three Months Ended March 31, 2025 | | | | | | |",
+        "| (in millions) | Three Months Ended March 31, 2026 | Passenger Revenue | RPMs (Traffic) | ASMs (Capacity) | Passenger Mile Yield | PRASM | Load Factor | |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Passenger Revenue by Geographic Region",
+      "lead_in": "",
+      "column_path": "Increase (Decrease) vs. Three Months Ended March 31, 2025 > Load Factor",
+      "value": "1",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "DAL_10-Q_2026-06-30.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "DAL_10-Q_2026-06-30.md",
+          "row": "| Pacific | 1,571 | 13% | 6% | 6% | 6% | 7% | 1 | pt |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::DAL_10-Q_2026-03-31.md::t8r0c2",
+    "query": "How many CRJ-900 aircraft did Endeavor Air, Inc. operate on behalf of Delta Air Lines, Inc. at March 31, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| Endeavor Air, Inc.(2) | 19 | 126 | -- | -- | 145 |"
+    ],
+    "expected_answer": "Endeavor Air, Inc. operated 126 CRJ-900 aircraft on behalf of Delta Air Lines, Inc. at March 31, 2026.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Regional aircraft information by fleet type and carrier | | | | | |",
+        "| | Fleet Type(1) | | | | |",
+        "| Carrier | CRJ-700 | CRJ-900 | Embraer 170 | Embraer 175 | Total |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Income Taxes > Fleet Information",
+      "lead_in": "The following table summarizes the aircraft operated by regional carriers on our behalf at March 31, 2026.",
+      "column_path": "Fleet Type(1) > CRJ-900",
+      "value": "126",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::DAL_10-Q_2026-06-30.md::t1r2c4",
+    "query": "What was the percentage change in Available Seat Miles (ASMs) for Delta Air Lines' Latin America passenger revenue segment for the three months ended June 30, 2026, compared to the same period in 2025?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Latin America | 990 | 4% | (8)% | (7)% | 13% | 12% | (1) | pt |"
+    ],
+    "expected_answer": "(7)%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | | Increase (Decrease) vs. Three Months Ended June 30, 2025 | | | | | | |",
+        "| (in millions) | Three Months Ended June 30, 2026 | Passenger Revenue | RPMs (Traffic) | ASMs (Capacity) | Passenger Mile Yield | PRASM | Load Factor | |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Passenger Revenue by Geographic Region",
+      "lead_in": "",
+      "column_path": "Increase (Decrease) vs. Three Months Ended June 30, 2025 > ASMs (Capacity)",
+      "value": "(7)%",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::JNJ_10-K_2025-12-28.md::t0r3c2",
+    "query": "What was the total percentage increase in worldwide sales for Johnson & Johnson in fiscal 2024?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2025-12-28.md"
+    ],
+    "expected_spans": [
+      "| Total | 6.0% | 4.3% |"
+    ],
+    "expected_answer": "The total percentage increase in worldwide sales for Johnson & Johnson in fiscal 2024 was 4.3%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Sales increase/(decrease) due to: | 2025 | 2024 |"
+      ],
+      "section": "",
+      "lead_in": "In 2025, worldwide sales increased 6.0% to $94.2 billion as compared to an increase of 4.3% in 2024. These sales changes consisted of the following:",
+      "column_path": "2024",
+      "value": "4.3%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "JNJ_10-K_2024-12-29.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "JNJ_10-K_2024-12-29.md",
+          "row": "| Total | 4.3% | 6.5% |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Total | 4.3% | 6.5% |' and doc JNJ_10-K_2024-12-29.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::JNJ_10-K_2025-12-28.md::t4r5c1",
+    "query": "What was Johnson & Johnson's 'Other' component of Other (income) expense, net in billions of dollars for fiscal year 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2025-12-28.md"
+    ],
+    "expected_spans": [
+      "| Other | (0.5) | (0.7) | 0.2 |"
+    ],
+    "expected_answer": "The figure is $(0.5) billion.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (Dollars in Billions)(Income)/Expense | 2025 | 2024 | Change |"
+      ],
+      "section": "Analysis of sales by business segments > Analysis of consolidated earnings before provision for taxes on income > Selling, marketing & administrative",
+      "lead_in": "Other (income) expense, net for the fiscal year 2025 reflected an increase in income of $11.9 billion as compared to the prior year primarily due to the following:",
+      "column_path": "2025",
+      "value": "(0.5)",
+      "row_also_in": [
+        "JNJ_10-Q_2025-09-28.md"
+      ],
+      "restatement_candidates": [
+        "JNJ_10-Q_2025-09-28.md",
+        "JNJ_10-Q_2026-06-28.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "JNJ_10-Q_2025-09-28.md",
+          "row": "| Other | (0.5) | (0.7) | 0.2 |"
+        },
+        {
+          "doc_id": "JNJ_10-Q_2026-06-28.md",
+          "row": "| Other | (0.1) | (0.5) | 0.4 |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::JNJ_10-K_2025-12-28.md::t5r2c4",
+    "query": "What was Johnson & Johnson's total segment sales in millions of dollars for fiscal year 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-K_2025-12-28.md"
+    ],
+    "expected_spans": [
+      "| Segment earnings before tax(1) | | 26,379 | 22,659 | 94,193 | 88,821 | 28.0 | 25.5 |"
+    ],
+    "expected_answer": "94,193 million dollars",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Income Before Tax | | | Segment Sales | | Percent of Segment Sales | |",
+        "| (Dollars in Millions) | | 2025 | 2024 | 2025 | 2024 | 2025 | 2024 |"
+      ],
+      "section": "Analysis of sales by business segments > Income before tax by segment",
+      "lead_in": "Income before tax by segment of business was as follows:",
+      "column_path": "Segment Sales > 2025",
+      "value": "94,193",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::JNJ_10-Q_2025-09-28.md::t2r2c4",
+    "query": "What was the operations change percentage for Johnson & Johnson's General MedTech franchise sales during the fiscal nine months ended September 28, 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "| General | 4,092 | 4,001 | 2.3 | 2.3 | 0.0 |"
+    ],
+    "expected_answer": "The operations change was 2.3%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (Dollars in Millions) | September 28, 2025 | September 29, 2024 | Total Change | Operations Change | Currency Change |"
+      ],
+      "section": "Management's discussion and analysis of financial condition and results of operations > Major MedTech franchise sales -- Fiscal Nine Months Ended",
+      "lead_in": "",
+      "column_path": "Operations Change",
+      "value": "2.3",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::JNJ_10-Q_2025-09-28.md::t9r0c1",
+    "query": "What was Johnson & Johnson's total U.S. income taxes paid net of tax refunds for the three months ended September 28, 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "| Total U.S. (1) | $3,740 | 4,156 |"
+    ],
+    "expected_answer": "$3,740 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (Dollars in Millions) | September 28, 2025 | December 29, 2024 |"
+      ],
+      "section": "Management's discussion and analysis of financial condition and results of operations > Cash flows",
+      "lead_in": "The following table summarizes income taxes paid net of tax refunds:",
+      "column_path": "September 28, 2025",
+      "value": "$3,740",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "edit query: 'for the three months ended September 28, 2025' -> 'for the fiscal nine months ended September 28, 2025', then accept",
+      "suggestion_reason": "the table compares year to date (September 28, 2025) with fiscal 2024 (December 29, 2024), not a quarter"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::JNJ_10-Q_2026-06-28.md::t4r1c1",
+    "query": "What was Johnson & Johnson's MedTech research and development expense in dollars for the fiscal second quarter ended June 28, 2026?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "| MedTech | 778 | 8.7 | 647 | 7.6 | 1,492 | 8.5 | 1,324 | 8.0 |"
+    ],
+    "expected_answer": "The MedTech research and development expense was $778 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Fiscal Second Quarter Ended | | | Fiscal Six Months Ended | | | | |",
+        "| | 2026 | | 2025 | 2026 | | 2025 | | |",
+        "| (Dollars in Millions) | Amount | % of Sales* | Amount | % of Sales* | Amount | % of Sales* | Amount | % of Sales* |"
+      ],
+      "section": "Management's discussion and analysis of financial condition and results of operations > Research and development expense",
+      "lead_in": "Research and development expense by segment of business was as follows:",
+      "column_path": "Fiscal Second Quarter Ended > 2026 > Amount",
+      "value": "778",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::JNJ_10-Q_2026-06-28.md::t8r0c2",
+    "query": "What was Johnson & Johnson's Innovative Medicine segment income before tax for the fiscal second quarter ended June 29, 2025?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "| Innovative Medicine | $6,249 | $5,552 | $16,384 | $15,202 | 38.1% | 36.5% |"
+    ],
+    "expected_answer": "$5,552 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Income Before Tax | | Segment Sales | | Percent of Segment Sales | |",
+        "| (Dollars in Millions) | June 28, 2026 | June 29, 2025 | June 28, 2026 | June 29, 2025 | June 28, 2026 | June 29, 2025 |"
+      ],
+      "section": "Management's discussion and analysis of financial condition and results of operations > MedTech segment",
+      "lead_in": "Income before tax by segment of business for the fiscal second quarters were as follows:",
+      "column_path": "Income Before Tax > June 29, 2025",
+      "value": "$5,552",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::LUV_10-Q_2025-09-30.md::t12r2c2",
+    "query": "What was Southwest Airlines Co's mark-to-market impact on deferred compensation plan investment for the nine months ended September 30, 2024?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "| Mark-to-market impact on deferred compensation plan investment | (34) | (40) |"
+    ],
+    "expected_answer": "The mark-to-market impact on deferred compensation plan investment was $(40) million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Nine months ended September 30, | |",
+        "| (in millions) | 2025 | 2024 |"
+      ],
+      "section": "Non-Operating Expenses (Income)",
+      "lead_in": "The following table displays the components of Other (gains) losses, net, for the nine months ended September 30, 2025 and 2024:",
+      "column_path": "Nine months ended September 30, > 2024",
+      "value": "(40)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::LUV_10-Q_2026-03-31.md::t0r2c3",
+    "query": "What was the percentage change in Southwest Airlines Co's revenue passenger miles (RPMs) for the three months ended March 31, 2026 compared to the same period in 2025?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| Revenue passenger miles (RPMs) (in millions)(a) | 31,151 | 30,629 | 1.7% | |"
+    ],
+    "expected_answer": "The percentage change was 1.7%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three months ended March 31, | | | |",
+        "| | 2026 | 2025 | Change | |"
+      ],
+      "section": "",
+      "lead_in": "Relevant comparative operating statistics for the three months ended March 31, 2026 and 2025 are included below. The Company provides these operating statistics because they are commonly used in the airline industry and, as such, allow readers to compare the Company's performance against its results for the prior year period, as well as against the performance of the Company's peers.",
+      "column_path": "Three months ended March 31, > Change",
+      "value": "1.7%",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::LUV_10-Q_2026-03-31.md::t4r1c1",
+    "query": "What was Southwest Airlines Co's fuel hedging premium expense in millions of dollars for the three months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| Fuel hedging premium expense (in millions) | $29 | (a) | $37 |"
+    ],
+    "expected_answer": "$29 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three months ended March 31, | | |",
+        "| | 2026 | | 2025 |"
+      ],
+      "section": "Operating Expenses",
+      "lead_in": "Aircraft fuel and related taxes expense for first quarter 2026 increased by $107 million, or 8.6 percent, compared with first quarter 2025. On a per ASM basis, first quarter 2026 Aircraft fuel and related taxes expense increased 7.3 percent. On a dollar and per ASM basis, the increase was primarily attributable to increased jet fuel prices, mainly due to increases during the month of March, particularly due to recent market disruptions and geopolitical events. The following table provides more information on the Company's economic fuel costs per gallon, including the impact of fuel hedging net",
+      "column_path": "Three months ended March 31, > 2026",
+      "value": "$29",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "LUV_10-Q_2026-06-30.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "LUV_10-Q_2026-06-30.md",
+          "row": "| Fuel hedging premium expense (in millions) | $29 | (a) | $36 | (a) |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::LUV_10-Q_2026-03-31.md::t6r2c3",
+    "query": "What was Southwest Airlines Co's aircraft fuel and related taxes, as reported (and economic), in millions of dollars for the three months ended March 31, 2025?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| | Aircraft fuel and related taxes, as reported (and economic) | $1,356 | $1,249 | 8.6 |"
+    ],
+    "expected_answer": "$1,249 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | | Three months ended March 31, | | Percent |",
+        "| | | 2026 | 2025 | Change |"
+      ],
+      "section": "Reconciliation of Reported Amounts to Non-GAAP Financial Measures (excluding special items) (unaudited)",
+      "lead_in": "(in millions, except per share amounts and per ASM amounts)",
+      "column_path": "Three months ended March 31, > 2025",
+      "value": "$1,249",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::LUV_10-Q_2026-06-30.md::t0r18c2",
+    "query": "What was Southwest Airlines Co's operating expenses per available seat mile (ASM), excluding fuel and special items, in cents, for the three months ended June 30, 2025?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Operating expenses per ASM, excluding fuel and special items (cents) | 12.56 | 12.07 | 4.1% | |"
+    ],
+    "expected_answer": "12.07 cents",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three months ended June 30, | | | |",
+        "| | 2026 | 2025 | Change | |"
+      ],
+      "section": "",
+      "lead_in": "Relevant comparative operating statistics for the three and six months ended June 30, 2026 and 2025 are included below. The Company provides these operating statistics because they are commonly used in the airline industry and, as such, allow readers to compare the Company's performance against its results for the prior year period, as well as against the performance of the Company's peers.",
+      "column_path": "Three months ended June 30, > 2025",
+      "value": "12.07",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::LUV_10-Q_2026-06-30.md::t4r9c3",
+    "query": "What was the dollar change in other operating expenses for Southwest Airlines Co. between the three months ended June 30, 2025 and the three months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Other operating expenses | 1,101 | 1,133 | (32) | (2.8) |"
+    ],
+    "expected_answer": "The dollar change in other operating expenses was a decrease of $32 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three months ended June 30, | | Increase (Decrease) | Percent change |",
+        "| (in millions) | 2026 | 2025 | | |"
+      ],
+      "section": "Comparison of the three months ended June 30, 2026 and 2025",
+      "lead_in": "",
+      "column_path": "Increase (Decrease)",
+      "value": "(32)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MRK_10-K_2024-12-31.md::t2r1c2",
+    "query": "What was the percentage change in Alliance Revenue for Lynparza within Merck & Co., Inc.'s Oncology segment for fiscal 2024 compared to fiscal 2023?",
+    "expected_doc_ids": [
+      "MRK_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| Alliance Revenue - Lynparza (1) | 1,311 | 9% | 11% | 1,199 | 7% | 9% | 1,116 |"
+    ],
+    "expected_answer": "The percentage change in Alliance Revenue for Lynparza was 9%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| ($ in millions) | 2024 | % Change | % Change Excluding Foreign Exchange | 2023 | % Change | % Change Excluding Foreign Exchange | 2022 |"
+      ],
+      "section": "Pharmaceutical Segment > Oncology",
+      "lead_in": "",
+      "column_path": "% Change",
+      "value": "9%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "MRK_10-K_2025-12-31.md",
+        "MRK_10-Q_2026-03-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "MRK_10-K_2025-12-31.md",
+          "row": "| Alliance Revenue - Lynparza (1) | 1,450 | 11% | 10% | 1,311 | 9% | 11% | 1,199 |"
+        },
+        {
+          "doc_id": "MRK_10-Q_2026-03-31.md",
+          "row": "| Alliance Revenue - Lynparza (1) | 341 | 312 | 9% | 6% |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Alliance Revenue - Lynparza (1) | 1,450 | 11% | 10% | 1,311 | 9% | 11% | 1,199 |' and doc MRK_10-K_2025-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MRK_10-K_2024-12-31.md::t5r2c2",
+    "query": "What was the percentage change in Adempas revenue for Merck & Co., Inc. in fiscal 2024 compared to fiscal 2023?",
+    "expected_doc_ids": [
+      "MRK_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| Adempas | 287 | 12% | 14% | 255 | 7% | 8% | 238 |"
+    ],
+    "expected_answer": "The percentage change in Adempas revenue for fiscal 2024 was 12%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| ($ in millions) | 2024 | % Change | % Change Excluding Foreign Exchange | 2023 | % Change | % Change Excluding Foreign Exchange | 2022 |"
+      ],
+      "section": "Pharmaceutical Segment > Cardiovascular",
+      "lead_in": "",
+      "column_path": "% Change",
+      "value": "12%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "MRK_10-K_2025-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "MRK_10-K_2025-12-31.md",
+          "row": "| Adempas | 312 | 9% | 6% | 287 | 12% | 14% | 255 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Adempas | 312 | 9% | 6% | 287 | 12% | 14% | 255 |' and doc MRK_10-K_2025-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MRK_10-K_2025-12-31.md::t10r8c2",
+    "query": "What was Merck & Co., Inc.'s taxes on income as reported under GAAP for fiscal 2024?",
+    "expected_doc_ids": [
+      "MRK_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| Taxes on income as reported under GAAP | 2,804 | 2,803 | 1,512 |"
+    ],
+    "expected_answer": "$2,803 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| ($ in millions except per share amounts) | 2025 | 2024 | 2023 |"
+      ],
+      "section": "Non-GAAP Income and Non-GAAP EPS",
+      "lead_in": "A reconciliation between GAAP financial measures and non-GAAP financial measures is as follows:",
+      "column_path": "2024",
+      "value": "2,803",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "MRK_10-K_2024-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "MRK_10-K_2024-12-31.md",
+          "row": "| Taxes on income as reported under GAAP | 2,803 | 1,512 | 1,918 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Taxes on income as reported under GAAP | 2,803 | 1,512 | 1,918 |' and doc MRK_10-K_2024-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MRK_10-K_2025-12-31.md::t8r0c3",
+    "query": "What was Merck & Co., Inc.'s cost of sales in millions of dollars for fiscal 2024?",
+    "expected_doc_ids": [
+      "MRK_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| Cost of sales | $16,382 | 8% | $15,193 | (6)% | $16,126 |"
+    ],
+    "expected_answer": "$15,193 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| ($ in millions) | 2025 | % Change | 2024 | % Change | 2023 |"
+      ],
+      "section": "Costs, Expenses and Other",
+      "lead_in": "",
+      "column_path": "2024",
+      "value": "$15,193",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "MRK_10-K_2024-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "MRK_10-K_2024-12-31.md",
+          "row": "| Cost of sales | $15,193 | (6)% | $16,126 | (7)% | $17,411 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Cost of sales | $15,193 | (6)% | $16,126 | (7)% | $17,411 |' and doc MRK_10-K_2024-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MRK_10-Q_2026-03-31.md::t1r2c1",
+    "query": "What was Merck & Co., Inc.'s revenue from Welireg in the three months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| Welireg | 199 | 137 | 45% | 43% |"
+    ],
+    "expected_answer": "$199 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended March 31, | | | % Change Excluding Foreign Exchange |",
+        "| ($ in millions) | 2026 | 2025 | % Change | |"
+      ],
+      "section": "Operating Results > Pharmaceutical Segment > Oncology",
+      "lead_in": "",
+      "column_path": "Three Months Ended March 31, > 2026",
+      "value": "199",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MRK_10-Q_2026-03-31.md::t7r2c2",
+    "query": "What was Merck & Co., Inc.'s non-segment activity in millions of dollars for the three months ended March 31, 2025?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| Non-segment activity | (15,775) | (5,443) |"
+    ],
+    "expected_answer": "-5,443 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Segment Profits | | |",
+        "| | Three Months Ended March 31, | |",
+        "| ($ in millions) | 2026 | 2025 |"
+      ],
+      "section": "Operating Results > Costs, Expenses and Other > Other (Income) Expense, Net",
+      "lead_in": "For details on the components of Other (income) expense, net see Note 11 to the condensed consolidated financial statements.",
+      "column_path": "Three Months Ended March 31, > 2025",
+      "value": "(5,443)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MRK_10-Q_2026-06-30.md::t1r3c2",
+    "query": "What was Merck & Co., Inc.'s Alliance Revenue - Reblozyl (in millions of dollars) for the three months ended June 30, 2025?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Alliance Revenue - Reblozyl (2) | 122 | 107 | 15% | 15% | | 270 | | 226 | | 20% | 20% |"
+    ],
+    "expected_answer": "107 million dollars",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended June 30, | | | % Change Excluding Foreign Exchange | | Six Months Ended June 30, | | | | | % Change Excluding Foreign Exchange |",
+        "| ($ in millions) | 2026 | 2025 | % Change | | 2026 | | 2025 | | % Change | | |"
+      ],
+      "section": "Operating Results > Pharmaceutical Segment > Oncology",
+      "lead_in": "",
+      "column_path": "Three Months Ended June 30, > 2025",
+      "value": "107",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MRK_10-Q_2026-06-30.md::t2r3c1",
+    "query": "What were the sales in millions of dollars for Merck & Co., Inc.'s Varivax vaccine during the three months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Varivax | 260 | 240 | 8% | 8% | | 495 | | 489 | | 1% | --% |"
+    ],
+    "expected_answer": "The sales for Varivax were $260 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended June 30, | | | % Change Excluding Foreign Exchange | | Six Months Ended June 30, | | | | | % Change Excluding Foreign Exchange |",
+        "| ($ in millions) | 2026 | 2025 | % Change | | 2026 | | 2025 | | % Change | | |"
+      ],
+      "section": "Operating Results > Pharmaceutical Segment > Vaccines",
+      "lead_in": "",
+      "column_path": "Three Months Ended June 30, > 2026",
+      "value": "260",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MSFT_10-K_2025-06-30.md::t0r3c2",
+    "query": "What was Microsoft Corp's net income in millions of dollars for fiscal 2024?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md"
+    ],
+    "expected_spans": [
+      "| Net income | 101,832 | 88,136 | 16% |"
+    ],
+    "expected_answer": "88,136 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (In millions, except percentages and per share amounts) | 2025 | 2024 | Percentage Change |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > SUMMARY RESULTS OF OPERATIONS",
+      "lead_in": "",
+      "column_path": "2024",
+      "value": "88,136",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "MSFT_10-K_2026-06-30.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "MSFT_10-K_2026-06-30.md",
+          "row": "| Net income | $133,749 | $101,832 | $88,136 | 31% | 16% |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Net income | $133,749 | $101,832 | $88,136 | 31% | 16% |' and doc MSFT_10-K_2026-06-30.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MSFT_10-K_2025-06-30.md::t3r0c2",
+    "query": "What was Microsoft Corp's sales and marketing expense in millions of dollars for fiscal 2024?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2025-06-30.md"
+    ],
+    "expected_spans": [
+      "| Sales and marketing | $25,654 | $24,456 | 5% |"
+    ],
+    "expected_answer": "$24,456 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (In millions, except percentages) | 2025 | 2024 | Percentage Change |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > Sales and Marketing",
+      "lead_in": "",
+      "column_path": "2024",
+      "value": "$24,456",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MSFT_10-K_2026-06-30.md::t6r3c1",
+    "query": "What was Microsoft Corp's net income for fiscal 2026?",
+    "expected_doc_ids": [
+      "MSFT_10-K_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Net income | $133,749 | $101,832 | $88,136 | 31% | 16% |"
+    ],
+    "expected_answer": "$133,749 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (In millions, except percentages and per share amounts) | 2026 | 2025 | 2024 | Percentage Change 2026 Versus 2025 | Percentage Change 2025 Versus 2024 |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > NON-GAAP FINANCIAL MEASURES",
+      "lead_in": "The following table reconciles our financial results reported in accordance with GAAP to non-GAAP financial results:",
+      "column_path": "2026",
+      "value": "$133,749",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MSFT_10-Q_2025-12-31.md::t0r2c7",
+    "query": "What was the percentage change in Microsoft Corp's operating income for the six months ended December 31, 2025, compared to the same period in the prior year?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| Operating income | | 38,275 | 31,653 | 21% | 76,236 | 62,205 | 23% |"
+    ],
+    "expected_answer": "The percentage change in operating income for the six months ended December 31, 2025, was 23%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (In millions, except percentages and per share amounts) | Three Months Ended December 31, | | | Percentage Change | Six Months Ended December 31, | | Percentage Change |",
+        "| | | 2025 | 2024 | | 2025 | 2024 | |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > SUMMARY RESULTS OF OPERATIONS",
+      "lead_in": "",
+      "column_path": "Percentage Change",
+      "value": "23%",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MSFT_10-Q_2025-12-31.md::t3r1c1",
+    "query": "What was Microsoft Corp's sales and marketing expense as a percent of revenue for the three months ended December 31, 2025?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| As a percent of revenue | 8% | 9% | (1)ppt | 8% | 9% | (1)ppt |"
+    ],
+    "expected_answer": "8%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (In millions, except percentages) | Three Months Ended December 31, | | Percentage Change | Six Months Ended December 31, | | Percentage Change |",
+        "| | 2025 | 2024 | | 2025 | 2024 | |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > OPERATING EXPENSES > Sales and Marketing",
+      "lead_in": "",
+      "column_path": "Three Months Ended December 31, > 2025",
+      "value": "8%",
+      "row_also_in": [
+        "MSFT_10-Q_2026-03-31.md"
+      ],
+      "restatement_candidates": [
+        "MSFT_10-K_2026-06-30.md",
+        "MSFT_10-Q_2026-03-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "MSFT_10-K_2026-06-30.md",
+          "row": "| As a percent of revenue | 8% | 9% | (1)ppt |"
+        },
+        {
+          "doc_id": "MSFT_10-Q_2026-03-31.md",
+          "row": "| As a percent of revenue | 8% | 9% | (1)ppt | 8% | 9% | (1)ppt |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::MSFT_10-Q_2026-03-31.md::t0r2c6",
+    "query": "What was Microsoft Corp's operating income for the nine months ended March 31, 2025?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| Operating income | | 38,398 | 32,000 | 20% | 114,634 | 94,205 | 22% |"
+    ],
+    "expected_answer": "Microsoft Corp's operating income for the nine months ended March 31, 2025, was $94,205 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (In millions, except percentages and per share amounts) | Three Months Ended March 31, | | | Percentage Change | Nine Months Ended March 31, | | Percentage Change |",
+        "| | | 2026 | 2025 | | 2026 | 2025 | |"
+      ],
+      "section": "MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS > SUMMARY RESULTS OF OPERATIONS",
+      "lead_in": "",
+      "column_path": "Nine Months Ended March 31, > 2025",
+      "value": "94,205",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::NVDA_10-K_2025-01-26.md::t6r3c3",
+    "query": "What was the dollar change in Other income (expense), net for Nvidia Corp between the fiscal year ended January 28, 2024 and the fiscal year ended January 26, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "| Other income (expense), net | $2,573 | $846 | $1,727 |"
+    ],
+    "expected_answer": "$1,727 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Year Ended | | |",
+        "| | Jan 26, 2025 | Jan 28, 2024 | $ Change |",
+        "| | ($ in millions) | | |"
+      ],
+      "section": "Results of Operations > Other Income (Expense), Net",
+      "lead_in": "",
+      "column_path": "Year Ended > $ Change",
+      "value": "$1,727",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::NVDA_10-K_2025-01-26.md::t9r1c1",
+    "query": "What was Nvidia Corp's aggregate debt due in five to ten years as of January 26, 2025, in millions?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2025-01-26.md"
+    ],
+    "expected_spans": [
+      "| Due in five to ten years | 2,750 |"
+    ],
+    "expected_answer": "2,750 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Jan 26, 2025 |",
+        "| | (In millions) |",
+        "| Due in one year | $-- |"
+      ],
+      "section": "Liquidity and Capital Resources > Outstanding Indebtedness and Commercial Paper Program",
+      "lead_in": "Our aggregate debt maturities as of January 26, 2025, by year payable, are as follows:",
+      "column_path": "Jan 26, 2025 > (In millions) > $--",
+      "value": "2,750",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::NVDA_10-K_2026-01-25.md::t2r1c3",
+    "query": "What was the dollar change in revenue for Nvidia Corp's Graphics segment between the fiscal year ended January 26, 2025 and the fiscal year ended January 25, 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "expected_spans": [
+      "| Graphics | 22,459 | 14,304 | 8,155 | 57% |"
+    ],
+    "expected_answer": "$8,155 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Year Ended | | | |",
+        "| | Jan 25, 2026 | Jan 26, 2025 | $ Change | % Change |",
+        "| | ($ in millions) | | | |"
+      ],
+      "section": "Results of Operations > Reportable Segments > Revenue by Reportable Segments",
+      "lead_in": "",
+      "column_path": "Year Ended > $ Change",
+      "value": "8,155",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::NVDA_10-K_2026-01-25.md::t3r2c1",
+    "query": "What was Nvidia Corp's total operating income for the fiscal year ended January 25, 2026?",
+    "expected_doc_ids": [
+      "NVDA_10-K_2026-01-25.md"
+    ],
+    "expected_spans": [
+      "| Total | $139,297 | $87,960 | $51,337 | 58% |"
+    ],
+    "expected_answer": "$139,297 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Year Ended | | | |",
+        "| | Jan 25, 2026 | Jan 26, 2025 | $ Change | % Change |",
+        "| | ($ in millions) | | | |"
+      ],
+      "section": "Results of Operations > Reportable Segments > Operating Income by Reportable Segments",
+      "lead_in": "",
+      "column_path": "Year Ended > Jan 25, 2026 > ($ in millions)",
+      "value": "$139,297",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::NVDA_10-Q_2025-07-27.md::t4r1c2",
+    "query": "What were Nvidia Corp's sales, general and administrative expenses for the three months ended July 28, 2024?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-07-27.md"
+    ],
+    "expected_spans": [
+      "| Sales, general and administrative expenses | 1,122 | 842 | 280 | 33% | 2,163 | 1,618 | 545 | 34% |"
+    ],
+    "expected_answer": "Nvidia Corp's sales, general and administrative expenses for the three months ended July 28, 2024 were $842 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | | | Six Months Ended | | | |",
+        "| | Jul 27, 2025 | Jul 28, 2024 | $ Change | % Change | Jul 27, 2025 | Jul 28, 2024 | $ Change | % Change |",
+        "| | ($ in millions) | | | | | | | |"
+      ],
+      "section": "Results of Operations > Operating Expenses",
+      "lead_in": "",
+      "column_path": "Three Months Ended > Jul 28, 2024",
+      "value": "842",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::NVDA_10-Q_2025-07-27.md::t5r0c2",
+    "query": "What was Nvidia Corp's interest income for the three months ended July 28, 2024?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-07-27.md"
+    ],
+    "expected_spans": [
+      "| Interest income | $592 | $444 | $148 | $1,108 | $803 | $305 |"
+    ],
+    "expected_answer": "$444 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | | Six Months Ended | | |",
+        "| | Jul 27, 2025 | Jul 28, 2024 | $ Change | Jul 27, 2025 | Jul 28, 2024 | $ Change |",
+        "| | ($ in millions) | | | | | |"
+      ],
+      "section": "Results of Operations > Total Other Income (Expense), Net",
+      "lead_in": "",
+      "column_path": "Three Months Ended > Jul 28, 2024",
+      "value": "$444",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::NVDA_10-Q_2025-10-26.md::t1r0c1",
+    "query": "What was Nvidia Corp's revenue expressed as a percentage of revenue for the three months ended October 26, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2025-10-26.md"
+    ],
+    "expected_spans": [
+      "| Revenue | 100.0% | 100.0% | 100.0% | 100.0% |"
+    ],
+    "expected_answer": "100.0%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | Nine Months Ended | |",
+        "| | Oct 26, 2025 | Oct 27, 2024 | Oct 26, 2025 | Oct 27, 2024 |"
+      ],
+      "section": "Results of Operations",
+      "lead_in": "The following table sets forth, for the periods indicated, certain items in our Condensed Consolidated Statements of Income expressed as a percentage of revenue.",
+      "column_path": "Three Months Ended > Oct 26, 2025",
+      "value": "100.0%",
+      "row_also_in": [
+        "NVDA_10-Q_2025-07-27.md"
+      ],
+      "restatement_candidates": [
+        "NVDA_10-K_2025-01-26.md",
+        "NVDA_10-K_2026-01-25.md",
+        "NVDA_10-Q_2025-07-27.md",
+        "NVDA_10-Q_2026-04-26.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "NVDA_10-K_2025-01-26.md",
+          "row": "| Revenue | 100.0% | 100.0% |"
+        },
+        {
+          "doc_id": "NVDA_10-K_2026-01-25.md",
+          "row": "| Revenue | 100.0% | 100.0% |"
+        },
+        {
+          "doc_id": "NVDA_10-Q_2025-07-27.md",
+          "row": "| Revenue | 100.0% | 100.0% | 100.0% | 100.0% |"
+        },
+        {
+          "doc_id": "NVDA_10-Q_2026-04-26.md",
+          "row": "| Revenue | 100.0% | 100.0% |"
+        }
+      ],
+      "suggestion": "reject",
+      "suggestion_reason": "degenerate: revenue as a percentage of revenue is always 100.0%"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::NVDA_10-Q_2026-04-26.md::t2r13c2",
+    "query": "What was Nvidia Corp's income tax expense as a percentage of revenue for the three months ended April 27, 2025?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2026-04-26.md"
+    ],
+    "expected_spans": [
+      "| Income tax expense | 14.2 | 7.1 |"
+    ],
+    "expected_answer": "7.1%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | |",
+        "| | Apr 26, 2026 | Apr 27, 2025 |"
+      ],
+      "section": "Results of Operations",
+      "lead_in": "The following table sets forth, for the periods indicated, certain items in our Condensed Consolidated Statements of Income expressed as a percentage of revenue.",
+      "column_path": "Three Months Ended > Apr 27, 2025",
+      "value": "7.1",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::PFE_10-Q_2025-09-28.md::t0r0c3",
+    "query": "What were Pfizer Inc's Biopharma segment total revenues in the U.S. for the three months ended September 28, 2025?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "| Biopharma | $16,310 | $17,392 | $10,599 | $11,964 | $5,711 | $5,428 | (6) | (11) | 5 |"
+    ],
+    "expected_answer": "$10,599 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| The following presents worldwide Total revenues by geography: | | | | | | | | | |",
+        "| | Three Months Ended | | | | | | | | |",
+        "| | Worldwide | | U.S. | | International | | World-wide | U.S. | Inter-national |",
+        "| (MILLIONS) | Sept. 28, 2025 | Sept. 29, 2024 | Sept. 28, 2025 | Sept. 29, 2024 | Sept. 28, 2025 | Sept. 29, 2024 | % Change | | |",
+        "| Operating segments: | | | | | | | | | |"
+      ],
+      "section": "ANALYSIS OF THE CONDENSED CONSOLIDATED STATEMENTS OF OPERATIONS > Total Revenues by Geography",
+      "lead_in": "",
+      "column_path": "Three Months Ended > U.S. > Sept. 28, 2025",
+      "value": "$10,599",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::PFE_10-Q_2025-09-28.md::t10r11c5",
+    "query": "What was Pfizer Inc.'s non-GAAP adjusted earnings per common share attributable to Pfizer Inc. common shareholders--diluted for the three months ended September 28, 2025?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "| Non-GAAP Adjusted | $3,979 | $3,158 | $257 | $4,949 | $0.87 |"
+    ],
+    "expected_answer": "$0.87",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended September 28, 2025 | | | | |",
+        "| Data presented will not (in all cases) aggregate to totals. (MILLIONS, EXCEPT PER SHARE DATA) | Cost of sales(a) | Selling, informational and administrative expenses(a) | Other (income)/deductions--net(a) | Net income attributable to Pfizer Inc. common shareholders(a), (b) | Earnings per common share attributable to Pfizer Inc. common shareholders--diluted |"
+      ],
+      "section": "NON-GAAP FINANCIAL MEASURE: ADJUSTED INCOME > Reconciliations of GAAP Reported to Non-GAAP Adjusted Information--Certain Line Items",
+      "lead_in": "",
+      "column_path": "Three Months Ended September 28, 2025 > Earnings per common share attributable to Pfizer Inc. common shareholders--diluted",
+      "value": "$0.87",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::PFE_10-Q_2025-09-28.md::t1r5c1",
+    "query": "What was the favorable impact of foreign exchange on Pfizer Inc's worldwide total revenues for the three months ended September 28, 2025, compared to the same period in 2024?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "| Favorable impact of foreign exchange | 203 | -- | 203 |"
+    ],
+    "expected_answer": "The favorable impact of foreign exchange was $203 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| The following provides an analysis of the worldwide change in Total revenues by geographic areas in the third quarter of 2025 compared to the third quarter of 2024: | | | |",
+        "| (MILLIONS) | Worldwide | U.S. | International |",
+        "| Operational growth/(decline): | | | |"
+      ],
+      "section": "ANALYSIS OF THE CONDENSED CONSOLIDATED STATEMENTS OF OPERATIONS > Total Revenues by Geography",
+      "lead_in": "",
+      "column_path": "Worldwide",
+      "value": "203",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::PFE_10-Q_2025-09-28.md::t2r4c3",
+    "query": "What was Pfizer Inc.'s operational growth/(decline), net in millions for the International segment during the first nine months of 2025 compared to the first nine months of 2024?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "| Operational growth/(decline), net | (811) | (1,511) | 701 |"
+    ],
+    "expected_answer": "The operational growth/(decline), net for the International segment was $701 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| The following provides an analysis of the worldwide change in Total revenues by geographic areas in the first nine months of 2025 compared to the first nine months of 2024: | | | |",
+        "| (MILLIONS) | Worldwide | U.S. | International |",
+        "| Operational growth/(decline): | | | |"
+      ],
+      "section": "ANALYSIS OF THE CONDENSED CONSOLIDATED STATEMENTS OF OPERATIONS > Total Revenues by Geography",
+      "lead_in": "",
+      "column_path": "International",
+      "value": "701",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::PFE_10-Q_2025-09-28.md::t9r1c1",
+    "query": "What was Pfizer Inc's effective tax rate on continuing operations for the three months ended September 28, 2025?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2025-09-28.md"
+    ],
+    "expected_spans": [
+      "| Effective tax rate on continuing operations | (6.5)% | 5.0% | | (2.9)% | 4.9% | |"
+    ],
+    "expected_answer": "(6.5)%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended | | | Nine Months Ended | | |",
+        "| (MILLIONS) | September 28, 2025 | September 29, 2024 | % Change | September 28, 2025 | September 29, 2024 | % Change |"
+      ],
+      "section": "ANALYSIS OF THE CONDENSED CONSOLIDATED STATEMENTS OF OPERATIONS > Provision/(Benefit) for Taxes on Income",
+      "lead_in": "",
+      "column_path": "Three Months Ended > September 28, 2025",
+      "value": "(6.5)%",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::TGT_10-K_2025-02-01.md::t2r0c1",
+    "query": "What was Target Corp's gross margin rate for fiscal 2024?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md"
+    ],
+    "expected_spans": [
+      "| Gross margin rate (a) | 28.2% | 27.5% | 24.6% |"
+    ],
+    "expected_answer": "Target Corp's gross margin rate for fiscal 2024 was 28.2%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Rate Analysis | 2024 | 2023 | 2022 |"
+      ],
+      "section": "Analysis of Results of Operations",
+      "lead_in": "(c)2023 consisted of 53 weeks compared with 52 weeks in 2024 and 2022.",
+      "column_path": "2024",
+      "value": "28.2%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "TGT_10-Q_2025-11-01.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "TGT_10-Q_2025-11-01.md",
+          "row": "| Gross margin rate (a) | 28.2% | 28.3% | 28.5% | 29.0% |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::TGT_10-K_2026-01-31.md::t10r0c3",
+    "query": "What was Target Corp's reported GAAP operating income in dollars for fiscal 2025?",
+    "expected_doc_ids": [
+      "TGT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "| Reported, GAAP measure | $21,535 | 20.6% | $5,117 | 4.9% | $21,969 | 20.6% | $5,566 | 5.2% | $21,462 | 20.0% | $5,707 | 5.3% |"
+    ],
+    "expected_answer": "$5,117 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2025 | | | | 2024 | | | | 2023 | | | |",
+        "| | SG&A Expenses | | Operating Income | | SG&A Expenses | | Operating Income | | SG&A Expenses | | Operating Income | |",
+        "| (dollars in millions) | Dollars | Rate (a) | Dollars | Rate (a) | Dollars | Rate (a) | Dollars | Rate (a) | Dollars | Rate (a) | Dollars | Rate (a) |"
+      ],
+      "section": "Reconciliation of Non-GAAP Financial Measures to GAAP Measures > Adjustments Affecting Comparability",
+      "lead_in": "",
+      "column_path": "2025 > Operating Income > Dollars",
+      "value": "$5,117",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::TGT_10-K_2026-01-31.md::t6r0c2",
+    "query": "What percentage of Target Corp's merchandise sales came from stores in fiscal 2024?",
+    "expected_doc_ids": [
+      "TGT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "| Stores | 97.6% | 97.6% | 97.4% |"
+    ],
+    "expected_answer": "97.6%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Merchandise Sales by Fulfillment Channel | 2025 | 2024 | 2023 |"
+      ],
+      "section": "Analysis of Results of Operations > Net Sales",
+      "lead_in": "",
+      "column_path": "2024",
+      "value": "97.6%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "TGT_10-K_2025-02-01.md",
+        "TGT_10-Q_2026-05-02.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "TGT_10-K_2025-02-01.md",
+          "row": "| Stores | 97.6% | 97.4% | 96.7% |"
+        },
+        {
+          "doc_id": "TGT_10-Q_2026-05-02.md",
+          "row": "| Stores | 97.6% | 97.6% |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Stores | 97.6% | 97.4% | 96.7% |' and doc TGT_10-K_2025-02-01.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::TGT_10-Q_2025-08-02.md::t3r0c3",
+    "query": "What was Target Corp's comparable sales change for the six months ended August 2, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-08-02.md"
+    ],
+    "expected_spans": [
+      "| Comparable sales change | (1.9)% | 2.0% | (2.8)% | (0.9)% |"
+    ],
+    "expected_answer": "The comparable sales change was (2.8)%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Comparable Sales | Three Months Ended | | Six Months Ended | |",
+        "| | August 2, 2025 | August 3, 2024 | August 2, 2025 | August 3, 2024 |"
+      ],
+      "section": "Analysis of Results of Operations > Net Sales",
+      "lead_in": "Merchandise Sales growth--from both comparable sales and new stores--represents an important driver of our long-term profitability. We expect that comparable sales growth will drive a significant portion of our total sales growth. We believe that our ability to successfully differentiate our guests' shopping experience through a careful combination of merchandise assortment, price, convenience, guest experience, and other factors will over the long-term drive both increasing shopping frequency (number of transactions, or \"traffic\") and the amount spent each visit (average transaction amount).",
+      "column_path": "Six Months Ended > August 2, 2025",
+      "value": "(2.8)%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "TGT_10-Q_2025-11-01.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "TGT_10-Q_2025-11-01.md",
+          "row": "| Comparable sales change | (2.7)% | 0.3% | (2.8)% | (0.5)% |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::TGT_10-Q_2025-08-02.md::t6r1c3",
+    "query": "What percentage of Target Corp's merchandise sales came from the Other fulfillment channel during the six months ended August 2, 2025?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-08-02.md"
+    ],
+    "expected_spans": [
+      "| Other | 2.3 | 2.1 | 2.3 | 2.2 |"
+    ],
+    "expected_answer": "2.3%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Merchandise Sales by Fulfillment Channel | Three Months Ended | | Six Months Ended | |",
+        "| | August 2, 2025 | August 3, 2024 | August 2, 2025 | August 3, 2024 |"
+      ],
+      "section": "Analysis of Results of Operations > Net Sales",
+      "lead_in": "",
+      "column_path": "Six Months Ended > August 2, 2025",
+      "value": "2.3",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "TGT_10-Q_2025-11-01.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "TGT_10-Q_2025-11-01.md",
+          "row": "| Other | 2.3 | 2.3 | 2.3 | 2.2 |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::TGT_10-Q_2025-11-01.md::t9r0c6",
+    "query": "What was the retail square feet for Target Corp stores of 170,000 or more sq. ft. as of November 2, 2024?",
+    "expected_doc_ids": [
+      "TGT_10-Q_2025-11-01.md"
+    ],
+    "expected_spans": [
+      "| 170,000 or more sq. ft. | 273 | 273 | 273 | 48,824 | 48,824 | 48,824 |"
+    ],
+    "expected_answer": "48,824",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Number of Stores and | Number of Stores | | | Retail Square Feet (a) | | |",
+        "| Retail Square Feet | November 1, 2025 | February 1, 2025 | November 2, 2024 | November 1, 2025 | February 1, 2025 | November 2, 2024 |"
+      ],
+      "section": "Analysis of Results of Operations > Store Data",
+      "lead_in": "",
+      "column_path": "Retail Square Feet (a) > November 2, 2024",
+      "value": "48,824",
+      "row_also_in": [
+        "TGT_10-Q_2025-08-02.md"
+      ],
+      "restatement_candidates": [
+        "TGT_10-K_2025-02-01.md",
+        "TGT_10-K_2026-01-31.md",
+        "TGT_10-Q_2025-08-02.md",
+        "TGT_10-Q_2026-05-02.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "TGT_10-K_2025-02-01.md",
+          "row": "| 170,000 or more sq. ft. | 273 | 273 | | 48,824 | 48,824 |"
+        },
+        {
+          "doc_id": "TGT_10-K_2026-01-31.md",
+          "row": "| 170,000 or more sq. ft. | 273 | 273 | | 48,824 | 48,824 |"
+        },
+        {
+          "doc_id": "TGT_10-Q_2025-08-02.md",
+          "row": "| 170,000 or more sq. ft. | 273 | 273 | 273 | 48,824 | 48,824 | 48,824 |"
+        },
+        {
+          "doc_id": "TGT_10-Q_2026-05-02.md",
+          "row": "| 170,000 or more sq. ft. | 274 | 273 | 273 | 49,045 | 48,824 | 48,824 |"
+        }
+      ],
+      "suggestion": "accept",
+      "suggestion_reason": "restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::UAL_10-K_2024-12-31.md::t2r1c3",
+    "query": "What was the increase in cargo operating revenue for United Airlines Holdings, Inc. between fiscal 2023 and fiscal 2024?",
+    "expected_doc_ids": [
+      "UAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| Cargo | 1,743 | 1,495 | 248 | 16.6 |"
+    ],
+    "expected_answer": "The increase in cargo operating revenue was $248 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2024 | 2023 | Increase (Decrease) | % Change |"
+      ],
+      "section": "Executive Summary > Results of Operations",
+      "lead_in": "Operating Revenue. The table below illustrates the year-over-year percentage change in the Company's operating revenues for the years ended December 31 (in millions, except percentage changes):",
+      "column_path": "Increase (Decrease)",
+      "value": "248",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::UAL_10-K_2024-12-31.md::t7r1c1",
+    "query": "What was the cash used in investing activities by United Airlines Holdings, Inc. for the fiscal year ended December 31, 2024?",
+    "expected_doc_ids": [
+      "UAL_10-K_2024-12-31.md"
+    ],
+    "expected_spans": [
+      "| Investing activities | (2,651) | (6,106) | (13,829) |"
+    ],
+    "expected_answer": "The cash used in investing activities was $2,651 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2024 | 2023 | 2022 |",
+        "| Total cash provided by (used in): | | | |"
+      ],
+      "section": "Sources and Uses of Cash",
+      "lead_in": "The following table summarizes our cash flow for the years ended December 31 (in millions):",
+      "column_path": "2024",
+      "value": "(2,651)",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "UAL_10-K_2025-12-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "UAL_10-K_2025-12-31.md",
+          "row": "| Investing activities | (6,350) | (2,651) | (6,106) |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Investing activities | (6,350) | (2,651) | (6,106) |' and doc UAL_10-K_2025-12-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::UAL_10-K_2025-12-31.md::t3r4c2",
+    "query": "What was the percentage change in passenger revenue per available seat mile (PRASM) for United Airlines Holdings, Inc.'s Atlantic region from fiscal 2024 to fiscal 2025?",
+    "expected_doc_ids": [
+      "UAL_10-K_2025-12-31.md"
+    ],
+    "expected_spans": [
+      "| PRASM | (4.1)% | (1.6)% | 3.0% | (5.2)% | (2.9)% |"
+    ],
+    "expected_answer": "The percentage change in PRASM for the Atlantic region was (1.6)%.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Increase (decrease) from 2024: | | | | |",
+        "| | Domestic | Atlantic | Pacific | Latin | Total |"
+      ],
+      "section": "Executive Summary > Results of Operations",
+      "lead_in": "The table below presents passenger revenue and select operating data of the Company, broken out by geographic region, expressed as year-over-year changes:",
+      "column_path": "Increase (decrease) from 2024: > Atlantic",
+      "value": "(1.6)%",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::UAL_10-Q_2025-09-30.md::t0r6c2",
+    "query": "What was United Airlines Holdings, Inc.'s net income for the three months ended September 30, 2024?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "| Net income | $949 | $965 | $(16) | (1.7) |"
+    ],
+    "expected_answer": "$965 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2025 | 2024 | Increase (Decrease) | % Change |"
+      ],
+      "section": "RESULTS OF OPERATIONS > Third Quarter 2025 Compared to Third Quarter 2024",
+      "lead_in": "Significant components of the Company's operating results for the three months ended September 30 are as follows (in millions, except percentage changes):",
+      "column_path": "2024",
+      "value": "$965",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::UAL_10-Q_2026-03-31.md::t1r7c3",
+    "query": "What was the change in cargo revenue ton miles, in millions, for United Airlines Holdings, Inc. between the three months ended March 31, 2025 and the three months ended March 31, 2026?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "| Cargo revenue ton miles (\"CTM\") (millions) (f) | 878 | 889 | (11) | (1.2) |"
+    ],
+    "expected_answer": "The change was (11) million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2026 | 2025 | Increase (Decrease) | % Change |"
+      ],
+      "section": "RESULTS OF OPERATIONS > First Quarter 2026 Compared to First Quarter 2025",
+      "lead_in": "Certain consolidated statistical information for the Company's operations for the three months ended March 31 is as follows:",
+      "column_path": "Increase (Decrease)",
+      "value": "(11)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::UAL_10-Q_2026-06-30.md::t11r3c2",
+    "query": "What was United Airlines Holdings, Inc.'s unrealized gains on investments, net (in millions) for the six months ended June 30, 2025?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Unrealized gains on investments, net | 26 | 5 | 21 | NM |"
+    ],
+    "expected_answer": "United Airlines Holdings, Inc.'s unrealized gains on investments, net were $5 million for the six months ended June 30, 2025.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2026 | 2025 | Increase (Decrease) | % Change |"
+      ],
+      "section": "RESULTS OF OPERATIONS > First Six Months 2026 Compared to First Six Months 2025",
+      "lead_in": "Nonoperating Income (Expense). The following table illustrates the year-over-year dollar and percentage changes in the Company's nonoperating income (expense) for the six months ended June 30 (in millions, except for percentage changes):",
+      "column_path": "2025",
+      "value": "5",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::UAL_10-Q_2026-06-30.md::t7r5c5",
+    "query": "What was the percentage change in TRASM (cents) for United Airlines Holdings, Inc. between the six months ended June 30, 2025 and the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| TRASM (cents) | 19.57 | 17.84 | 1.73 | | 9.7 |"
+    ],
+    "expected_answer": "9.7%",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | 2026 | 2025 | Increase (Decrease) | | % Change |"
+      ],
+      "section": "RESULTS OF OPERATIONS > First Six Months 2026 Compared to First Six Months 2025",
+      "lead_in": "Certain consolidated statistical information for the Company's operations for the six months ended June 30 is as follows:",
+      "column_path": "% Change",
+      "value": "9.7",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::WMT_10-K_2025-01-31.md::t4r1c1",
+    "query": "What were Walmart Inc.'s capital expenditures for store and club remodels, in millions of dollars, for the fiscal year ended January 31, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-K_2025-01-31.md"
+    ],
+    "expected_spans": [
+      "| Store and club remodels | 5,552 | 5,792 |"
+    ],
+    "expected_answer": "Walmart Inc.'s capital expenditures for store and club remodels were $5,552 million for the fiscal year ended January 31, 2025.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| (Amounts in millions) | Fiscal Years Ended January 31, | |",
+        "| Allocation of Capital Expenditures | 2025 | 2024 |"
+      ],
+      "section": "Strategic Capital Allocation",
+      "lead_in": "Our strategy includes allocating the majority of our capital to higher-return areas focused on automation such as eCommerce, supply chain and store and club investments. The following table provides additional detail regarding our capital expenditures:",
+      "column_path": "Fiscal Years Ended January 31, > 2025",
+      "value": "5,552",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "WMT_10-K_2026-01-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "WMT_10-K_2026-01-31.md",
+          "row": "| Store and club remodels | 5,571 | 5,552 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Store and club remodels | 5,571 | 5,552 |' and doc WMT_10-K_2026-01-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::WMT_10-K_2026-01-31.md::t3r2c3",
+    "query": "What was Walmart Inc.'s accounts payable as of January 31, 2024?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "| Accounts payable | 63,061 | 58,666 | 56,812 |"
+    ],
+    "expected_answer": "Walmart Inc.'s accounts payable as of January 31, 2024, was $56,812 million.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | As of January 31, | | |",
+        "| | 2026 | 2025 | 2024 |",
+        "| Certain Balance Sheet Data | | | |"
+      ],
+      "section": "Returns > Return on Assets and Return on Investment",
+      "lead_in": "(1)The average is calculated using the account balance at the end of the current and prior comparative periods.",
+      "column_path": "As of January 31, > 2024",
+      "value": "56,812",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "WMT_10-K_2025-01-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "WMT_10-K_2025-01-31.md",
+          "row": "| Accounts payable | 58,666 | 56,812 | 53,742 |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Accounts payable | 58,666 | 56,812 | 53,742 |' and doc WMT_10-K_2025-01-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::WMT_10-K_2026-01-31.md::t7r9c3",
+    "query": "What was the operating expenses as a percentage of net sales for Walmart U.S. in fiscal 2024?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "| Operating expenses | 22.8% | 22.6% | 22.2% |"
+    ],
+    "expected_answer": "The operating expenses were 22.2% of net sales.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Fiscal Years Ended January 31, | | |",
+        "| (Dollar amounts and retail square feet in millions) | 2026 | 2025 | 2024 |"
+      ],
+      "section": "Capital Allocation > Walmart U.S. Segment",
+      "lead_in": "",
+      "column_path": "Fiscal Years Ended January 31, > 2024",
+      "value": "22.2%",
+      "row_also_in": [],
+      "restatement_candidates": [
+        "WMT_10-K_2025-01-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "WMT_10-K_2025-01-31.md",
+          "row": "| Operating expenses | 22.6% | 22.2% | 22.1% |"
+        }
+      ],
+      "suggestion": "add alternative(s) '| Operating expenses | 22.6% | 22.2% | 22.1% |' and doc WMT_10-K_2025-01-31.md, then accept",
+      "suggestion_reason": "that filing's comparative column states the same period's figure"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::WMT_10-K_2026-01-31.md::t9r6c1",
+    "query": "What was Walmart Inc.'s Sam's Club U.S. Segment operating income including fuel for the fiscal year ended January 31, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "| Operating income | $2,442 | $2,404 | $2,192 |"
+    ],
+    "expected_answer": "$2,442 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Fiscal Years Ended January 31, | | |",
+        "| (Dollar amounts and retail square feet in millions) | 2026 | 2025 | 2024 |",
+        "| Including Fuel | | | |"
+      ],
+      "section": "Capital Allocation > Sam's Club U.S. Segment",
+      "lead_in": "",
+      "column_path": "Fiscal Years Ended January 31, > 2026",
+      "value": "$2,442",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::WMT_10-Q_2025-10-31.md::t8r3c2",
+    "query": "What was Walmart International's gross profit in millions of dollars for the three months ended October 31, 2024?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2025-10-31.md"
+    ],
+    "expected_spans": [
+      "| Gross profit | 7,002 | 6,529 | 20,021 | 19,649 |"
+    ],
+    "expected_answer": "Walmart International's gross profit was $6,529 million for the three months ended October 31, 2024.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended October 31, | | Nine Months Ended October 31, | |",
+        "| (Dollar amounts and retail square feet in millions) | 2025 | 2024 | 2025 | 2024 |"
+      ],
+      "section": "Capital Allocation > Walmart International Segment",
+      "lead_in": "",
+      "column_path": "Three Months Ended October 31, > 2024",
+      "value": "6,529",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::WMT_10-Q_2026-04-30.md::t5r3c3",
+    "query": "What was the net cash used in investing activities for Walmart Inc. for the three months ended April 30, 2025?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "| Net cash used in investing activities(1) | | $(6,737) | $(5,093) |"
+    ],
+    "expected_answer": "$(5,093) million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended April 30, | | |",
+        "| (Amounts in millions) | | 2026 | 2025 |"
+      ],
+      "section": "Capital Allocation > Free Cash Flow",
+      "lead_in": "The following table sets forth a reconciliation of free cash flow, a non-GAAP financial measure, to net cash provided by operating activities, which we believe to be the GAAP financial measure most directly comparable to free cash flow, as well as information regarding net cash used in investing activities and net cash provided by financing activities.",
+      "column_path": "Three Months Ended April 30, > 2025",
+      "value": "$(5,093)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::WMT_10-Q_2026-04-30.md::t8r11c1",
+    "query": "What was the retail square feet (in millions) at period end for Walmart International during the three months ended April 30, 2026?",
+    "expected_doc_ids": [
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "| Retail square feet at period end | 278 | 274 |"
+    ],
+    "expected_answer": "278 million",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| | Three Months Ended April 30, | |",
+        "| (Dollar amounts and retail square feet in millions) | 2026 | 2025 |"
+      ],
+      "section": "Capital Allocation > Walmart International Segment",
+      "lead_in": "",
+      "column_path": "Three Months Ended April 30, > 2026",
+      "value": "278",
+      "row_also_in": [
+        "WMT_10-K_2026-01-31.md"
+      ],
+      "restatement_candidates": [
+        "WMT_10-K_2026-01-31.md"
+      ],
+      "restatement_rows": [
+        {
+          "doc_id": "WMT_10-K_2026-01-31.md",
+          "row": "| Retail square feet at period end | 278 | 274 | 274 |"
+        }
+      ],
+      "suggestion": "edit query: 'during the three months ended April 30, 2026' -> 'as of April 30, 2026', then accept",
+      "suggestion_reason": "square feet is a period-end balance; restatement candidates are other periods (coincidental figure), no alternative"
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::XOM_10-Q_2026-06-30.md::t10r0c2",
+    "query": "What were ExxonMobil Holdings Corp's Specialty Products sales in the United States, in thousands of metric tons, for the three months ended June 30, 2025?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| United States | 367 | 504 | 903 | 977 |"
+    ],
+    "expected_answer": "504 thousand metric tons",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Specialty Products Operational Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
+        "| (thousands of metric tons) | 2026 | 2025 | 2026 | 2025 |",
+        "| Specialty Products sales (1) | | | | |"
+      ],
+      "section": "SPECIALTY PRODUCTS > Volume / Mix",
+      "lead_in": "Identified Items - 2026 $(13) million loss.",
+      "column_path": "Three Months Ended June 30, > 2025",
+      "value": "504",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::XOM_10-Q_2026-06-30.md::t1r1c4",
+    "query": "What were ExxonMobil Holdings Corp's selling, general and administrative expenses, in billions of dollars, for the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Selling, general and administrative expenses | 11.4 | 11.1 | 5.1 | 5.2 | |"
+    ],
+    "expected_answer": "The selling, general and administrative expenses were $5.2 billion.",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Dollars in billions (unless otherwise noted) | Twelve Months Ended December 31, | | Six Months Ended June 30, | | |",
+        "| 2019 | 2025 | 2025 | 2026 | | |",
+        "| Components of Operating Costs | | | | | |",
+        "| From ExxonMobil's Consolidated Statement of Income (U.S. GAAP) | | | | | |"
+      ],
+      "section": "FORWARD-LOOKING STATEMENTS > Selected Earnings Driver Definitions",
+      "lead_in": "disciplined expense management.",
+      "column_path": "Six Months Ended June 30, > 2026",
+      "value": "5.2",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::XOM_10-Q_2026-06-30.md::t2r1c4",
+    "query": "What was ExxonMobil Holdings Corp's Non-U.S. upstream earnings (loss) under U.S. GAAP for the six months ended June 30, 2025?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Non-U.S. | 6,007 | 4,190 | 10,170 | 9,076 |"
+    ],
+    "expected_answer": "9,076 million dollars",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Upstream Financial Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
+        "| (millions of dollars) | 2026 | 2025 | 2026 | 2025 |",
+        "| Earnings (loss) (U.S. GAAP) | | | | |"
+      ],
+      "section": "UPSTREAM",
+      "lead_in": "",
+      "column_path": "Six Months Ended June 30, > 2025",
+      "value": "9,076",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::XOM_10-Q_2026-06-30.md::t3r1c2",
+    "query": "What was ExxonMobil Holdings Corp's net production of crude oil, natural gas liquids, bitumen and synthetic oil in thousands of barrels daily for Canada/Other Americas during the three months ended June 30, 2025?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Canada/Other Americas | 922 | 797 | 929 | 779 |"
+    ],
+    "expected_answer": "797 thousand barrels daily",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Upstream Operational Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
+        "| | 2026 | 2025 | 2026 | 2025 |",
+        "| Net production of crude oil, natural gas liquids, bitumen and synthetic oil (thousands of barrels daily) | | | | |"
+      ],
+      "section": "UPSTREAM > Volume / Mix",
+      "lead_in": "Identified Items - 2026 $(1,199) million loss from financial reserves.",
+      "column_path": "Three Months Ended June 30, > 2025",
+      "value": "797",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::XOM_10-Q_2026-06-30.md::t4r3c2",
+    "query": "What was the impact of Government Mandates on ExxonMobil Holdings Corp's oil-equivalent production volumes, in thousands of barrels daily, for the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Government Mandates | -- | (2) |"
+    ],
+    "expected_answer": "-2 thousand barrels daily",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Upstream Additional Information (thousands of barrels daily) | Three Months Ended June 30, | Six Months Ended June 30, |",
+        "| Volumes reconciliation (Oil-equivalent production) (1) | | |"
+      ],
+      "section": "UPSTREAM > Volume / Mix",
+      "lead_in": "",
+      "column_path": "Six Months Ended June 30,",
+      "value": "(2)",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::XOM_10-Q_2026-06-30.md::t5r2c3",
+    "query": "What was ExxonMobil Holdings Corp's total Energy Products earnings (loss) under U.S. GAAP for the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Total | 5,465 | 1,366 | 4,203 | 2,193 |"
+    ],
+    "expected_answer": "4,203 million dollars",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Energy Products Financial Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
+        "| (millions of dollars) | 2026 | 2025 | 2026 | 2025 |",
+        "| Earnings (loss) (U.S. GAAP) | | | | |"
+      ],
+      "section": "ENERGY PRODUCTS",
+      "lead_in": "",
+      "column_path": "Six Months Ended June 30, > 2026",
+      "value": "4,203",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::XOM_10-Q_2026-06-30.md::t6r1c4",
+    "query": "What was ExxonMobil Holdings Corp's refinery throughput in Canada, in thousands of barrels daily, for the six months ended June 30, 2025?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Canada | 331 | 376 | 358 | 387 |"
+    ],
+    "expected_answer": "387 thousand barrels daily",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Energy Products Operational Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
+        "| (thousands of barrels daily) | 2026 | 2025 | 2026 | 2025 |",
+        "| Refinery throughput | | | | |"
+      ],
+      "section": "ENERGY PRODUCTS > Volume / Mix",
+      "lead_in": "shipments associated with hedges.",
+      "column_path": "Six Months Ended June 30, > 2025",
+      "value": "387",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  },
+  {
+    "id": "table::XOM_10-Q_2026-06-30.md::t8r2c4",
+    "query": "What were ExxonMobil Holdings Corp's worldwide Chemical Products sales in thousands of metric tons for the six months ended June 30, 2025?",
+    "expected_doc_ids": [
+      "XOM_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "| Worldwide | 4,471 | 5,264 | 9,829 | 10,040 |"
+    ],
+    "expected_answer": "10,040 thousand metric tons",
+    "matching_mode": "span_and_document",
+    "tier": "table",
+    "review": {
+      "verdict": "pending",
+      "note": "",
+      "header_lines": [
+        "| Chemical Products Operational Results | Three Months Ended June 30, | | Six Months Ended June 30, | |",
+        "| (thousands of metric tons) | 2026 | 2025 | 2026 | 2025 |",
+        "| Chemical Products sales (1) | | | | |"
+      ],
+      "section": "CHEMICAL PRODUCTS > Volume / Mix",
+      "lead_in": "Identified Items - 2026 $(83) million loss.",
+      "column_path": "Six Months Ended June 30, > 2025",
+      "value": "10,040",
+      "row_also_in": [],
+      "restatement_candidates": [],
+      "restatement_rows": [],
+      "suggestion": "accept",
+      "suggestion_reason": ""
+    },
+    "drafted_with": "qwen3.6:27b-mlx",
+    "checked_with": "gemma4:31b-mlx"
+  }
+]

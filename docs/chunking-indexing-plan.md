@@ -440,6 +440,39 @@ bare number. Commit it under the same freeze rule, then record a `fixed`
 chunker baseline on it before Phase 5 is measured. Phase 4 itself is judged
 by heading precision and span presence, not by this tier.
 
+*Drafted 2026-09-29; in review, not frozen, nothing measured on it.*
+`scripts/draft_tier_set.py draft table` draws from the 726 data tables in
+`edgar_md` (a separator line and two or more rows holding figures). The
+script picks the target, not the LLM: round-robin by company, a random table,
+then a random figure under a labeled column. The LLM writes only the
+question and answer. The span is the whole rendered row.
+
+- **Not checked against the fixed chunker.** The other tiers drop drafts
+  whose span the fixed chunker splits. This tier exists to compare chunkers,
+  so that check would remove exactly the rows the fixed chunker handles
+  worst. Splits are reported as `unmatchable_spans` instead.
+- **`span_and_document` matching.** A row can recur verbatim in another
+  period's filing (CVX's Europe acreage, TGT's square feet), where it answers
+  a different period's question. A 10-K's prior-year column is a genuine
+  restatement: it joins as an `alternative` plus its filing. `review` lists
+  every same-label, same-figure row in the company's other filings. About a
+  third of them are coincidences (a short figure like `8%` for another
+  period).
+- **Run:** 110 targets, drafted with `qwen3.6:27b-mlx`, checked with
+  `gemma4:31b-mlx`. That gave 96 drafts. The 14 rejects: 5 rows not unique in their
+  filing, 4 failed verification, 2 answers missing the figure, 2 questions
+  missing the column's year, 1 missing the company. All 14 read as sound
+  rejections except possibly one (MSFT segment operating income).
+- **First-pass read (suggestions in the draft file, verdicts pending):**
+  95 accept, 1 reject (NVDA "revenue as a percentage of revenue", always
+  100%). Of the accepts, 21 need a restatement alternative added and 3 a
+  query edit. One of those is a wrong period: JNJ income taxes paid is year
+  to date, not "three months". Six drafts whose column labels looked
+  doubtful were checked against their tables and are right.
+- **Next:** human review → `finalize` → commit → the `fixed` baseline on
+  `edgar_md` (retrieval and answers, with `unmatchable_spans` and mid-table
+  starts).
+
 ### Phase 1 — Query instruction for the embedder (half a day)
 
 The cheapest experiment in the plan: it changes query vectors only, so there's
