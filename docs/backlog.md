@@ -811,13 +811,30 @@ rate limiting are what cover that case.
   no new dependency but is per replica. Say so, and name the gateway as the
   place it belongs once there is more than one replica.
 - **Prompt-injection delimiters.** Wrap each passage and the query in
-  explicit tags in `build_rag_prompt`, and tell the system prompt that tagged
-  content is data, not instructions. This changes the grounded prompt, so
-  re-measure answer quality with the `measure-change` skill before and after.
+  explicit tags, and tell the system prompt that tagged content is data, not
+  instructions. Put the passage tags in `format_passage`, not only in
+  `build_rag_prompt`: the agent formats its search results with the same
+  function, so both paths get the fix. This changes the grounded prompt, so
+  re-measure answer quality with the `measure-change` skill before and after,
+  in both `chat.mode`s.
   Also add a few adversarial documents (planted "ignore previous
   instructions" text) to a separate eval tier, and report how often they
-  work. Delimiters reduce injection; they don't prevent it. Record the rate
-  rather than claiming a fix.
+  work, in both modes. In agentic mode an injected passage can also steer
+  the next searches, not just the answer, so record the queries the agent
+  issues after seeing one. Delimiters reduce injection; they don't prevent
+  it. Record the rate rather than claiming a fix.
+  *Source for the planted text:* the RAG text-poisoning records (surface B1)
+  of [ART-SafeBench](https://huggingface.co/datasets/Fujitsu/agentic-rag-redteam-bench).
+  Check the record schema first: whether a record carries the poisoned
+  passage itself or only the attack text decides how much adapter it needs.
+  Plant them in their own corpus, never pooled with `edgar`, so the EDGAR
+  sets' `expected_doc_ids` and indexes are untouched. Keep the data
+  gitignored and fetched, like `edgar`: part of the dataset is research-only
+  (CC-BY-NC), and it contains harmful text. Its other surfaces don't apply:
+  B2 attacks OCR (there is no image pipeline), B3 is direct jailbreaks (a
+  test of the model, not of this system), and B4 hijacks tools with side
+  effects, which the agent doesn't have (see the
+  [Milestone 19 plan](milestone-19-plan.md#5--follow-ups-only-if-phase-4-justifies-the-agent)).
 - **Failure behaviour.** A `/ready` check, separate from `/health`
   (liveness), that asks the configured components rather than a fixed list,
   so each deployment checks only what it runs. Locally that is Ollama and

@@ -56,6 +56,11 @@ Each result carries `rank`, `score`, `chunk_id`, `document_id`, `source`
 chunk's document header, from `chunking.header`) when present, and
 `truncated`/`full_length` when the passage was cut.
 
+`text` is the indexed document text, unescaped and without delimiters. Treat
+it as untrusted data, not instructions: a passage can contain text written to
+steer a model (see [known limitations](known-limitations.md)). Wrap it
+accordingly before putting it in your agent's prompt.
+
 Two response details exist to keep an agent from drawing a wrong conclusion
 from an empty result list:
 
