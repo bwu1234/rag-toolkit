@@ -1233,5 +1233,53 @@
         "source_id": "MRK_10-Q_2025-09-30.md::chunk10"
       }
     ]
+  },
+  {
+    "id": "mh-agg-airline-margin",
+    "query": "Which of the airlines in this corpus had the highest operating margin in the quarter ended June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md",
+      "LUV_10-Q_2026-06-30.md",
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Our operating income for the June 2026 quarter was $1.9 billion",
+      "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
+      "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
+      "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+      "| Operating income | | 1,096 | | | 1,325 |"
+    ],
+    "expected_answer": "Delta, quarter ended June 30, 2026: About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue); Southwest, quarter ended June 30, 2026: 3.4% as reported (6.7% excluding special items); United, quarter ended June 30, 2026: About 6.2% ($1,096 million operating income on $17,672 million operating revenue). Conclusion: Delta (about 9.6%), ahead of United (about 6.2%) and Southwest (3.4%).",
+    "tier": "multihop",
+    "kind": "aggregation",
+    "parts": [
+      {
+        "label": "Delta, quarter ended June 30, 2026",
+        "answer": "About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue)",
+        "spans": [
+          "Our operating income for the June 2026 quarter was $1.9 billion",
+          "| Total operating revenue | $ | 19,757 | | $ | 16,648 |"
+        ],
+        "source_id": "DAL_10-Q_2026-06-30.md::chunk0"
+      },
+      {
+        "label": "Southwest, quarter ended June 30, 2026",
+        "answer": "3.4% as reported (6.7% excluding special items)",
+        "spans": [
+          "| | Operating margin, as reported | 3.4 | % | | 3.1 | %"
+        ],
+        "source_id": "LUV_10-Q_2026-06-30.md::chunk44"
+      },
+      {
+        "label": "United, quarter ended June 30, 2026",
+        "answer": "About 6.2% ($1,096 million operating income on $17,672 million operating revenue)",
+        "spans": [
+          "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+          "| Operating income | | 1,096 | | | 1,325 |"
+        ],
+        "source_id": "UAL_10-Q_2026-06-30.md::chunk4"
+      }
+    ],
+    "conclusion": "Delta (about 9.6%), ahead of United (about 6.2%) and Southwest (3.4%)."
   }
 ]

@@ -719,7 +719,8 @@ the harness plan's publication.
   period-shifted negatives from answerable samples, and verify programmatically
   that the answer is absent from the corpus before keeping one. That check is
   what the two removed Costco negatives lacked. The cross-company superlative
-  is already covered by the Milestone 19 plan's open question. Human-review
+  stays in this set with a corrected rationale; see the
+  [Milestone 19 plan](milestone-19-plan.md#the-superlative-question-stays-a-refusal). Human-review
   and freeze this tier before comparing variants, and require its results
   before claiming reliable refusal behavior.
 - **Generation settings and repeat analysis.** The generator runs at

@@ -100,9 +100,9 @@
     "id": "neg-unanswerable-comparison",
     "query": "Which of the companies in this corpus had the highest operating margin last quarter?",
     "expected_doc_ids": [],
-    "expected_answer": "Must decline or heavily qualify: answering requires aggregating across 14 companies' filings, which single-pass retrieval cannot do -- it returns at most rerank_top_k passages. A confident ranking is a hallucination and must FAIL. This is the multi-hop limitation Milestone 19 targets.",
+    "expected_answer": "Must decline or heavily qualify: the corpus cannot support a ranking of all 14 companies, however many searches are made. Only MD&A was extracted, and Apple, Johnson & Johnson, Merck, Pfizer, ExxonMobil and Chevron report no operating income there (the pharmaceutical companies report income before taxes, the oil companies segment earnings). 'Last quarter' also differs by company: the latest filings end between March 31 and June 30, 2026, and Chevron's is a 10-K. A confident ranking across all 14 is a hallucination and must FAIL. Naming the highest among the companies that do report operating margin, with that limitation stated, passes. The answerable form of this question is mh-agg-airline-margin in the multi-hop set.",
     "tier": "refusal",
-    "negative_type": "requires_aggregation"
+    "negative_type": "unsupported_by_corpus"
   },
   {
     "id": "neg-cross-corpus-acs-auth",

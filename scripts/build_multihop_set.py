@@ -20,10 +20,14 @@ Every span is checked against the corpus documents when they are present, so a
 typo in a source id or a stale sample fails the build rather than producing a
 question no retrieval could satisfy.
 
-Deliberately excluded: the probe's superlative question ("highest operating
-margin last quarter" across all 14 companies). Its gold needs operating margin
-computed from every filing, which is new ground truth, not inherited -- see the
-Milestone 19 plan's open questions.
+A part may instead be hand-authored (`G`), with spans quoted from the filing,
+when no single-hop sample covers the fact. That is new ground truth, so it is
+kept rare and passes the same span-in-corpus check. The first one is the airline
+operating-margin question, the answerable form of the probe's superlative
+("highest operating margin last quarter" across all 14 companies). The
+original stays in the refusal set: operating income is not in the MD&A of six
+of the 14 companies and their latest quarters end on different dates, so even
+an agent that searches everything should decline or qualify it.
 
 Usage:
     python scripts/build_multihop_set.py            # writes the set
@@ -40,7 +44,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from rag.eval.dataset import EvalDataset, EvalSample  # noqa: E402
+from rag.eval.dataset import EvalDataset, EvalSample, ExpectedSpan  # noqa: E402
 from rag.eval.relevance import normalize  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
@@ -52,6 +56,11 @@ CORPUS = REPO / "data/corpora/edgar/documents"
 def P(source: str, label: str, answer: str | None = None) -> dict[str, Any]:
     """A part: `source` is the single-hop sample id, `FILE#chunkN` shorthand."""
     return {"source": source.replace("#", ".md::chunk"), "label": label, "answer": answer}
+
+
+def G(source: str, label: str, answer: str, spans: list[str]) -> dict[str, Any]:
+    """A hand-authored part: `spans` are quoted from the filing, `source` names the chunk holding the first."""
+    return {"source": source.replace("#", ".md::chunk"), "label": label, "answer": answer, "spans": spans}
 
 
 # (id, kind, question, parts, conclusion or None)
@@ -243,6 +252,24 @@ SPEC: list[tuple[str, str, str, list[dict[str, Any]], str | None]] = [
       P("MRK_10-Q_2025-09-30#10", "Merck, period ended September 30, 2025",
         "Expected tariffs implemented to date to cost less than $100 million.")],
      None),
+    # Hand-authored: no single-hop sample states airline operating income. Only
+    # Southwest reports the margin itself; the other two are computed from the
+    # quoted operating income and revenue. Delta leads on every reading,
+    # including Southwest's 6.7% excluding special items.
+    ("mh-agg-airline-margin", "aggregation",
+     "Which of the airlines in this corpus had the highest operating margin in the quarter ended June 30, 2026?",
+     [G("DAL_10-Q_2026-06-30#0", "Delta, quarter ended June 30, 2026",
+        "About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue)",
+        ["Our operating income for the June 2026 quarter was $1.9 billion",
+         "| Total operating revenue | $ | 19,757 | | $ | 16,648 |"]),
+      G("LUV_10-Q_2026-06-30#44", "Southwest, quarter ended June 30, 2026",
+        "3.4% as reported (6.7% excluding special items)",
+        ["| | Operating margin, as reported | 3.4 | % | | 3.1 | %"]),
+      G("UAL_10-Q_2026-06-30#4", "United, quarter ended June 30, 2026",
+        "About 6.2% ($1,096 million operating income on $17,672 million operating revenue)",
+        ["| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+         "| Operating income | | 1,096 | | | 1,325 |"])],
+     "Delta (about 9.6%), ahead of United (about 6.2%) and Southwest (3.4%)."),
 ]
 
 
@@ -250,7 +277,20 @@ def build(sources: dict[str, EvalSample]) -> list[EvalSample]:
     built: list[EvalSample] = []
     for sample_id, kind, query, parts, conclusion in SPEC:
         out_parts: list[dict[str, Any]] = []
+        part_spans: list[list[ExpectedSpan]] = []
+        doc_ids: set[str] = set()
         for part in parts:
+            if "spans" in part:
+                spans = [ExpectedSpan(text=t) for t in part["spans"]]
+                out_parts.append({
+                    "label": part["label"],
+                    "answer": part["answer"],
+                    "spans": [s.to_json() for s in spans],
+                    "source_id": part["source"],
+                })
+                part_spans.append(spans)
+                doc_ids.add(part["source"].split("::")[0])
+                continue
             src = sources.get(part["source"])
             if src is None:
                 raise SystemExit(f"{sample_id}: unknown source sample {part['source']!r}")
@@ -262,7 +302,8 @@ def build(sources: dict[str, EvalSample]) -> list[EvalSample]:
                 "spans": [s.to_json() for s in src.expected_spans],
                 "source_id": src.id,
             })
-        doc_ids = sorted({d for p in parts for d in sources[p["source"]].expected_doc_ids})
+            part_spans.append(list(src.expected_spans))
+            doc_ids.update(src.expected_doc_ids)
         answer = "; ".join(f"{p['label']}: {p['answer']}" for p in out_parts)
         if conclusion:
             answer += f". Conclusion: {conclusion}"
@@ -274,8 +315,8 @@ def build(sources: dict[str, EvalSample]) -> list[EvalSample]:
             query=query,
             # The union, so retrieval_eval can also run on this set: recall there
             # is the share of every part's evidence the single search surfaced.
-            expected_spans=[s for p in parts for s in sources[p["source"]].expected_spans],
-            expected_doc_ids=doc_ids,
+            expected_spans=[s for spans in part_spans for s in spans],
+            expected_doc_ids=sorted(doc_ids),
             expected_answer=answer,
             extra=extra,
         ))

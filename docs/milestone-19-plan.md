@@ -383,8 +383,8 @@ appended to the tool result, then with the shipped separate message.
   guessing. The prototype found them in 5. It also called COST "Costa Mesa"
   (it's Costco), a slip no passage supports.
 - **The superlative answer names a winner (NVIDIA) after seeing margins for
-  only some of the 14 companies.** That's the open question below about
-  where this question belongs, not a loop bug.
+  only some of the 14 companies.** That's a problem with the question, not
+  a loop bug; see [the superlative question](#the-superlative-question-stays-a-refusal).
 
 ### 4 — Measure (the milestone's actual deliverable)
 
@@ -599,7 +599,21 @@ These are design references, not evidence that the additions improve this repo.
   quota; one reference row fits. A frontier model proper still needs an
   Anthropic adapter and **real API budget**, so explicit sign-off with a cost
   estimate first.
-- **Does the superlative question belong in the refusal set?** Under the
-  pipeline it's unanswerable. An agent with 14 searches could actually answer
-  it. It probably moves to the multi-hop set with a real gold answer, which
-  means computing operating margin for all 14 companies from their filings.
+
+### The superlative question stays a refusal
+
+Resolved on 2026-09-29, before phase 4. The open question was whether an agent
+with 14 searches could answer "which company had the highest operating margin
+last quarter?", which would move it to the multi-hop set. It can't. Only MD&A
+was extracted, and six of the 14 companies (AAPL, JNJ, MRK, PFE, XOM, CVX)
+report no operating income there. "Last quarter" also ends on different dates,
+March 31 to June 30, 2026, and Chevron's latest filing is a 10-K. So
+`neg-unanswerable-comparison` stays in the refusal set with a corrected
+rationale: the corpus can't support the ranking, however many searches are
+made. Its `negative_type` changed from `requires_aggregation` to
+`unsupported_by_corpus`. The answerable form is a new multi-hop question,
+`mh-agg-airline-margin`: the airlines in the corpus, the quarter ended June 30,
+2026. It still makes the agent find out which companies qualify. Its parts are
+the set's first hand-authored gold, verified against the filings by
+`scripts/build_multihop_set.py`. The set is now 35 questions, so totals from
+before this change (15/34) are not directly comparable.

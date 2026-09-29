@@ -1449,7 +1449,10 @@ the FiQA gap falls from 0.0113 to 0.0020 nDCG@10.
   sample (MRK). Re-run them before comparing new answer results against them.
   Both, and the multi-hop baseline, also predate the chunk header becoming
   the default, so Milestone 19 phase 4 has to re-run its `pipeline / 9b` row
-  at the current config.
+  at the current config. On 2026-09-29 the multi-hop set also gained a 35th
+  question and the refusal set's `neg-unanswerable-comparison` got a new
+  rubric ([why](milestone-19-plan.md#the-superlative-question-stays-a-refusal)),
+  so earlier multi-hop totals (x/34) and refusal results don't carry over.
 - Answers with metadata filters or document routing on; both phases measured
   retrieval only.
 - `retrieval.top_k` between 20 and 100 with `bge-v2-m3`. 100 measured as noise

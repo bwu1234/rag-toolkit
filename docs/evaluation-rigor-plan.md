@@ -18,7 +18,7 @@ establish general RAG quality or production readiness.
 | Generated EDGAR set | 174 questions; 173 have one expected span | Direct lookup regression checks. Questions originate from existing chunks and explicitly name company and period. |
 | Period set | 55 questions requiring span and document identity | Provenance checks against repeated paragraphs in different filings. Exact period-end wording makes routing easier than informal dates. |
 | Underspecified set | 118 rewrites: 54 implicit-company, 64 paraphrase | Query wording sensitivity. All reuse generated-set facts; implicit descriptions identify a company rather than require clarification. |
-| Multi-hop set | 34 questions: 21 cross-period, 8 cross-company, 5 aggregation | Completeness across 2–3 labeled spans. Built from existing single-hop facts, not independent task coverage. |
+| Multi-hop set | 35 questions: 21 cross-period, 8 cross-company, 6 aggregation | Completeness across 2–3 labeled spans. Built from existing single-hop facts except one hand-authored question (`mh-agg-airline-margin`), not independent task coverage. |
 | EDGAR refusal set | 15 questions | A small refusal regression control; insufficient coverage for a broad reliability claim. |
 
 The [recorded shipped baseline](measured-results.md#current-shipped-baseline)
