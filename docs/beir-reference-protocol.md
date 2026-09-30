@@ -175,6 +175,7 @@ made because they raise scores.
 | 2026-09-29 | Phase 3: this repo's `bm25` and `sqlite_fts5` backends and its BGE dense integration (Chroma), with exact-search controls, on all three test splits | Yes. Shipped parameters, reported as differences; no parameter, feature or model was chosen from them |
 | 2026-09-29 | `hnsw_ef_search`: the test query *texts* embedded to measure Chroma's recall against exact search; then the BGE dense run re-scored at the chosen 1600 | Recall reads no labels, and it chose the value. The re-scoring read labels only to report the result, after the value was fixed |
 | 2026-09-29 | Phase 4: test qrels read to group related queries (shared relevant documents) and query texts inspected for duplicates, before the family was frozen | No: no retrieval was run and no score was computed. The grouping rule is in the [phase-4 protocol](beir-phase4-protocol.md#dependence-between-queries) |
+| 2026-09-29 | Phase 4: the frozen family's seven variants, one run each, on all three test splits, after the protocol was committed (`0cda7fd`) | Yes. Nothing was chosen from them: no rerun, no parameter change, no default changed. Reported in [measured results](measured-results.md#beir-query-time-stack-public-benchmarks-plan-phase-4) |
 
 ## Recreating the reference environment
 

@@ -6,7 +6,8 @@ pins, protocol and frozen tolerances are in
 provenance is in `data/corpora/beir-<name>/manifest.json`. Phase 1 done
 2026-09-29 ([what shipped](#phase-1-as-built)). Phase 2 done 2026-09-29
 ([what shipped](#phase-2-as-built)). Phase 3 done 2026-09-29: the gate is
-met ([what shipped](#phase-3-as-built)). Phase 4 onward is not implemented. Sizes and query counts below come from the BEIR README; the
+met ([what shipped](#phase-3-as-built)). Phase 4 done 2026-09-29
+([what shipped](#phase-4-as-built)). The follow-ons are not implemented. Sizes and query counts below come from the BEIR README; the
 manifests hold the counts measured from the pinned archives.
 
 Every number in [measured results](measured-results.md) comes from a corpus
@@ -504,6 +505,40 @@ are required even if its full orchestration is not yet shipped. Report latency
 and index cost alongside quality, and word conclusions as the rigor plan
 requires. For example: "hybrid + reranker improved nDCG@10 by X on FiQA test; no effect
 shown on SciFact". Don't average across datasets into one headline.
+
+### Phase 4 as built
+
+Shipped 2026-09-29. Numbers and findings:
+[measured results](measured-results.md#beir-query-time-stack-public-benchmarks-plan-phase-4).
+The frozen family and its rules:
+[phase-4 protocol](beir-phase4-protocol.md), committed (PR #59) before any
+test run.
+
+- **`scripts/run_beir_stack.py`** runs seven variants: BGE and Qwen, each
+  dense / hybrid / hybrid + cross-encoder, plus Qwen with its query
+  instruction. Depths are 100 per retriever, 100 fused (the reranker pool) and 10 final.
+  Every run saves both rankings, per-query scores and per-stage latency, and
+  a `provenance.json`: the loaded commit, eval-set/corpus/qrels/index/config
+  hashes, Ollama digest or Hugging Face snapshot, library versions and timings.
+  `--compare` renders the family table.
+- **Family**: five comparisons × three datasets, Bonferroni over the 15. The
+  smallest worthwhile effect is 0.01 nDCG@10.
+- **Nothing was tuned on dev.** Parameters are shared and at shipped values,
+  with one exception: the dev runs showed that reranking 100 long FiQA
+  passages at the model's 8,192-token limit exhausts memory. So
+  `reranker.max_length` was added (default null, shipped behaviour unchanged)
+  and `beir.yaml` sets 512. Its measured cost on NFCorpus dev: −0.0019
+  nDCG@10 [−0.0059, +0.0021].
+- **Dependence.** SciFact's intervals are cluster-robust over claims that
+  share an abstract (`rag.eval.paired.grouped_difference`). FiQA's queries
+  are independent. NFCorpus can't be grouped, so its intervals are marked as
+  too narrow.
+- **Headline, scoped to these test sets.** The shipped stack beats its dense
+  leg on FiQA and NFCorpus, with nothing shown on SciFact and no regression.
+  Fusion alone hurt FiQA; the reranker recovered it. Qwen's query instruction,
+  off on EDGAR evidence, gained on FiQA and NFCorpus. No default changed.
+- **Not run:** query expansion and CRAG (LLM per query, needing repeats), and
+  the shipped 20/5 depths.
 
 ## Follow-on: multi-hop and agentic retrieval on MuSiQue
 

@@ -78,3 +78,15 @@ def test_queries_sharing_a_relevant_document_share_a_group() -> None:
 )
 def test_readings_follow_the_frozen_rules(diff: PairedDifference, reading: str) -> None:
     assert run_beir_stack._reading(diff) == reading
+
+
+def test_provenance_records_the_loaded_commit_even_after_head_moves(monkeypatch: pytest.MonkeyPatch) -> None:
+    loaded = run_beir_stack.LOADED_CODE["commit"]
+    real_git = run_beir_stack._git
+    monkeypatch.setattr(
+        run_beir_stack, "_git", lambda *args: "f" * 40 if args == ("rev-parse", "HEAD") else real_git(*args)
+    )
+    code = run_beir_stack.code_provenance()
+
+    assert code["commit"] == loaded
+    assert code["head_at_run"] == "f" * 40

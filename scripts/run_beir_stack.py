@@ -165,6 +165,12 @@ def _git(*args: str) -> str:
     return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True, check=True).stdout.strip()
 
 
+#: The code this process runs, read once at import. Recording HEAD per run
+#: instead was wrong in phase 4: another session switched this checkout's
+#: branch mid-run, and 18 of 21 test runs recorded a commit they never loaded.
+LOADED_CODE = {"commit": _git("rev-parse", "HEAD"), "dirty": _git("status", "--porcelain", "--untracked-files=no")}
+
+
 def _version(package: str) -> str | None:
     try:
         return importlib.metadata.version(package)
@@ -190,6 +196,18 @@ def _hf_snapshot(model: str) -> str | None:
         return Path(snapshot_download(model, local_files_only=True)).name
     except Exception:  # noqa: BLE001 -- provenance is best effort; a miss is recorded as null
         return None
+
+
+def code_provenance() -> dict[str, str]:
+    """The loaded commit and tree state, plus HEAD now, warning if they differ."""
+    head_at_run = _git("rev-parse", "HEAD")
+    if head_at_run != LOADED_CODE["commit"]:
+        logger.warning(
+            "HEAD moved to %s since this process loaded %s; the run uses the loaded code",
+            head_at_run[:7],
+            LOADED_CODE["commit"][:7],
+        )
+    return {**LOADED_CODE, "head_at_run": head_at_run}
 
 
 def provenance(variant: Variant, config: RagConfig, dataset: str, split: str) -> dict[str, Any]:
@@ -225,7 +243,7 @@ def provenance(variant: Variant, config: RagConfig, dataset: str, split: str) ->
             "reranker_pool": config.retrieval.top_k if config.reranker.provider != "none" else 0,
             "final": config.retrieval.rerank_top_k,
         },
-        "code": {"commit": _git("rev-parse", "HEAD"), "dirty": _git("status", "--porcelain", "--untracked-files=no")},
+        "code": code_provenance(),
         "eval_set": {"path": str(eval_set_path(dataset, split).relative_to(REPO)), "sha256": _sha256(eval_set_path(dataset, split))},
         "corpus": {"name": corpus, "corpus_sha256": inventory["corpus"]["sha256"], "qrels_sha256": inventory["qrels"][split]["sha256"]},
         "index": {

@@ -87,7 +87,10 @@ embedding:
   # Query-side instruction (Qwen3-Embedding's `Instruct: ...\nQuery:` prefix).
   # null on evidence: the model card's retrieval task measured no better than
   # noise on EDGAR, and leaned worse (docs/measured-results.md, "Query
-  # instruction for the embedder"). Query-time only, so no reindex to change it.
+  # instruction for the embedder"). On BEIR the same instruction gained +0.077
+  # nDCG@10 on FiQA and +0.057 on NFCorpus, dense only ("BEIR query-time
+  # stack"). So re-measure on EDGAR with a filings-specific task before
+  # turning it on; BEIR alone doesn't. Query-time only, so no reindex to change it.
   query_instruction: null
 
 llm:
