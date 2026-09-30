@@ -842,6 +842,9 @@ def main() -> int:
             "generator": generator_of(config),
             "mode": mode_of(config),
             "retrieval": "oracle" if variant.oracle else "configured",
+            # The commit (plus a hash of uncommitted changes) the row ran at, so
+            # rows meant to share one frozen commit can be checked to.
+            "code": code,
         }
         for name in sets_for[variant.name]:
             checkpoint = checkpoints[variant.name, name]

@@ -170,6 +170,7 @@ def test_the_oracle_skips_the_refusal_set_and_gets_only_gold_questions(
     assert row["_oracle_sets"] == [["mh-0", "mh-1"]]
     assert row["_built"] == [{"mode": "pipeline", "retriever": "oracle-retriever"}]
     assert (row["retrieval"], row["mode"]) == ("oracle", "pipeline")
+    assert row["code"] == matrix.code_version()
 
 
 def test_repeats_are_separate_rows_with_a_spread_table(
