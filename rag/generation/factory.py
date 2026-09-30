@@ -9,7 +9,8 @@ not-yet-implemented error rather than `Unknown provider`.
 
 from __future__ import annotations
 
-from rag.config.settings import LLMConfig
+from rag.config.settings import REPO_ROOT, LLMConfig
+from rag.generation.daily_budget import DailyRequestCounter
 from rag.generation.gemini_llm import GeminiLLMClient, api_key_from_env
 from rag.generation.llm import LLMClient
 from rag.generation.ollama_llm import OllamaLLMClient
@@ -49,6 +50,15 @@ def get_llm_client(config: LLMConfig, *, num_ctx: int | None = None) -> LLMClien
             requests_per_minute=config.requests_per_minute,
             tokens_per_minute=config.tokens_per_minute,
             thinking_level=config.thinking_level,
+            daily_counter=(
+                DailyRequestCounter(
+                    (REPO_ROOT / config.daily_request_log).resolve(),
+                    key=config.model,
+                    limit=config.requests_per_day - config.requests_per_day_reserve,
+                )
+                if config.requests_per_day is not None
+                else None
+            ),
         )
 
     if config.provider in _KNOWN_BUT_UNIMPLEMENTED:

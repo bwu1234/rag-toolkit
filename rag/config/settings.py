@@ -193,6 +193,14 @@ class LLMConfig(BaseModel):
     # itself under both rather than firing and eating 429s. None = don't pace.
     requests_per_minute: int | None = Field(default=None, gt=0)
     tokens_per_minute: int | None = Field(default=None, gt=0)
+    # The per-day request quota (Gemini only). With it set, the client counts
+    # every request this machine sends to the model in `daily_request_log`
+    # (relative to the repo) and refuses once the day's count reaches
+    # `requests_per_day - requests_per_day_reserve`, so no one caller can spend
+    # the whole day (see rag.generation.daily_budget). None = no daily count.
+    requests_per_day: int | None = Field(default=None, gt=0)
+    requests_per_day_reserve: int = Field(default=0, ge=0)
+    daily_request_log: str = "data/logs/llm_daily_requests.json"
     # Gemini 3+ thinking models only (Flash-Lite 3.1/3.5). Thinking can't be
     # switched off there, and its tokens come out of `max_tokens`, so a deep
     # level on a long RAG prompt can leave no budget for the answer. None sends
@@ -206,6 +214,22 @@ class LLMConfig(BaseModel):
         # every gemini stanza restate the endpoint invites a stale copy.
         if self.provider == "gemini" and "base_url" not in self.model_fields_set:
             self.base_url = GEMINI_BASE_URL
+        return self
+
+    @model_validator(mode="after")
+    def _daily_budget_is_gemini_only(self) -> "LLMConfig":
+        if self.requests_per_day is None:
+            return self
+        if self.provider != "gemini":
+            raise ValueError(
+                f"requests_per_day counts a hosted provider's daily quota; provider "
+                f"{self.provider!r} has none and would ignore it"
+            )
+        if self.requests_per_day_reserve >= self.requests_per_day:
+            raise ValueError(
+                f"requests_per_day_reserve ({self.requests_per_day_reserve}) leaves nothing of "
+                f"requests_per_day ({self.requests_per_day})"
+            )
         return self
 
     @model_validator(mode="after")

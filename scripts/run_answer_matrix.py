@@ -88,6 +88,14 @@ config's default model changes. The agent rows also pin the agent model's
 **The oracle** answers from each question's gold chunks instead of retrieval
 (`rag.eval.oracle`). It skips any set without gold spans (the refusal set).
 
+**The hosted pair.** `--family m19-hosted` runs `pipeline / flash-lite` and
+`agentic react / flash-lite` into the same table, on the free tier. It refuses
+an unbounded answerable set, and the client's daily request budget
+(`llm.requests_per_day`, see `rag.generation.daily_budget`) stops the run
+before the day's quota is gone. The per-sample checkpoints mean rerunning the
+same command after midnight Pacific resumes where it stopped. Measure calls
+per question on a few samples first (`--limit 5 --sets answerable`).
+
 **Repeats.** The 9b samples at temperature 0.2, and the phase 0 run moved by
 +/-2 multi-hop questions between identical runs. `--repeat N` runs every
 variant N times as separate rows (`name #1` ... `name #N`), each with its own
@@ -138,6 +146,7 @@ from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval  # no
 from rag.eval.oracle import build_oracle_retriever  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.generation.builder import build_chat_service  # noqa: E402
+from rag.generation.daily_budget import DailyRequestBudgetSpent  # noqa: E402
 from rag.generation.chat_service import ChatResponder  # noqa: E402
 from rag.generation.factory import get_llm_client  # noqa: E402
 from rag.generation.llm import LLMClient  # noqa: E402
@@ -248,9 +257,36 @@ M19_VARIANTS: list[Variant] = [
     }),
 ]
 
-FAMILIES: dict[str, list[Variant]] = {"crag": VARIANTS, "m19": M19_VARIANTS}
-#: Each family writes apart, so a row is only ever paired within its own family.
-DEFAULT_RESULTS_DIRS = {"crag": Path("data/eval/results"), "m19": Path("data/eval/results_m19")}
+# The hosted reference pair (Milestone 19 plan, open question on a hosted model):
+# the same model with and without the agent loop, so "the method doesn't help"
+# and "the local model can't drive it" come apart. Settings come from the
+# model's config file, daily request budget included, so a row can't drift
+# from it. Its own family, so a plain `--family m19` run never spends quota.
+_FLASH_LITE_CONFIG = Path(__file__).resolve().parent.parent / "rag/config/gemini-3.5-flash-lite.yaml"
+_FLASH_LITE = load_config(_FLASH_LITE_CONFIG).llm.model_dump(mode="json")
+
+M19_HOSTED_VARIANTS: list[Variant] = [
+    Variant("pipeline / flash-lite", {"chat.mode": "pipeline", "crag.enabled": False, "llm": _FLASH_LITE}),
+    Variant("agentic react / flash-lite", {
+        **_AGENTIC, "agent.strategy": "react",
+        "agent.llm": {**_FLASH_LITE, "max_tokens": 4096, "timeout_s": 600},
+    }),
+]
+
+FAMILIES: dict[str, list[Variant]] = {
+    "crag": VARIANTS, "m19": M19_VARIANTS, "m19-hosted": M19_HOSTED_VARIANTS,
+}
+#: Families that spend a hosted provider's quota: each needs a bounded answerable set.
+HOSTED_FAMILIES = {"m19-hosted"}
+#: The CRAG rows write apart, so a phase 4 row is never paired against one. The
+#: hosted rows share the phase 4 table, so they sit next to the local rows.
+DEFAULT_RESULTS_DIRS = {
+    "crag": Path("data/eval/results"),
+    "m19": Path("data/eval/results_m19"),
+    "m19-hosted": Path("data/eval/results_m19"),
+}
+#: Row order in a results table, across families, so the local baseline stays first.
+_ROW_ORDER = {v.name: i for i, v in enumerate(v for family in FAMILIES.values() for v in family)}
 
 
 def apply_overrides(config: RagConfig, overrides: dict[str, Any]) -> RagConfig:
@@ -691,6 +727,10 @@ def main() -> int:
         variants = [v for v in variants if v.name in wanted]
     if args.repeat < 1:
         parser.error("--repeat must be at least 1")
+    if args.family in HOSTED_FAMILIES and args.limit <= 0:
+        # docs/backlog.md: no unbounded evals against a hosted key. The full
+        # answerable set is most of a day's quota on its own.
+        parser.error(f"--family {args.family} spends a hosted quota; give --limit a positive value")
     variants = repeated(variants, args.repeat)
     if args.list:
         for v in variants:
@@ -727,8 +767,9 @@ def main() -> int:
         accumulated = {r["variant"]: r for r in json.loads(destination.read_text())["results"]}
 
     def flush() -> list[dict[str, Any]]:
-        order = {v.name: i for i, v in enumerate(family)}
-        ordered = sorted(accumulated.values(), key=lambda r: (order.get(base_name(r["variant"]), 999), r["variant"]))
+        ordered = sorted(
+            accumulated.values(), key=lambda r: (_ROW_ORDER.get(base_name(r["variant"]), 999), r["variant"])
+        )
         destination.write_text(json.dumps({
             "corpus": selection.describe(),
             "collection": selection.collection_name,
@@ -801,13 +842,23 @@ def main() -> int:
             "generator": generator_of(config),
             "mode": mode_of(config),
             "retrieval": "oracle" if variant.oracle else "configured",
+            # The commit (plus a hash of uncommitted changes) the row ran at, so
+            # rows meant to share one frozen commit can be checked to.
+            "code": code,
         }
         for name in sets_for[variant.name]:
             checkpoint = checkpoints[variant.name, name]
-            if name == "multihop":
-                record[name] = run_multihop(chat_service, judge, datasets[name], checkpoint)
-            else:
-                record[name] = run_one(name, chat_service, judge, datasets[name], checkpoint)
+            try:
+                if name == "multihop":
+                    record[name] = run_multihop(chat_service, judge, datasets[name], checkpoint)
+                else:
+                    record[name] = run_one(name, chat_service, judge, datasets[name], checkpoint)
+            except DailyRequestBudgetSpent as exc:
+                # Every finished sample is in the checkpoint: the same command
+                # resumes from here once the budget resets.
+                logger.error("[%s] %s: stopped. %s Rerun the same command after it resets.",
+                             variant.name, name, exc)
+                return 2
             accumulated[variant.name] = record
             # Write the finished set, then drop its checkpoint: the results file
             # only ever holds whole sets, and a crash between the two just
