@@ -129,7 +129,8 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   provider than the one it inherits. Multi-hop: `python -m rag.eval.multihop_eval --corpus edgar`.
   Both take `--oracle` (gold chunks instead of retrieval, a diagnostic
   ceiling). The Milestone 19 phase 4 matrix is `scripts/run_answer_matrix.py
-  --family m19` (`--repeat N` for run-to-run noise); `--family m19-hosted` is
+  --family m19` (`--repeat N` for run-to-run noise, `--sets ...,adaptive` for
+  the bridge/discovery set); `--family m19-hosted` is
   the Gemini Flash-Lite reference pair, on the free tier and bounded by
   `llm.requests_per_day`.
 

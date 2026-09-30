@@ -51,6 +51,8 @@ REPO = Path(__file__).resolve().parent.parent
 SOURCE = REPO / "data/eval/edgar_eval_set.json"
 OUTPUT = REPO / "data/eval/edgar_multihop_set.json"
 CORPUS = REPO / "data/corpora/edgar/documents"
+#: The same filings rendered as Markdown; some alternatives quote that rendering.
+MARKDOWN_CORPUS = REPO / "data/corpora/edgar_md/documents"
 
 
 def P(source: str, label: str, answer: str | None = None) -> dict[str, Any]:
@@ -58,13 +60,19 @@ def P(source: str, label: str, answer: str | None = None) -> dict[str, Any]:
     return {"source": source.replace("#", ".md::chunk"), "label": label, "answer": answer}
 
 
-def G(source: str, label: str, answer: str, spans: list[str]) -> dict[str, Any]:
-    """A hand-authored part: `spans` are quoted from the filing, `source` names the chunk holding the first."""
+def G(source: str, label: str, answer: str, spans: list[str | dict[str, Any]]) -> dict[str, Any]:
+    """A hand-authored part: `spans` are quoted from the filing, `source` names the chunk holding the first.
+
+    A span may be `{"text": ..., "alternatives": [...]}` when the filing states
+    the fact twice (a sentence and a table row), so either chunk counts.
+    """
     return {"source": source.replace("#", ".md::chunk"), "label": label, "answer": answer, "spans": spans}
 
 
 # (id, kind, question, parts, conclusion or None)
-SPEC: list[tuple[str, str, str, list[dict[str, Any]], str | None]] = [
+Spec = list[tuple[str, str, str, list[dict[str, Any]], str | None]]
+
+SPEC: Spec = [
     # --- cross_period: one company, one metric, two or more periods -------------
     ("mh-aapl-lease-yoy", "cross_period",
      "How did Apple's fixed lease payment obligations change between September 28, 2024 and September 27, 2025?",
@@ -273,15 +281,15 @@ SPEC: list[tuple[str, str, str, list[dict[str, Any]], str | None]] = [
 ]
 
 
-def build(sources: dict[str, EvalSample]) -> list[EvalSample]:
+def build(sources: dict[str, EvalSample], spec: Spec = SPEC) -> list[EvalSample]:
     built: list[EvalSample] = []
-    for sample_id, kind, query, parts, conclusion in SPEC:
+    for sample_id, kind, query, parts, conclusion in spec:
         out_parts: list[dict[str, Any]] = []
         part_spans: list[list[ExpectedSpan]] = []
         doc_ids: set[str] = set()
         for part in parts:
             if "spans" in part:
-                spans = [ExpectedSpan(text=t) for t in part["spans"]]
+                spans = [ExpectedSpan.from_json(t) for t in part["spans"]]
                 out_parts.append({
                     "label": part["label"],
                     "answer": part["answer"],
@@ -330,26 +338,42 @@ def check_spans_in_corpus(samples: list[EvalSample]) -> int:
         return 0
     missing = 0
     cache: dict[str, str] = {}
+
+    def text_of(doc: str, corpus: Path = CORPUS) -> str:
+        path = corpus / doc
+        if str(path) not in cache:
+            cache[str(path)] = normalize(path.read_text(encoding="utf-8")) if path.exists() else ""
+        return cache[str(path)]
+
     for sample in samples:
         for part in sample.extra["parts"]:
             doc = part["source_id"].split("::")[0]
-            if doc not in cache:
-                cache[doc] = normalize((CORPUS / doc).read_text(encoding="utf-8"))
-            for span in part["spans"]:
-                text = span if isinstance(span, str) else span["text"]
-                if normalize(text) not in cache[doc]:
+            for raw in part["spans"]:
+                span = ExpectedSpan.from_json(raw)
+                if normalize(span.text) not in text_of(doc):
                     missing += 1
-                    print(f"{sample.id}: span not in {doc}: {text[:80]!r}")
+                    print(f"{sample.id}: span not in {doc}: {span.text[:80]!r}")
+                # An alternative may quote another filing (a restated prior-year
+                # figure) or the Markdown rendering, so it only has to be in one
+                # of the question's documents, in either corpus. Unchecked when
+                # edgar_md isn't built.
+                for alt in span.alternatives:
+                    if not MARKDOWN_CORPUS.is_dir():
+                        continue
+                    if not any(normalize(alt) in text_of(d, c)
+                               for d in sample.expected_doc_ids for c in (CORPUS, MARKDOWN_CORPUS)):
+                        missing += 1
+                        print(f"{sample.id}: alternative in none of its documents: {alt[:80]!r}")
     return missing
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
+def main(spec: Spec = SPEC, output: Path = OUTPUT, description: str | None = __doc__) -> int:
+    parser = argparse.ArgumentParser(description=(description or "").split("\n")[0])
     parser.add_argument("--check", action="store_true", help="Validate without writing")
     args = parser.parse_args()
 
     sources = {s.id: s for s in EvalDataset.load(SOURCE)}
-    samples = build(sources)
+    samples = build(sources, spec)
 
     ids = Counter(s.id for s in samples)
     if dupes := [i for i, n in ids.items() if n > 1]:
@@ -360,8 +384,8 @@ def main() -> int:
     kinds = Counter(s.extra["kind"] for s in samples)
     print(f"{len(samples)} samples: " + ", ".join(f"{k}={n}" for k, n in sorted(kinds.items())))
     if not args.check:
-        EvalDataset(samples=samples).save(OUTPUT)
-        print(f"wrote {OUTPUT.relative_to(REPO)}")
+        EvalDataset(samples=samples).save(output)
+        print(f"wrote {output.relative_to(REPO)}")
     return 0
 
 

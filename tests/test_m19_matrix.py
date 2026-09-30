@@ -195,6 +195,28 @@ def test_groundedness_verdicts_are_saved_and_counted(monkeypatch: pytest.MonkeyP
     assert [s["grounded"] for s in row["refusals"]["samples"]] == [False]
 
 
+def test_the_adaptive_set_is_judged_part_by_part_in_its_own_table(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    adaptive = tmp_path / "adaptive.json"
+    adaptive.write_text(json.dumps([
+        {"id": f"ad-{kind}", "query": f"which {kind}", "expected_answer": "A: 1", "kind": kind,
+         "expected_spans": ["a1"], "parts": [{"label": "A", "answer": "1", "spans": ["a1"]}]}
+        for kind in ("bridge", "discovery")
+    ]))
+    chat = _Chat()
+    [row] = _run(monkeypatch, tmp_path, chat, "--variant", "oracle / 9b",
+                 "--sets", "multihop,adaptive", "--adaptive", str(adaptive))
+
+    assert row["adaptive"]["complete_rate_by_kind"] == {"bridge": 1.0, "discovery": 1.0}
+    assert row["multihop"]["num_evaluated"] == 2
+    # The oracle gets the adaptive questions' gold too.
+    assert row["_oracle_sets"] == [["mh-0", "mh-1", "ad-bridge", "ad-discovery"]]
+    [markdown] = (tmp_path / "results").glob("*.md")
+    assert "| `oracle / 9b` | 1.000 |" in markdown.read_text().split("adaptive complete")[1]
+    assert "bridge 1.000, discovery 1.000" in markdown.read_text()
+
+
 def test_an_unknown_variant_name_is_refused(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(sys, "argv", ["run_answer_matrix.py", "--family", "m19", "--variant", "crag=off",
                                       "--results-dir", str(tmp_path)])

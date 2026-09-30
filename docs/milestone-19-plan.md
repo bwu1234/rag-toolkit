@@ -422,6 +422,20 @@ results now carry per-turn LLM calls and tokens, as multi-hop results already
 did. Run order: `pipeline / 9b` first, since the table pairs every row against
 the first one.
 
+*The adaptive set, added after stage 1.* Stage 1 (the four 9b rows, three
+repeats) found the multi-hop set can't separate the agent from the pipeline:
+34 of its 35 questions name every company and period they ask about, so one
+search with the whole question already reaches most of the evidence, and the
+oracle completes about 33.7 of 35. `data/eval/edgar_adaptive_set.json`
+(`scripts/build_adaptive_set.py`, 15 questions) asks what only a second,
+different search can answer. The 10 **bridge** questions name an identifying
+fact rather than the company ("the company that sells Enflonsia"), or ask a
+follow-up about a comparison's winner. The 5 **discovery** questions name a
+class ("the airlines in this corpus") or the latest period. It is a separate
+file, so stage 1's multi-hop numbers stay valid. `--sets ...,adaptive` runs it,
+and it reports completion per kind. It changes only the scripts and data, not
+the answering code under `rag/`.
+
 **The oracle row** feeds the generator the indexed chunks that contain each
 question's gold spans, found by the same `unmatched_spans` matching that
 evidence recall uses, in place of retrieval. It separates two failures that

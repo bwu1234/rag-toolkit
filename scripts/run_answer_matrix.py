@@ -66,6 +66,15 @@ question. It is judged part by part (see `rag.eval.multihop_eval`) and reports
 complete-and-correct rate, mean completeness and evidence recall -- the
 baseline the Milestone 19 agent has to beat.
 
+The adaptive set
+----------------
+`--sets ...,adaptive` adds `edgar_adaptive_set.json`
+(scripts/build_adaptive_set.py): bridge and discovery questions, whose next
+search depends on what the last one found -- what the multi-hop set, whose
+questions name every company they ask about, can't test. Judged and reported
+like the multi-hop set, in its own table, with the complete rate per kind.
+Opt-in, so the CRAG matrix's default sets are unchanged.
+
 The chunking plan's tiers
 -------------------------
 `--sets period,underspecified` adds the two tiers frozen in Phase 0 of
@@ -157,13 +166,16 @@ logger = logging.getLogger(__name__)
 DEFAULT_ANSWERABLE = Path("data/eval/edgar_eval_set.json")
 DEFAULT_REFUSALS = Path("data/eval/edgar_refusal_set.json")
 DEFAULT_MULTIHOP = Path("data/eval/edgar_multihop_set.json")
+DEFAULT_ADAPTIVE = Path("data/eval/edgar_adaptive_set.json")
 DEFAULT_PERIOD = Path("data/eval/edgar_period_set.json")
 DEFAULT_UNDERSPECIFIED = Path("data/eval/edgar_underspecified_set.json")
 #: What runs without `--sets`, as before the tiers existed.
 DEFAULT_SETS = ("answerable", "refusals", "multihop")
 #: The chunking plan's tiers: single-answer like `answerable`, reported apart.
 TIER_SETS = ("period", "underspecified")
-SETS = DEFAULT_SETS + TIER_SETS
+#: Judged part by part (`rag.eval.multihop_eval`) rather than pass/fail.
+MULTIHOP_SETS = ("multihop", "adaptive")
+SETS = DEFAULT_SETS + ("adaptive",) + TIER_SETS
 
 
 @dataclass
@@ -607,25 +619,32 @@ def render_table(results: list[dict[str, Any]]) -> str:
                     f"| {elapsed} |"
                 )
 
-    multihop = [r for r in results if r.get("multihop")]
-    if multihop:
+    for set_name, title in (("multihop", "multi-hop"), ("adaptive", "adaptive")):
+        rows = [r for r in results if r.get(set_name)]
+        if not rows:
+            continue
+        # The adaptive set's kinds (bridge, discovery) ask different things of
+        # the agent, so its table shows each; the multi-hop kinds don't.
+        kinds = set_name == "adaptive"
         lines += [
             "",
-            "| variant | multi-hop complete | completeness | evidence recall | n | s/turn "
-            "| LLM calls/turn | LLM s/turn | prompt / gen tokens/turn |",
-            "|---|---|---|---|---|---|---|---|---|",
+            f"| variant | {title} complete | completeness | evidence recall | n | s/turn "
+            "| LLM calls/turn | LLM s/turn | prompt / gen tokens/turn |"
+            + (" complete by kind |" if kinds else ""),
+            "|---|---|---|---|---|---|---|---|---|" + ("---|" if kinds else ""),
         ]
-        for r in multihop:
-            m = r["multihop"]
+        for r in rows:
+            m = r[set_name]
             # Rows recorded before the cost columns existed show "—" for them.
             cost = (
                 f"{m['mean_llm_calls']:.1f} | {m['mean_llm_s']:.1f} | {_tokens_cell(m)}"
                 if "mean_llm_calls" in m else "— | — | —"
             )
+            by_kind = ", ".join(f"{k} {v:.3f}" for k, v in sorted(m.get("complete_rate_by_kind", {}).items()))
             lines.append(
                 f"| `{r['variant']}` | {m['complete_rate']:.3f} | {m['mean_completeness']:.3f} "
                 f"| {m['evidence_recall']:.3f} | {m['num_evaluated']} | {m['mean_latency_s']:.1f} "
-                f"| {cost} |"
+                f"| {cost} |" + (f" {by_kind} |" if kinds else "")
             )
 
     checked = [(r, name, r[name]["groundedness"]) for r in results for name in SETS
@@ -670,7 +689,7 @@ def render_repeats(results: list[dict[str, Any]]) -> str:
             if len(counts) < 2:
                 continue
             passed = [p for p, _ in counts]
-            label = "complete" if set_name == "multihop" else "pass"
+            label = "complete" if set_name in MULTIHOP_SETS else "pass"
             rows.append(
                 f"| `{name}` | {set_name} {label} | {', '.join(f'{p}/{n}' for p, n in counts)} "
                 f"| {sum(passed) / len(passed):.1f} | {max(passed) - min(passed)} |"
@@ -696,6 +715,7 @@ def main() -> int:
     parser.add_argument("--answerable", type=Path, default=DEFAULT_ANSWERABLE)
     parser.add_argument("--refusals", type=Path, default=DEFAULT_REFUSALS)
     parser.add_argument("--multihop", type=Path, default=DEFAULT_MULTIHOP)
+    parser.add_argument("--adaptive", type=Path, default=DEFAULT_ADAPTIVE)
     parser.add_argument("--period", type=Path, default=DEFAULT_PERIOD)
     parser.add_argument("--underspecified", type=Path, default=DEFAULT_UNDERSPECIFIED)
     parser.add_argument("--sets", default=",".join(DEFAULT_SETS),
@@ -746,7 +766,7 @@ def main() -> int:
     judge = get_llm_client(judge_config)
     paths = {
         "answerable": args.answerable, "refusals": args.refusals, "multihop": args.multihop,
-        "period": args.period, "underspecified": args.underspecified,
+        "adaptive": args.adaptive, "period": args.period, "underspecified": args.underspecified,
     }
     datasets = {name: EvalDataset.load(paths[name]) for name in sets}
     if "answerable" in datasets:
@@ -777,6 +797,7 @@ def main() -> int:
             "answerable_set": str(args.answerable),
             "refusal_set": str(args.refusals),
             "multihop_set": str(args.multihop),
+            "adaptive_set": str(args.adaptive),
             "period_set": str(args.period),
             "underspecified_set": str(args.underspecified),
             "results": ordered,
@@ -849,7 +870,7 @@ def main() -> int:
         for name in sets_for[variant.name]:
             checkpoint = checkpoints[variant.name, name]
             try:
-                if name == "multihop":
+                if name in MULTIHOP_SETS:
                     record[name] = run_multihop(chat_service, judge, datasets[name], checkpoint)
                 else:
                     record[name] = run_one(name, chat_service, judge, datasets[name], checkpoint)
