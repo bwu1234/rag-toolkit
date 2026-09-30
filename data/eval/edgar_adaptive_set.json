@@ -1,0 +1,596 @@
+[
+  {
+    "id": "ad-owowo-buyback",
+    "query": "A company in this corpus holds a working interest in the offshore blocks that contain the Owowo Field. How much did that company spend repurchasing its shares in the third quarter of 2025?",
+    "expected_doc_ids": [
+      "CVX_10-K_2024-12-31.md",
+      "CVX_10-Q_2025-09-30.md"
+    ],
+    "expected_spans": [
+      "Chevron also holds a 27 percent nonoperated working interest in OML 139 and OML 154",
+      "including the Owowo Field, which straddles OML 139 and OML 154",
+      "16.6 million shares repurchased for $2.6 billion in third quarter 2025"
+    ],
+    "expected_answer": "The company holding an interest in the Owowo Field: Chevron (a 27 percent nonoperated working interest in OML 139 and OML 154, which the Owowo Field straddles); Its share repurchases, third quarter of 2025: $2.6 billion (16.6 million shares). Conclusion: Chevron spent $2.6 billion.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "The company holding an interest in the Owowo Field",
+        "answer": "Chevron (a 27 percent nonoperated working interest in OML 139 and OML 154, which the Owowo Field straddles)",
+        "spans": [
+          "Chevron also holds a 27 percent nonoperated working interest in OML 139 and OML 154",
+          "including the Owowo Field, which straddles OML 139 and OML 154"
+        ],
+        "source_id": "CVX_10-K_2024-12-31.md::chunk42"
+      },
+      {
+        "label": "Its share repurchases, third quarter of 2025",
+        "answer": "$2.6 billion (16.6 million shares)",
+        "spans": [
+          "16.6 million shares repurchased for $2.6 billion in third quarter 2025"
+        ],
+        "source_id": "CVX_10-Q_2025-09-30.md::chunk63"
+      }
+    ],
+    "conclusion": "Chevron spent $2.6 billion."
+  },
+  {
+    "id": "ad-enflonsia-ocf",
+    "query": "How much cash did the company that sells Enflonsia provide from operating activities in the first quarter of 2026?",
+    "expected_doc_ids": [
+      "MRK_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "Sales of Enflonsia were $1 million in the first quarter of 2026",
+      "Cash provided by operating activities was $3.9 billion in the first three months of 2026"
+    ],
+    "expected_answer": "The company that sells Enflonsia: Merck; Its cash from operating activities, first quarter of 2026: $3.9 billion. Conclusion: Merck, $3.9 billion.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "The company that sells Enflonsia",
+        "answer": "Merck",
+        "spans": [
+          "Sales of Enflonsia were $1 million in the first quarter of 2026"
+        ],
+        "source_id": "MRK_10-Q_2026-03-31.md::chunk34"
+      },
+      {
+        "label": "Its cash from operating activities, first quarter of 2026",
+        "answer": "$3.9 billion",
+        "spans": [
+          "Cash provided by operating activities was $3.9 billion in the first three months of 2026"
+        ],
+        "source_id": "MRK_10-Q_2026-03-31.md::chunk84"
+      }
+    ],
+    "conclusion": "Merck, $3.9 billion."
+  },
+  {
+    "id": "ad-recaro-cash",
+    "query": "An airline in this corpus has been retrofitting its aircraft with RECARO seats. What was its unrestricted cash balance as of March 31, 2026?",
+    "expected_doc_ids": [
+      "LUV_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "As of April 22, 2026, 84 aircraft retrofitted with RECARO",
+      "unrestricted cash of $3.3 billion as of March 31, 2026"
+    ],
+    "expected_answer": "The airline retrofitting aircraft with RECARO seats: Southwest Airlines; Its unrestricted cash, March 31, 2026: $3.3 billion. Conclusion: Southwest Airlines, $3.3 billion.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "The airline retrofitting aircraft with RECARO seats",
+        "answer": "Southwest Airlines",
+        "spans": [
+          "As of April 22, 2026, 84 aircraft retrofitted with RECARO"
+        ],
+        "source_id": "LUV_10-Q_2026-03-31.md::chunk8"
+      },
+      {
+        "label": "Its unrestricted cash, March 31, 2026",
+        "answer": "$3.3 billion",
+        "spans": [
+          "unrestricted cash of $3.3 billion as of March 31, 2026"
+        ],
+        "source_id": "LUV_10-Q_2026-03-31.md::chunk42"
+      }
+    ],
+    "conclusion": "Southwest Airlines, $3.3 billion."
+  },
+  {
+    "id": "ad-vepdegestrant-dividend",
+    "query": "What dividend per share did the company that partnered with Arvinas on vepdegestrant declare in June 2026?",
+    "expected_doc_ids": [
+      "PFE_10-Q_2025-09-28.md",
+      "PFE_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "In September 2025, Arvinas and Pfizer jointly agreed to out-license the commercialization rights to vepdegestrant to a third party.",
+      "In June 2026, our BOD declared a dividend of $0.43 per share"
+    ],
+    "expected_answer": "The company that partnered with Arvinas on vepdegestrant: Pfizer; Its dividend declared in June 2026: $0.43 per share. Conclusion: Pfizer, $0.43 per share.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "The company that partnered with Arvinas on vepdegestrant",
+        "answer": "Pfizer",
+        "spans": [
+          "In September 2025, Arvinas and Pfizer jointly agreed to out-license the commercialization rights to vepdegestrant to a third party."
+        ],
+        "source_id": "PFE_10-Q_2025-09-28.md::chunk72"
+      },
+      {
+        "label": "Its dividend declared in June 2026",
+        "answer": "$0.43 per share",
+        "spans": [
+          "In June 2026, our BOD declared a dividend of $0.43 per share"
+        ],
+        "source_id": "PFE_10-Q_2026-06-28.md::chunk81"
+      }
+    ],
+    "conclusion": "Pfizer, $0.43 per share."
+  },
+  {
+    "id": "ad-wellness-ocf",
+    "query": "The retailer in this corpus that introduced 2,000 new wellness products in January 2025: how much cash did its operating activities provide in the first quarter of its fiscal 2026?",
+    "expected_doc_ids": [
+      "TGT_10-K_2025-02-01.md",
+      "TGT_10-Q_2026-05-02.md"
+    ],
+    "expected_spans": [
+      "2,000 new wellness products introduced in January of 2025",
+      "Cash flows provided by operating activities were $0.7 billion and $0.3 billion for the three months ended May 2, 2026, and May 3, 2025, respectively."
+    ],
+    "expected_answer": "The retailer that introduced 2,000 wellness products: Target; Its operating cash flow, first quarter of fiscal 2026 (three months ended May 2, 2026): $0.7 billion. Conclusion: Target, $0.7 billion.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "The retailer that introduced 2,000 wellness products",
+        "answer": "Target",
+        "spans": [
+          "2,000 new wellness products introduced in January of 2025"
+        ],
+        "source_id": "TGT_10-K_2025-02-01.md::chunk0"
+      },
+      {
+        "label": "Its operating cash flow, first quarter of fiscal 2026 (three months ended May 2, 2026)",
+        "answer": "$0.7 billion",
+        "spans": [
+          "Cash flows provided by operating activities were $0.7 billion and $0.3 billion for the three months ended May 2, 2026, and May 3, 2025, respectively."
+        ],
+        "source_id": "TGT_10-Q_2026-05-02.md::chunk25"
+      }
+    ],
+    "conclusion": "Target, $0.7 billion."
+  },
+  {
+    "id": "ad-refinery-debt",
+    "query": "One airline in this corpus owns a refinery, which posted an operating loss of $39 million in the March 2026 quarter. How much did that airline repay on its debt and finance lease obligations in that quarter?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "The refinery generated an operating loss of $39 million in the March 2026 quarter",
+      "In the three months ended March 31, 2026, we had cash outflows of $1.6 billion related to repayments of our debt and finance lease obligations."
+    ],
+    "expected_answer": "The airline that owns the refinery: Delta Air Lines; Its debt and finance lease repayments, March 2026 quarter: $1.6 billion. Conclusion: Delta Air Lines, $1.6 billion.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "The airline that owns the refinery",
+        "answer": "Delta Air Lines",
+        "spans": [
+          "The refinery generated an operating loss of $39 million in the March 2026 quarter"
+        ],
+        "source_id": "DAL_10-Q_2026-03-31.md::chunk16"
+      },
+      {
+        "label": "Its debt and finance lease repayments, March 2026 quarter",
+        "answer": "$1.6 billion",
+        "spans": [
+          "In the three months ended March 31, 2026, we had cash outflows of $1.6 billion related to repayments of our debt and finance lease obligations."
+        ],
+        "source_id": "DAL_10-Q_2026-03-31.md::chunk28"
+      }
+    ],
+    "conclusion": "Delta Air Lines, $1.6 billion."
+  },
+  {
+    "id": "ad-openai-etr",
+    "query": "What was the effective tax rate, for the three months ended March 31, 2026, of the company that signed a new definitive agreement with OpenAI in October 2025?",
+    "expected_doc_ids": [
+      "MSFT_10-Q_2025-12-31.md",
+      "MSFT_10-Q_2026-03-31.md"
+    ],
+    "expected_spans": [
+      "In October 2025, we signed a new definitive agreement with OpenAI that extends this partnership",
+      "Our effective tax rate was 19% and 18% for the three months ended March 31, 2026 and 2025"
+    ],
+    "expected_answer": "The company that signed the October 2025 agreement with OpenAI: Microsoft; Its effective tax rate, three months ended March 31, 2026: 19%. Conclusion: Microsoft, 19%.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "The company that signed the October 2025 agreement with OpenAI",
+        "answer": "Microsoft",
+        "spans": [
+          "In October 2025, we signed a new definitive agreement with OpenAI that extends this partnership"
+        ],
+        "source_id": "MSFT_10-Q_2025-12-31.md::chunk5"
+      },
+      {
+        "label": "Its effective tax rate, three months ended March 31, 2026",
+        "answer": "19%",
+        "spans": [
+          "Our effective tax rate was 19% and 18% for the three months ended March 31, 2026 and 2025"
+        ],
+        "source_id": "MSFT_10-Q_2026-03-31.md::chunk43"
+      }
+    ],
+    "conclusion": "Microsoft, 19%."
+  },
+  {
+    "id": "ad-airline-margin-capex",
+    "query": "Which airline in this corpus had the highest operating margin in the quarter ended June 30, 2026, and what were that airline's capital expenditures for the six months ended June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md",
+      "LUV_10-Q_2026-06-30.md",
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      "Our operating income for the June 2026 quarter was $1.9 billion",
+      "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
+      "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
+      "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+      "| Operating income | | 1,096 | | | 1,325 |",
+      "Our capital expenditures were $2.7 billion and $2.4 billion for the six months ended June 30, 2026 and 2025, respectively."
+    ],
+    "expected_answer": "Delta, quarter ended June 30, 2026: About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue); Southwest, quarter ended June 30, 2026: 3.4% as reported (6.7% excluding special items); United, quarter ended June 30, 2026: About 6.2% ($1,096 million operating income on $17,672 million operating revenue); The winner's capital expenditures, six months ended June 30, 2026: Delta: $2.7 billion. Conclusion: Delta (about 9.6%, ahead of United at about 6.2% and Southwest at 3.4%), with $2.7 billion of capital expenditures.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "Delta, quarter ended June 30, 2026",
+        "answer": "About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue)",
+        "spans": [
+          "Our operating income for the June 2026 quarter was $1.9 billion",
+          "| Total operating revenue | $ | 19,757 | | $ | 16,648 |"
+        ],
+        "source_id": "DAL_10-Q_2026-06-30.md::chunk0"
+      },
+      {
+        "label": "Southwest, quarter ended June 30, 2026",
+        "answer": "3.4% as reported (6.7% excluding special items)",
+        "spans": [
+          "| | Operating margin, as reported | 3.4 | % | | 3.1 | %"
+        ],
+        "source_id": "LUV_10-Q_2026-06-30.md::chunk44"
+      },
+      {
+        "label": "United, quarter ended June 30, 2026",
+        "answer": "About 6.2% ($1,096 million operating income on $17,672 million operating revenue)",
+        "spans": [
+          "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+          "| Operating income | | 1,096 | | | 1,325 |"
+        ],
+        "source_id": "UAL_10-Q_2026-06-30.md::chunk4"
+      },
+      {
+        "label": "The winner's capital expenditures, six months ended June 30, 2026",
+        "answer": "Delta: $2.7 billion",
+        "spans": [
+          "Our capital expenditures were $2.7 billion and $2.4 billion for the six months ended June 30, 2026 and 2025, respectively."
+        ],
+        "source_id": "DAL_10-Q_2026-06-30.md::chunk35"
+      }
+    ],
+    "conclusion": "Delta (about 9.6%, ahead of United at about 6.2% and Southwest at 3.4%), with $2.7 billion of capital expenditures."
+  },
+  {
+    "id": "ad-authorization-ocf",
+    "query": "Which had the larger remaining share repurchase authorization, Merck as of December 31, 2025 or Walmart as of July 31, 2025? How much cash did that company provide from operating activities in the first six months of 2026?",
+    "expected_doc_ids": [
+      "MRK_10-K_2025-12-31.md",
+      "MRK_10-Q_2026-06-30.md",
+      "WMT_10-Q_2025-07-31.md"
+    ],
+    "expected_spans": [
+      "As of December 31, 2025, the Company's remaining share repurchase authorization was $7.3 billion.",
+      "As of July 31, 2025, authorization for $5.9 billion of share repurchases remained under the share repurchase program.",
+      "Cash provided by operating activities was $9.3 billion in the first six months of 2026"
+    ],
+    "expected_answer": "Merck, as of December 31, 2025: $7.3 billion; Walmart, as of July 31, 2025: $5.9 billion; The winner's operating cash flow, first six months of 2026: Merck: $9.3 billion. Conclusion: Merck ($7.3 billion vs $5.9 billion), which provided $9.3 billion from operating activities.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "Merck, as of December 31, 2025",
+        "answer": "$7.3 billion",
+        "spans": [
+          "As of December 31, 2025, the Company's remaining share repurchase authorization was $7.3 billion."
+        ],
+        "source_id": "MRK_10-K_2025-12-31.md::chunk114"
+      },
+      {
+        "label": "Walmart, as of July 31, 2025",
+        "answer": "$5.9 billion",
+        "spans": [
+          "As of July 31, 2025, authorization for $5.9 billion of share repurchases remained under the share repurchase program."
+        ],
+        "source_id": "WMT_10-Q_2025-07-31.md::chunk47"
+      },
+      {
+        "label": "The winner's operating cash flow, first six months of 2026",
+        "answer": "Merck: $9.3 billion",
+        "spans": [
+          "Cash provided by operating activities was $9.3 billion in the first six months of 2026"
+        ],
+        "source_id": "MRK_10-Q_2026-06-30.md::chunk102"
+      }
+    ],
+    "conclusion": "Merck ($7.3 billion vs $5.9 billion), which provided $9.3 billion from operating activities."
+  },
+  {
+    "id": "ad-apple-buyback-os",
+    "query": "In which quarter of fiscal 2026 did Apple repurchase more of its common stock, the second or the third, and which operating system versions did it announce in that quarter?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-03-28.md",
+      "AAPL_10-Q_2026-06-27.md"
+    ],
+    "expected_spans": [
+      "During the second quarter of 2026, the Company repurchased $11.0 billion of its common stock",
+      "During the third quarter of 2026, the Company repurchased $25.8 billion of its common stock",
+      "During the third quarter of 2026, the Company announced iOS 27, macOS® 27 Golden Gate, iPadOS® 27, watchOS® 27, visionOS® 27 and tvOS® 27"
+    ],
+    "expected_answer": "Apple, second quarter of fiscal 2026: $11.0 billion; Apple, third quarter of fiscal 2026: $25.8 billion; Operating systems announced in the larger quarter: The third quarter: iOS 27, macOS 27 Golden Gate, iPadOS 27, watchOS 27, visionOS 27 and tvOS 27. Conclusion: The third quarter ($25.8 billion vs $11.0 billion), when Apple announced iOS 27, macOS 27 Golden Gate, iPadOS 27, watchOS 27, visionOS 27 and tvOS 27.",
+    "tier": "multihop",
+    "kind": "bridge",
+    "parts": [
+      {
+        "label": "Apple, second quarter of fiscal 2026",
+        "answer": "$11.0 billion",
+        "spans": [
+          "During the second quarter of 2026, the Company repurchased $11.0 billion of its common stock"
+        ],
+        "source_id": "AAPL_10-Q_2026-03-28.md::chunk23"
+      },
+      {
+        "label": "Apple, third quarter of fiscal 2026",
+        "answer": "$25.8 billion",
+        "spans": [
+          "During the third quarter of 2026, the Company repurchased $25.8 billion of its common stock"
+        ],
+        "source_id": "AAPL_10-Q_2026-06-27.md::chunk22"
+      },
+      {
+        "label": "Operating systems announced in the larger quarter",
+        "answer": "The third quarter: iOS 27, macOS 27 Golden Gate, iPadOS 27, watchOS 27, visionOS 27 and tvOS 27",
+        "spans": [
+          "During the third quarter of 2026, the Company announced iOS 27, macOS® 27 Golden Gate, iPadOS® 27, watchOS® 27, visionOS® 27 and tvOS® 27"
+        ],
+        "source_id": "AAPL_10-Q_2026-06-27.md::chunk4"
+      }
+    ],
+    "conclusion": "The third quarter ($25.8 billion vs $11.0 billion), when Apple announced iOS 27, macOS 27 Golden Gate, iPadOS 27, watchOS 27, visionOS 27 and tvOS 27."
+  },
+  {
+    "id": "ad-airline-fuel",
+    "query": "Which airline in this corpus had the largest year-over-year percentage increase in aircraft fuel expense in the quarter ended June 30, 2026?",
+    "expected_doc_ids": [
+      "DAL_10-Q_2026-06-30.md",
+      "LUV_10-Q_2026-06-30.md",
+      "UAL_10-Q_2026-06-30.md"
+    ],
+    "expected_spans": [
+      {
+        "text": "| Aircraft fuel and related taxes | 4,109 | | 2,458 | | | 1,651 | | 67 | % |",
+        "alternatives": [
+          "Aircraft fuel and related taxes increased $1.7 billion compared to the June 2025 quarter"
+        ]
+      },
+      "| Aircraft fuel and related taxes | 2,215 | | | 1,326 | | | 889 | | | 67.0 |",
+      "Aircraft fuel expense increased $2.3 billion, or 84.1%, in the second quarter of 2026 as compared to the year-ago period"
+    ],
+    "expected_answer": "Delta, quarter ended June 30, 2026: Up 67% ($4,109 million vs $2,458 million); Southwest, quarter ended June 30, 2026: Up 67.0% ($2,215 million vs $1,326 million); United, quarter ended June 30, 2026: Up 84.1% ($2.3 billion). Conclusion: United (84.1%), ahead of Delta (67%) and Southwest (67.0%).",
+    "tier": "multihop",
+    "kind": "discovery",
+    "parts": [
+      {
+        "label": "Delta, quarter ended June 30, 2026",
+        "answer": "Up 67% ($4,109 million vs $2,458 million)",
+        "spans": [
+          {
+            "text": "| Aircraft fuel and related taxes | 4,109 | | 2,458 | | | 1,651 | | 67 | % |",
+            "alternatives": [
+              "Aircraft fuel and related taxes increased $1.7 billion compared to the June 2025 quarter"
+            ]
+          }
+        ],
+        "source_id": "DAL_10-Q_2026-06-30.md::chunk10"
+      },
+      {
+        "label": "Southwest, quarter ended June 30, 2026",
+        "answer": "Up 67.0% ($2,215 million vs $1,326 million)",
+        "spans": [
+          "| Aircraft fuel and related taxes | 2,215 | | | 1,326 | | | 889 | | | 67.0 |"
+        ],
+        "source_id": "LUV_10-Q_2026-06-30.md::chunk16"
+      },
+      {
+        "label": "United, quarter ended June 30, 2026",
+        "answer": "Up 84.1% ($2.3 billion)",
+        "spans": [
+          "Aircraft fuel expense increased $2.3 billion, or 84.1%, in the second quarter of 2026 as compared to the year-ago period"
+        ],
+        "source_id": "UAL_10-Q_2026-06-30.md::chunk11"
+      }
+    ],
+    "conclusion": "United (84.1%), ahead of Delta (67%) and Southwest (67.0%)."
+  },
+  {
+    "id": "ad-pharma-ocf",
+    "query": "Which of the pharmaceutical companies in this corpus generated the most cash from operating activities in the first six months of 2026?",
+    "expected_doc_ids": [
+      "JNJ_10-Q_2026-06-28.md",
+      "MRK_10-Q_2026-06-30.md",
+      "PFE_10-Q_2026-06-28.md"
+    ],
+    "expected_spans": [
+      "11.1\nnet cash generated from operating activities",
+      "Cash provided by operating activities was $9.3 billion in the first six months of 2026",
+      "| Operating activities | | $ | 3,450 | | | $ | 1,753 | | |"
+    ],
+    "expected_answer": "Johnson & Johnson, fiscal first six months of 2026: $11.1 billion; Merck, first six months of 2026: $9.3 billion; Pfizer, first six months of 2026: $3,450 million. Conclusion: Johnson & Johnson ($11.1 billion), ahead of Merck ($9.3 billion) and Pfizer ($3.45 billion).",
+    "tier": "multihop",
+    "kind": "discovery",
+    "parts": [
+      {
+        "label": "Johnson & Johnson, fiscal first six months of 2026",
+        "answer": "$11.1 billion",
+        "spans": [
+          "11.1\nnet cash generated from operating activities"
+        ],
+        "source_id": "JNJ_10-Q_2026-06-28.md::chunk45"
+      },
+      {
+        "label": "Merck, first six months of 2026",
+        "answer": "$9.3 billion",
+        "spans": [
+          "Cash provided by operating activities was $9.3 billion in the first six months of 2026"
+        ],
+        "source_id": "MRK_10-Q_2026-06-30.md::chunk102"
+      },
+      {
+        "label": "Pfizer, first six months of 2026",
+        "answer": "$3,450 million",
+        "spans": [
+          "| Operating activities | | $ | 3,450 | | | $ | 1,753 | | |"
+        ],
+        "source_id": "PFE_10-Q_2026-06-28.md::chunk76"
+      }
+    ],
+    "conclusion": "Johnson & Johnson ($11.1 billion), ahead of Merck ($9.3 billion) and Pfizer ($3.45 billion)."
+  },
+  {
+    "id": "ad-tariff-refunds",
+    "query": "Which companies in this corpus say they have sought refunds of the tariffs the U.S. Supreme Court struck down in February 2026, and did any of them report that refunds improved their results?",
+    "expected_doc_ids": [
+      "AAPL_10-Q_2026-06-27.md",
+      "TGT_10-Q_2026-05-02.md",
+      "WMT_10-Q_2026-04-30.md"
+    ],
+    "expected_spans": [
+      "The Company has applied for a refund of tariffs paid",
+      "primarily due to a different mix of products and tariff refunds",
+      "participating in the process established by the U.S. Customs and Border Protection for refunds of tariffs",
+      "the Company did not recognize any amounts related to these claims in the three months ended April 30, 2026",
+      "We incurred tariffs under IEEPA, and are following the established refund filing and validation process",
+      "Subsequent to quarter-end, we began receiving refunds, which to date have not been material"
+    ],
+    "expected_answer": "Apple: Applied for refunds; recognized refunds received as a reduction of products cost of sales, which helped raise products gross margin in the third quarter of fiscal 2026; Walmart: Participating in the U.S. Customs and Border Protection refund process; recognized nothing in the three months ended April 30, 2026; Target: Filing through the CAPE refund process; nothing received or recorded as of May 2, 2026, and refunds received after quarter-end were not material. Conclusion: Apple, Walmart and Target; only Apple reported that refunds improved its results.",
+    "tier": "multihop",
+    "kind": "discovery",
+    "parts": [
+      {
+        "label": "Apple",
+        "answer": "Applied for refunds; recognized refunds received as a reduction of products cost of sales, which helped raise products gross margin in the third quarter of fiscal 2026",
+        "spans": [
+          "The Company has applied for a refund of tariffs paid",
+          "primarily due to a different mix of products and tariff refunds"
+        ],
+        "source_id": "AAPL_10-Q_2026-06-27.md::chunk6"
+      },
+      {
+        "label": "Walmart",
+        "answer": "Participating in the U.S. Customs and Border Protection refund process; recognized nothing in the three months ended April 30, 2026",
+        "spans": [
+          "participating in the process established by the U.S. Customs and Border Protection for refunds of tariffs",
+          "the Company did not recognize any amounts related to these claims in the three months ended April 30, 2026"
+        ],
+        "source_id": "WMT_10-Q_2026-04-30.md::chunk2"
+      },
+      {
+        "label": "Target",
+        "answer": "Filing through the CAPE refund process; nothing received or recorded as of May 2, 2026, and refunds received after quarter-end were not material",
+        "spans": [
+          "We incurred tariffs under IEEPA, and are following the established refund filing and validation process",
+          "Subsequent to quarter-end, we began receiving refunds, which to date have not been material"
+        ],
+        "source_id": "TGT_10-Q_2026-05-02.md::chunk3"
+      }
+    ],
+    "conclusion": "Apple, Walmart and Target; only Apple reported that refunds improved its results."
+  },
+  {
+    "id": "ad-nvda-latest-gm",
+    "query": "What was NVIDIA's gross margin in the most recent quarter covered by the filings in this corpus?",
+    "expected_doc_ids": [
+      "NVDA_10-Q_2026-04-26.md"
+    ],
+    "expected_spans": [
+      {
+        "text": "Gross margin increased to 74.9% for the first quarter of fiscal year 2027",
+        "alternatives": [
+          "| Gross margin | 74.9 | % | | 75.0 | % | | 60.5 | %"
+        ]
+      }
+    ],
+    "expected_answer": "NVIDIA, most recent quarter (first quarter of fiscal 2027, ended April 26, 2026): 74.9%",
+    "tier": "multihop",
+    "kind": "discovery",
+    "parts": [
+      {
+        "label": "NVIDIA, most recent quarter (first quarter of fiscal 2027, ended April 26, 2026)",
+        "answer": "74.9%",
+        "spans": [
+          {
+            "text": "Gross margin increased to 74.9% for the first quarter of fiscal year 2027",
+            "alternatives": [
+              "| Gross margin | 74.9 | % | | 75.0 | % | | 60.5 | %"
+            ]
+          }
+        ],
+        "source_id": "NVDA_10-Q_2026-04-26.md::chunk22"
+      }
+    ]
+  },
+  {
+    "id": "ad-wmt-latest-etr",
+    "query": "What was Walmart's effective income tax rate for the most recent fiscal year covered by the filings in this corpus, and why did it change from the year before?",
+    "expected_doc_ids": [
+      "WMT_10-K_2026-01-31.md"
+    ],
+    "expected_spans": [
+      "Our effective income tax rate was 24.4%, 23.4%, and 25.5% for fiscal 2026, 2025 and 2024, respectively.",
+      "primarily due to the share-based compensation charge recorded at the Company's PhonePe subsidiary, which provided no tax benefit"
+    ],
+    "expected_answer": "Walmart, most recent fiscal year (fiscal 2026): 24.4%, up from 23.4% in fiscal 2025; The reason for the change: A share-based compensation charge at its PhonePe subsidiary, which provided no tax benefit",
+    "tier": "multihop",
+    "kind": "discovery",
+    "parts": [
+      {
+        "label": "Walmart, most recent fiscal year (fiscal 2026)",
+        "answer": "24.4%, up from 23.4% in fiscal 2025",
+        "spans": [
+          "Our effective income tax rate was 24.4%, 23.4%, and 25.5% for fiscal 2026, 2025 and 2024, respectively."
+        ],
+        "source_id": "WMT_10-K_2026-01-31.md::chunk30"
+      },
+      {
+        "label": "The reason for the change",
+        "answer": "A share-based compensation charge at its PhonePe subsidiary, which provided no tax benefit",
+        "spans": [
+          "primarily due to the share-based compensation charge recorded at the Company's PhonePe subsidiary, which provided no tax benefit"
+        ],
+        "source_id": "WMT_10-K_2026-01-31.md::chunk30"
+      }
+    ]
+  }
+]
