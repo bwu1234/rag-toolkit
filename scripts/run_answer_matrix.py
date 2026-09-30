@@ -255,6 +255,9 @@ M19_VARIANTS: list[Variant] = [
     Variant("oracle / 9b", _PIPELINE, oracle=True),
     Variant("agentic react / 9b", {**_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_9B}),
     Variant("agentic planned / 9b", {**_AGENTIC, "agent.strategy": "planned", "agent.llm": _AGENT_9B}),
+    # The control for the 27b agent: the same model and settings answering once,
+    # so pipeline / 27b vs agentic react / 27b is the loop alone.
+    Variant("pipeline / 27b", {"chat.mode": "pipeline", "crag.enabled": False, "llm": _AGENT_27B}),
     Variant("agentic react / 27b", {**_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_27B}),
     Variant("agentic react / 27b, think=low", {
         **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
