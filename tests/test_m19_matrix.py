@@ -63,6 +63,15 @@ def test_agent_rows_differ_from_each_other_in_one_factor() -> None:
     assert {(llm.max_tokens, llm.timeout_s) for llm in llms if llm} == {(4096, 600.0)}
 
 
+def test_the_27b_control_differs_from_the_27b_agent_in_the_loop_alone() -> None:
+    # The agent answers with agent.llm, the pipeline with llm: the two must be
+    # the same model, settings and all, or the comparison isn't the loop alone.
+    rows = {v.name: matrix.apply_overrides(RagConfig(), v.overrides) for v in matrix.M19_VARIANTS}
+    pipeline, agent = rows["pipeline / 27b"], rows["agentic react / 27b"]
+    assert pipeline.llm == agent.agent.llm
+    assert (pipeline.chat.mode, agent.chat.mode) == ("pipeline", "agentic")
+
+
 def test_the_oracle_row_checkpoints_apart_from_the_pipeline_row() -> None:
     config = matrix.apply_overrides(RagConfig(), _variant("pipeline / 9b").overrides)
     dataset = EvalDataset.from_dicts([{"id": "s", "query": "q", "expected_answer": "a"}])

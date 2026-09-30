@@ -406,6 +406,7 @@ Matrix, one factor at a time, on all three sets:
 | `oracle / 9b` | the ceiling for generation: gold evidence, no retrieval (diagnostic only) |
 | `agentic react / 9b` | the loop's effect with the model we ship |
 | `agentic planned / 9b` | whether plan-and-execute recovers the multi-hop gain without an iterating model (decision 9) |
+| `pipeline / 27b` | control for the row below: same model and settings, answering once, so the pair isolates the loop (added after stage 2's first runs) |
 | `agentic react / 27b` | the loop plus an iterating model |
 | `agentic react / 27b, think=low` | whether reasoning improves search planning enough to justify its tokens |
 | `agentic react / 27b + groundedness` | whether CRAG's checker catches the leakage cases |
