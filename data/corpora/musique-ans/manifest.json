@@ -7,7 +7,7 @@
   "repo_commit": "922ac98f19a201998dbdae6d7f2887a5258dbdeb (main, 2024-06-12; download_data.sh and evaluate_v1.0.py read at this commit)",
   "paper": "https://arxiv.org/abs/2108.00573",
   "license": "CC BY 4.0 (repo README). Fetched at build time, never committed or redistributed.",
-  "fetcher": "not yet implemented (MuSiQue follow-on, phase B)",
+  "fetcher": "scripts/fetch_musique.py (download, verify, unpack Ans train and dev); scripts/musique_to_eval_set.py (corpora and eval sets)",
   "archive": {
     "file": "musique_v1.0.zip",
     "sha256": "98f839bf2fd5319f5c688aed77901a6d5c30b3b9f9f691ab9a8ecafb045ee0cd",
@@ -27,6 +27,11 @@
       "date": "2026-10-01",
       "split": "all",
       "use": "inventory only (counts, hashes, id and leakage checks); no question answered, no model run"
+    },
+    {
+      "date": "2026-10-01",
+      "split": "train (tuning slice), dev",
+      "use": "converted to corpora and eval sets; no question answered, no model run"
     }
   ],
   "inventory": {
@@ -353,5 +358,38 @@
       "unanswerable_missing_supporting": 2417,
       "all_withheld_present_in_pool": 2417
     }
+  },
+  "tuning_slice": {
+    "corpus_questions": 2417,
+    "corpus_paragraphs": 25777,
+    "eval_questions": 300,
+    "eval_by_kind": {
+      "2hop": 156,
+      "3hop": 94,
+      "4hop": 50
+    },
+    "eval_ids_sha256": "d2b77c37ac990ea547f90861296776f8e7734b1e0d8ae0f5e42baf746aa27a05",
+    "seed": 19,
+    "rule": "eligible = the 7,117 of 19,938 Ans train questions with no paragraph in the dev pool; 300 scored at dev's hop mix, then the pool filled to 2,417 questions at the remaining eligible questions' own mix",
+    "dropped_repeated_questions": []
+  },
+  "dev_set": {
+    "corpus_questions": 2417,
+    "corpus_paragraphs": 21100,
+    "eval_questions": 2412,
+    "eval_by_kind": {
+      "2hop": 1250,
+      "3hop": 757,
+      "4hop": 405
+    },
+    "eval_ids_sha256": "3b4f323d78a1984bc8d7a36a4efa9909270634d456a9f45ba0b98f3532c5927f",
+    "dropped_repeated_questions": [
+      "2hop__683203_72813",
+      "2hop__444265_82341",
+      "3hop2__326964_851134_7713",
+      "3hop2__125104_127483_10557",
+      "3hop1__64957_87694_64412"
+    ],
+    "note": "repeated question texts keep their first copy (scripts/musique_to_eval_set.py, drop_repeated_questions); the corpus keeps every paragraph"
   }
 }

@@ -46,8 +46,12 @@ data/corpora/musique-*/source/
 # Eval sets converted from those qrels (scripts/beir_to_eval_set.py): regenerated
 # from the pinned archive, and the labels are third-party data.
 data/eval/beir_*.json
+# MuSiQue eval sets (scripts/musique_to_eval_set.py): regenerated, never committed.
+data/eval/musique_*.json
 # The benchmark index rag/config/beir.yaml reads (public benchmarks plan).
 data/index_beir/
+# The MuSiQue index rag/config/musique.yaml reads.
+data/index_musique/
 # The BGE benchmark index rag/config/beir_bge.yaml reads.
 data/index_beir_bge/
 # Phase 3 reproduction outputs: reference and repo runs (tens of MB of TREC

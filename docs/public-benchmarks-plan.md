@@ -673,6 +673,36 @@ Exit: both indexes build, `index-report` shows one chunk per paragraph and a
 synced index, and the converter round-trips counts and ids against the pinned
 files.
 
+*Built 2026-10-01.* The pieces:
+
+- `scripts/fetch_musique.py` downloads the archive and unpacks only the Ans
+  train and dev splits. It refuses the archive or either file on a hash
+  mismatch.
+- `scripts/musique_to_eval_set.py {dev,train-tune}` writes each corpus in
+  BEIR's `corpus.jsonl` format, so `BeirCorpusLoader` indexes it unchanged,
+  and writes a gitignored eval set.
+- Two registry entries: `musique-ans-dev` and `musique-ans-train-tune`.
+- `rag/config/musique.yaml`, a `base:` child of the **shipped** config rather
+  than `beir.yaml`. The Milestone 19 rows need the shipped pipeline (hybrid,
+  `bge-v2-m3` reranker, top 20 reranked to 5), not depth-100 retrieval
+  scoring. It changes only one chunk per paragraph with no header, its own
+  index directory, and near-exact HNSW.
+
+Choices made while building it:
+
+- **Dev drops five repeated question texts, keeping the first copy of each,**
+  so it scores 2,412 questions. A repeat asks the same thing twice, and one
+  pair cites different gold, which no system can satisfy twice and which the
+  oracle (keyed by question) can't serve. The ids are in the manifest.
+- **The tuning slice.** It has 300 scored questions at dev's hop mix
+  (156/94/50). Train's own mix is 72% 2-hop, and only 244 eligible questions
+  are 4-hop, so a dev-sized pool at dev's mix isn't possible. Their
+  paragraphs, plus those of further eligible questions up to dev's 2,417,
+  form a 25,777-paragraph corpus.
+- **Pinned and checked.** Both sets' counts and an id hash are in the
+  manifest, and the converter fails if either changes. Every gold paragraph
+  resolves to exactly one chunk (2–4 per question).
+
 ### Phase C: scoring
 
 - **Answer EM/F1 with aliases**, ported from the official evaluation script
@@ -692,6 +722,39 @@ files.
   wall-clock, as the Milestone 19 matrix already reports.
 - Stratify every metric by hop count (2/3/4). Pool across hops only with the
   strata shown.
+
+*Built 2026-10-01.* `rag/eval/answer_match.py` ports the official EM/F1
+(`metrics/answer.py` at `922ac98`). It agrees with the reference code on all
+21,753 perturbed dev answers, and the committed test checks synthetic cases
+against reference-computed values. `rag/eval/musique_eval.py` scores each
+answer as follows:
+
+- **Extraction.** One temperature-0 call to the judge model copies the short
+  answer the response commits to, or returns NONE. This is the recorded
+  extraction rule, and it changes nothing the system under test sees.
+- **Scores.** EM and F1 over the gold answer and its aliases.
+- **`contains`**, an extraction-free check: whether a gold answer appears as
+  whole tokens anywhere in the long answer.
+- **Evidence.** Overall evidence recall, the share of questions with every
+  supporting paragraph found, and recall per decomposition step.
+- **Cost**, as the Milestone 19 matrix reports it.
+
+`ClosedBookResponder` is the memorization control. In the matrix,
+`--family musique --config rag/config/musique.yaml --corpus musique-ans-*`
+runs the rows below, and `--musique-sample N` takes a seeded hop-stratified
+sample, so rows sampled separately still pair question by question.
+Extraction errors are still to be checked by hand on the tuning slice before
+any dev run.
+
+*Smoke run, 6 tuning questions, 3 rows (2026-10-01).* EM was 2/6 for
+`pipeline / 9b`, 1/6 for `closed-book / 9b` and 4/6 for `agentic react / 27b`
+(5 calls and 68 s a question). Read by hand, the extractor was right on all
+18 answers. The case that looks like an extraction miss isn't one: the 27b's
+NONE on a hedged answer ("can only answer the part regarding Harvard") is the
+rule working. One caveat on `contains`: an alias can be an intermediate
+entity. For `2hop__89354`, "Lok Sabha" appears in two wrong answers that
+explain how the Lok Sabha is elected, not the Speaker. Containment therefore
+overstates correctness, and EM/F1 stay the primary metrics.
 
 ### Phase D: the Milestone 19 rows on outside data
 
