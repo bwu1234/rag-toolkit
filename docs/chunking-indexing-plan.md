@@ -805,7 +805,7 @@ results.*
   checked by hand on a sample like the one above (target: >90% real), and
   every eval span still matches.
 
-### Phase 5 — Structure-aware chunker (3–4 days)
+### Phase 5 — Structure-aware chunker (3–4 days) — *measured 2026-10-01; default pending*
 
 `StructuredChunker`, selected with `chunking.strategy: structured`. No new
 dependency: Markdown block parsing (ATX headings, pipe tables, lists,
@@ -841,6 +841,37 @@ paragraphs) is a small hand-written pass.
   `answer_eval`, `unmatchable_spans`, chunk-size distribution and prompt
   tokens at `rerank_top_k`. It becomes the default only if answer quality
   improves and retrieval doesn't regress beyond noise.
+
+*Result (2026-10-01): meets the criterion on `edgar_md`.* Full numbers are in
+[measured results](measured-results.md#structure-aware-chunker-chunking-plan-phase-5).
+
+- **Index.** Mid-table chunk starts fall from 690 to 0.
+- **`table` tier.** Answer pass goes from 0.811 to 0.947, 15 wins and 2
+  losses (p 0.002). The 17 questions whose fixed chunk lost the header row go
+  from 7 to 14 passes.
+- **Answerable set.** A tie at 0.948, 3 wins and 3 losses.
+- **Retrieval.** Up on the `table` tier, and in NDCG on the generated and
+  `period` sets. Flat on `underspecified`, with no set regressing.
+- **Prompts.** 9–17% smaller.
+- **Not adopted: `prose_overlap`.** It was no better than plain `structured`.
+
+*Making it the default is one more decision, because it was measured on
+`edgar_md` only.* The shipped corpus for EDGAR is still `edgar`, plain text.
+Two ways forward:
+
+- **Move EDGAR to `edgar_md`, with `structured` as the default chunker.**
+  This is the measured configuration. It changes the corpus every EDGAR eval
+  runs on, so the Milestone 19 rows and the tier baselines, all recorded on
+  `edgar`, need a re-run before anything is paired against them.
+- **Flip `chunking.strategy` alone and keep `edgar`.** The chunker also runs
+  on `edgar`'s pipe rows, but that pairing hasn't been measured. Measure it
+  before adopting, on the generated set and the tiers. The `table` tier's
+  spans exist only in `edgar_md`.
+
+Either way, rebuild with `index --reset` and confirm with `index-report`.
+The index manifest doesn't record the chunking strategy, so it won't refuse
+an index built by the other chunker. `index-report`'s sync check is what
+shows it.
 
 ### Phase 6 — Parent-child expansion (2 days)
 
