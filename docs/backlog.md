@@ -912,6 +912,13 @@ quality claims or extensive tuning. The existing sets remain development and
 regression benchmarks; the plan below is not evidence that these additions
 have shipped.
 
+*Fresh grouped holdout, 2026-10-01: drafted, not frozen.* The protocol,
+company-level split, leakage audit and freeze tooling are in
+[holdout protocol](holdout-protocol.md) and `scripts/build_holdout.py`.
+171 drafts (114 holdout, 57 fresh development), on `edgar_md` pooled with
+the new `edgar_md_holdout` corpus, await human review. No system has been
+run on them.
+
 PR #15 fixed how differences are *tested* (paired CIs) and made answer failures
 attributable to retrieval or generation. What remains is what the eval sets
 *measure* and how far the judge can be trusted. Several "measured-off" verdicts

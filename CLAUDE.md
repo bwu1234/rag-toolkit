@@ -98,6 +98,11 @@ index.
   pinned to the accessions on disk), then `--render-markdown
   data/corpora/edgar_md/documents`. Same document ids, so never pool it with
   `edgar`.
+- `edgar_md_holdout` holds 10 filings from 5 companies absent from `edgar`
+  (pinned in `data/corpora/edgar_holdout/manifest.json`). It exists only for
+  the fresh holdout: pool it with `edgar_md`, and see the
+  [holdout protocol](docs/holdout-protocol.md) before running anything on
+  those questions.
 - `beir-fiqa`, `beir-scifact` and `beir-nfcorpus` are public benchmarks
   (`scripts/fetch_beir.py NAME`). Their registry entries set `clean: false`
   so the text is indexed exactly as published. Index them with
@@ -212,6 +217,10 @@ Design rationale, history, and planning live in `docs/`, read on demand:
 - **`docs/evaluation-rigor-plan.md`** — what the current benchmarks support,
   their coverage and grading limits, and the plan for held-out questions,
   evidence-aware grading, judge calibration, and broader corpora.
+- **`docs/holdout-protocol.md`** — the fresh grouped holdout (`fresh_v1`):
+  company-level split, leakage rule, review rubric, and freeze and
+  single-use rules. Read before running, tuning on, or adding to those
+  questions.
 - **`docs/backlog.md`** — the planned milestones: the plan behind each, and
   why they are ordered as they are.
 - **`docs/known-limitations.md`** — known gaps and failure modes in what's

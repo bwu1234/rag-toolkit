@@ -105,8 +105,11 @@ Holdout samples add:
   `available: false` is a part the corpus does not support, and the answer
   must say so.
 - `calc` for arithmetic questions.
-- `absent_terms` for refusals: strings the audit verifies are absent from
-  every filing.
+- `absent_terms` for refusals and unavailable parts: strings the audit
+  verifies are absent from the named companies' own filings. Absence is
+  scoped to those filings, so another company's use of a word ("guidance")
+  does not disprove it. The reviewer still checks for paraphrases and for
+  figures that can be derived.
 - `origin`, `drafted_with` and `drafted_on`.
 - `review`: a verdict, the reviewer, a decision and reason for each rubric
   dimension, and any edits.
@@ -115,6 +118,67 @@ Holdout samples add:
 
 Answerable spans use `span_and_document` matching, so a copy of the text in
 another period's filing does not earn credit.
+
+## Drafting record (2026-10-01)
+
+Claude Opus 5.5 drafted the questions from whole filings. For filings
+already used by development sets, it drafted from a view that marked every
+development-set paragraph and figure, so drafts avoided that material
+instead of being screened for it afterwards. The calculation references
+were recomputed independently.
+
+**No system has been run on these questions**: no retrieval, no answer and
+no judge. Keep it that way until the freeze and the predeclaration in
+`holdout_uses`.
+
+| Family | Holdout (target) | Dev (target) |
+|---|---|---|
+| `direct_lookup` | 23 (26) | 9 (14) |
+| `entity_period` | 15 (16) | 14 (8) |
+| `table_calc` | 19 (18) | 8 (10) |
+| `distributed` | 14 (16) | 6 (8) |
+| `synthesis` | 10 (9) | 6 (5) |
+| `revision` | 8 (7) | 2 (3) |
+| `ambiguity` | 9 (9) | 5 (5) |
+| `unanswerable` | 16 (17) | 7 (9) |
+| **Total** | **114** (118) | **57** (62) |
+
+Expected behaviors: holdout 89 answer, 9 clarify, 12 refuse and 4 partial;
+development 45 answer, 5 clarify, 5 refuse and 2 partial. The holdout has
+61 `new_entity` and 53 `fresh_fact` drafts in 15 groups, 5 of them
+cross-company. The development split has 11 groups.
+
+Known gaps in the drafts:
+
+- `revision` is thin in development (2 drafts).
+- Refusals are all period-absent, near-miss metric or out-of-scope-section
+  cases. There are no off-corpus entities, which the existing refusal set
+  already covers.
+- Every ambiguity is a missing period, segment or basis. None is a genuine
+  entity ambiguity.
+
+`audit` reports two spans that the structured chunker splits across chunks.
+They are kept, as the protocol requires.
+
+## How to review
+
+```
+python scripts/build_holdout.py review                 # every pending draft, with context
+python scripts/build_holdout.py review --id fh-aal-...  # one draft
+python scripts/build_holdout.py audit                  # re-run every mechanical check
+```
+
+Edit `data/eval/drafts/fresh_v1_draft.json` in place. For each draft, fill
+in:
+
+- `review.verdict`: `accept` or `reject`;
+- `review.reviewer`;
+- for each of `answerability`, `usefulness` and `clarity`, a `decision`
+  (`pass` or `fail`) and a `reason`;
+- `review.edits`: what was changed, if anything.
+
+Reject rather than repair a draft whose question you would not have asked.
+Run `audit` after edits; then run `finalize`.
 
 ## Review rubric
 

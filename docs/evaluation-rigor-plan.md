@@ -3,6 +3,9 @@
 Status: proposed work, 2026-09-28. This document records an assessment of the
 existing files and results, not a new evaluation run. Dataset additions,
 grader changes, and acceptance gates below are not implemented yet.
+*Update 2026-10-01:* the fresh grouped holdout for sections 1-3 has a fixed
+protocol and 171 drafts awaiting human review
+([holdout protocol](holdout-protocol.md)). Nothing is frozen or measured yet.
 
 ## What the current evaluation supports
 
