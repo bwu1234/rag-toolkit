@@ -229,6 +229,29 @@ VARIANTS: list[Variant] = [
         )
     ],
 
+    # Structure-aware chunking (chunking plan, Phase 5), on `edgar_md`: its own
+    # index (data/eval/config_structured.yaml), everything else shipped, so
+    # each row pairs with `baseline` (or its stage-1/dense twin) run on the
+    # same corpus with the fixed chunker.
+    *[
+        Variant(f"chunker=structured{suffix}", "chunker",
+                {"paths.index_dir": "data/index_structured",
+                 "chunking.strategy": "structured", **extra},
+                requires="index")
+        for suffix, extra in (
+            ("", {}),
+            (" stage1_top_k=20", {"retrieval.top_k": 20, "retrieval.rerank_top_k": 20}),
+            (" mode=dense", {"retrieval.mode": "dense"}),
+        )
+    ],
+    # Overlap between paragraphs of one section as well as within an
+    # oversized one (data/eval/config_structured_overlap.yaml).
+    Variant("chunker=structured prose_overlap", "chunker",
+            {"paths.index_dir": "data/index_structured-ov",
+             "chunking.strategy": "structured",
+             "chunking.structured.prose_overlap": True},
+            requires="index"),
+
     # Metadata filtering (chunking plan, Phase 3), at the shipped config. Each
     # sample is filtered by what its own labels say a caller would name. The
     # oracle before the interface existed found "company" adds nothing after
@@ -389,6 +412,14 @@ def fingerprint(config: RagConfig) -> tuple[str, dict[str, Any]]:
     if config.vector_store.hnsw_ef_search != DEFAULT_HNSW_EF_SEARCH:
         # Likewise: every row before the setting existed ran at Chroma's default.
         settings["vector_store.hnsw_ef_search"] = config.vector_store.hnsw_ef_search
+    if config.chunking.strategy != "fixed":
+        # Off its default only, so every row recorded before the structured
+        # chunker keeps its fingerprint.
+        settings["chunking.strategy"] = config.chunking.strategy
+        if config.chunking.strategy == "structured":
+            settings.update(
+                {f"chunking.structured.{k}": v for k, v in config.chunking.structured.model_dump().items()}
+            )
     if config.retrieval.document_routing.top_m is not None:
         # The template shapes routing only while routing is on.
         settings["retrieval.document_routing.record_template"] = config.retrieval.document_routing.record_template

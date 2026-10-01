@@ -311,6 +311,25 @@ class ChunkHeaderConfig(BaseModel):
     template: str | None = None
 
 
+class StructuredChunkingConfig(BaseModel):
+    """Settings for `chunking.strategy: structured` (chunking plan Phase 5).
+
+    `chunking.chunk_size` is the cap and `chunking.chunk_overlap` the overlap
+    between pieces of an oversized paragraph; these add what only a
+    structure-aware chunker needs. See `rag.chunking.structured`.
+    """
+
+    # Headings with this many `#` or fewer always start a chunk; deeper ones
+    # pack with their siblings. EDGAR's rendered headings run `##` to `####`.
+    split_level: int = Field(default=2, ge=1, le=6)
+    # A section shorter than this joins its next sibling rather than standing
+    # alone, so a heading never becomes a chunk by itself.
+    min_chars: int = Field(default=200, ge=0)
+    # Also overlap chunks split between two paragraphs of one section. Off:
+    # structure boundaries carry no overlap unless measured to help.
+    prose_overlap: bool = False
+
+
 class ChunkingConfig(BaseModel):
     """Parameters for splitting documents into retrievable chunks.
 
@@ -322,9 +341,13 @@ class ChunkingConfig(BaseModel):
     text unchanged, and `chunk_size`/`chunk_overlap` are ignored. For corpora
     that arrive pre-split into retrieval units (BEIR), where splitting a
     passage would let one document fill several ranks.
+
+    `structured` = split on Markdown headings, table edges and paragraph
+    breaks, packing up to `chunk_size`; oversized tables split by rows with
+    the header repeated. Settings under `structured`.
     """
 
-    strategy: Literal["fixed", "none"] = "fixed"
+    strategy: Literal["fixed", "none", "structured"] = "fixed"
     chunk_size: int = Field(default=1000, gt=0, description="Target characters per chunk")
     chunk_overlap: int = Field(default=150, ge=0, description="Characters of overlap between consecutive chunks")
     contextual: ContextualChunkingConfig = ContextualChunkingConfig()
@@ -334,6 +357,16 @@ class ChunkingConfig(BaseModel):
     # integer still supports range filters.
     carry_metadata: list[str] = Field(default_factory=lambda: list(DEFAULT_CARRY_METADATA))
     header: ChunkHeaderConfig = ChunkHeaderConfig()
+    structured: StructuredChunkingConfig = StructuredChunkingConfig()
+
+    @model_validator(mode="after")
+    def _structured_fits(self) -> "ChunkingConfig":
+        if self.strategy == "structured" and self.structured.min_chars >= self.chunk_size:
+            raise ValueError(
+                f"chunking.structured.min_chars ({self.structured.min_chars}) must be smaller "
+                f"than chunking.chunk_size ({self.chunk_size})"
+            )
+        return self
 
 
 #: Chroma's own default `ef_search`, which every collection used before

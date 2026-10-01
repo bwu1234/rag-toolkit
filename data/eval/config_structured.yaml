@@ -1,0 +1,14 @@
+# Chunking plan Phase 5: the structure-aware chunker, measured against the
+# shipped fixed chunker on `edgar_md` (Phase 4's Markdown render). Inherits the
+# shipped config and changes only the chunker, so it needs its own index:
+#
+#   python -m rag.cli --config data/eval/config_structured.yaml index --corpus edgar_md --reset
+#
+# Check boundaries first with `index-report` (no embedder needed).
+base: ../../rag/config/config.yaml
+
+paths:
+  index_dir: data/index_structured
+
+chunking:
+  strategy: structured

@@ -102,9 +102,23 @@ llm:
   think: false
 
 chunking:
+  # fixed = 1,000-char windows with overlap. structured = split on Markdown
+  # headings, table edges and paragraph breaks, packing up to chunk_size;
+  # oversized tables split by rows with the header rows repeated, so no chunk
+  # starts mid-table (settings under `structured` below). none = one chunk per
+  # document, for pre-split corpora (rag/config/beir.yaml).
   strategy: fixed
   chunk_size: 1000
   chunk_overlap: 150
+  # Used only by `strategy: structured` (docs/chunking-indexing-plan.md,
+  # Phase 5). Headings with split_level or fewer `#` always start a chunk; a
+  # section under min_chars joins its next sibling; prose_overlap applies
+  # chunk_overlap between paragraphs of one section too (oversized paragraphs
+  # always get it).
+  structured:
+    split_level: 2
+    min_chars: 200
+    prose_overlap: false
   # Contextual retrieval: at index time, ask the LLM to write a sentence
   # situating each chunk in its parent document, and index that sentence
   # prepended to the chunk. Fixes chunks that never name their own subject

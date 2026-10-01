@@ -1,0 +1,13 @@
+# Chunking plan Phase 5: as config_structured.yaml, plus `chunk_overlap` (150,
+# ~15%) between chunks split between two paragraphs of one section. Structure
+# boundaries (headings, table edges) still get none.
+#
+#   python -m rag.cli --config data/eval/config_structured_overlap.yaml index --corpus edgar_md --reset
+base: config_structured.yaml
+
+paths:
+  index_dir: data/index_structured-ov
+
+chunking:
+  structured:
+    prose_overlap: true
