@@ -523,17 +523,20 @@ Today that can corrupt an answer or steer the next search, but it can't
 trigger a side effect: the agent's only tool, `rag_search`, is read-only, and
 `corpus`, `top_k`, `max_chars` and `filters` are pinned. That is why
 tool-hijack benchmarks (InjecAgent, ToolEmu, AgentHarm) don't apply yet.
-Three follow-ups below widen the surface: model-set filters let injected text
-narrow the search, `read_document` puts whole untrusted filings into the
-prompt, and web routing (enhancement 3) brings in content nobody curates.
+Four follow-ups below widen the surface: model-set filters let injected text
+narrow the search, the [navigation tools](#tool-surface-navigation-not-only-search)
+put long windows of untrusted filings into the prompt, corpus routing
+(enhancement 6) lets injected text pick which corpus is searched next, and web
+routing (enhancement 3) brings in content nobody curates.
 Each runs the injection tier from
 [Milestone 28](backlog.md#milestone-28--production-hardening) in agentic mode
 before it is adopted, next to its quality row.
 
-- **Structural tools:** `read_document(doc_id, section?)` and
-  `read_span(doc_id, start, end)`. A single filing is roughly 15k tokens, well
-  within the 27b's 262k context. This is the READ-paper direction, and it
-  targets the table-split case the 27b needed 5 searches for.
+- **Navigation tools:** listing, reading and finding text in documents, not
+  only ranked search. The first follow-up; designed in
+  [its own section](#tool-surface-navigation-not-only-search) below. It
+  replaces the earlier `read_document(doc_id, section?)` and
+  `read_span(doc_id, start, end)` pair.
 - **Let the model set `filters` on `rag_search`.** The filter itself shipped
   with the chunking plan's Phase 3: `rag_search` takes a `QueryFilter` over
   the front-matter fields (`company`, `ticker`, `form`, `period_end`, …), and
@@ -559,14 +562,110 @@ before it is adopted, next to its quality row.
   measured, so that a win can be credited to either the plan or the extra
   round.
 
+#### Tool surface: navigation, not only search
+
+The agent has one tool, `rag_search`, which returns ranked chunks. Published
+agentic retrieval systems also *navigate*. Claude Code
+[replaced its vector index with glob, grep and read](https://officechai.com/ai/claude-researcher-explains-how-agentic-search-performed-better-than-rag-for-code-generation/).
+Anthropic's [context-engineering guidance](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+describes agents that hold lightweight identifiers and load content "just in
+time". OpenAI's [Deep Research](https://cdn.openai.com/deep-research-system-card.pdf)
+was trained to search, open, scroll and read. Phase 4 points at the same gap
+on this corpus:
+
+- **Discovery is every row's weakest kind.** No 9b row completes a discovery
+  question, and `react / 27b` completes 2.7 of 5. A discovery question asks
+  for a set ("the airlines in this corpus"), and no ranked search can
+  enumerate a set.
+- **Split tables cost searches.** The 27b needed 5 searches to rebuild a
+  table the chunker had split.
+- **Refusals are the most expensive turn** (6.6 calls, 158 s). The agent
+  can't establish that the corpus lacks something except by searching until it
+  gives up. Seeing which companies and periods exist would let it decline
+  sooner, and would make `neg-unanswerable-comparison` (missed in 3 of the
+  27b agent's 6 runs) checkable.
+
+**The tools, in build order.** Each one adds a matrix row, so a win is
+credited to one tool:
+
+1. **`rag_list_documents(filters?)`.** Lists the selected corpora's documents
+   with their front-matter fields (`company`, `ticker`, `form`, `period_end`)
+   and length. It reads documents and front matter only, with no embedder. It
+   targets discovery questions and "which periods exist" questions.
+   `rag_list_corpora` works at the corpus level; this works at the document
+   level.
+2. **`rag_read_document(document_id, start?, max_chars?)`.** Returns a window
+   of the document's cleaned text: the text that chunk offsets index into
+   (`chunk_selected_corpora`). It comes with `start`, `end`, `length` and
+   `next_start`. One tool with an offset covers both earlier tools
+   (`read_document` and `read_span`), and Anthropic's
+   [tool-design guidance](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+   warns against tools whose uses overlap.
+   - *Prerequisite.* `rag_search` results gain `char_start`/`char_end`, which
+     chunk metadata already holds, so the model can read around a hit.
+   - *Sections.* A `section` argument waits for the
+     [chunking plan](chunking-indexing-plan.md)'s Phase 5 to supply heading
+     paths. On `edgar_md` the Markdown headings already exist, so an outline
+     in the response can come first there.
+   - *Size.* This corrects the earlier "well within the 27b's 262k context".
+     EDGAR's 61 filings average about 57k characters (about 14k tokens), and
+     agent calls run at `agent.num_ctx` 32768. A whole filing doesn't fit
+     beside the system prompt and earlier results. Reads are therefore
+     windowed: a default of about 6k characters, under a per-turn budget
+     `agent.max_read_chars` that is separate from `max_passage_chars`.
+3. **`rag_find(phrase, document_id?)`.** A literal, case-insensitive phrase
+   search over the selected documents' cleaned text. It returns matches with
+   offsets and a short surrounding context. Search can miss an exact name or
+   figure ("Enflonsia", a dollar amount) because hybrid ranking scores term
+   overlap and the reranker then reorders, so it can fall out of the top 5.
+   `rag_find` does no ranking. A linear scan of EDGAR's 3.5 MB takes
+   milliseconds. At BEIR or MuSiQue scale, check first whether the contentless
+   FTS5 table can answer phrase queries. Build this tool only if the read rows
+   still miss questions that name an exact term.
+
+**Constraints shared by all three:**
+
+- **Citations through the ledger.** Every read window and find snippet becomes
+  a ledger passage, with an id built from the document id and offsets, so
+  `[n]` keeps one source of truth and the turn log records what was shown.
+  Deduplicate by overlapping offsets, not only by chunk id.
+- **Scope.** A `document_id` outside the turn's corpus selection or filters is
+  a tool error. An id the model guesses gains it nothing.
+- **Budgets.** Reads and finds count toward `max_tool_calls`. The existing
+  context-overflow fallback covers a read that outgrows the window.
+- **Shared with MCP.** Implement the tools in `RagTools` and register them in
+  the MCP server, as `rag_search` is, so outside agents get them too. Update
+  the contract in [MCP server](mcp-server.md).
+- **Injection.** Run the Milestone 28 injection tier before adoption. A read
+  window carries about five times more undelimited filing text than a search
+  result.
+
+**Measurement.**
+
+- *Rows.* Cumulative rows on all four sets, each paired against the one
+  before: `agentic react / 27b + list`, `+ list + read` and
+  `+ list + read + find`. Also run `agentic react / 9b + list`: one listing
+  call is the kind of single decision the 9b does make.
+- *Evidence recall.* This needs one change. A 6k-character window contains
+  gold spans more easily than a 1.2k-character passage, so report recall from
+  searches and recall from reads separately, with characters read per turn.
+- *Table tier.* Add the chunking plan's `table` tier when it exists, since
+  split tables are where `rag_read_document` should show.
+- *Adoption.* The same rule as every follow-up: paired quality and cost
+  evidence on the same questions.
+
 #### Enhancement follow-ups
 
 These are proposed experiments, not shipped capabilities or prerequisites for
 phase 4. Keep the current baseline and defaults unchanged. Implement one
 intervention at a time after failure analysis identifies its target; adopt it
 only with paired quality and cost evidence on the same corpus and questions.
-The priorities below order this additional work, not the existing structural
-tools and `planned_refine` experiments above.
+The priorities below order this additional work. The
+[navigation tools](#tool-surface-navigation-not-only-search) come before all
+of it: they target the failures phase 4 actually showed (discovery questions,
+split tables, refusal cost), and items 1 and 2 address grounding failures that
+have not been measured yet. `planned_refine` stays conditional, as written
+above.
 
 1. **Measure grounding and citation failures before adding runtime gates.**
    Reuse [eval harness Phase 4a](eval-harness-plan.md#phase-4a--grounding-completeness-and-citation-scoring-estimate-pending)
@@ -621,6 +720,58 @@ tools and `planned_refine` experiments above.
    preserve separate correctness, grounding and completeness scores. On
    answerable questions, a refusal or vacuously faithful empty answer must not
    count as success; score appropriate refusals separately on unanswerable cases.
+
+5. **Search budget and search-strategy prompt.** These are two rows on
+   `react / 27b`, measured separately. Neither changes code under `rag/`.
+   - *Wider budget.* Set `max_tool_calls` to 16 and `max_passage_chars` to
+     2400. On Anthropic's
+     [research eval](https://www.anthropic.com/engineering/multi-agent-research-system),
+     token usage alone explained 80% of performance variance. This row tests
+     whether the one question left between the agent and the oracle is a
+     budget limit.
+   - *Strategy prompt.* Tell the agent to start with short, broad queries and
+     then narrow, to scale effort to the question (one or two searches for a
+     single fact), and to decline when differently worded searches return
+     nothing relevant. Anthropic names prompting as its main lever for agent
+     behavior. The target is cost: refusals take 6.6 calls and 158 s, and
+     single-hop questions take 36 s against the pipeline's 10 s. Adopt the
+     prompt only if quality holds.
+
+6. **Corpus routing within the caller's scope.** Today `corpus` is pinned, so
+   the agent searches the turn's selection as one index. In this change, the
+   turn's selection becomes an upper limit. The model may search any subset
+   of it (one corpus, then another) but nothing outside it, and gets a
+   `rag_list_corpora` restricted to the selection. That restriction is the
+   same rule as model-set filters: narrow the scope, never widen it.
+   - *Comparison.* Pair the agent routing between corpora against the agent
+     searching the pooled index. Pooling already spans corpora in one search,
+     so routing has to beat pooling, not beat searching a single corpus.
+   - *Prerequisite: a workload.* The corpora are EDGAR plus public benchmarks
+     that may only be evaluated in isolation, so no current set needs a
+     second corpus. Routing needs a second real corpus that EDGAR questions
+     plausibly draw on, with questions that span both. Registry entries also
+     need a description field, because the model routes on what the listing
+     says.
+
+**Deferred: training the search policy, and multi-agent orchestration.**
+
+- *Training the search policy.* The largest published gains come from models
+  trained to search: OpenAI trained Deep Research with reinforcement learning
+  on browsing tasks, and open recipes such as
+  [Search-R1](https://arxiv.org/abs/2503.09516) do the same for 3–7b models
+  against a retriever. Phase 4's result, where the 9b loop gains nothing and
+  the 27b loop gains 6.7 questions, fits searching being a trained skill. The
+  local lever is model choice: a tool-calling model that is a credible
+  candidate gets a matrix row like the 27b's. Fine-tuning a search policy
+  would be a research milestone with its own compute budget, not a follow-up
+  here.
+- *Multi-agent orchestration.* A lead agent with parallel subagents (Anthropic
+  Research, about 15 times a chat's tokens) pays off by keeping each
+  subagent's context separate and by covering broad questions in parallel.
+  Here the costliest turns total about 35k prompt tokens across all their
+  calls, over a few hops.
+  Reconsider it only if the navigation tools push turns past the context
+  window.
 
 **Deferred: durable evidence memory and learned retrieval policies.** Recent
 history and per-turn deduplication already exist. Require reviewed multi-turn
