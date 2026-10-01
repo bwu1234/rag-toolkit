@@ -293,19 +293,25 @@ crag:
 
 # Milestone 19 -- agentic retrieval: the model calls search as a tool, as many
 # times as it needs, instead of the pipeline's single retrieve-then-generate.
-# Read only when `chat.mode: agentic` (rag/generation/agent.py); unmeasured
-# until phase 4 of docs/milestone-19-plan.md. Every guard below answers a
-# failure the prototype showed.
+# Read only when `chat.mode: agentic` (rag/generation/agent.py). Measured in
+# phase 4 (docs/measured-results.md, "Agentic retrieval"): with the 27b below,
+# the loop completes ~33/35 multi-hop questions against the pipeline's ~25, at
+# 1-2 min per hard question. The 9b doesn't search a second time and gains
+# nothing. Hence opt-in for hard questions, not the default. Every guard below
+# answers a failure the prototype showed.
 agent:
   # The agent's own model; null uses `llm`. Must be a provider that can call
   # tools (ollama or gemini) -- building the agent fails otherwise. The measured
-  # split is the 27b here and the 9b in `llm`:
+  # opt-in setup is the 27b here and the 9b in `llm`. think: low matched default
+  # thinking's quality with fewer tokens:
   #
   #   llm:
   #     provider: ollama
   #     model: qwen3.8:27b-mlx
   #     base_url: http://localhost:11434
+  #     max_tokens: 4096
   #     timeout_s: 600
+  #     think: low
   llm: null
   # react   -- the model decides after each result whether to search again
   # planned -- one call plans all sub-queries, they run back to back, then one

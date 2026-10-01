@@ -468,6 +468,20 @@ outcome is **"agentic is an opt-in mode for hard questions"**, not a new
 default. If `planned / 9b` wins by more than noise, prefer it over the 27b
 for any default; it is the only agentic variant that runs at 9b speed.
 
+*Result (2026-10-01): opt-in, not the default.* Full numbers in
+[measured results](measured-results.md#agentic-retrieval-milestone-19-phase-4).
+`agentic react / 27b` against `pipeline / 27b` (the loop alone) gained 6.7 of
+35 multi-hop and 5.7 of 15 adaptive questions, 7 wins and 0 losses on each,
+and reached within a question of the oracle. Answerable and refusals held.
+The 27b answering once gained 1.3 and 1.7, not shown at 95%. Both 9b
+strategies stayed within noise of the pipeline on multi-hop and fell behind
+it on the adaptive set, so `planned / 9b` didn't win. The win comes only from
+the 27b, at 74–108 s per hard question against 10 s, which is the case this
+criterion names: `chat.mode` stays `pipeline`, and agentic ships as an opt-in
+mode for hard questions with the 27b at `think: low` (same quality, fewer
+tokens). The groundedness checker flagged 9 of 104 answers, 6 of them ones
+the judge passed, so it stays off.
+
 **Outside evidence (proposed).** Every set above was written from this
 repo's own chunks. The public benchmarks plan drafts a
 [MuSiQue follow-on](public-benchmarks-plan.md#follow-on-multi-hop-and-agentic-retrieval-on-musique)

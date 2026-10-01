@@ -51,9 +51,11 @@ generator `qwen3.5:9b-mlx`, judge `gemma4:31b-mlx`. NDCG is after the
 | `underspecified` | 118 | 0.822 | 0.698 | 0.763 |
 
 Sources: [chunk header](#deterministic-chunk-header-chunking-plan-phase-2) and
-[NDCG re-run](#ndcg-credits-each-span-once). The multi-hop baseline and the
-40-sample `crag=off` answer row predate the header (see
-[Not yet measured](#not-yet-measured)).
+[NDCG re-run](#ndcg-credits-each-span-once). The 40-sample `crag=off` answer
+row predates the header (see [Not yet measured](#not-yet-measured)). The
+multi-hop baseline at this config is Milestone 19 phase 4's `pipeline / 9b`:
+24.7/35 complete, evidence recall 0.79
+([agentic retrieval](#agentic-retrieval-milestone-19-phase-4)).
 
 ### Milestone 11, pass 1
 
@@ -1552,6 +1554,143 @@ Raw records: `data/benchmarks/phase4/{fiqa,nfcorpus,scifact}/test/*/` and
 the rendered table `data/benchmarks/phase4/test.md`. Dev runs, exploratory:
 `data/benchmarks/phase4/{fiqa,nfcorpus}/dev/`.
 
+### Agentic retrieval (Milestone 19, phase 4)
+
+**Setup.** `edgar`, isolated, run at the shipped config (header on, hybrid,
+`bge-reranker-v2-m3`, `top_k 20`, `rerank_top_k 5`, CRAG off), judged by
+`gemma4:31b-mlx` at temperature 0. Every row ran on four sets: 40 answerable
+questions (evenly spaced from the 174), the 15-question refusal set, the
+35-question multi-hop set, and the 15-question adaptive set
+(`edgar_adaptive_set.json`: 10 bridge and 5 discovery questions, added after
+stage 1 because the multi-hop set names every company it asks about; see the
+[plan](milestone-19-plan.md#4--measure-the-milestones-actual-deliverable)). Rows are those of
+`scripts/run_answer_matrix.py --family m19`. Each differs from the one it is
+compared with in one factor. The agent rows pin `agent.llm` to 4096 tokens
+and a 600 s timeout, and `pipeline / 27b` uses those same 27b settings, so
+the `pipeline / 27b` vs `agentic react / 27b` pair isolates the loop. Most
+rows ran three times (`--repeat 3`), `think=low` twice and `+ groundedness`
+once. Stage 1's four 9b rows ran the answerable, refusal and multi-hop
+sets at `429c391`, everything else at `c7c6ef9` or `051edd6`. No file under
+`rag/` changed between the three, so they are comparable. Raw records:
+`data/eval/results_m19/`. The main file's stage 1 rows show `c7c6ef9`
+because adding the adaptive set merged into them; `stage1_429c391/` is the
+copy taken before that.
+
+Counts are per run, out of each set's size:
+
+| row | answerable /40 | refusals /15 | multi-hop /35 | adaptive /15 (bridge /10, discovery /5) | evidence recall, multi-hop / adaptive |
+|---|---|---|---|---|---|
+| `pipeline / 9b` (shipped) | 39, 38, 39 | 14, 14, 14 | 24, 25, 25 | 4, 4, 5 (4.3, 0) | 0.79 / 0.64 |
+| `oracle / 9b` (gold chunks, ceiling) | 40, 40, 40 | — | 34, 34, 33 | 13, 12, 12 (8.7, 3.7) | 1.00 / 1.00 |
+| `agentic react / 9b` | 37, 38, 36 | 15, 15, 15 | 25, 24, 27 | 3, 2, 2 (2.3, 0) | 0.84 / 0.54 |
+| `agentic planned / 9b` | 37, 37, 37 | 15, 15, 15 | 23, 28, 25 | 3, 3, 3 (3.0, 0) | 0.88 / 0.56 |
+| `pipeline / 27b` | 38, 38, 39 | 15, 15, 15 | 26, 26, 26 | 6, 6, 6 (6.0, 0) | 0.79 / 0.64 |
+| **`agentic react / 27b`** | 38, 39, 38 | 15, 14, 15 | **33, 32, 33** | **12, 11, 12** (9.0, 2.7) | **0.98 / 0.90** |
+| `agentic react / 27b, think=low` | 38, 38 | 14, 15 | 33, 33 | 13, 11 (8.5, 3.5) | 0.98 / 0.92 |
+| `agentic react / 27b + groundedness` | 38 | 14 | 33 | 12 (10.0, 2.0) | 0.96 / 0.86 |
+
+Paired by question, each question's score being its pass (or complete) rate
+over the row's runs, so sampling noise averages out without counting a
+question three times. Δ in questions, 95% interval, wins/losses over
+questions whose rates differ, exact sign-test p:
+
+| comparison | answerable | refusals | multi-hop | adaptive |
+|---|---|---|---|---|
+| react / 9b vs pipeline / 9b (loop, 9b) | −1.7 [−3.8, +0.5], 0/3 | +1.0 [−1.0, +3.0], 1/0 | +0.7 [−5.5, +6.8], 7/6, p 1.0 | −2.0 [−4.5, +0.5], 1/4, p 0.38 |
+| planned / 9b vs pipeline / 9b | −1.7 [−3.8, +0.5], 0/3 | +1.0 [−1.0, +3.0], 1/0 | +0.7 [−4.6, +6.0], 7/5, p 0.77 | −1.3 [−3.6, +0.9], 1/3, p 0.63 |
+| pipeline / 27b vs pipeline / 9b (model) | −0.3 [−1.0, +0.3], 0/1 | +1.0 [−1.0, +3.0], 1/0 | +1.3 [−0.7, +3.4], 2/0, p 0.5 | +1.7 [−0.2, +3.5], 3/0, p 0.25 |
+| **react / 27b vs pipeline / 27b (loop, 27b)** | +0.0 [−0.9, +0.9], 1/1 | −0.3 [−1.0, +0.3], 0/1 | **+6.7 [+2.1, +11.2], 7/0, p 0.016** | **+5.7 [+2.1, +9.2], 7/0, p 0.016** |
+| react / 27b vs pipeline / 9b (both) | −0.3 [−1.0, +0.3], 0/1 | +0.7 [−0.6, +2.0], 1/0 | +8.0 [+3.2, +12.8], 9/0, p 0.004 | +7.3 [+4.0, +10.6], 10/0, p 0.002 |
+| think=low vs react / 27b | −0.3 [−1.0, +0.3], 0/1 | −0.2 [−0.5, +0.2], 0/1 | +0.3 [−0.3, +1.0], 1/0 | +0.3 [−2.6, +3.2], 2/3 |
+
+Cost per answering turn (the judge's calls excluded), mean over runs:
+
+| row | LLM calls: ans / ref / multi-hop / adaptive | s/turn: same order | prompt tokens: multi-hop / adaptive / refusals |
+|---|---|---|---|
+| `pipeline / 9b` | 1.0 / 1.0 / 1.0 / 1.0 | 10 / 11 / 10 / 10 | 1,649 / 1,632 / 1,808 |
+| `agentic react / 9b` | 2.0 / 2.0 / 2.1 / 2.2 | 12 / 13 / 17 / 15 | 4,950 / 5,156 / 4,220 |
+| `agentic planned / 9b` | 2.0 / 2.0 / 2.0 / 2.0 | 13 / 13 / 18 / 14 | 4,110 / 3,449 / 3,258 |
+| `pipeline / 27b` | 1.0 / 1.0 / 1.0 / 1.0 | 24 / 27 / 31 / 41 | 1,649 / 1,632 / 1,808 |
+| `agentic react / 27b` | 2.4 / 6.6 / 2.7 / 4.0 | 36 / 158 / 74 / 108 | 9,598 / 15,888 / 34,945 |
+| `agentic react / 27b, think=low` | 2.1 / 4.1 / 2.2 / 3.3 | 40 / 109 / 76 / 108 | 6,898 / 13,095 / 17,578 |
+| `agentic react / 27b + groundedness` | 3.4 / 7.2 / 3.7 / 4.9 | 61 / 196 / 102 / 127 | 13,522 / 19,754 / 39,416 |
+
+**Findings.**
+
+- **The loop is what closes the multi-hop gap, and only with a model that
+  searches again.** With the 27b, adding the loop gains 6.7 multi-hop and 5.7
+  adaptive questions over the same model answering once, with 7 wins and no
+  losses on each set. Evidence recall goes from 0.79 to 0.98 and from 0.64 to
+  0.90: the agent finds the passages a single search misses. That brings it to
+  within one question of the oracle on both sets (32.7 vs 33.7; 11.7 vs 12.3).
+  The larger model alone, answering once, gains 1.3 and 1.7 questions, not
+  shown at 95%, with identical evidence recall, because retrieval is
+  unchanged. Both loop comparisons are p = 0.016. Against a Bonferroni
+  threshold across all 24 tests in the table (0.002) they don't clear on
+  their own; the 7/0 splits on two separately built sets, and the matching
+  recall gain, are what make the result credible. React / 27b against the
+  shipped `pipeline / 9b` clears it on the adaptive set (p = 0.002).
+- **The 9b agent is no better than the pipeline, and worse on bridge and
+  discovery questions.** Both 9b strategies make about two LLM calls a
+  question, one round of searching and the answer, so the loop never runs a
+  second round. That matches the [generator probe](#generator-model-qwen359b-vs-qwen3827b-pre-milestone-19).
+  On the multi-hop set they are within noise (+0.7, wins and losses nearly
+  even). On the adaptive set they retrieve less than the pipeline's single
+  search on the whole question (0.54–0.56 vs 0.64 evidence recall), and none
+  of the 9b rows completes a discovery question. `planned / 9b`, which the
+  plan would have preferred for a default because it runs at 9b speed, didn't
+  win.
+- **The bottleneck was retrieval, not the 9b's reasoning.** Given gold chunks,
+  the 9b completes 33.7 of 35 multi-hop and 12.3 of 15 adaptive questions.
+  Phase 0's worry, from the multi-hop literature, that the generator would
+  mis-combine evidence it already has, didn't hold on this corpus. When the
+  pipeline retrieves all of a question's evidence it completes 94% of those
+  questions, and 25% when evidence is partial. Planned's 83% completion with
+  full evidence is the one exception, unexplained.
+- **The multi-hop set alone could not have shown this.** 34 of its 35
+  questions name every company and period they ask about, so one search
+  already reaches most of the evidence (0.79). The adaptive set, where the
+  question names an identifying fact or a class rather than the company,
+  separates the rows more sharply: 4.3 for the shipped pipeline against 11.7
+  for the agent.
+- **Nothing is lost on single-hop and refusal questions.** The 27b agent holds
+  answerable within 0.3 questions and refusals within one. The 9b agents'
+  −1.7 on answerable (0 wins, 3 losses) is not shown at 95% but points the
+  wrong way. The only refusal any row missed is the corrected
+  `neg-unanswerable-comparison`: every `pipeline / 9b` run missed it, and no
+  9b agent or `pipeline / 27b` run did. The 27b agent missed it in 3 of its 6
+  runs, so declining "rank all 14 companies" is not something the loop
+  reliably does.
+- **The cost is what keeps it opt-in.** The 27b agent takes 36 s on a
+  single-hop question, 74 s on a multi-hop one and 108 s on a bridge or
+  discovery one, against 10 s, with 6–10× the prompt tokens. A refusal is the
+  most expensive turn: 6.6 calls, 158 s and 35k prompt tokens, because the
+  agent keeps searching before it declines.
+- **`think=low` matches the 27b's quality at lower cost.** Within half a
+  question on every set, with fewer calls and prompt tokens (6.9k vs 9.6k on
+  multi-hop, 17.6k vs 34.9k on refusals) and the same latency. Two runs, so
+  this is the setting to ship, not a measured improvement.
+- **The groundedness check doesn't earn its cost here.** Over 104 checked
+  answers it flagged 9, and the judge had passed 6 of those. It caught 3
+  failures and missed 5. It adds 20–70% to latency, so it stays off,
+  consistent with [CRAG's measurement](#crag-milestone-10-measured).
+- **Judge check.** Read by hand: six of `react / 27b #1`'s adaptive answers.
+  Four passes are correct. One pass is lenient: `ad-airline-margin-capex`
+  gave Southwest's adjusted 6.7% margin rather than the reported 3.4%, which
+  the rubric lists but which doesn't change the ranking. The two failures are
+  real: `ad-pharma-ocf` read J&J's fiscal six-month figure as one quarter's,
+  and `ad-tariff-refunds` missed that refunds raised Apple's product margin.
+
+**Decision.** This meets the plan's
+[default-flip criterion](milestone-19-plan.md#4--measure-the-milestones-actual-deliverable)
+on quality: multi-hop gained by more than noise while single-hop and
+refusals held. It meets it only with the 27b, at one to two minutes per hard
+question, which is the case the plan named in advance: **agentic is an opt-in
+mode for hard questions** (`chat.mode: agentic` with the 27b at
+`think: low`), not the default. `chat.mode` stays `pipeline`. The scope note
+at the top of this file applies: one corpus, questions written from its own
+chunks, an LLM judge. The plan's MuSiQue follow-on is the outside check.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a
@@ -1568,12 +1707,15 @@ the rendered table `data/benchmarks/phase4/test.md`. Dev runs, exploratory:
   `data/eval/results/answer_edgar__judge-gemma4-31b-mlx.json`, which
   Milestone 19 phase 4 pairs against. That subsample includes one fixed
   sample (MRK). Re-run them before comparing new answer results against them.
-  Both, and the multi-hop baseline, also predate the chunk header becoming
-  the default, so Milestone 19 phase 4 has to re-run its `pipeline / 9b` row
-  at the current config. On 2026-09-29 the multi-hop set also gained a 35th
-  question and the refusal set's `neg-unanswerable-comparison` got a new
-  rubric ([why](milestone-19-plan.md#the-superlative-question-stays-a-refusal)),
-  so earlier multi-hop totals (x/34) and refusal results don't carry over.
+  Both also predate the chunk header becoming the default. Milestone 19
+  phase 4 re-ran its own `pipeline / 9b` row at the current config
+  ([above](#agentic-retrieval-milestone-19-phase-4)), so it no longer pairs
+  against them. On 2026-09-29 the multi-hop set gained a 35th question and the
+  refusal set's `neg-unanswerable-comparison` got a new rubric
+  ([why](milestone-19-plan.md#the-superlative-question-stays-a-refusal)), so
+  multi-hop totals out of 34 and earlier refusal results don't carry over.
+- The Milestone 19 hosted reference pair (`--family m19-hosted`, Gemini
+  Flash-Lite): built, not run, because it spends free-tier quota.
 - Answers with metadata filters or document routing on; both phases measured
   retrieval only.
 - `retrieval.top_k` between 20 and 100 with `bge-v2-m3`. 100 measured as noise
