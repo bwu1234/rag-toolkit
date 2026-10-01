@@ -429,6 +429,32 @@ graph LR
   intent (navigational/factual/exploratory) to vary `top_k` and reranking
   depth. Should share one `LLMClient`-backed rewriter with the existing
   condenser/HyDE code rather than duplicating that seam.
+- **Corpus-specific retrieval profiles and weighted fusion.** Compare dense-only,
+  equal-weight RRF and configurable per-retriever RRF weights on development
+  data. The [BEIR results](measured-results.md#beir-query-time-stack-public-benchmarks-plan-phase-4)
+  show that equal-weight fusion can lose useful dense candidates; EDGAR's
+  hybrid default is not a universal preset. Use config overlays for each
+  workload, including its query instruction, and declare how a pooled corpus
+  selects a profile. Keep this separate from Milestone 19's dynamic retriever
+  routing. Select weights and instructions on development data, freeze them
+  before confirmation, and retain the current default until a replacement
+  earns it under Milestone 27's rules.
+- **Independent retrieval depths.** Separate per-retriever candidate depth,
+  fused/reranker pool depth and final context depth; today `top_k` controls
+  both the per-list search and the fused pool. Measure where relevant evidence
+  is lost at each truncation, alongside final answer quality, prompt size and
+  latency. Preserve the current 20/20/5 behavior as the compatibility default.
+  Wider pools are experiments, not an automatic improvement; coordinate their
+  confirmation with the serving-configuration evaluation in Milestone 27.
+- **Refresh embedding and reranker comparisons.** Keep the shipped Qwen3
+  embedder and BGE reranker as baselines, and benchmark newer candidates for
+  quality, p50/p95 latency and memory on the intended hardware. Include the
+  [Ettin cross-encoder family](https://huggingface.co/blog/ettin-reranker)
+  as a candidate, not a presumed upgrade. Pin model revisions, query/document
+  formatting and truncation; isolate each model change before measuring the
+  chosen combination through the full pipeline. Use existing interfaces and
+  the `add-provider` workflow if a new adapter is needed, then the
+  `measure-change` workflow and a fresh confirmation set before changing defaults.
 - **Document-level aggregation.** The eval suite already matches at document
   level (`chunk.document_id`); the pipeline still returns chunks. Group
   `ScoredChunk`s by `document_id`, score each document (max, or sum of its
@@ -659,6 +685,24 @@ untouched confirmation set remain dataset work here, and must precede the
 broader measurement claims they support. None of this is marked shipped by
 the harness plan's publication.
 
+- **Validate the serving configuration on outside data.** The BEIR phase-4
+  runs used 100 candidates per retriever, 100 fused and 10 final results;
+  the shipped 20/20/5 operating point remains unmeasured there. Freeze a
+  separate comparison at serving depths, reporting final-list metrics at 5
+  and stage-1 recall at the actual candidate depth. Keep it separate from
+  the reference nDCG@10 / R@100 results. BEIR's pre-split passages cannot
+  validate parsing, chunking or answers: pair that retrieval check with the
+  fresh grouped holdout from the [evaluation rigor plan](evaluation-rigor-plan.md),
+  exercising ingestion through citation scoring at the exact serving config.
+  Record corpus/index identities and model/prompt settings; compare current
+  `edgar_md` rows only with compatible rows, not historical fixed/plain-text
+  EDGAR results. Report correctness, evidence completeness, source/period
+  attribution, citation support, refusal behavior and latency separately.
+  Use the already planned outside multi-hop sets first; consider
+  [BRIGHT-Pro](https://arxiv.org/abs/2605.04018) for complementary-evidence
+  coverage if those sets leave that behavior untested. Further use of already
+  inspected public test sets is transfer/regression evidence, not a fresh
+  confirmation set for choices informed by those results.
 - **A question tier that doesn't name its own entities.** In
   `edgar_eval_set.json`, all 174 questions name company and period (by
   construction of the generator). 128 start with "What was/were", 124 spans
@@ -898,13 +942,33 @@ rate limiting are what cover that case.
   corpus manifest.
 
 Out of scope, stated so it doesn't read as forgotten: multi-tenancy,
-per-document access control, SSO in the app itself, autoscaling, and
-zero-downtime reindexing (building a new collection while the old one serves,
-then switching over). The last is the natural next milestone once the index
-is rebuilt on a schedule rather than by hand.
+per-document access control (tracked in the follow-on below), SSO in the app
+itself, autoscaling, and zero-downtime reindexing (building a new collection
+while the old one serves, then switching over). The last is the natural next
+milestone once the index is rebuilt on a schedule rather than by hand.
 
 Ordering: do this ahead of Milestone 13. Auth, input bounds and the
 production container come first, because they're what make any deployment
 safe to expose. Milestone 23's retrieval gate pairs with it: "production
 ready" includes "a change can't quietly make answers worse", and that gate
 has no dependencies either.
+
+#### Follow-on — Permission-aware retrieval
+
+Required before serving corpora whose documents have different audiences;
+it does not expand Milestone 28's initial one-team/shared-corpus target.
+API authentication alone does not authorize access to every indexed document.
+
+- Resolve a trusted caller identity and document ACLs from the source system,
+  and enforce that scope inside both dense and sparse retrieval before top-k.
+  Intersect caller/model semantic filters with the authorization scope; neither
+  may replace or widen it. Unknown identity or permission state must deny access.
+- Apply the same policy to `/chat`, MCP, and Milestone 19's list/read/find tools,
+  including document metadata and returned citations. An unauthorized document
+  id must not become a bypass through direct navigation.
+- Propagate permission changes and revocations. Partition or invalidate
+  Milestone 13's caches by authorization scope and permission version; govern
+  access to stored passages and turn logs under the same policy.
+- Add cross-user/group isolation and revocation tests for both indexes, cached
+  answers and navigation. Record denied-access behavior and permission-sync
+  guarantees before claiming support for multiple document audiences.
