@@ -312,16 +312,24 @@ quota) and the MuSiQue outside check. The cost bullets
 below were written before the interface change; `LLMClient` was kept, and
 tool calling was added as a `ToolCallingLLM` subclass instead.
 
+**Next: navigation tools.** These are
+[`rag_list_documents`, `rag_read_document` and `rag_find`](milestone-19-plan.md#tool-surface-navigation-not-only-search),
+so the agent can list, read and find text in documents, not only run ranked
+search. They target the failures phase 4 showed: discovery questions, split
+tables and the cost of refusals.
+
 **Proposed enhancement follow-ups:** tracked in
 [Milestone 19 phase 5](milestone-19-plan.md#enhancement-follow-ups), after the
-phase 4 comparison identifies failures worth addressing. Prioritize calibrated
-claim/citation scoring, then an opt-in bounded draft-check/repair loop; evaluate
-dynamic retriever routing separately. Scoring stays owned by
+navigation tools. Prioritize calibrated claim/citation scoring, then an opt-in
+bounded draft-check/repair loop; evaluate dynamic retriever routing
+separately. Two cheap rows test a wider search budget and a search-strategy
+prompt. Corpus routing within the caller's scope waits for a second real
+corpus that EDGAR questions need. Scoring stays owned by
 [eval harness Phase 4a](eval-harness-plan.md#phase-4a--grounding-completeness-and-citation-scoring-estimate-pending)
 and trace export by [Milestone 26](#milestone-26--opentelemetry-trace-export).
-Durable evidence memory, SQL/graph tools and learned retrieval policies remain
-deferred pending a concrete workload. These follow-ups do not change defaults
-or delay measurement of the shipped loop.
+Durable evidence memory, SQL/graph tools, learned retrieval policies, a
+trained search policy and multi-agent orchestration remain deferred. These
+follow-ups do not change defaults or delay measurement of the shipped loop.
 
 Expose search as a **tool the answering model calls**, rather than a stage that
 always runs before it. Unlike the rest of this list, this one *replaces* shipped
