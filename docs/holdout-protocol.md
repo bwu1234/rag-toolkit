@@ -27,13 +27,19 @@ corpora. Evaluate them with `--corpus edgar_md --corpus edgar_md_holdout`, so
 each corpus serves as the other's same-sector distractor.
 
 - `edgar_md`: the 61 existing filings, 14 companies.
-- `edgar_md_holdout`: 12 filings from 6 new companies (AAL, ALK, AMD, BMY,
-  COP, HD), fetched 2026-10-01. Ten requested filings had no extractable
-  MD&A. Two that did extract were removed by hand (LOW 10-K overran into
-  Item 8; COP 10-K was truncated); see its manifest.
+- `edgar_md_holdout`: 10 filings from 5 new companies (AAL, ALK, AMD, COP,
+  HD), fetched 2026-10-01. Ten requested filings had no extractable MD&A.
+  Four that did extract were removed by hand: the LOW 10-K overran into
+  Item 8, the COP 10-K was truncated, and both BMY 10-Qs start mid-MD&A
+  with their revenue discussion missing. See its manifest.
+
+  *Amendment, 2026-10-01, before any BMY question was drafted:* BMY was
+  dropped after the protocol commit, once its truncated start was found.
+  That removed one holdout group. The seeded draw of existing companies is
+  unaffected.
 
 Held-out filings stay searchable; the holdout protects questions and labels,
-not documents. Freezing records the sha256 and accession of all 73 filings.
+not documents. Freezing records the sha256 and accession of all 71 filings.
 After that, `audit` refuses any corpus that differs.
 
 ## Grouping and split
@@ -46,7 +52,7 @@ set of its companies. A sample whose companies straddle the split is refused.
 **Split**, drawn with `random.Random(20261001)` before any authoring:
 
 - **Holdout:** one existing company per sector — AAPL, TGT, LUV, PFE, XOM —
-  plus all six new companies.
+  plus all five new companies.
 - **Development (fresh):** COST, CVX, DAL, JNJ, MRK, MSFT, NVDA, UAL, WMT.
 
 Two transfer slices are reported separately and never averaged:
@@ -163,5 +169,5 @@ a stratified 20%: every family, both splits, accepts and rejects.
   it exists, answer-pass rates on this set are uncalibrated.
 - **Workload breadth.** It covers MD&A sections of large-cap 10-K/10-Q
   filings only. There are no full filings, PDFs or enterprise documents, and
-  six new companies and five holdout groups among existing companies is a
+  five new companies and five holdout groups among existing companies is a
   small number of groups.

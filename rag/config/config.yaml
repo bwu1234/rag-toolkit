@@ -50,8 +50,8 @@ corpora:
     edgar_md_holdout:
       documents_dir: data/corpora/edgar_md_holdout/documents
       description: >
-        12 filings from 6 companies absent from `edgar` (AAL, ALK, AMD, BMY,
-        COP, HD), rendered like `edgar_md`. Hosts the fresh holdout's
+        10 filings from 5 companies absent from `edgar` (AAL, ALK, AMD, COP,
+        HD), rendered like `edgar_md`. Hosts the fresh holdout's
         entity-transfer questions (docs/holdout-protocol.md); pool it with
         `edgar_md` (`--corpus edgar_md --corpus edgar_md_holdout`) so each
         corpus is the other's same-sector distractor. Fetched from
