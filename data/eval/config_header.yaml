@@ -6,12 +6,16 @@
 #
 # EDGAR documents need front matter first (`scripts/fetch_edgar.py
 # --backfill-front-matter` for files fetched before the fetcher wrote it).
+#
+# Pinned to the `fixed` chunker this was measured with, so a rebuild
+# reproduces it after config.yaml's default moved to `structured`.
 base: ../../rag/config/config.yaml
 
 paths:
   index_dir: data/index_header
 
 chunking:
+  strategy: fixed
   carry_metadata: [title, page, page_count, company, ticker, form, period_end, filed, accession]
   header:
     template: "{company} ({ticker}) {form}, period ended {period_end}"

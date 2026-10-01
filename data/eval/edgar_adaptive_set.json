@@ -246,10 +246,30 @@
     ],
     "expected_spans": [
       "Our operating income for the June 2026 quarter was $1.9 billion",
-      "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
-      "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
-      "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
-      "| Operating income | | 1,096 | | | 1,325 |",
+      {
+        "text": "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
+        "alternatives": [
+          "| Total operating revenue | $19,757 |  | $16,648 |"
+        ]
+      },
+      {
+        "text": "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
+        "alternatives": [
+          "|  | Operating margin, as reported | 3.4% | 3.1% |"
+        ]
+      },
+      {
+        "text": "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+        "alternatives": [
+          "| Operating revenue | $17,672 | $15,236 |"
+        ]
+      },
+      {
+        "text": "| Operating income | | 1,096 | | | 1,325 |",
+        "alternatives": [
+          "| Operating income | 1,096 | 1,325 |"
+        ]
+      },
       "Our capital expenditures were $2.7 billion and $2.4 billion for the six months ended June 30, 2026 and 2025, respectively."
     ],
     "expected_answer": "Delta, quarter ended June 30, 2026: About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue); Southwest, quarter ended June 30, 2026: 3.4% as reported (6.7% excluding special items); United, quarter ended June 30, 2026: About 6.2% ($1,096 million operating income on $17,672 million operating revenue); The winner's capital expenditures, six months ended June 30, 2026: Delta: $2.7 billion. Conclusion: Delta (about 9.6%, ahead of United at about 6.2% and Southwest at 3.4%), with $2.7 billion of capital expenditures.",
@@ -261,7 +281,12 @@
         "answer": "About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue)",
         "spans": [
           "Our operating income for the June 2026 quarter was $1.9 billion",
-          "| Total operating revenue | $ | 19,757 | | $ | 16,648 |"
+          {
+            "text": "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
+            "alternatives": [
+              "| Total operating revenue | $19,757 |  | $16,648 |"
+            ]
+          }
         ],
         "source_id": "DAL_10-Q_2026-06-30.md::chunk0"
       },
@@ -269,7 +294,12 @@
         "label": "Southwest, quarter ended June 30, 2026",
         "answer": "3.4% as reported (6.7% excluding special items)",
         "spans": [
-          "| | Operating margin, as reported | 3.4 | % | | 3.1 | %"
+          {
+            "text": "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
+            "alternatives": [
+              "|  | Operating margin, as reported | 3.4% | 3.1% |"
+            ]
+          }
         ],
         "source_id": "LUV_10-Q_2026-06-30.md::chunk44"
       },
@@ -277,8 +307,18 @@
         "label": "United, quarter ended June 30, 2026",
         "answer": "About 6.2% ($1,096 million operating income on $17,672 million operating revenue)",
         "spans": [
-          "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
-          "| Operating income | | 1,096 | | | 1,325 |"
+          {
+            "text": "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+            "alternatives": [
+              "| Operating revenue | $17,672 | $15,236 |"
+            ]
+          },
+          {
+            "text": "| Operating income | | 1,096 | | | 1,325 |",
+            "alternatives": [
+              "| Operating income | 1,096 | 1,325 |"
+            ]
+          }
         ],
         "source_id": "UAL_10-Q_2026-06-30.md::chunk4"
       },
@@ -395,7 +435,12 @@
           "Aircraft fuel and related taxes increased $1.7 billion compared to the June 2025 quarter"
         ]
       },
-      "| Aircraft fuel and related taxes | 2,215 | | | 1,326 | | | 889 | | | 67.0 |",
+      {
+        "text": "| Aircraft fuel and related taxes | 2,215 | | | 1,326 | | | 889 | | | 67.0 |",
+        "alternatives": [
+          "| Aircraft fuel and related taxes | 2,215 | 1,326 | 889 | 67.0 |"
+        ]
+      },
       "Aircraft fuel expense increased $2.3 billion, or 84.1%, in the second quarter of 2026 as compared to the year-ago period"
     ],
     "expected_answer": "Delta, quarter ended June 30, 2026: Up 67% ($4,109 million vs $2,458 million); Southwest, quarter ended June 30, 2026: Up 67.0% ($2,215 million vs $1,326 million); United, quarter ended June 30, 2026: Up 84.1% ($2.3 billion). Conclusion: United (84.1%), ahead of Delta (67%) and Southwest (67.0%).",
@@ -419,7 +464,12 @@
         "label": "Southwest, quarter ended June 30, 2026",
         "answer": "Up 67.0% ($2,215 million vs $1,326 million)",
         "spans": [
-          "| Aircraft fuel and related taxes | 2,215 | | | 1,326 | | | 889 | | | 67.0 |"
+          {
+            "text": "| Aircraft fuel and related taxes | 2,215 | | | 1,326 | | | 889 | | | 67.0 |",
+            "alternatives": [
+              "| Aircraft fuel and related taxes | 2,215 | 1,326 | 889 | 67.0 |"
+            ]
+          }
         ],
         "source_id": "LUV_10-Q_2026-06-30.md::chunk16"
       },
@@ -443,9 +493,19 @@
       "PFE_10-Q_2026-06-28.md"
     ],
     "expected_spans": [
-      "11.1\nnet cash generated from operating activities",
+      {
+        "text": "11.1\nnet cash generated from operating activities",
+        "alternatives": [
+          "| 11.1 | net cash generated from operating activities |"
+        ]
+      },
       "Cash provided by operating activities was $9.3 billion in the first six months of 2026",
-      "| Operating activities | | $ | 3,450 | | | $ | 1,753 | | |"
+      {
+        "text": "| Operating activities | | $ | 3,450 | | | $ | 1,753 | | |",
+        "alternatives": [
+          "| Operating activities | $3,450 | $1,753 |"
+        ]
+      }
     ],
     "expected_answer": "Johnson & Johnson, fiscal first six months of 2026: $11.1 billion; Merck, first six months of 2026: $9.3 billion; Pfizer, first six months of 2026: $3,450 million. Conclusion: Johnson & Johnson ($11.1 billion), ahead of Merck ($9.3 billion) and Pfizer ($3.45 billion).",
     "tier": "multihop",
@@ -455,7 +515,12 @@
         "label": "Johnson & Johnson, fiscal first six months of 2026",
         "answer": "$11.1 billion",
         "spans": [
-          "11.1\nnet cash generated from operating activities"
+          {
+            "text": "11.1\nnet cash generated from operating activities",
+            "alternatives": [
+              "| 11.1 | net cash generated from operating activities |"
+            ]
+          }
         ],
         "source_id": "JNJ_10-Q_2026-06-28.md::chunk45"
       },
@@ -471,7 +536,12 @@
         "label": "Pfizer, first six months of 2026",
         "answer": "$3,450 million",
         "spans": [
-          "| Operating activities | | $ | 3,450 | | | $ | 1,753 | | |"
+          {
+            "text": "| Operating activities | | $ | 3,450 | | | $ | 1,753 | | |",
+            "alternatives": [
+              "| Operating activities | $3,450 | $1,753 |"
+            ]
+          }
         ],
         "source_id": "PFE_10-Q_2026-06-28.md::chunk76"
       }

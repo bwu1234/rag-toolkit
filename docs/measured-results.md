@@ -1307,9 +1307,11 @@ than plain `structured` on any set, so it was not run end to end.
 
 **Decision.** This meets the plan's default criterion: answer quality
 improves, by more than noise on the `table` tier, and retrieval doesn't
-regress on any set. Making it the default is a separate step, because it
-was measured on `edgar_md` only. See the
-[chunking plan](chunking-indexing-plan.md#phase-5--structure-aware-chunker-34-days--measured-2026-10-01-default-pending).
+regress on any set. Adopted as the default, with `edgar_md` as the EDGAR
+corpus evals run on
+([chunking plan](chunking-indexing-plan.md#phase-5--structure-aware-chunker-34-days--done-2026-10-01)).
+EDGAR rows recorded before this section ran on `edgar` with the `fixed`
+chunker; they are not paired with rows recorded after it.
 
 ### SQLite FTS5 sparse backend
 

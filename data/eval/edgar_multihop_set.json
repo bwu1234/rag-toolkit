@@ -1244,10 +1244,30 @@
     ],
     "expected_spans": [
       "Our operating income for the June 2026 quarter was $1.9 billion",
-      "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
-      "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
-      "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
-      "| Operating income | | 1,096 | | | 1,325 |"
+      {
+        "text": "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
+        "alternatives": [
+          "| Total operating revenue | $19,757 |  | $16,648 |"
+        ]
+      },
+      {
+        "text": "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
+        "alternatives": [
+          "|  | Operating margin, as reported | 3.4% | 3.1% |"
+        ]
+      },
+      {
+        "text": "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+        "alternatives": [
+          "| Operating revenue | $17,672 | $15,236 |"
+        ]
+      },
+      {
+        "text": "| Operating income | | 1,096 | | | 1,325 |",
+        "alternatives": [
+          "| Operating income | 1,096 | 1,325 |"
+        ]
+      }
     ],
     "expected_answer": "Delta, quarter ended June 30, 2026: About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue); Southwest, quarter ended June 30, 2026: 3.4% as reported (6.7% excluding special items); United, quarter ended June 30, 2026: About 6.2% ($1,096 million operating income on $17,672 million operating revenue). Conclusion: Delta (about 9.6%), ahead of United (about 6.2%) and Southwest (3.4%).",
     "tier": "multihop",
@@ -1258,7 +1278,12 @@
         "answer": "About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue)",
         "spans": [
           "Our operating income for the June 2026 quarter was $1.9 billion",
-          "| Total operating revenue | $ | 19,757 | | $ | 16,648 |"
+          {
+            "text": "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
+            "alternatives": [
+              "| Total operating revenue | $19,757 |  | $16,648 |"
+            ]
+          }
         ],
         "source_id": "DAL_10-Q_2026-06-30.md::chunk0"
       },
@@ -1266,7 +1291,12 @@
         "label": "Southwest, quarter ended June 30, 2026",
         "answer": "3.4% as reported (6.7% excluding special items)",
         "spans": [
-          "| | Operating margin, as reported | 3.4 | % | | 3.1 | %"
+          {
+            "text": "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
+            "alternatives": [
+              "|  | Operating margin, as reported | 3.4% | 3.1% |"
+            ]
+          }
         ],
         "source_id": "LUV_10-Q_2026-06-30.md::chunk44"
       },
@@ -1274,8 +1304,18 @@
         "label": "United, quarter ended June 30, 2026",
         "answer": "About 6.2% ($1,096 million operating income on $17,672 million operating revenue)",
         "spans": [
-          "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
-          "| Operating income | | 1,096 | | | 1,325 |"
+          {
+            "text": "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+            "alternatives": [
+              "| Operating revenue | $17,672 | $15,236 |"
+            ]
+          },
+          {
+            "text": "| Operating income | | 1,096 | | | 1,325 |",
+            "alternatives": [
+              "| Operating income | 1,096 | 1,325 |"
+            ]
+          }
         ],
         "source_id": "UAL_10-Q_2026-06-30.md::chunk4"
       }

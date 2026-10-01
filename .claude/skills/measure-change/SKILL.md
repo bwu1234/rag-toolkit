@@ -17,11 +17,13 @@ before proposing any of them again.
 2. **Pick the corpus deliberately.** `baseline` is 8 documents, ~26k chars —
    `top_k 20` retrieves ~65% of it, so retrieval metrics saturate and every
    variant looks the same. It is a control, not a measurement. Measure on
-   `edgar` (61 filings, ~4,200 chunks) with
-   `data/eval/edgar_eval_set.json` (174 samples).
+   `edgar_md` (61 filings, ~4,800 structured chunks) with
+   `data/eval/edgar_eval_set.json` (174 samples). Results recorded before
+   2026-10-01 are on `edgar` (plain text, fixed chunker); don't pair a new
+   `edgar_md` row against one of them.
 3. **Confirm the index matches the config.** Collection names carry the corpus
-   selection slug (`rag_corpus__edgar`). Anything under `chunking.*` requires a
-   rebuild (`python -m rag.cli index --corpus edgar --reset`) — a config flip
+   selection slug (`rag_corpus__edgar_md`). Anything under `chunking.*` requires a
+   rebuild (`python -m rag.cli index --corpus edgar_md --reset`) — a config flip
    alone measures nothing. Everything else is a pure query-time knob.
 
 ## Running the matrix
@@ -31,9 +33,9 @@ whole matrix runs in minutes against one index.
 
 ```bash
 python scripts/run_matrix.py --list                    # variants, run nothing
-python scripts/run_matrix.py --corpus edgar --eval-set data/eval/edgar_eval_set.json
-python scripts/run_matrix.py --only reranker,min_score --corpus edgar
-python scripts/run_matrix.py --variant "rr=bge-base" --merge --corpus edgar
+python scripts/run_matrix.py --corpus edgar_md --eval-set data/eval/edgar_eval_set.json
+python scripts/run_matrix.py --only reranker,min_score --corpus edgar_md
+python scripts/run_matrix.py --variant "rr=bge-base" --merge --corpus edgar_md
 ```
 
 Key flags: `--only <axes>` and `--variant <name>` narrow the run; `--merge` adds

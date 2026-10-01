@@ -333,9 +333,8 @@ class StructuredChunkingConfig(BaseModel):
 class ChunkingConfig(BaseModel):
     """Parameters for splitting documents into retrievable chunks.
 
-    `fixed` = simple character-based windows with overlap. Deliberately the
-    simplest strategy that could work; structure-aware/semantic chunking is a
-    later milestone once the end-to-end pipeline is proven out.
+    `fixed` = simple character-based windows with overlap. The model default,
+    like the other plain options here; config.yaml ships `structured`.
 
     `none` = no splitting: each document becomes exactly one chunk with its
     text unchanged, and `chunk_size`/`chunk_overlap` are ignored. For corpora
@@ -344,7 +343,8 @@ class ChunkingConfig(BaseModel):
 
     `structured` = split on Markdown headings, table edges and paragraph
     breaks, packing up to `chunk_size`; oversized tables split by rows with
-    the header repeated. Settings under `structured`.
+    the header repeated. Settings under `structured`. The shipped default
+    since chunking plan Phase 5.
     """
 
     strategy: Literal["fixed", "none", "structured"] = "fixed"

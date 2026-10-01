@@ -14,7 +14,7 @@ Usage::
     python -m rag.eval.answer_eval --config path/to/config.yaml
     python -m rag.eval.answer_eval --judge-model gemma4:31b-mlx
     python -m rag.eval.answer_eval --judge-provider gemini --judge-model gemma-4-31b-it
-    python -m rag.eval.answer_eval --corpus edgar --oracle     # gold evidence, no retrieval
+    python -m rag.eval.answer_eval --corpus edgar_md --oracle     # gold evidence, no retrieval
 
 The judge prompt is deliberately minimal: it asks the LLM to output exactly
 ``PASS`` or ``FAIL`` (optionally followed by a brief reason on the same line)

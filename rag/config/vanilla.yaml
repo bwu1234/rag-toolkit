@@ -2,7 +2,7 @@
 # similarity, paste them into a plain prompt, generate. Nothing else.
 #
 #   python -m rag.cli --config rag/config/vanilla.yaml chat
-#   python -m rag.eval.retrieval_eval --config rag/config/vanilla.yaml --corpus edgar ...
+#   python -m rag.eval.retrieval_eval --config rag/config/vanilla.yaml --corpus edgar_md ...
 #
 # The point is a floor to measure the default pipeline against -- what hybrid
 # search, reranking and the grounded prompt actually buy on a given corpus.
@@ -16,13 +16,17 @@
 # The chunk header is the exception that needs its own index: it's stored in
 # the index, not applied at query time, so the shipped index can't serve a
 # header-free baseline. Build this one once with
-#   python -m rag.cli --config rag/config/vanilla.yaml index --corpus edgar
+#   python -m rag.cli --config rag/config/vanilla.yaml index --corpus edgar_md
+#
+# The chunker is pinned to `fixed` windows, the plain-RAG way to split text,
+# so the floor stays a floor when config.yaml's chunker changes.
 base: config.yaml
 
 paths:
   index_dir: data/index_vanilla
 
 chunking:
+  strategy: fixed
   # No "{company} ({ticker}) ..." line indexed ahead of each chunk.
   header:
     template: null

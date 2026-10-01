@@ -87,12 +87,15 @@
   incrementally, because the per-chunk content hash covers `chunk.text` only.
   The context cache keeps that rebuild from re-paying for blurbs whose inputs
   didn't change.
-- Chunking is character-based fixed-size with overlap. On EDGAR, 543 chunks
-  (12.8%) start partway through a table, separated from its header row
-  (`index-report` counts them). A structure-aware chunker is planned in the
-  [chunking plan](chunking-indexing-plan.md) (Phases 4–5); semantic chunking
-  was dropped from it on the evidence there. Token-aware sizing waits for an
-  embedder with a hard token limit.
+- The `structured` chunker only sees structure written as Markdown headings
+  and pipe tables. On `edgar_md` no chunk starts mid-table. Text without
+  either gets paragraph packing and nothing more; for scale, the `fixed`
+  chunker on plain-text `edgar` put 543 chunks (12.8%) inside a table, away
+  from its header row (`index-report` counts them). Sizes are in
+  characters, capped at `chunk_size` except for 39 `edgar_md` chunks that
+  carry a heading over it (at most 1,164). Semantic chunking was dropped on
+  the evidence in the [chunking plan](chunking-indexing-plan.md); token-aware
+  sizing waits for an embedder with a hard token limit.
 - **The chunk header needs typed document metadata.** A document missing any
   field `chunking.header.template` names gets no header, and on EDGAR that
   metadata comes only from the fetcher's YAML front matter. PDFs and

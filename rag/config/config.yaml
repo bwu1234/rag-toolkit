@@ -34,9 +34,11 @@ corpora:
     edgar:
       documents_dir: data/corpora/edgar/documents
       description: >
-        SEC 10-K/10-Q MD&A sections (61 filings, ~3.6M chars, ~4,200 chunks).
+        SEC 10-K/10-Q MD&A sections (61 filings, ~3.6M chars) as plain text.
         Built by scripts/fetch_edgar.py; documents are gitignored and
-        reproduced from data/corpora/edgar/manifest.json.
+        reproduced from data/corpora/edgar/manifest.json. Results up to
+        Milestone 19 phase 4 were measured on it; new EDGAR measurements use
+        edgar_md, and edgar is the source edgar_md is rendered from.
     edgar_md:
       documents_dir: data/corpora/edgar_md/documents
       description: >
@@ -107,7 +109,12 @@ chunking:
   # oversized tables split by rows with the header rows repeated, so no chunk
   # starts mid-table (settings under `structured` below). none = one chunk per
   # document, for pre-split corpora (rag/config/beir.yaml).
-  strategy: fixed
+  #
+  # structured is the default since chunking plan Phase 5: on edgar_md it
+  # raised table-tier answer pass from 0.811 to 0.947 and tied on the
+  # answerable set (docs/measured-results.md). Changing it re-chunks every
+  # document; `rag.cli index` re-embeds the changed chunks and purges the rest.
+  strategy: structured
   chunk_size: 1000
   chunk_overlap: 150
   # Used only by `strategy: structured` (docs/chunking-indexing-plan.md,

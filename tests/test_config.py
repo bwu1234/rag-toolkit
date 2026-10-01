@@ -200,7 +200,8 @@ def test_vanilla_config_inherits_everything_it_does_not_change() -> None:
 
     changed = {
         "paths": {"index_dir": "data/index_vanilla"},
-        "chunking": {"header": {"template": None}},
+        # Pinned: plain RAG splits on fixed windows, whatever config.yaml ships.
+        "chunking": {"strategy": "fixed", "header": {"template": None}},
         "retrieval": {"mode": "dense", "top_k": 5},
         "reranker": {"provider": "none"},
         "chat": {"condense_history": False, "prompt": "plain"},

@@ -31,7 +31,7 @@ Two runs with the same fingerprint are comparable; two without are not.
 
 Usage
 -----
-    python scripts/run_matrix.py --corpus edgar --eval-set data/eval/edgar_eval_set.json
+    python scripts/run_matrix.py --corpus edgar_md --eval-set data/eval/edgar_eval_set.json
     python scripts/run_matrix.py --only baseline,reranker   # a subset of axes
     python scripts/run_matrix.py --list                     # show variants, run nothing
 """
