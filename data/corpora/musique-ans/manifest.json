@@ -1,0 +1,357 @@
+{
+  "name": "musique-ans",
+  "description": "MuSiQue-Ans v1.0: 2-4 hop questions composed from single-hop questions over Wikipedia paragraphs, each with 20 context paragraphs, supporting-paragraph labels and a question decomposition. Evaluated as one corpus pooled over a split's paragraphs (public benchmarks plan, MuSiQue follow-on).",
+  "source": "https://drive.google.com/file/d/1tGdADlNjWFaHLeZZGShh2IRcpO6Lv24h/view (the link in the official download_data.sh)",
+  "download": "https://drive.usercontent.google.com/download?id=1tGdADlNjWFaHLeZZGShh2IRcpO6Lv24h&export=download&confirm=t",
+  "homepage": "https://github.com/StonyBrookNLP/musique",
+  "repo_commit": "922ac98f19a201998dbdae6d7f2887a5258dbdeb (main, 2024-06-12; download_data.sh and evaluate_v1.0.py read at this commit)",
+  "paper": "https://arxiv.org/abs/2108.00573",
+  "license": "CC BY 4.0 (repo README). Fetched at build time, never committed or redistributed.",
+  "fetcher": "not yet implemented (MuSiQue follow-on, phase B)",
+  "archive": {
+    "file": "musique_v1.0.zip",
+    "sha256": "98f839bf2fd5319f5c688aed77901a6d5c30b3b9f9f691ab9a8ecafb045ee0cd",
+    "bytes": 272049578,
+    "contents": "data/ with the six split files, dev_test_singlehop_questions_v1.0.json and a macOS .DS_Store (ignored)",
+    "inventoried": "2026-10-01 with scripts/inventory_musique.py"
+  },
+  "decisions": {
+    "variant": "MuSiQue-Ans only. MuSiQue-Full is not run pooled: in full_dev_pooling_leak, all 2,417 unanswerable dev questions get their withheld supporting paragraph back through the answerable twin's context. Full would need per-question corpora (20 paragraphs each); deferred.",
+    "confirmatory_split": "ans dev (2,417 questions, 21,100 unique paragraphs). Test labels are hidden (labelled 0), so test is never used.",
+    "tuning_split": "a fixed, hop-stratified slice of ans train drawn only from questions none of whose paragraphs appear in the dev pool (17.5% of dev paragraphs also occur in train), with its own pooled corpus. Size, seed and ids are recorded by the phase B converter; the comparison family is frozen on it before any dev run.",
+    "paragraph_ids": "musique-<sha256(title + '\\n' + text)[:16]>, identical paragraphs deduped into one document. 0 collisions across every split.",
+    "full_split_duplicate_ids": "Full splits repeat each question id twice by design: the answerable question and its unanswerable contrast copy."
+  },
+  "access_log": [
+    {
+      "date": "2026-10-01",
+      "split": "all",
+      "use": "inventory only (counts, hashes, id and leakage checks); no question answered, no model run"
+    }
+  ],
+  "inventory": {
+    "files": {
+      "musique_ans_v1.0_train.jsonl": {
+        "sha256": "83a75b1e11e4e9bb8f8308e72ac40ca617ae4431b3a0d955b61cab259248490a",
+        "bytes": 241046755
+      },
+      "musique_ans_v1.0_dev.jsonl": {
+        "sha256": "15fa63794d18a94ce12411aca6e2327e65b6e83b0b1490efab3f1962e48abf3b",
+        "bytes": 30439728
+      },
+      "musique_ans_v1.0_test.jsonl": {
+        "sha256": "92ee3067957b8ebce885baa71156a7c0c29f3bc72cca04510aef506911dd768f",
+        "bytes": 28366572
+      },
+      "musique_full_v1.0_train.jsonl": {
+        "sha256": "b1cd998f7e0e2838d6fda024e4ad1eb0e7fc3edefdadb0bd9b5b10b0907f2034",
+        "bytes": 476696984
+      },
+      "musique_full_v1.0_dev.jsonl": {
+        "sha256": "8cab31d56a3a1c4ef491b205a8dab3f1ac9c66e472098c6cf1de4e20294f7a4a",
+        "bytes": 59422562
+      },
+      "musique_full_v1.0_test.jsonl": {
+        "sha256": "01d7b0f752bdc1fc98856d605560e021a89be903baeb9daff11adeb7fac61328",
+        "bytes": 55558292
+      },
+      "dev_test_singlehop_questions_v1.0.json": {
+        "sha256": "013be00ab914799891e5ae40de6cdc1baf03aaffd1f3ce4bf0de796020069613",
+        "bytes": 915921
+      }
+    },
+    "splits": {
+      "ans_v1.0_train": {
+        "questions": 19938,
+        "duplicate_question_ids": [],
+        "hop_types": {
+          "2hop": 14376,
+          "3hop1": 3737,
+          "3hop2": 650,
+          "4hop1": 648,
+          "4hop2": 127,
+          "4hop3": 400
+        },
+        "paragraphs_per_question": {
+          "16": 1,
+          "17": 2,
+          "18": 8,
+          "19": 10,
+          "20": 19917
+        },
+        "supporting_per_question": {
+          "2": 14376,
+          "3": 4387,
+          "4": 1175
+        },
+        "decomposition_steps": {
+          "2": 14376,
+          "3": 4387,
+          "4": 1175
+        },
+        "answerable": {
+          "True": 19938
+        },
+        "labelled": 19938,
+        "with_answer_aliases": 5067,
+        "paragraph_slots": 398724,
+        "unique_paragraphs": 84559,
+        "unique_supporting_paragraphs": 13672,
+        "id_collisions": 0,
+        "empty_paragraph_text": 0,
+        "max_paragraph_chars": 1998,
+        "decomposition_support_idx_not_supporting": 0
+      },
+      "ans_v1.0_dev": {
+        "questions": 2417,
+        "duplicate_question_ids": [],
+        "hop_types": {
+          "2hop": 1252,
+          "3hop1": 568,
+          "3hop2": 192,
+          "4hop1": 246,
+          "4hop2": 64,
+          "4hop3": 95
+        },
+        "paragraphs_per_question": {
+          "17": 2,
+          "18": 5,
+          "19": 9,
+          "20": 2401
+        },
+        "supporting_per_question": {
+          "2": 1252,
+          "3": 760,
+          "4": 405
+        },
+        "decomposition_steps": {
+          "2": 1252,
+          "3": 760,
+          "4": 405
+        },
+        "answerable": {
+          "True": 2417
+        },
+        "labelled": 2417,
+        "with_answer_aliases": 680,
+        "paragraph_slots": 48315,
+        "unique_paragraphs": 21100,
+        "unique_supporting_paragraphs": 2629,
+        "id_collisions": 0,
+        "empty_paragraph_text": 0,
+        "max_paragraph_chars": 2010,
+        "decomposition_support_idx_not_supporting": 0
+      },
+      "ans_v1.0_test": {
+        "questions": 2459,
+        "duplicate_question_ids": [],
+        "hop_types": {
+          "2hop": 1271,
+          "3hop1": 604,
+          "3hop2": 159,
+          "4hop1": 278,
+          "4hop2": 46,
+          "4hop3": 100,
+          "4hop4": 1
+        },
+        "paragraphs_per_question": {
+          "18": 7,
+          "19": 11,
+          "20": 2441
+        },
+        "supporting_per_question": {
+          "0": 2459
+        },
+        "decomposition_steps": {
+          "0": 2459
+        },
+        "answerable": {
+          "None": 2459
+        },
+        "labelled": 0,
+        "with_answer_aliases": 0,
+        "paragraph_slots": 49155,
+        "unique_paragraphs": 25659,
+        "unique_supporting_paragraphs": 0,
+        "id_collisions": 0,
+        "empty_paragraph_text": 0,
+        "max_paragraph_chars": 2046,
+        "decomposition_support_idx_not_supporting": 0
+      },
+      "full_v1.0_train": {
+        "questions": 39876,
+        "duplicate_question_ids": [
+          "2hop__10001_33297",
+          "2hop__10001_72062",
+          "2hop__100274_14948",
+          "2hop__100331_42157",
+          "2hop__100331_85374",
+          "2hop__100384_14937",
+          "2hop__100474_35202",
+          "2hop__100482_14960",
+          "2hop__100512_15014",
+          "2hop__100543_15014"
+        ],
+        "hop_types": {
+          "2hop": 28752,
+          "3hop1": 7474,
+          "3hop2": 1300,
+          "4hop1": 1296,
+          "4hop2": 254,
+          "4hop3": 800
+        },
+        "paragraphs_per_question": {
+          "16": 1,
+          "17": 3,
+          "18": 14,
+          "19": 31,
+          "2": 1,
+          "20": 39825,
+          "3": 1
+        },
+        "supporting_per_question": {
+          "0": 6306,
+          "1": 10473,
+          "2": 17054,
+          "3": 4868,
+          "4": 1175
+        },
+        "decomposition_steps": {
+          "2": 28752,
+          "3": 8774,
+          "4": 2350
+        },
+        "answerable": {
+          "False": 19938,
+          "True": 19938
+        },
+        "labelled": 39876,
+        "with_answer_aliases": 7215,
+        "paragraph_slots": 797413,
+        "unique_paragraphs": 95125,
+        "unique_supporting_paragraphs": 13672,
+        "id_collisions": 0,
+        "empty_paragraph_text": 0,
+        "max_paragraph_chars": 2046,
+        "decomposition_support_idx_not_supporting": 0
+      },
+      "full_v1.0_dev": {
+        "questions": 4834,
+        "duplicate_question_ids": [
+          "2hop__10017_18974",
+          "2hop__10114_599630",
+          "2hop__10122_18974",
+          "2hop__103889_86452",
+          "2hop__104095_40501",
+          "2hop__104095_40502",
+          "2hop__10515_21567",
+          "2hop__10620_49084",
+          "2hop__10620_79092",
+          "2hop__106864_80460"
+        ],
+        "hop_types": {
+          "2hop": 2504,
+          "3hop1": 1136,
+          "3hop2": 384,
+          "4hop1": 492,
+          "4hop2": 128,
+          "4hop3": 190
+        },
+        "paragraphs_per_question": {
+          "15": 1,
+          "16": 2,
+          "17": 2,
+          "18": 9,
+          "19": 17,
+          "20": 4803
+        },
+        "supporting_per_question": {
+          "0": 541,
+          "1": 1178,
+          "2": 1795,
+          "3": 915,
+          "4": 405
+        },
+        "decomposition_steps": {
+          "2": 2504,
+          "3": 1520,
+          "4": 810
+        },
+        "answerable": {
+          "False": 2417,
+          "True": 2417
+        },
+        "labelled": 4834,
+        "with_answer_aliases": 947,
+        "paragraph_slots": 96626,
+        "unique_paragraphs": 26326,
+        "unique_supporting_paragraphs": 2629,
+        "id_collisions": 0,
+        "empty_paragraph_text": 0,
+        "max_paragraph_chars": 2066,
+        "decomposition_support_idx_not_supporting": 0
+      },
+      "full_v1.0_test": {
+        "questions": 4918,
+        "duplicate_question_ids": [
+          "2hop__10026_538992",
+          "2hop__10135_577072",
+          "2hop__101756_20590",
+          "2hop__1029_33075",
+          "2hop__10320_450197",
+          "2hop__10380_37182",
+          "2hop__103966_126088",
+          "2hop__104350_8583",
+          "2hop__105158_8974",
+          "2hop__106187_34736"
+        ],
+        "hop_types": {
+          "2hop": 2542,
+          "3hop1": 1208,
+          "3hop2": 318,
+          "4hop1": 556,
+          "4hop2": 92,
+          "4hop3": 200,
+          "4hop4": 2
+        },
+        "paragraphs_per_question": {
+          "13": 1,
+          "15": 1,
+          "16": 1,
+          "17": 1,
+          "18": 7,
+          "19": 17,
+          "20": 4890
+        },
+        "supporting_per_question": {
+          "0": 4918
+        },
+        "decomposition_steps": {
+          "0": 4918
+        },
+        "answerable": {
+          "None": 4918
+        },
+        "labelled": 0,
+        "with_answer_aliases": 0,
+        "paragraph_slots": 98310,
+        "unique_paragraphs": 30922,
+        "unique_supporting_paragraphs": 0,
+        "id_collisions": 0,
+        "empty_paragraph_text": 0,
+        "max_paragraph_chars": 1970,
+        "decomposition_support_idx_not_supporting": 0
+      }
+    },
+    "ans_dev_vs_train": {
+      "dev_paragraphs_in_train": 3697,
+      "dev_supporting_paragraphs_in_train": 693,
+      "dev_questions_verbatim_in_train": 0
+    },
+    "full_dev_pooling_leak": {
+      "pairs": 2417,
+      "unanswerable_missing_supporting": 2417,
+      "all_withheld_present_in_pool": 2417
+    }
+  }
+}
