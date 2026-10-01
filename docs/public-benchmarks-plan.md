@@ -950,6 +950,162 @@ filtered retrieval for any question returns only that question's chunks.
 Cost: local only, no API spend. HTML pages are larger than BEIR passages, so
 record disk, extraction and index time.
 
+## Follow-on: outside-labelled 10-K questions on FinDER
+
+BEIR and MuSiQue arrive pre-split, so neither measures this repo's extraction
+or chunking. The EDGAR sets do, but their questions were written from this
+repo's own chunks and have been tuned against repeatedly
+([evaluation rigor plan](evaluation-rigor-plan.md)). This section adds
+expert-written questions over 10-K filings, with evidence given as text, so
+the existing span matching scores our own chunks against labels we did not
+write. It is proposed, not scheduled.
+
+### Why FinDER
+
+[FinDER](https://huggingface.co/datasets/Linq-AI-Research/FinDER)
+([paper](https://arxiv.org/abs/2504.15800), ICLR 2025 Advances in Financial
+AI workshop) has 5,703 queries taken from a financial Q&A service used by
+hedge-fund, asset-management and banking analysts. Financial experts (an
+investment-bank analyst and a CPA) linked each query to evidence in the
+company's 10-K and wrote a verified answer. It covers 490 S&P 500 companies.
+
+| Field | Use here |
+|---|---|
+| `text` (22–331 chars) | The query, kept verbatim: short, acronym-heavy and often ambiguous ("Delta in CBOE Data & Access Solutions rev from 2021-23.") |
+| `references` (1–6 passages) | Gold evidence as text, which becomes `expected_spans` |
+| `answer` (0–4,420 chars) | Reference answer for the judge; long-form, not a short span |
+| `category` (8), `type` (7), `reasoning` | Strata: category is the 10-K area (financials, footnotes, governance…); type is the operation (e.g. `Subtract`, `Compositional`) |
+
+The paper reports 84.5% qualitative and 15.5% quantitative questions, and
+about half of the quantitative ones need several steps. Retrieval is the hard
+part in their results: the best retriever (E5-mistral) reached a context
+recall of 25.95. Claude 3.7 Sonnet scored 66.48 correctness given the gold
+passages and 9.37 with none. Read those as the paper's numbers under its
+segmentation, not as targets.
+
+Alternatives: FinanceBench has 150 open questions with verbatim
+`evidence_text` and page numbers, but is too small for paired comparisons at
+the 0.01–0.05 effects this repo cares about, and its quotes come from PDF
+extraction. Keep it as a later transfer check.
+
+### What it does and does not measure
+
+- **Measures:** the production pipeline end to end on 10-Ks: our extraction,
+  cleaning, chunking, retrieval and answers, against labels this repo did not
+  write. Unmatchable spans
+  ([relevance](../rag/eval/relevance.py)) become a chunking metric on outside
+  evidence. Questions with several references give union evidence recall,
+  which the agent can be measured on.
+- **The corpus is ours, not theirs.** FinDER distributes evidence passages,
+  not filings. The paper converted 10-K HTML to plain text and split it into
+  paragraphs, and that segmentation is not published. So a FinDER row
+  measures our chunking, and a miss can mean a reference our extraction never
+  produced. Phase A measures that rate before any retrieval number is read.
+- **Whole 10-Ks, not MD&A.** `data/corpora/edgar` holds only MD&A (Item 7).
+  FinDER evidence comes from every section: employee counts in Item 1, the
+  income statement, footnotes. It needs a whole-filing corpus, and the
+  existing EDGAR sets are unaffected.
+- **Mostly single-hop.** It is not a multi-hop set. Multi-reference
+  questions give an agent stratum, but MuSiQue remains the multi-hop check.
+- **Answers are graded by a judge.** Most answers are long-form analysis, so
+  EM/F1 does not apply. Retrieval is the primary measurement, and answer pass
+  rates carry the judge caveats in the rigor plan.
+- **Probably in training data.** The dataset has been public since 2025, and
+  10-K text is on the open web. Every answer row needs a closed-book control
+  beside it.
+- **Licence: treat as CC BY-NC 4.0.** The paper states CC BY 4.0 and the
+  Hugging Face card CC BY-NC 4.0. Follow the stricter until resolved. As with
+  every corpus here, the data is fetched and gitignored, never committed.
+
+### Phase A: pin, attribute and audit
+
+- Pin the release: Hugging Face revision, parquet SHA-256, licence as stated
+  in both places, and counts per `category`, `type` and reference count, in
+  `data/corpora/finder/manifest.json`.
+- **Attribute each question to a filing.** Records name no company, filing or
+  year. The four rows inspected while drafting all quote Cboe's FY2023 10-K.
+  Resolve each question to one accession by locating its references in
+  candidate filings, using `rag.eval.relevance.normalize` matching, not by
+  parsing the query. Record the accession, and the method that found it, per
+  question. Report the questions that resolve to no filing or to several, and
+  the fiscal-year distribution, instead of assuming every question is FY2023.
+- **Evidence-match audit.** For each attributed question, the share of its
+  references found verbatim in our extracted text. Report it by category,
+  because table-heavy references (statements, segment tables) are where
+  extraction differs most. Hand-read a random sample of misses and classify
+  them: table layout, whitespace or encoding, text absent from our
+  extraction, or a reference from another document. If table references
+  rarely match, the table categories are scored on the `edgar_md` rendering
+  or reported separately, never silently dropped.
+- **Splits.** FinDER ships one split. Make a dev/test split **grouped by
+  company**, so no filing's facts cross the boundary, with a recorded seed.
+  Freeze it in the manifest before any retrieval run. Tune on dev only.
+- **Size.** Measure characters and chunks per whole 10-K on a sample, and
+  extrapolate the full corpus's index time from FiQA's measured rate (57,600
+  passages in 6,028 s with Qwen via Ollama). If the full set is out of the
+  local budget, pool a company sample: a pooled corpus of the companies
+  in both splits, where every other company's filing is a distractor. Record
+  the sample and its size.
+
+Exit: a manifest with counts, attribution for every kept question, an
+evidence-match rate per category with the audited miss classes, and a frozen
+company-grouped split.
+
+### Phase B: corpus and eval-set conversion
+
+- **Whole-filing fetch** in `scripts/fetch_edgar.py`: a mode that keeps the
+  full primary document instead of slicing MD&A, pinned to the accessions
+  phase A attributed, under the same fair-access user agent and rate limit.
+  Its front matter carries the same fields, so the chunk header works
+  unchanged. Run it through `--cache-raw` and `--render-markdown` too,
+  so the Markdown path is available to the table categories.
+- **Registry entry** `finder`, with normal cleaning (`clean: true`), the
+  shipped chunker and header. Never pool it with `edgar`: the companies
+  overlap and the filings differ.
+- **Converter** `scripts/finder_to_eval_set.py` writes
+  `data/eval/finder_{dev,test}.json`: verbatim query, `references` as
+  `expected_spans`, `answer` as `expected_answer`, the attributed document
+  as `expected_doc_ids`, and `category`, `type`, `reasoning` and reference
+  count as strata. Use `span_and_document`: 10-Ks repeat boilerplate year to
+  year and across companies (risk factors, accounting policies), and span
+  matching alone would credit another filing's copy. Fail on malformed
+  records instead of dropping them.
+
+Exit: the index builds, `index-report` shows chunk health on whole 10-Ks, and
+the unmatchable-span count on dev equals phase A's audit.
+
+### Phase C: scoring
+
+- **Retrieval:** the existing span-mode metrics (hit rate, Recall@k, MRR,
+  nDCG), plus the unmatchable rate, per category and per reference-count
+  stratum, with Wilson intervals. For multi-reference questions, union
+  evidence recall as `multihop_eval` defines it.
+- **Answers:** `answer_eval` with `eval.judge`, never the generator,
+  calibrated on a hand-labelled dev sample before any comparison. Split every
+  FAIL into evidence retrieved and evidence missed, as the runner already
+  does. For quantitative `type`s, also check the number against the reference
+  answer by rule, as a judge-independent signal.
+
+### Phase D: measurements
+
+- `pipeline / 9b` on the full test split, against `closed-book / 9b` and
+  `oracle / 9b` (gold references as the context). The gap between them shows
+  how much of the shortfall is retrieval and how much generation.
+- The chunking variants the [chunking plan](chunking-indexing-plan.md)
+  already measures on EDGAR (fixed vs. structure-aware on `edgar_md`, header
+  on/off), as a transfer check on outside labels. An EDGAR gain that does
+  not appear here points to the lineage effect the rigor plan describes.
+- The Milestone 19 agentic rows, on a sample sized from dev variance and
+  stratified by reference count. Terse, ambiguous queries are where query
+  rewriting and repeated search should help most, if they help anywhere.
+- Paired per-question deltas with `rag/eval/paired.py` uncertainty, per
+  stratum, and the same pre-run freeze of the comparison family as
+  [phase 4](beir-phase4-protocol.md).
+
+Cost: local only, no API spend. SEC requests are free but rate-limited, so
+whole-filing fetches run once and are cached. Record fetch, extraction and
+index time, and disk.
+
 ## Deferred: pre-embedded vectors and answer eval
 
 **Importing published vectors into the production pipeline** (Cohere's BEIR
@@ -980,8 +1136,10 @@ catch to settle before starting:
   small enough to embed locally, and scored by EM/F1 rather than a judge.
 - FlashRAG's NQ and HotpotQA with gold answers. Their corpus is 21M
   passages, so this depends on the pre-embedded decision above.
-- FinanceBench or FinDER. Nearest to the EDGAR workload, but distributed
-  as raw filings, so our chunking is back in the loop.
+- FinDER, drafted above as the
+  [10-K follow-on](#follow-on-outside-labelled-10-k-questions-on-finder):
+  evidence ships as text, not filings, so our chunking is back in the loop.
+  FinanceBench is the smaller alternative.
 - The reference-free metrics of
   [Milestone 22](backlog.md#milestone-22--reference-free-eval-metrics).
 
@@ -1016,6 +1174,7 @@ reported beside it.
 | MuSiQue A–D (follow-on) | Pooled MuSiQue-Ans corpus, EM/F1 scorer, Milestone 19 rows on outside data | 3; agentic rows also need Milestone 19 phase 3 |
 | Paired BEIR queries (optional) | Own-authored paired questions over the BEIR corpora; SciFact answers derived from its labels | 1, 2; run after MuSiQue D |
 | CRAG A–D (follow-on) | Task 1 web pages with per-question scope, HTML extraction, three-way grading, refusal measured by population | 3; agentic rows also need Milestone 19 phase 3 |
+| FinDER A–D (follow-on) | Questions attributed to filings, whole-10-K corpus, evidence-match audit, company-grouped split, span-scored retrieval and judged answers | Nothing from 0–4 (the production pipeline, not the benchmark path); agentic rows need Milestone 19 phase 3 |
 
 Tracked under [Milestone 27](backlog.md#milestone-27--eval-coverage-and-judge-reliability)
 as the "broaden the corpus" step of the rigor plan, limited to the query-time
