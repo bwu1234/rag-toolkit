@@ -113,10 +113,10 @@ checkpoint, and adds a table of the spread across them.
 
 Usage
 -----
-    python scripts/run_answer_matrix.py --corpus edgar --limit 40
-    python scripts/run_answer_matrix.py --corpus edgar --variant crag=off \
+    python scripts/run_answer_matrix.py --corpus edgar_md --limit 40
+    python scripts/run_answer_matrix.py --corpus edgar_md --variant crag=off \
         --judge-model gemma4:31b-mlx
-    python scripts/run_answer_matrix.py --family m19 --corpus edgar --limit 40 \
+    python scripts/run_answer_matrix.py --family m19 --corpus edgar_md --limit 40 \
         --judge-model gemma4:31b-mlx --variant "pipeline / 9b" --repeat 3
 """
 

@@ -51,7 +51,8 @@ REPO = Path(__file__).resolve().parent.parent
 SOURCE = REPO / "data/eval/edgar_eval_set.json"
 OUTPUT = REPO / "data/eval/edgar_multihop_set.json"
 CORPUS = REPO / "data/corpora/edgar/documents"
-#: The same filings rendered as Markdown; some alternatives quote that rendering.
+#: The same filings rendered as Markdown, the corpus EDGAR evals run on. A
+#: table-row span quotes `edgar`'s rendering, with an alternative quoting this one.
 MARKDOWN_CORPUS = REPO / "data/corpora/edgar_md/documents"
 
 
@@ -269,14 +270,18 @@ SPEC: Spec = [
      [G("DAL_10-Q_2026-06-30#0", "Delta, quarter ended June 30, 2026",
         "About 9.6% ($1.9 billion operating income on $19,757 million total operating revenue)",
         ["Our operating income for the June 2026 quarter was $1.9 billion",
-         "| Total operating revenue | $ | 19,757 | | $ | 16,648 |"]),
+         {"text": "| Total operating revenue | $ | 19,757 | | $ | 16,648 |",
+          "alternatives": ["| Total operating revenue | $19,757 |  | $16,648 |"]}]),
       G("LUV_10-Q_2026-06-30#44", "Southwest, quarter ended June 30, 2026",
         "3.4% as reported (6.7% excluding special items)",
-        ["| | Operating margin, as reported | 3.4 | % | | 3.1 | %"]),
+        [{"text": "| | Operating margin, as reported | 3.4 | % | | 3.1 | %",
+          "alternatives": ["|  | Operating margin, as reported | 3.4% | 3.1% |"]}]),
       G("UAL_10-Q_2026-06-30#4", "United, quarter ended June 30, 2026",
         "About 6.2% ($1,096 million operating income on $17,672 million operating revenue)",
-        ["| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
-         "| Operating income | | 1,096 | | | 1,325 |"])],
+        [{"text": "| Operating revenue | | $ | 17,672 | | | $ | 15,236 |",
+          "alternatives": ["| Operating revenue | $17,672 | $15,236 |"]},
+         {"text": "| Operating income | | 1,096 | | | 1,325 |",
+          "alternatives": ["| Operating income | 1,096 | 1,325 |"]}])],
      "Delta (about 9.6%), ahead of United (about 6.2%) and Southwest (3.4%)."),
 ]
 
@@ -364,6 +369,17 @@ def check_spans_in_corpus(samples: list[EvalSample]) -> int:
                                for d in sample.expected_doc_ids for c in (CORPUS, MARKDOWN_CORPUS)):
                         missing += 1
                         print(f"{sample.id}: alternative in none of its documents: {alt[:80]!r}")
+                # edgar_md is the EDGAR corpus evals run on (chunking plan,
+                # Phase 5), so some form of every span must be in it. Its
+                # table rows differ from edgar's, so a quoted row needs a
+                # Markdown alternative.
+                if MARKDOWN_CORPUS.is_dir() and not any(
+                    normalize(form) in text_of(d, MARKDOWN_CORPUS)
+                    for form in (span.text, *span.alternatives)
+                    for d in sample.expected_doc_ids
+                ):
+                    missing += 1
+                    print(f"{sample.id}: no form of this span is in edgar_md: {span.text[:80]!r}")
     return missing
 
 

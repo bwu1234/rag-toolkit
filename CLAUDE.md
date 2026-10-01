@@ -72,8 +72,10 @@ index.
   --backfill-front-matter`; `index-report` shows how many documents have a
   header.
 - `edgar_md` is the same filings and text as `edgar`, rendered as Markdown
-  (headings, tables, no page furniture) for the structure-aware chunker.
-  Build it offline: `scripts/fetch_edgar.py --cache-raw` once (SEC requests,
+  (headings, tables, no page furniture), and is **the EDGAR corpus evals run
+  on** since the structured chunker became the default (chunking plan
+  Phase 5). Results recorded before 2026-10-01 are on `edgar` with the fixed
+  chunker; never pair a new row against one. Build it offline: `scripts/fetch_edgar.py --cache-raw` once (SEC requests,
   pinned to the accessions on disk), then `--render-markdown
   data/corpora/edgar_md/documents`. Same document ids, so never pool it with
   `edgar`.
@@ -121,7 +123,7 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   `data/logs/turns.jsonl`); `provider: none` logs nothing. The eval runners
   never do.
 - Retrieval eval: `python -m rag.eval.retrieval_eval` (`-v` for per-sample;
-  `--eval-set data/eval/edgar_eval_set.json --corpus edgar` for EDGAR).
+  `--eval-set data/eval/edgar_eval_set.json --corpus edgar_md` for EDGAR).
   A BEIR qrels set (`scripts/beir_to_eval_set.py`) is scored `trec_eval`-style
   instead: `--config rag/config/beir.yaml --corpus beir-scifact --eval-set
   data/eval/beir_scifact_test.json`, with `--save-run DIR` to keep the
@@ -129,7 +131,7 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 - Answer eval (LLM-as-judge): `python -m rag.eval.answer_eval`. The judge is
   `eval.judge`, else the generator grading itself (warned); `--judge-model`
   overrides, plus `--judge-provider` when the judge runs on a different
-  provider than the one it inherits. Multi-hop: `python -m rag.eval.multihop_eval --corpus edgar`.
+  provider than the one it inherits. Multi-hop: `python -m rag.eval.multihop_eval --corpus edgar_md`.
   Both take `--oracle` (gold chunks instead of retrieval, a diagnostic
   ceiling). The Milestone 19 phase 4 matrix is `scripts/run_answer_matrix.py
   --family m19` (`--repeat N` for run-to-run noise, `--sets ...,adaptive` for

@@ -34,9 +34,9 @@ reported counts; with none, they are ``None`` (unknown), never zero.
 
 Usage::
 
-    python -m rag.eval.multihop_eval --corpus edgar --judge-model gemma4:31b-mlx
+    python -m rag.eval.multihop_eval --corpus edgar_md --judge-model gemma4:31b-mlx
     python -m rag.eval.multihop_eval --eval-set path/to/set.json -v
-    python -m rag.eval.multihop_eval --corpus edgar --oracle   # gold evidence, no retrieval
+    python -m rag.eval.multihop_eval --corpus edgar_md --oracle   # gold evidence, no retrieval
 """
 
 from __future__ import annotations

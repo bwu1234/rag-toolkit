@@ -805,7 +805,7 @@ results.*
   checked by hand on a sample like the one above (target: >90% real), and
   every eval span still matches.
 
-### Phase 5 — Structure-aware chunker (3–4 days) — *measured 2026-10-01; default pending*
+### Phase 5 — Structure-aware chunker (3–4 days) — *done 2026-10-01*
 
 `StructuredChunker`, selected with `chunking.strategy: structured`. No new
 dependency: Markdown block parsing (ATX headings, pipe tables, lists,
@@ -855,23 +855,27 @@ paragraphs) is a small hand-written pass.
 - **Prompts.** 9–17% smaller.
 - **Not adopted: `prose_overlap`.** It was no better than plain `structured`.
 
-*Making it the default is one more decision, because it was measured on
-`edgar_md` only.* The shipped corpus for EDGAR is still `edgar`, plain text.
-Two ways forward:
+*Adopted 2026-10-01, by moving EDGAR to `edgar_md`.* `chunking.strategy:
+structured` is the shipped default, and `edgar_md` is the EDGAR corpus evals
+run on. That is the measured configuration. The other option, flipping the
+chunker but keeping plain-text `edgar`, was not measured and was not taken.
 
-- **Move EDGAR to `edgar_md`, with `structured` as the default chunker.**
-  This is the measured configuration. It changes the corpus every EDGAR eval
-  runs on, so the Milestone 19 rows and the tier baselines, all recorded on
-  `edgar`, need a re-run before anything is paired against them.
-- **Flip `chunking.strategy` alone and keep `edgar`.** The chunker also runs
-  on `edgar`'s pipe rows, but that pairing hasn't been measured. Measure it
-  before adopting, on the generated set and the tiers. The `table` tier's
-  spans exist only in `edgar_md`.
-
-Either way, rebuild with `index --reset` and confirm with `index-report`.
-The index manifest doesn't record the chunking strategy, so it won't refuse
-an index built by the other chunker. `index-report`'s sync check is what
-shows it.
+- **Old rows aren't comparable.** Every EDGAR result recorded before this,
+  including the Milestone 19 phase 4 rows and the tier baselines, ran on
+  `edgar` with the `fixed` chunker. A new row is paired only against a
+  baseline re-run on `edgar_md`.
+- **Eval sets.** Seven gold spans in the multi-hop and adaptive sets quoted
+  `edgar`'s rendering of a table row, so they gained `edgar_md`
+  alternatives. `build_multihop_set.py` now refuses a span with no form in
+  `edgar_md`. Every EDGAR set matches fully on `edgar_md`, under both
+  chunkers.
+- **Historical configs.** `rag/config/vanilla.yaml` and the Phase 1b and
+  Phase 2 configs pin `strategy: fixed`, so they reproduce what they
+  measured.
+- **Re-indexing.** Plain `rag.cli index` is enough. A changed chunk is
+  re-embedded under its id, and chunks no longer produced are purged. The
+  index manifest doesn't record the strategy, so `index-report`'s sync check
+  is what shows an index built by the other chunker.
 
 ### Phase 6 — Parent-child expansion (2 days)
 

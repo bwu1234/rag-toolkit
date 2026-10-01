@@ -82,13 +82,17 @@ the eval runners.
 | Corpus | Contents | Where it comes from |
 |---|---|---|
 | `baseline` | 8 hand-written sample docs | Committed at `data/corpora/baseline/documents/` |
-| `edgar` | 61 SEC 10-K/10-Q MD&A sections (~4,200 chunks) | Fetched from its manifest (below); gitignored |
+| `edgar` | 61 SEC 10-K/10-Q MD&A sections, plain text | Fetched from its manifest (below); gitignored |
+| `edgar_md` | The same 61 filings rendered as Markdown (headings, tables); the EDGAR corpus evals run on (~4,800 chunks) | Rendered from the filings' cached HTML (below); gitignored |
 
 ```bash
 # The SEC requires a User-Agent identifying the requester
 SEC_USER_AGENT="Your Name you@example.com" \
   python scripts/fetch_edgar.py --manifest data/corpora/edgar/manifest.json
-python -m rag.cli index --corpus edgar
+# Download those filings' HTML once (pinned by accession), then render it offline
+SEC_USER_AGENT="Your Name you@example.com" python scripts/fetch_edgar.py --cache-raw
+python scripts/fetch_edgar.py --render-markdown data/corpora/edgar_md/documents
+python -m rag.cli index --corpus edgar_md
 ```
 
 The fetcher writes YAML front matter (`company`, `ticker`, `form`,
@@ -121,7 +125,7 @@ Some limits worth knowing before pointing the pipeline at a corpus:
 
 - **No OCR.** PDF text comes from `pypdf`'s text layer. A scanned or image-only PDF extracts as empty text and contributes zero chunks — it loads without error but adds nothing to the index.
 - **Text only.** Images and layout structure are dropped, and PDF tables are linearized into running text rather than preserved as tables.
-- **Chunking is format-blind** — fixed-size character windows over the extracted text (see `chunking` in [rag/config/config.yaml](rag/config/config.yaml)), which suits prose better than highly structured content. On EDGAR about 13% of chunks start partway through a table; a structure-aware chunker is planned ([chunking plan](docs/chunking-indexing-plan.md), Phases 4–5).
+- **Chunking follows Markdown structure only.** The default `structured` chunker splits on Markdown headings, table edges and paragraph breaks, and repeats a table's header rows when it splits a long table (see `chunking` in [rag/config/config.yaml](rag/config/config.yaml)). Text without Markdown headings or pipe tables gets packed paragraphs and nothing more; that's why EDGAR is evaluated on its Markdown rendering, `edgar_md` ([chunking plan](docs/chunking-indexing-plan.md), Phases 4–5).
 - **Markdown front matter becomes metadata.** `MarkdownLoader` parses a YAML front-matter block into `Document.metadata` and strips it from the text; `chunking.carry_metadata` picks which keys ride on each chunk (and so which are filterable).
 - **Ingestion is an offline CLI step.** There is no upload endpoint or widget; the API and UI only query an index that `python -m rag.cli index` already built.
 
@@ -222,9 +226,9 @@ Re-measure before turning any of these on — see
 
 ```bash
 python -m rag.eval.retrieval_eval -v                  # hit rate, MRR, NDCG on the baseline set
-python -m rag.eval.retrieval_eval --eval-set data/eval/edgar_eval_set.json --corpus edgar
+python -m rag.eval.retrieval_eval --eval-set data/eval/edgar_eval_set.json --corpus edgar_md
 python -m rag.eval.answer_eval                        # LLM-as-judge answer quality
-python -m rag.eval.multihop_eval --corpus edgar       # questions that need several documents
+python -m rag.eval.multihop_eval --corpus edgar_md       # questions that need several documents
 ```
 
 EDGAR's question sets in `data/eval/` are reported separately rather than

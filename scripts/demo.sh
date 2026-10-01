@@ -4,8 +4,8 @@
 #
 # Usage:
 #   scripts/demo.sh                                  # the configured active corpus
-#   scripts/demo.sh --corpus edgar                   # one corpus, isolated
-#   scripts/demo.sh --corpus baseline --corpus edgar # both, pooled
+#   scripts/demo.sh --corpus edgar_md                   # one corpus, isolated
+#   scripts/demo.sh --corpus baseline --corpus edgar_md # both, pooled
 #   scripts/demo.sh --question "What changed in Q3?"
 #
 # The document directories are resolved from `corpora` in config.yaml rather
