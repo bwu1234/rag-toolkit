@@ -47,6 +47,16 @@ corpora:
         (chunking plan Phase 4). Same document ids, so every EDGAR eval set
         runs against it; don't pool it with `edgar`. Built offline by
         `scripts/fetch_edgar.py --cache-raw` then `--render-markdown`.
+    edgar_md_holdout:
+      documents_dir: data/corpora/edgar_md_holdout/documents
+      description: >
+        12 filings from 6 companies absent from `edgar` (AAL, ALK, AMD, BMY,
+        COP, HD), rendered like `edgar_md`. Hosts the fresh holdout's
+        entity-transfer questions (docs/holdout-protocol.md); pool it with
+        `edgar_md` (`--corpus edgar_md --corpus edgar_md_holdout`) so each
+        corpus is the other's same-sector distractor. Fetched from
+        data/corpora/edgar_holdout/manifest.json, then `--cache-raw` and
+        `--render-markdown` as for `edgar_md`.
     # Public benchmarks (docs/public-benchmarks-plan.md): pre-split passages
     # with published relevance labels. `clean: false` indexes the text exactly
     # as published; pair them with rag/config/beir.yaml, which keeps each
