@@ -135,7 +135,10 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   --family m19` (`--repeat N` for run-to-run noise, `--sets ...,adaptive` for
   the bridge/discovery set); `--family m19-hosted` is
   the Gemini Flash-Lite reference pair, on the free tier and bounded by
-  `llm.requests_per_day`.
+  `llm.requests_per_day`. `--family musique --config rag/config/musique.yaml
+  --corpus musique-ans-train-tune` runs those rows on MuSiQue-Ans, scored by
+  official EM/F1 (`scripts/fetch_musique.py`, then
+  `scripts/musique_to_eval_set.py dev|train-tune`; public benchmarks plan).
 
 ## Conventions
 

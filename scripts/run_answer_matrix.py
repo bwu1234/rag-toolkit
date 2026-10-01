@@ -152,6 +152,12 @@ from rag.eval.checkpoint import (  # noqa: E402
 from rag.eval.dataset import EvalDataset  # noqa: E402
 from rag.eval.metrics import wilson_interval  # noqa: E402
 from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval  # noqa: E402
+from rag.eval.musique_eval import (  # noqa: E402
+    ClosedBookResponder,
+    MusiqueSampleResult,
+    run_musique_eval,
+    stratified_subset,
+)
 from rag.eval.oracle import build_oracle_retriever  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
 from rag.generation.builder import build_chat_service  # noqa: E402
@@ -160,6 +166,7 @@ from rag.generation.chat_service import ChatResponder  # noqa: E402
 from rag.generation.factory import get_llm_client  # noqa: E402
 from rag.generation.llm import LLMClient  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
+from rag.observability.usage import metered_client  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +182,8 @@ DEFAULT_SETS = ("answerable", "refusals", "multihop")
 TIER_SETS = ("period", "underspecified")
 #: Judged part by part (`rag.eval.multihop_eval`) rather than pass/fail.
 MULTIHOP_SETS = ("multihop", "adaptive")
-SETS = DEFAULT_SETS + ("adaptive",) + TIER_SETS
+SETS = DEFAULT_SETS + ("adaptive",) + TIER_SETS + ("musique",)
+DEFAULT_MUSIQUE = Path("data/eval/musique_ans_train_tune.json")
 
 
 @dataclass
@@ -184,6 +192,8 @@ class Variant:
     overrides: dict[str, Any] = field(default_factory=dict)
     #: Answer from the gold chunks instead of retrieval (see `rag.eval.oracle`).
     oracle: bool = False
+    #: Answer from the model alone, no retrieval (`rag.eval.musique_eval.ClosedBookResponder`).
+    closed_book: bool = False
 
 
 # Each check is isolated so a difference is attributable to one mechanism.
@@ -288,9 +298,27 @@ M19_HOSTED_VARIANTS: list[Variant] = [
     }),
 ]
 
+# MuSiQue-Ans (docs/public-benchmarks-plan.md, MuSiQue follow-on, phase D): the
+# phase 4 rows that decide the default, on outside data, plus a closed-book row
+# per generator, since MuSiQue's Wikipedia answers may be memorized. Run with
+# --config rag/config/musique.yaml and a musique-ans-* corpus.
+MUSIQUE_VARIANTS: list[Variant] = [
+    Variant("pipeline / 9b", _PIPELINE),
+    Variant("oracle / 9b", _PIPELINE, oracle=True),
+    Variant("closed-book / 9b", _PIPELINE, closed_book=True),
+    Variant("agentic react / 9b", {**_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_9B}),
+    Variant("agentic planned / 9b", {**_AGENTIC, "agent.strategy": "planned", "agent.llm": _AGENT_9B}),
+    Variant("pipeline / 27b", {"chat.mode": "pipeline", "crag.enabled": False, "llm": _AGENT_27B}),
+    Variant("closed-book / 27b", {"chat.mode": "pipeline", "crag.enabled": False, "llm": _AGENT_27B},
+            closed_book=True),
+    Variant("agentic react / 27b", {**_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_27B}),
+]
+
 FAMILIES: dict[str, list[Variant]] = {
-    "crag": VARIANTS, "m19": M19_VARIANTS, "m19-hosted": M19_HOSTED_VARIANTS,
+    "crag": VARIANTS, "m19": M19_VARIANTS, "m19-hosted": M19_HOSTED_VARIANTS, "musique": MUSIQUE_VARIANTS,
 }
+#: Sets a family runs when --sets is not given.
+FAMILY_DEFAULT_SETS = {"musique": ("musique",)}
 #: Families that spend a hosted provider's quota: each needs a bounded answerable set.
 HOSTED_FAMILIES = {"m19-hosted"}
 #: The CRAG rows write apart, so a phase 4 row is never paired against one. The
@@ -299,9 +327,14 @@ DEFAULT_RESULTS_DIRS = {
     "crag": Path("data/eval/results"),
     "m19": Path("data/eval/results_m19"),
     "m19-hosted": Path("data/eval/results_m19"),
+    "musique": Path("data/eval/results_musique"),
 }
 #: Row order in a results table, across families, so the local baseline stays first.
-_ROW_ORDER = {v.name: i for i, v in enumerate(v for family in FAMILIES.values() for v in family)}
+# A name shared by two families keeps its first position, so adding a family
+# can't reorder an existing table (the first row is what every row pairs against).
+_ROW_ORDER: dict[str, int] = {}
+for _i, _v in enumerate(v for family in FAMILIES.values() for v in family):
+    _ROW_ORDER.setdefault(_v.name, _i)
 
 
 def apply_overrides(config: RagConfig, overrides: dict[str, Any]) -> RagConfig:
@@ -355,7 +388,7 @@ def mode_of(config: RagConfig) -> str:
 
 def checkpoint_fingerprint(
     config: RagConfig, judge: LLMConfig, dataset: EvalDataset, corpus: str, code: str,
-    *, oracle: bool = False,
+    *, oracle: bool = False, closed_book: bool = False,
 ) -> dict[str, str]:
     """What a set's result depends on; a checkpoint is resumed only if all of it matches."""
     fingerprint = {
@@ -368,6 +401,8 @@ def checkpoint_fingerprint(
     if oracle:
         # The oracle row's config equals the pipeline row's; this keeps them apart.
         fingerprint["retrieval"] = "oracle"
+    if closed_book:
+        fingerprint["retrieval"] = "none"
     return fingerprint
 
 
@@ -480,6 +515,60 @@ def paired_pass_delta(result: dict[str, Any], baseline: dict[str, Any]) -> str:
     except ValueError:
         return f"{delta:+.3f} (unpaired)"
     return format_difference(diff, binary=True)
+
+
+def run_musique(
+    chat_service: ChatResponder,
+    extractor: LLMClient,
+    dataset: EvalDataset,
+    checkpoint: SampleCheckpoint | None = None,
+) -> dict[str, Any]:
+    completed = {
+        sid: MusiqueSampleResult.from_dict(r) for sid, r in (checkpoint.load() if checkpoint else {}).items()
+    }
+    if completed:
+        logger.info("  musique: resuming, %d sample(s) from the checkpoint", len(completed))
+    started = time.monotonic()
+    report = run_musique_eval(
+        dataset, chat_service, extractor, completed=completed,
+        on_result=(lambda r: checkpoint.append(r.to_dict())) if checkpoint else None,
+    )
+    elapsed = time.monotonic() - started
+    logger.info(
+        "  musique: EM %.3f, F1 %.3f, contains %.3f, evidence recall %.3f in %.0fs",
+        report.em, report.f1, report.contains, report.evidence_recall, elapsed,
+    )
+    return {
+        "num_evaluated": report.num_samples,
+        "em": round(report.em, 4),
+        "f1": round(report.f1, 4),
+        "contains": round(report.contains, 4),
+        "num_none": report.num_none,
+        "evidence_recall": round(report.evidence_recall, 4),
+        "all_evidence": round(report.all_evidence, 4),
+        "evidence_by_hop": [round(v, 4) for v in report.evidence_by_hop],
+        "by_kind": {k: {m: round(v, 4) for m, v in d.items()} for k, d in report.by_kind.items()},
+        "mean_latency_s": round(report.mean_latency_s, 1),
+        "mean_retrieval_rounds": round(report.mean_retrieval_rounds, 2),
+        "mean_llm_calls": round(report.mean_llm_calls, 2),
+        "mean_llm_s": round(report.mean_llm_s, 1),
+        "mean_prompt_tokens": _round_or_none(report.mean_prompt_tokens),
+        "mean_completion_tokens": _round_or_none(report.mean_completion_tokens),
+        "num_with_tokens": report.num_with_tokens,
+        "elapsed_s": round(elapsed, 1),
+        "resumed_samples": len(completed),
+        "samples": [
+            {
+                "id": r.sample_id, "kind": r.kind, "em": r.em, "f1": round(r.f1, 4),
+                "contains": r.contains, "extracted": r.extracted,
+                "evidence_recall": round(r.evidence_recall, 3), "hop_found": r.hop_found,
+                "llm_calls": r.llm_calls, "llm_ms": round(r.llm_ms),
+                "prompt_tokens": r.prompt_tokens, "completion_tokens": r.completion_tokens,
+                "latency_s": round(r.latency_s, 1), "answer": r.actual_answer,
+            }
+            for r in report.sample_results
+        ],
+    }
 
 
 def run_multihop(
@@ -650,6 +739,29 @@ def render_table(results: list[dict[str, Any]]) -> str:
                 f"| {cost} |" + (f" {by_kind} |" if kinds else "")
             )
 
+    musique = [r for r in results if r.get("musique")]
+    if musique:
+        lines += [
+            "",
+            "MuSiQue-Ans (EM/F1 on the extracted short answer, max over aliases; contains = a gold "
+            "answer appears anywhere in the long answer; none = no committed answer):",
+            "",
+            "| variant | EM | F1 | contains | none | EM 2/3/4-hop | evidence recall | all evidence "
+            "| recall by hop | n | s/turn | LLM calls/turn | prompt / gen tokens/turn |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+        ]
+        for r in musique:
+            m = r["musique"]
+            by_hop = "/".join(f"{m['by_kind'][k]['em']:.2f}" if k in m["by_kind"] else "—"
+                              for k in ("2hop", "3hop", "4hop"))
+            hops = "/".join(f"{v:.2f}" for v in m["evidence_by_hop"])
+            lines.append(
+                f"| `{r['variant']}` | {m['em']:.3f} | {m['f1']:.3f} | {m['contains']:.3f} | {m['num_none']} "
+                f"| {by_hop} | {m['evidence_recall']:.3f} | {m['all_evidence']:.3f} | {hops} "
+                f"| {m['num_evaluated']} | {m['mean_latency_s']:.1f} | {m['mean_llm_calls']:.1f} "
+                f"| {_tokens_cell(m)} |"
+            )
+
     checked = [(r, name, r[name]["groundedness"]) for r in results for name in SETS
                if r.get(name) and r[name].get("groundedness")]
     if checked:
@@ -685,6 +797,7 @@ def render_repeats(results: list[dict[str, Any]]) -> str:
         for set_name in SETS:
             counts = [
                 (run[set_name]["num_passed"] if "num_passed" in run[set_name]
+                 else round(run[set_name]["em"] * run[set_name]["num_evaluated"]) if set_name == "musique"
                  else round(run[set_name]["complete_rate"] * run[set_name]["num_evaluated"]),
                  run[set_name]["num_evaluated"])
                 for run in runs if run.get(set_name)
@@ -692,7 +805,7 @@ def render_repeats(results: list[dict[str, Any]]) -> str:
             if len(counts) < 2:
                 continue
             passed = [p for p, _ in counts]
-            label = "complete" if set_name in MULTIHOP_SETS else "pass"
+            label = "EM" if set_name == "musique" else "complete" if set_name in MULTIHOP_SETS else "pass"
             rows.append(
                 f"| `{name}` | {set_name} {label} | {', '.join(f'{p}/{n}' for p, n in counts)} "
                 f"| {sum(passed) / len(passed):.1f} | {max(passed) - min(passed)} |"
@@ -721,7 +834,11 @@ def main() -> int:
     parser.add_argument("--adaptive", type=Path, default=DEFAULT_ADAPTIVE)
     parser.add_argument("--period", type=Path, default=DEFAULT_PERIOD)
     parser.add_argument("--underspecified", type=Path, default=DEFAULT_UNDERSPECIFIED)
-    parser.add_argument("--sets", default=",".join(DEFAULT_SETS),
+    parser.add_argument("--musique", type=Path, default=DEFAULT_MUSIQUE,
+                        help="MuSiQue eval set (scripts/musique_to_eval_set.py); the tuning slice by default.")
+    parser.add_argument("--musique-sample", type=int, default=0, metavar="N",
+                        help="Score a hop-stratified sample of N MuSiQue questions (seeded); 0 = all.")
+    parser.add_argument("--sets", default=None,
                         help=f"Comma-separated subset of {', '.join(SETS)} to run "
                              f"(default: {','.join(DEFAULT_SETS)}).")
     add_judge_arguments(parser, note=" Fixed across all variants.")
@@ -757,9 +874,12 @@ def main() -> int:
     variants = repeated(variants, args.repeat)
     if args.list:
         for v in variants:
-            print(f"  {v.name:<36} {'[oracle] ' if v.oracle else ''}{v.overrides}")
+            tag = "[oracle] " if v.oracle else "[closed-book] " if v.closed_book else ""
+            print(f"  {v.name:<36} {tag}{v.overrides}")
         return 0
 
+    if args.sets is None:
+        args.sets = ",".join(FAMILY_DEFAULT_SETS.get(args.family, DEFAULT_SETS))
     sets = [name.strip() for name in args.sets.split(",") if name.strip()]
     if unknown := set(sets) - set(SETS):
         parser.error(f"unknown set(s): {', '.join(sorted(unknown))}")
@@ -770,10 +890,13 @@ def main() -> int:
     paths = {
         "answerable": args.answerable, "refusals": args.refusals, "multihop": args.multihop,
         "adaptive": args.adaptive, "period": args.period, "underspecified": args.underspecified,
+        "musique": args.musique,
     }
     datasets = {name: EvalDataset.load(paths[name]) for name in sets}
     if "answerable" in datasets:
         datasets["answerable"] = subsample(datasets["answerable"], args.limit)
+    if "musique" in datasets and args.musique_sample:
+        datasets["musique"] = stratified_subset(datasets["musique"], args.musique_sample)
     selection = base.corpus_selection(args.corpus)
     logger.info(
         "Answer matrix: %d variant(s), sets %s, corpus %s, judge %s:%s",
@@ -803,6 +926,8 @@ def main() -> int:
             "adaptive_set": str(args.adaptive),
             "period_set": str(args.period),
             "underspecified_set": str(args.underspecified),
+            "musique_set": str(args.musique),
+            "musique_sample": args.musique_sample or None,
             "results": ordered,
         }, indent=2) + "\n")
         (args.results_dir / f"{stem}.md").write_text(
@@ -832,7 +957,8 @@ def main() -> int:
             checkpoint = SampleCheckpoint(
                 args.results_dir / ".partial" / f"{stem}__{variant_slug}__{name}.jsonl",
                 checkpoint_fingerprint(configs[variant.name], judge_config, datasets[name],
-                                       selection.slug, code, oracle=variant.oracle),
+                                       selection.slug, code, oracle=variant.oracle,
+                                       closed_book=variant.closed_book),
             )
             if args.fresh:
                 checkpoint.discard()
@@ -847,7 +973,9 @@ def main() -> int:
     for variant in variants:
         logger.info("[%s] %s", variant.name, variant.overrides)
         config = configs[variant.name]
-        if variant.oracle:
+        if variant.closed_book:
+            chat_service = ClosedBookResponder(metered_client(get_llm_client(config.llm)))
+        elif variant.oracle:
             retriever, unfound = build_oracle_retriever(
                 config, [s for name in sets_for[variant.name] for s in datasets[name]], args.corpus,
             )
@@ -865,7 +993,7 @@ def main() -> int:
             "overrides": variant.overrides,
             "generator": generator_of(config),
             "mode": mode_of(config),
-            "retrieval": "oracle" if variant.oracle else "configured",
+            "retrieval": "oracle" if variant.oracle else "none" if variant.closed_book else "configured",
             # The commit (plus a hash of uncommitted changes) the row ran at, so
             # rows meant to share one frozen commit can be checked to.
             "code": code,
@@ -873,7 +1001,9 @@ def main() -> int:
         for name in sets_for[variant.name]:
             checkpoint = checkpoints[variant.name, name]
             try:
-                if name in MULTIHOP_SETS:
+                if name == "musique":
+                    record[name] = run_musique(chat_service, judge, datasets[name], checkpoint)
+                elif name in MULTIHOP_SETS:
                     record[name] = run_multihop(chat_service, judge, datasets[name], checkpoint)
                 else:
                     record[name] = run_one(name, chat_service, judge, datasets[name], checkpoint)
