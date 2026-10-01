@@ -1213,6 +1213,104 @@ result, not the drafting's.
   (`edgar` vs. `edgar_md` under the fixed chunker) can't be measured here.
   The other tiers can measure it: every span has a quote in both corpora.
 
+### Structure-aware chunker (chunking plan, Phase 5)
+
+**Setup.** Corpus `edgar_md`, isolated. The `fixed` chunker (1,000/150) is
+compared with `structured` (`split_level 2`, `min_chars 200`, no prose
+overlap, 1,000-character cap), each with its own index. Everything else is
+the shipped config: header on, hybrid retrieval, `bge-reranker-v2-m3`,
+`top_k 20`, `rerank_top_k 5`, CRAG off, generator `qwen3.5:9b-mlx`, judge
+`gemma4:31b-mlx`.
+
+- *Retrieval rows.* Run 2026-09-29 with `scripts/run_matrix.py`
+  (`data/eval/results/retrieval_edgar_md_*`), from the chunker code later
+  committed unchanged as `ee379b4`.
+- *Answer rows.* Run 2026-10-01 with `scripts/run_answer_matrix.py
+  --corpus edgar_md --variant crag=off --variant "chunker=structured"
+  --sets answerable,table --limit 0`, at `1e8d29c` from a pinned worktree
+  (`data/eval/results/answer_edgar_md__judge-gemma4-31b-mlx.*`). One run per
+  row, on all 174 answerable questions and the 95-question `table` tier.
+
+**Index** (`index-report`):
+
+| | fixed | structured |
+|---|---|---|
+| chunks | 4,159 | 4,808 |
+| chunk characters, p10 / median / max | 991 / 996 / 999 | 455 / 812 / 1,164 |
+| chunks starting mid-table | 690 (16.6%) | **0** |
+| over 1,000 characters | 0 | 39, a heading or stub carried with its unit |
+| duplicate chunks (distinct texts) | 46 (21) | 805 (325) |
+
+**Retrieval**, paired against `fixed` (Δ hit, then Δ NDCG, 95% intervals;
+wins/losses with McNemar's p):
+
+| set | n | Δ hit | Δ NDCG | W/L |
+|---|---|---|---|---|
+| `table` | 95 | **+0.116** [+0.045, +0.187] | **+0.107** [+0.031, +0.183] | 12/1, p 0.003 |
+| `period` | 55 | +0.073 [−0.013, +0.159] | **+0.148** [+0.049, +0.246] | 5/1, p 0.22 |
+| generated | 174 | +0.011 [−0.011, +0.034] | **+0.045** [+0.015, +0.076] | 3/1, p 0.62 |
+| `underspecified` | 118 | +0.008 [−0.047, +0.064] | +0.033 [−0.023, +0.088] | 6/5, p 1 |
+
+`prose_overlap` (overlap between paragraphs of one section) was no better
+than plain `structured` on any set, so it was not run end to end.
+
+**Answers:**
+
+| set | n | fixed | structured | Δ, W/L | failures, retrieval / generation (fixed → structured) |
+|---|---|---|---|---|---|
+| `table` | 95 | 0.811 | **0.947** [0.883, 0.977] | **+0.137**, 15/2, p 0.002 | 13 / 5 → 2 / 3 |
+| answerable | 174 | 0.948 | 0.948 | +0.000 [−0.028, +0.028], 3/3, p 1 | 3 / 6 → 3 / 6 |
+
+| | prompt tokens, answerable / table | completion tokens | retrieval s/query |
+|---|---|---|---|
+| fixed | 1,668 / 2,030 | 109 / 117 | 1.03 |
+| structured | 1,379 / 1,842 | 97 / 99 | 0.98 |
+
+- **It fixes the failure the baseline located.** The `fixed` row reproduced
+  the baseline's 0.811 and its 13 / 5 failure split. Split by whether the
+  fixed chunk holding the row kept the table's header row (the same 78/17
+  grouping as the baseline):
+
+  | row's fixed chunk | n | fixed | structured |
+  |---|---|---|---|
+  | keeps the header row | 78 | 70 | 76 |
+  | loses it | 17 | 7 | **14** |
+
+  The 17 went from 7 to 14 passes. The kept group gained too (70 → 76),
+  likely because a structured chunk holds one table under its heading rather
+  than the tail of one table and the start of the next. That reading is not
+  tested here. The fixed row's split moved by two
+  questions from the baseline's 68 and 9 at the same total, which is
+  temperature 0.2 sampling.
+- **Failures where the row never reached the prompt fell from 13 to 2.**
+  The baseline found 11 of its 13 were "right filing, wrong chunk". With a
+  table kept whole, or split under a repeated header, the chunk that matches
+  the question's column and period words is the one holding the row.
+- **Nothing regressed.** Answerable is a tie, 3 wins and 3 losses, with the
+  same failure split; at 0.948 it has 9 failures to fix, so it measures
+  harm more than gain. `underspecified` retrieval is flat. The two table
+  losses are `DAL_10-Q_2026-03-31 t8r0c2` and `XOM_10-Q_2026-06-30 t8r2c4`.
+- **Cheaper prompts.** Chunks are shorter at the median (812 vs. 996
+  characters), so the prompt is 17% smaller on answerable and 9% on the
+  tier, and answers are about 10% shorter.
+- **Latency is not attributable to the chunker.** Mean answer latency was
+  8.2 → 9.3 s (answerable) and 10.2 → 12.2 s (`table`), but retrieval timed
+  alone is the same (1.03 vs. 0.98 s/query over 40 queries, two rounds) and
+  the generator got fewer tokens. The structured rows ran second, so machine
+  load is the likely cause. A rerun in the opposite order would settle it.
+- **The duplicate chunks don't reach the prompt.** The 805 are boilerplate
+  paragraphs a company repeats across its quarterly filings (fair-value and
+  revenue policies, up to 5 copies). Paragraph-aligned chunks make the
+  copies identical, where fixed windows started at different offsets and
+  hid them. Retrieving every answerable and `table` question, 1 of 269 had
+  a repeated passage in its top 5, so no deduplication is needed.
+
+**Decision.** This meets the plan's default criterion: answer quality
+improves, by more than noise on the `table` tier, and retrieval doesn't
+regress on any set. Making it the default is a separate step, because it
+was measured on `edgar_md` only. See the
+[chunking plan](chunking-indexing-plan.md#phase-5--structure-aware-chunker-34-days--measured-2026-10-01-default-pending).
+
 ### SQLite FTS5 sparse backend
 
 **Full pipeline.** Run on 2026-09-28 with `scripts/run_matrix.py` at the

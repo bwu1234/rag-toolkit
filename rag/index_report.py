@@ -64,7 +64,8 @@ class IndexReport:
     over_cap: int
     #: Chunks holding at least one table row.
     table_chunks: int
-    #: Chunks that begin inside a table, past its first row: they lost the header.
+    #: Chunks that begin inside a table, past its first row, and don't repeat
+    #: the table's header rows: they lost the header.
     mid_table_starts: int
     #: The subset of `mid_table_starts` that begin partway through a row.
     mid_row_starts: int
@@ -119,6 +120,51 @@ def table_start(text: str, start: int) -> str | None:
     return "later_row" if is_table_row(previous) else None
 
 
+_TABLE_SEPARATOR = re.compile(r"^\s*\|(\s*:?-+:?\s*\|)+\s*$")
+
+
+def table_header(text: str, start: int) -> str:
+    """The header rows of the table containing offset ``start`` in ``text``.
+
+    Rows through the Markdown `|---|` separator when the table has one, else
+    its first row (the `edgar` format has no separator). Blank lines between
+    rows don't end the table, as in `table_start`.
+    """
+    lines = text[: text.find("\n", start) if text.find("\n", start) != -1 else len(text)].split("\n")
+    first = len(lines) - 1
+    for index in range(len(lines) - 2, -1, -1):
+        if is_table_row(lines[index]):
+            first = index
+        elif lines[index].strip():
+            break
+    rows = [line for line in text.split("\n")[first:] if line.strip()]
+    header: list[str] = []
+    for line in rows:
+        if not is_table_row(line):
+            break
+        header.append(line)
+        if _TABLE_SEPARATOR.match(line):
+            return "\n".join(header)
+    return rows[0] if rows else ""
+
+
+def chunk_table_start(text: str, chunk: Chunk) -> str | None:
+    """`table_start` for ``chunk``, except a chunk that repeats its table's header isn't mid-table.
+
+    A structure-aware chunker splits an oversized table by rows and prefixes
+    each later piece with the header rows. Such a piece starts at a later row
+    of the document, but it has what `table_start` checks for: the header.
+    """
+    start = int(chunk.metadata.get("char_start", 0))
+    position = table_start(text, start)
+    if position is None:
+        return None
+    header = " ".join(table_header(text, start).split())
+    if header and " ".join(chunk.text.split()).startswith(header):
+        return None
+    return position
+
+
 def build_report(
     *,
     corpus: str,
@@ -135,7 +181,7 @@ def build_report(
     text_by_doc = {document.id: document.text for document in documents}
 
     positions = Counter(
-        table_start(text_by_doc[chunk.document_id], int(chunk.metadata.get("char_start", 0)))
+        chunk_table_start(text_by_doc[chunk.document_id], chunk)
         for chunk in chunks
         if chunk.document_id in text_by_doc
     )

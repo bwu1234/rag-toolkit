@@ -78,7 +78,8 @@ Opt-in, so the CRAG matrix's default sets are unchanged.
 The chunking plan's tiers
 -------------------------
 `--sets period,underspecified` adds the two tiers frozen in Phase 0 of
-docs/chunking-indexing-plan.md. They are opt-in, always run in full
+docs/chunking-indexing-plan.md, and `table` the tier frozen before Phase 5
+(on `edgar_md`; its spans quote rendered Markdown rows). They are opt-in, always run in full
 (`--limit` applies to the answerable set only), and are reported in their own
 table, never averaged into the answerable rate. `underspecified` is also
 broken down by `kind` (implicit, paraphrase). Each pass rate carries a 95%
@@ -169,10 +170,11 @@ DEFAULT_MULTIHOP = Path("data/eval/edgar_multihop_set.json")
 DEFAULT_ADAPTIVE = Path("data/eval/edgar_adaptive_set.json")
 DEFAULT_PERIOD = Path("data/eval/edgar_period_set.json")
 DEFAULT_UNDERSPECIFIED = Path("data/eval/edgar_underspecified_set.json")
+DEFAULT_TABLE = Path("data/eval/edgar_table_set.json")
 #: What runs without `--sets`, as before the tiers existed.
 DEFAULT_SETS = ("answerable", "refusals", "multihop")
 #: The chunking plan's tiers: single-answer like `answerable`, reported apart.
-TIER_SETS = ("period", "underspecified")
+TIER_SETS = ("period", "underspecified", "table")
 #: Judged part by part (`rag.eval.multihop_eval`) rather than pass/fail.
 MULTIHOP_SETS = ("multihop", "adaptive")
 SETS = DEFAULT_SETS + ("adaptive",) + TIER_SETS
@@ -234,6 +236,21 @@ VARIANTS: list[Variant] = [
         "paths.index_dir": "data/index_header",
         "chunking.header.template": "{company} ({ticker}) {form}, period ended {period_end}",
         "reranker.include_header": True,
+    }),
+    # Chunking plan Phase 5: the structure-aware chunker on `edgar_md`, from
+    # the indexes data/eval/config_structured*.yaml build. Everything else is
+    # the shipped config, so it pairs with `crag=off` run on the same corpus.
+    Variant("chunker=structured", {
+        "crag.enabled": False,
+        "paths.index_dir": "data/index_structured",
+        "chunking.strategy": "structured",
+    }),
+    # The same with `chunk_overlap` between paragraphs of one section too.
+    Variant("chunker=structured prose_overlap", {
+        "crag.enabled": False,
+        "paths.index_dir": "data/index_structured-ov",
+        "chunking.strategy": "structured",
+        "chunking.structured.prose_overlap": True,
     }),
 ]
 
@@ -721,6 +738,7 @@ def main() -> int:
     parser.add_argument("--adaptive", type=Path, default=DEFAULT_ADAPTIVE)
     parser.add_argument("--period", type=Path, default=DEFAULT_PERIOD)
     parser.add_argument("--underspecified", type=Path, default=DEFAULT_UNDERSPECIFIED)
+    parser.add_argument("--table", type=Path, default=DEFAULT_TABLE)
     parser.add_argument("--sets", default=",".join(DEFAULT_SETS),
                         help=f"Comma-separated subset of {', '.join(SETS)} to run "
                              f"(default: {','.join(DEFAULT_SETS)}).")
@@ -770,6 +788,7 @@ def main() -> int:
     paths = {
         "answerable": args.answerable, "refusals": args.refusals, "multihop": args.multihop,
         "adaptive": args.adaptive, "period": args.period, "underspecified": args.underspecified,
+        "table": args.table,
     }
     datasets = {name: EvalDataset.load(paths[name]) for name in sets}
     if "answerable" in datasets:
@@ -803,6 +822,7 @@ def main() -> int:
             "adaptive_set": str(args.adaptive),
             "period_set": str(args.period),
             "underspecified_set": str(args.underspecified),
+            "table_set": str(args.table),
             "results": ordered,
         }, indent=2) + "\n")
         (args.results_dir / f"{stem}.md").write_text(

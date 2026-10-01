@@ -859,3 +859,52 @@ removed, and config changes the content hash couldn't see.
   went or why it fell back. `RetrievalResult.routed_to`, each turn log's
   `RetrievalAttempt.routed_to` and each retrieval eval sample's `routed_to`
   record the routed filings.
+
+
+## Structured chunker notes (chunking plan, Phase 5)
+
+- **A hand-written block pass, not a Markdown library.** The loaders emit
+  four things: ATX headings, pipe tables, paragraphs and list lines.
+  `parse_blocks` recognises them with three regular expressions and keeps
+  every block's character offsets, which a library's AST would have to be
+  mapped back to. Blank lines end a paragraph but not a table, because the
+  `edgar` fetcher writes one after every pipe row, so the same chunker runs
+  on `edgar`, `edgar_md` and `baseline`.
+- **`Chunk.text` stays a verbatim slice, except for a repeated table
+  header.** A continuation piece of a split table is prefixed with the
+  table's header rows (through the `|---|` line). They have to be in `text`,
+  not only in index text: the `table` tier's failures were answers from rows
+  whose column headers the model never saw. Span matching is by substring, so
+  a quoted row still matches. `char_start`/`char_end` cover the verbatim
+  part, and a test checks on every corpus that the chunks cover every
+  non-whitespace character of every document.
+- **Splitting happens at packing time, so the first piece leaves room for its
+  lead-in.** An oversized block is split only once the packer knows what
+  comes with it: trailing headings always move forward with the unit they
+  introduce, and so does a stub under `min_chars` (a line like "(amounts in
+  millions)"). Splitting up front put 131 chunks over the cap with a heading
+  on top, and left "## CONSOLIDATED STATEMENTS OF INCOME" as a chunk of its
+  own. A block that fits alone isn't split to make room, so the cap can be
+  exceeded by the lead-in (on `edgar_md`, 39 of 4,808 chunks, at most 1,164
+  characters).
+- **Oversized rows split by words, under the header.** A few MRK filings
+  render a whole pipeline list into one cell, a 2,600-character row.
+  Splitting that row by words, each piece under the header, keeps the cap.
+  The first piece keeps the header in place when the row is the table's
+  first, which the coverage check caught: the header had been left only in
+  a prefix, with no chunk's span covering it.
+- **Overlap only fills spare room.** `prose_overlap` prepends the tail of the
+  previous paragraph, but only as much as fits under the cap. Unbounded, it
+  put 8% of chunks over it. Oversized paragraphs always overlap their pieces,
+  and each piece must end past the last, or a sentence too long to fit next
+  to the overlap would stall the split one word at a time.
+- **`section_path` is metadata, not header.** The plan had the heading path
+  feed Phase 2's header. But `IndexedDocument` and document routing read one
+  header per document from its first chunk, so a per-chunk path in `header`
+  would quietly change routing records. Indexing the path needs its own
+  `Chunk` field and its own measurement, so this phase measures one variable,
+  where chunks break.
+- **`index-report` credits a repeated header.** Its mid-table count looked
+  only at `char_start`, which for a continuation piece is a later row. A
+  chunk whose text begins with its table's header rows now isn't counted,
+  whichever chunker made it.

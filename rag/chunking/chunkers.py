@@ -299,6 +299,20 @@ def get_chunker(config: ChunkingConfig) -> Chunker:
             header_template=config.header.template,
         )
 
+    if config.strategy == "structured":
+        # Imported here: `structured` builds on this module's helpers.
+        from rag.chunking.structured import StructuredChunker
+
+        return StructuredChunker(
+            chunk_size=config.chunk_size,
+            chunk_overlap=config.chunk_overlap,
+            split_level=config.structured.split_level,
+            min_chars=config.structured.min_chars,
+            prose_overlap=config.structured.prose_overlap,
+            carry_metadata=config.carry_metadata,
+            header_template=config.header.template,
+        )
+
     raise ValueError(
         f"Unknown chunking strategy: {config.strategy!r}. "
         "Add a Chunker and register it here to support a new strategy."

@@ -29,6 +29,10 @@ data/index_emb-*/
 data/index_header/
 # The header-free index rag/config/vanilla.yaml reads, so its floor stays plain RAG.
 data/index_vanilla/
+# The structure-aware chunker's indexes, chunking plan Phase 5
+# (data/eval/config_structured*.yaml).
+data/index_structured/
+data/index_structured-ov/
 
 # Per-turn logs (Milestone 12) -- local usage data, not source.
 data/logs/
