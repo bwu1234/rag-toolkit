@@ -324,6 +324,30 @@ so the agent can list, read and find text in documents, not only run ranked
 search. They target the failures phase 4 showed: discovery questions, split
 tables and the cost of refusals.
 
+**Long-context baseline.** Retrieval has to beat simply reading the filing.
+On `edgar_md` the median filing is about 48k characters (~12k tokens) and the
+largest 143k (~36k), so most filings fit a current model's window whole; the
+61 together are 3.5M characters (~0.9M tokens). Three comparison rows, none a
+shipped mode:
+
+- *Gold filing in context.* Hand the model the whole of each question's
+  expected documents instead of retrieved chunks. Like `--oracle`, a ceiling,
+  but at document grain: it shows what chunking and ranking lose that reading
+  the filing would not, on the multi-hop, table and period tiers especially.
+- *Routed filing in context.* Pick the filing without labels (document
+  routing, or the agent with `rag_list_documents`), then read it whole. This is
+  the deployable version, and the endpoint of `rag_read_document` with an
+  unlimited window.
+- *Whole corpus in context*, on a hosted 1M-token model only. It spends quota,
+  so it runs only with the budget agreed first.
+
+Report cost with quality: tokens and latency per question, against the
+pipeline's ~5 passages. Local runs need `num_ctx` above the filing (the agent
+requests 32,768, below the largest filing), and Ollama drops overflow
+silently, so the runner must check the prompt fits before calling. Answer
+pass alone can't separate the rows on period attribution; pair them with
+eval harness Phase 4a's citation scoring when it exists.
+
 **Proposed enhancement follow-ups:** tracked in
 [Milestone 19 phase 5](milestone-19-plan.md#enhancement-follow-ups), after the
 navigation tools. Prioritize calibrated claim/citation scoring, then an opt-in
