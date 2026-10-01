@@ -195,6 +195,12 @@ off local.
   [chunking plan](chunking-indexing-plan.md#phase-2--document-metadata-and-a-deterministic-chunk-header-23-days)
   Phase 2 as a comparator. It needs `embed_documents` to receive chunks
   grouped by document, so it's an interface change, not only a provider.
+- A conventional hosted embedding reference, `voyage-4-large`, for
+  Milestone 20's model comparison. Keep it separate from `voyage-context-4`
+  so a model swap and document-context encoding are measured independently.
+  Both are optional quality references; neither replaces the local default
+  without workload-specific evidence. Follow the
+  [Voyage model documentation](https://www.mongodb.com/docs/voyageai/models/).
 - A hosted `VectorStore` adapter (Chroma's own server mode is the smallest
   step; Qdrant or similar if a managed tier is wanted).
 - The claim to earn: swapping any of these is a config change, no pipeline
@@ -448,13 +454,40 @@ graph LR
   confirmation with the serving-configuration evaluation in Milestone 27.
 - **Refresh embedding and reranker comparisons.** Keep the shipped Qwen3
   embedder and BGE reranker as baselines, and benchmark newer candidates for
-  quality, p50/p95 latency and memory on the intended hardware. Include the
-  [Ettin cross-encoder family](https://huggingface.co/blog/ettin-reranker)
-  as a candidate, not a presumed upgrade. Pin model revisions, query/document
-  formatting and truncation; isolate each model change before measuring the
-  chosen combination through the full pipeline. Use existing interfaces and
-  the `add-provider` workflow if a new adapter is needed, then the
-  `measure-change` workflow and a fresh confirmation set before changing defaults.
+  quality, p50/p95 latency and memory on the intended hardware. The evaluation
+  shortlist as of 2026-10-01, in priority order (none is an adopted replacement):
+
+  - **Rerankers first:** `cross-encoder/ettin-reranker-150m-v1`,
+    `cross-encoder/ettin-reranker-400m-v1`, and the official
+    `Qwen/Qwen3-Reranker-0.6B`, against `BAAI/bge-reranker-v2-m3`.
+    Keep the embedder and candidate lists fixed for this first comparison.
+    The [Ettin release](https://huggingface.co/blog/ettin-reranker) supplies
+    the two size candidates. Qwen's earlier community `-seq-cls` conversion
+    failure does not establish official-model quality: its
+    [current model card](https://huggingface.co/Qwen/Qwen3-Reranker-0.6B#usage)
+    documents a Sentence Transformers `CrossEncoder` path. Verify compatibility,
+    instruction formatting, truncation and score normalization before measuring;
+    do not assume either a config-only swap or a new adapter is required.
+  - **Compact local embedders next:**
+    [`voyageai/voyage-4-nano`](https://huggingface.co/voyageai/voyage-4-nano)
+    and [`google/embeddinggemma-300m`](https://ai.google.dev/gemma/docs/embeddinggemma),
+    against `qwen3-embedding:0.6b`. Verify each model's query/document prompts
+    and pooling, rebuild isolated indexes, and hold the downstream retrieval
+    configuration fixed. Report indexing cost as well as query quality,
+    latency and memory; assess CPU serving alongside local accelerator use.
+  - **Hosted references later:** `voyage-4-large` for conventional embeddings
+    and `voyage-context-4` for document-context encoding, with adapters owned
+    by Milestone 18. Keep their results and interface changes distinct.
+  - **Answer generation:** finish the existing Qwen3.5-9B / Qwen3.8-27B and
+    Gemini Flash-Lite comparisons under Milestones 18 and 19 before expanding
+    that model list. Use calibrated evidence/citation scoring from Milestone 27
+    and eval harness Phase 4a, with a fixed independent judge.
+
+  Pin model revisions, query/document formatting and truncation; isolate each
+  model change before measuring the chosen combination through the full pipeline.
+  Use existing interfaces and the `add-provider` workflow if a new adapter is
+  needed, then the `measure-change` workflow and a fresh confirmation set before
+  changing defaults. Published benchmark gains still need validation on this corpus.
 - **Document-level aggregation.** The eval suite already matches at document
   level (`chunk.document_id`); the pipeline still returns chunks. Group
   `ScoredChunk`s by `document_id`, score each document (max, or sum of its
