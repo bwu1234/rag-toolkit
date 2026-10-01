@@ -613,6 +613,29 @@ shape and is the fallback if MuSiQue fails phase A.
 Exit: a manifest with counts, a split and access log, and a written decision
 on Full.
 
+*Done 2026-10-01.* Pinned in `data/corpora/musique-ans/manifest.json` by
+`scripts/inventory_musique.py`: the official Google Drive archive
+`musique_v1.0.zip` (SHA-256 `98f839bf…ee0cd`, 272 MB, CC BY 4.0, repo commit
+`922ac98`), with per-file hashes.
+
+- **Counts.** Ans dev has 2,417 questions: 1,252 2-hop, 760 3-hop and 405
+  4-hop. Pooled, it is 21,100 unique paragraphs from 48,315 slots, and
+  identical paragraphs recur heavily across questions: only 2,629 unique
+  paragraphs are supporting. Train has 19,938 questions and 84,559 unique
+  paragraphs. Test labels are hidden.
+- **Ids.** `musique-<sha256(title + "\n" + text)[:16]>` has no collisions in
+  any split, and every decomposition step's support index points at a
+  supporting paragraph.
+- **Full: not run pooled.** The caveat holds for every pair. All 2,417
+  unanswerable dev questions get their withheld supporting paragraph back
+  through the answerable twin. Full would need per-question corpora, so it is
+  deferred, and the experiment is MuSiQue-Ans.
+- **Tuning split.** 17.5% of dev's paragraphs, and 693 of its 2,629
+  supporting ones, also occur in train, though no dev question does. The
+  tuning slice is therefore drawn only from train questions that share no
+  paragraph with the dev pool. Its size, seed and ids come with the phase B
+  converter.
+
 ### Phase B: corpus and eval-set conversion
 
 Builds on phase 1's JSONL loader, cleaning bypass and identity chunker, and

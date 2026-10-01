@@ -42,6 +42,7 @@ data/eval/results/.partial/
 # BEIR queries and qrels (scripts/fetch_beir.py) sit outside documents/ so they
 # never reach an index; fetched like the passages, never committed.
 data/corpora/beir-*/source/
+data/corpora/musique-*/source/
 # Eval sets converted from those qrels (scripts/beir_to_eval_set.py): regenerated
 # from the pinned archive, and the labels are third-party data.
 data/eval/beir_*.json
