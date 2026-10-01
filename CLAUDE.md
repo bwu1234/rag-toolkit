@@ -42,7 +42,10 @@ code — read them from `RagConfig`.
 
 `chat.mode: agentic` swaps the retrieve-then-generate pipeline for an agent
 that calls search as a tool (`rag/generation/agent.py`, settings under
-`agent:`). It stays off by default until Milestone 19 phase 4 measures it.
+`agent:`). Milestone 19 phase 4 measured it: with the 27b as `agent.llm` it
+closes most of the multi-hop gap, at 1–2 minutes per hard question, and the 9b
+agent gains nothing. So it is an opt-in mode for hard questions; the default
+stays `pipeline`.
 
 A config file may start with `base: <path>` (relative to itself) to inherit
 another and list only what it changes — mappings merge, lists replace.

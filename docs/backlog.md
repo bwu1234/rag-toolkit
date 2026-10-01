@@ -302,8 +302,13 @@ land.
 **In progress:** see [Milestone 19 plan](milestone-19-plan.md). Phases 0–3
 shipped: a fixed eval judge and the multi-hop set, `ToolCallingLLM` (Ollama
 and Gemini), one tool surface shared with MCP (`rag/tools.py`), and the agent
-loop behind `chat.mode: agentic` (off by default). Phase 4, the measurement
-that decides whether the agent is worth having, is next. The cost bullets
+loop behind `chat.mode: agentic` (off by default). Phase 4 measured it
+(2026-10-01, [results](measured-results.md#agentic-retrieval-milestone-19-phase-4)):
+with the 27b the loop gains 6.7 of 35 multi-hop questions over the same model
+answering once, but at 1–2 minutes per hard question, and the 9b agent gains
+nothing. So agentic stays an opt-in mode for hard questions, not the default.
+Open: the Gemini Flash-Lite reference pair (built, not run, because it spends
+quota) and the MuSiQue outside check. The cost bullets
 below were written before the interface change; `LLMClient` was kept, and
 tool calling was added as a `ToolCallingLLM` subclass instead.
 
