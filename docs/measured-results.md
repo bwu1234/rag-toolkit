@@ -38,24 +38,32 @@ record; no new runs are reported here.
 
 ### Current shipped baseline
 
-What later changes pair against, as of 2026-09-28: `edgar`, header on and
-`reranker.include_header` (chunking plan Phase 2), hybrid, `bge-reranker-v2-m3`,
-`top_k 20`, `rerank_top_k 5`, `min_score 0.0`, no expansion, no routing,
-generator `qwen3.5:9b-mlx`, judge `gemma4:31b-mlx`. NDCG is after the
-[span-credit fix](#ndcg-credits-each-span-once).
+What later changes pair against, as of 2026-10-02: `edgar_md`, `structured`
+chunker (chunking plan Phase 5), header on and `reranker.include_header`,
+hybrid, `bge-reranker-v2-m3`, `top_k 20`, `rerank_top_k 5`, `min_score 0.0`,
+no expansion, no routing, generator `qwen3.5:9b-mlx`, judge `gemma4:31b-mlx`.
 
 | set | n | retrieval hit | NDCG | answer pass |
 |---|---|---|---|---|
-| generated | 174 | 0.977 | 0.892 | 0.943 |
-| `period` | 55 | 0.836 | 0.761 | 0.927 |
-| `underspecified` | 118 | 0.822 | 0.698 | 0.763 |
+| generated | 174 | 0.977 | 0.932 | 0.948 (one run, all 174) |
+| answerable, evenly spaced | 40 | — | — | 37.3 / 40 (3 runs) |
+| refusals | 15 | — | — | 15.0 / 15 |
+| multi-hop complete | 35 | — | — | 24.7 / 35, evidence recall 0.853 |
+| adaptive complete | 15 | — | — | 6.7 / 15, evidence recall 0.689 |
+| `period` | 55 | 0.964 | 0.891 | 54.0 / 55 |
+| `underspecified` | 118 | 0.831 | 0.738 | 89.7 / 118 |
+| `table` | 95 | 0.979 | 0.859 | 89.7 / 95 |
 
-Sources: [chunk header](#deterministic-chunk-header-chunking-plan-phase-2) and
-[NDCG re-run](#ndcg-credits-each-span-once). The 40-sample `crag=off` answer
-row predates the header (see [Not yet measured](#not-yet-measured)). The
-multi-hop baseline at this config is Milestone 19 phase 4's `pipeline / 9b`:
-24.7/35 complete, evidence recall 0.79
-([agentic retrieval](#agentic-retrieval-milestone-19-phase-4)).
+Sources:
+
+- *Answer rows:* the [`edgar_md` pipeline baseline](#edgar_md-pipeline-baseline-after-chunking-plan-phase-5).
+- *Retrieval and the 174-question row:* the
+  [structure-aware chunker](#structure-aware-chunker-chunking-plan-phase-5).
+
+The previous baseline, `edgar` with the `fixed` chunker as of 2026-09-28,
+is in the [chunk header](#deterministic-chunk-header-chunking-plan-phase-2)
+and [agentic retrieval](#agentic-retrieval-milestone-19-phase-4) sections.
+Rows recorded on it are not paired with rows recorded on this one.
 
 ### Milestone 11, pass 1
 
@@ -1312,6 +1320,63 @@ corpus evals run on
 ([chunking plan](chunking-indexing-plan.md#phase-5--structure-aware-chunker-34-days--done-2026-10-01)).
 EDGAR rows recorded before this section ran on `edgar` with the `fixed`
 chunker; they are not paired with rows recorded after it.
+
+### `edgar_md` pipeline baseline (after chunking plan Phase 5)
+
+**Setup.** This is the shipped pipeline after Phase 5 was adopted: corpus
+`edgar_md`, `structured` chunker, header on, `reranker.include_header`,
+hybrid, `bge-reranker-v2-m3`, `top_k 20`, `rerank_top_k 5`, CRAG off,
+generator `qwen3.5:9b-mlx`, judge `gemma4:31b-mlx`.
+
+- *Command.* `scripts/run_answer_matrix.py --family m19 --corpus edgar_md
+  --variant "pipeline / 9b" --repeat 3 --limit 40` on all seven sets.
+- *Provenance.* Run 2026-10-01 to 10-02 at `9745738`, from a pinned
+  worktree. `index-report` showed the index in sync, with 4,808 chunks and
+  none starting mid-table.
+- *Raw records.* `data/eval/results_m19/answer_edgar_md__judge-gemma4-31b-mlx.*`.
+- *Not pairable with older rows.* This is the row new EDGAR rows pair
+  against. It is not paired with any row recorded on `edgar`, because corpus
+  and chunker changed together.
+
+Counts per run, out of each set's size:
+
+| set | n | per run | mean | spread | evidence recall |
+|---|---|---|---|---|---|
+| answerable (evenly spaced) | 40 | 37, 38, 37 | 37.3 | 1 | — |
+| refusals | 15 | 15, 15, 15 | 15.0 | 0 | — |
+| multi-hop complete | 35 | 25, 25, 24 | 24.7 | 1 | 0.853 |
+| adaptive complete (bridge /10, discovery /5) | 15 | 7, 6, 7 (4.7, 2.0) | 6.7 | 1 | 0.689 |
+| `period` | 55 | 54, 54, 54 | 54.0 | 0 | — |
+| `underspecified` | 118 | 90, 90, 89 | 89.7 | 1 | — |
+| `table` | 95 | 90, 89, 90 | 89.7 | 1 | — |
+
+Prompt tokens per turn are 1,140–1,842 by set, and latency 6.8–10.5 s.
+
+- **The `table` tier holds Phase 5's result:** 89.7 of 95 (0.944) over
+  three runs, against Phase 5's single `structured` run at 0.947.
+- **Latency.** Table latency here is 9.9–10.5 s, against 12.2 s for
+  `structured` in the Phase 5 run. That supports reading Phase 5's latency
+  rise as machine load rather than the chunker.
+- **For orientation only: the move against the old `edgar` baseline.**
+  These are not paired comparisons. On the same questions, the old `edgar`
+  rows (`pipeline / 9b`, Milestone 19 phase 4 and the Phase 2 header row)
+  read:
+
+  | set | old `edgar` | now `edgar_md` |
+  |---|---|---|
+  | answerable /40 | 38.7 | 37.3 |
+  | refusals /15 | 14.0 | 15.0 |
+  | multi-hop /35 | 24.7 | 24.7 |
+  | adaptive /15 | 4.3 | 6.7 |
+  | evidence recall, multi-hop / adaptive | 0.79 / 0.64 | 0.85 / 0.69 |
+  | `period` / `underspecified` answer pass, one run | 0.927 / 0.763 | 0.982 / 0.760 avg |
+
+  - *Refusals.* The refusal every old run missed,
+    `neg-unanswerable-comparison`, now passes in all three runs.
+  - *Agentic gains.* The Milestone 19 agent gains were measured against the
+    old pipeline row. This baseline's adaptive score is higher (6.7 vs
+    4.3), so the agent's margin on `edgar_md` is unknown until the agent rows
+    are re-run here.
 
 ### SQLite FTS5 sparse backend
 
