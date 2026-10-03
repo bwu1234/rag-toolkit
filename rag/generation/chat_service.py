@@ -101,12 +101,13 @@ class Citation:
     page: int | None = None
 
 
-StoppedReason = Literal["answered", "cap", "timeout", "context"]
+StoppedReason = Literal["answered", "cap", "timeout", "context", "empty"]
 """How an agent turn ended: the model chose to answer, or a guard made it.
 
-`cap` is `agent.max_tool_calls`, `timeout` is `agent.timeout_s`, and `context`
-is a prompt that outgrew the model's context window. All three but `answered`
-end with the forced tool-free turn.
+`cap` is `agent.max_tool_calls`, `timeout` is `agent.timeout_s`, `context` is
+a prompt that outgrew the model's context window, and `empty` is a model that
+stopped with neither text nor a tool call. All but `answered` end with the
+forced tool-free turn.
 """
 
 

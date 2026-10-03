@@ -125,6 +125,9 @@ class AssistantTurn:
     # on). Sent back with the turn so the model sees its own earlier reasoning.
     thinking: str | None = None
     usage: LLMUsage | None = None
+    # Why the provider stopped generating, as it names it (Ollama's
+    # `done_reason`: "stop", or "length" at `max_tokens`). None when not reported.
+    stop_reason: str | None = None
 
 
 @dataclass(frozen=True)

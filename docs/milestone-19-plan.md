@@ -326,6 +326,16 @@ from decision 6. What shipped, and where it departs from the original bullets:
   forced turn answers. If there's no step to roll back, the error propagates.
   `ContextOverflowError` moved to `rag/generation/llm.py` so the agent needn't
   import a concrete adapter.
+- **`stopped_reason` gained `empty`** (2026-10-03).
+  - *The trigger.* On `edgar_md`, the 27b with default thinking returned
+    neither text nor a tool call on one refusal question in every run, and
+    the turn returned `""` as if answered.
+  - *The guard.* Such a reply is now dropped from the conversation, and the
+    forced turn answers, once. If that turn is empty too, the turn ends empty
+    and logged.
+  - *The diagnosis.* `AssistantTurn.stop_reason` carries Ollama's
+    `done_reason`, so the warning says whether the model stopped at
+    `max_tokens`. Gemini already raises in that case.
 - **`timeout_s` bounds the searching, not the whole turn.** It is checked
   before each model call and each search. An in-flight call isn't
   interrupted, and the forced answer is one more call after the budget.

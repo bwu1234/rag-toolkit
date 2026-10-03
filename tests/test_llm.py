@@ -251,6 +251,16 @@ def test_chat_round_trips_a_tool_conversation_in_ollama_message_format() -> None
     ]
 
 
+@pytest.mark.parametrize(("done_reason", "expected"), [("length", "length"), ("stop", "stop"), (None, None)])
+def test_chat_reports_why_generation_stopped(done_reason: str | None, expected: str | None) -> None:
+    reply: dict = {"message": {"role": "assistant", "content": ""}}
+    if done_reason is not None:
+        reply["done_reason"] = done_reason
+    client = _client_with_handler(_recording_handler([], reply))
+
+    assert client.chat([ChatMessage("user", "q")]).stop_reason == expected
+
+
 def test_chat_returns_the_reasoning_trace_when_thinking() -> None:
     reply = {"message": {"role": "assistant", "content": "Answer.", "thinking": "Let me compare."}}
     sent: list[dict] = []

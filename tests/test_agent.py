@@ -7,6 +7,7 @@ driven exactly to its edge.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -287,6 +288,63 @@ def test_overflow_with_nothing_to_roll_back_raises() -> None:
 
     with pytest.raises(ContextOverflowError):
         _agent(_Overflow([]), _FakeTools()).ask("question")
+
+
+# --------------------------------------------------------------------------
+# An empty reply
+# --------------------------------------------------------------------------
+
+
+def _empty(stop_reason: str | None = "length", thinking: str | None = "x" * 900) -> AssistantTurn:
+    return AssistantTurn(content="", thinking=thinking, usage=LLMUsage(300, 4096), stop_reason=stop_reason)
+
+
+def test_an_empty_reply_after_searching_gets_the_forced_answer_turn() -> None:
+    # The Milestone 19 re-run case: one search, then neither text nor a tool call.
+    tools = _FakeTools({"eli lilly incretin": [_chunk("m1", doc="MRK.md")]})
+    llm = ScriptedToolLLM([_step(_search("eli lilly incretin")), _empty(), _answer("Eli Lilly is not covered.")])
+
+    answer = _agent(llm, tools).ask("What did Eli Lilly say about incretin capacity?")
+
+    assert (answer.answer, answer.stopped_reason) == ("Eli Lilly is not covered.", "empty")
+    messages, offered = llm.calls[-1]
+    assert offered == []
+    assert messages[-1] == ChatMessage("user", AGENT_SYNTHESIS_INSTRUCTION)
+    # The empty turn isn't sent back: the forced turn follows the tool results.
+    assert isinstance(messages[-2], ToolResult)
+    assert not any(isinstance(m, AssistantTurn) and m.thinking == "x" * 900 for m in messages)
+
+
+def test_an_empty_plan_gets_the_forced_answer_turn() -> None:
+    llm = ScriptedToolLLM([_empty(), _answer("Hello!")])
+
+    answer = _agent(llm, _FakeTools(), strategy="planned").ask("hi")
+
+    assert (answer.answer, answer.stopped_reason, len(llm.calls)) == ("Hello!", "empty", 2)
+    assert llm.calls[-1][1] == []
+
+
+def test_an_empty_forced_turn_is_not_retried_again(caplog: pytest.LogCaptureFixture) -> None:
+    llm = ScriptedToolLLM([_step(_search("q")), _empty(), _empty()])
+
+    with caplog.at_level(logging.WARNING, logger="rag.generation.agent"):
+        answer = _agent(llm, _FakeTools({"q": [_chunk("c")]})).ask("question")
+
+    # One recovery attempt, then the turn ends empty rather than looping.
+    assert (answer.answer, answer.stopped_reason, len(llm.calls)) == ("", "empty", 3)
+    # The log says why, as far as the provider reported it.
+    assert "stop_reason=length, 900 reasoning chars" in caplog.text
+    assert "raise the agent model's max_tokens or set think: low" in caplog.text
+
+
+def test_an_empty_reply_without_a_length_stop_gets_no_max_tokens_hint(caplog: pytest.LogCaptureFixture) -> None:
+    llm = ScriptedToolLLM([_empty(stop_reason="stop", thinking=None), _answer("ok")])
+
+    with caplog.at_level(logging.WARNING, logger="rag.generation.agent"):
+        _agent(llm, _FakeTools()).ask("question")
+
+    assert "stop_reason=stop, 0 reasoning chars" in caplog.text
+    assert "max_tokens" not in caplog.text
 
 
 # --------------------------------------------------------------------------
