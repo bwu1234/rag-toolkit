@@ -101,7 +101,7 @@ config's default model changes. The agent rows also pin the agent model's
 **The hosted pair.** `--family m19-hosted` runs `pipeline / flash-lite` and
 `agentic react / flash-lite` into the same table, on the free tier. It refuses
 an unbounded answerable set, and the client's daily request budget
-(`llm.requests_per_day`, see `rag.generation.daily_budget`) stops the run
+(`llm.requests_per_day`, see `rag.llm.daily_budget`) stops the run
 before the day's quota is gone. The per-sample checkpoints mean rerunning the
 same command after midnight Pacific resumes where it stopped. Measure calls
 per question on a few samples first (`--limit 5 --sets answerable`).
@@ -161,11 +161,11 @@ from rag.eval.musique_eval import (  # noqa: E402
 )
 from rag.eval.oracle import build_oracle_retriever  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
-from rag.generation.builder import build_chat_service  # noqa: E402
-from rag.generation.daily_budget import DailyRequestBudgetSpent  # noqa: E402
+from rag.chat import build_chat_service  # noqa: E402
+from rag.llm.daily_budget import DailyRequestBudgetSpent  # noqa: E402
 from rag.generation.chat_service import ChatResponder  # noqa: E402
-from rag.generation.factory import get_llm_client  # noqa: E402
-from rag.generation.llm import LLMClient  # noqa: E402
+from rag.llm.factory import get_llm_client  # noqa: E402
+from rag.llm.base import LLMClient  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
 from rag.observability.records import AgentToolCall  # noqa: E402
 from rag.observability.usage import metered_client  # noqa: E402

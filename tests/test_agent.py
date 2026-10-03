@@ -1,4 +1,4 @@
-"""The agent loop (`rag.generation.agent`), against a scripted model and a fake search.
+"""The agent loop (`rag.agent.service`), against a scripted model and a fake search.
 
 Hermetic: `ScriptedToolLLM` replays fixed turns and records what each call was
 sent, and `_FakeTools` answers `retrieve` from a table, so each guard can be
@@ -15,10 +15,10 @@ import pytest
 
 from rag.config.settings import AgentConfig, ChatConfig, CorpusSelection, CragConfig, LLMConfig, RagConfig
 from rag.events import EventSink, PipelineEvent
-from rag.generation.agent import AgentService, PassageLedger
-from rag.generation.builder import build_chat_service
+from rag.agent.service import AgentService, PassageLedger
+from rag.chat import build_chat_service
 from rag.generation.chat_service import BLANK_QUERY_ANSWER
-from rag.generation.llm import (
+from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
     ContextOverflowError,
@@ -28,7 +28,7 @@ from rag.generation.llm import (
     ToolDefinition,
     ToolResult,
 )
-from rag.generation.prompts import AGENT_SYNTHESIS_INSTRUCTION
+from rag.agent.prompts import AGENT_SYNTHESIS_INSTRUCTION
 from rag.observability.usage import metered_client
 from rag.query_filter import QueryFilter
 from rag.retrieval.retriever import RetrievalResult
@@ -332,7 +332,7 @@ def test_an_empty_plan_gets_the_forced_answer_turn() -> None:
 def test_an_empty_forced_turn_is_not_retried_again(caplog: pytest.LogCaptureFixture) -> None:
     llm = ScriptedToolLLM([_step(_search("q")), _empty(), _empty()])
 
-    with caplog.at_level(logging.WARNING, logger="rag.generation.agent"):
+    with caplog.at_level(logging.WARNING, logger="rag.agent.service"):
         answer = _agent(llm, _FakeTools({"q": [_chunk("c")]})).ask("question")
 
     # One recovery attempt, then the turn ends empty rather than looping.
@@ -345,7 +345,7 @@ def test_an_empty_forced_turn_is_not_retried_again(caplog: pytest.LogCaptureFixt
 def test_an_empty_reply_without_a_length_stop_gets_no_max_tokens_hint(caplog: pytest.LogCaptureFixture) -> None:
     llm = ScriptedToolLLM([_empty(stop_reason="stop", thinking=None), _answer("ok")])
 
-    with caplog.at_level(logging.WARNING, logger="rag.generation.agent"):
+    with caplog.at_level(logging.WARNING, logger="rag.agent.service"):
         _agent(llm, _FakeTools()).ask("question")
 
     assert "stop_reason=stop, 0 reasoning chars" in caplog.text

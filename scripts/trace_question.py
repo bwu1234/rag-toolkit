@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from rag.config.settings import load_config  # noqa: E402
-from rag.generation.builder import build_chat_service  # noqa: E402
+from rag.chat import build_chat_service  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
 from rag.observability.records import TurnRecord  # noqa: E402
 from rag.observability.transcript import write_trace  # noqa: E402

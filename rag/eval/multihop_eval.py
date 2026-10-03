@@ -55,9 +55,9 @@ from rag.eval.answer_eval import _parse_verdict, add_judge_arguments, build_judg
 from rag.eval.dataset import EvalDataset, EvalSample, ExpectedSpan
 from rag.eval.oracle import add_oracle_argument, build_oracle_retriever
 from rag.eval.relevance import unmatched_spans
-from rag.generation.builder import build_chat_service
+from rag.chat import build_chat_service
 from rag.generation.chat_service import ChatResponder
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 from rag.logging_config import configure_logging
 from rag.observability.records import AgentToolCall
 

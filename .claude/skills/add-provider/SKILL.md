@@ -19,7 +19,7 @@ branch with no config field is unselectable.
 | `VectorStore` | `rag/vectorstore/base.py` | `rag/vectorstore/factory.py::get_vector_store` | `VectorStoreConfig` |
 | `Reranker` | `rag/retrieval/reranker.py` | `rag/retrieval/factory.py::get_reranker` | `RerankerConfig` |
 | `QueryExpander` | `rag/retrieval/expansion.py` | `rag/retrieval/factory.py::get_query_expander` | `QueryExpansionConfig` |
-| `LLMClient` | `rag/generation/llm.py` | `rag/generation/factory.py::get_llm_client` | `LLMConfig` |
+| `LLMClient` | `rag/llm/base.py` | `rag/llm/factory.py::get_llm_client` | `LLMConfig` |
 | `Chunker` | `rag/chunking/chunkers.py` | `rag/chunking/chunkers.py::get_chunker` | `ChunkingConfig` |
 
 `Chunker` is the one exception to the `provider:` convention — it is selected by

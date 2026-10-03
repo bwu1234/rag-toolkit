@@ -103,7 +103,7 @@ Two layers, and callers pick which one they need:
   - **`ChatService`** (`pipeline`) wraps a `Retriever` and adds
     condensing, CRAG, generation and citations. The diagram below is this path.
   - **`AgentService`** (`agentic`, the default since
-    [ADR 0015](decisions/0015-agentic-default.md); `rag/generation/agent.py`) lets the model
+    [ADR 0015](decisions/0015-agentic-default.md); `rag/agent/service.py`) lets the model
     call search as a tool, as often as it needs; see
     [below](#agentserviceask-chatmode-agentic).
 
@@ -217,7 +217,7 @@ and groundedness both need to see both sides of the retrieve/generate boundary.
    corpus's documents and their metadata; a listing is not a passage, so it
    isn't cited, but it spends the same `max_tool_calls` budget. With
    `calculator` (off by default) it can evaluate arithmetic over the figures
-   it found (`rag.generation.calculator`, a safe `ast` evaluator, agent-only
+   it found (`rag.agent.calculator`, a safe `ast` evaluator, agent-only
    and not served over MCP); a calculation adds no passages and spends no
    budget. Every call,
    refused or not, is recorded on `ChatAnswer.agent_calls`: query and
@@ -240,7 +240,10 @@ It runs on its own model (`agent.llm`, falling back to `llm`) through
 ## Entrypoints
 
 Every entrypoint builds its pipeline through one of two builders, so they all
-get an identically configured stack from the same config:
+get an identically configured stack from the same config.
+`build_chat_service` (`rag/chat.py`) picks `build_pipeline_service`
+(`rag/generation/builder.py`) or `build_agent_service` (`rag/agent/builder.py`)
+by `chat.mode`:
 
 | Entrypoint | Builder | Gets | Notes |
 |---|---|---|---|

@@ -38,7 +38,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 from rag.vectorstore.base import ScoredChunk
 
 logger = logging.getLogger(__name__)

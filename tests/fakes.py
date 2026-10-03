@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from rag.generation.llm import AssistantTurn, Message, ToolCallingLLM, ToolDefinition
+from rag.llm.base import AssistantTurn, Message, ToolCallingLLM, ToolDefinition
 
 
 class ScriptedToolLLM(ToolCallingLLM):

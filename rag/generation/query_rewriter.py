@@ -25,7 +25,7 @@ import logging
 from dataclasses import dataclass
 from typing import Literal
 
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 
 logger = logging.getLogger(__name__)
 

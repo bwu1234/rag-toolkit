@@ -42,7 +42,7 @@ code — read them from `RagConfig`.
 
 `chat.mode: agentic` (the default since
 [ADR 0015](docs/decisions/0015-agentic-default.md)) answers with an agent that
-calls search as a tool (`rag/generation/agent.py`, settings under `agent:`),
+calls search as a tool (`rag/agent/service.py`, settings under `agent:`),
 instead of the retrieve-then-generate pipeline. With the 27b as `agent.llm`
 it closes most of the multi-hop gap, at 1–2 minutes per hard question; the 9b
 agent gains nothing, so never leave `agent.llm` null under agentic.

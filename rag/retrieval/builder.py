@@ -16,8 +16,8 @@ from collections.abc import Sequence
 
 from rag.config.settings import RagConfig
 from rag.embedding.factory import get_embedder
-from rag.generation.factory import get_llm_client
-from rag.generation.llm import LLMClient
+from rag.llm.factory import get_llm_client
+from rag.llm.base import LLMClient
 from rag.index_manifest import check_queryable, index_manifest_path
 from rag.retrieval.document_router import DocumentRouter, check_record_template
 from rag.retrieval.factory import get_query_expander, get_reranker, get_sparse_index

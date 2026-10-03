@@ -25,7 +25,7 @@ from rag.eval.musique_eval import (
     summarize,
 )
 from rag.generation.chat_service import ChatAnswer, ChatService, Citation
-from rag.generation.llm import LLMClient, LLMUsage
+from rag.llm.base import LLMClient, LLMUsage
 from rag.observability.usage import metered_client
 
 REPO = Path(__file__).resolve().parents[1]

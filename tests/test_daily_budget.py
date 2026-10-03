@@ -14,9 +14,9 @@ import httpx
 import pytest
 
 from rag.config.settings import REPO_ROOT, LLMConfig
-from rag.generation.daily_budget import DailyRequestBudgetSpent, DailyRequestCounter
-from rag.generation.factory import get_llm_client
-from rag.generation.gemini_llm import GeminiLLMClient
+from rag.llm.daily_budget import DailyRequestBudgetSpent, DailyRequestCounter
+from rag.llm.factory import get_llm_client
+from rag.llm.gemini_llm import GeminiLLMClient
 
 
 def _counter(path: Path, limit: int = 3, key: str = "flash", day: list[str] | None = None) -> DailyRequestCounter:

@@ -26,7 +26,7 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from rag.generation.llm import ToolDefinition
+from rag.llm.base import ToolDefinition
 
 CALCULATOR_TOOL = "calculator"
 

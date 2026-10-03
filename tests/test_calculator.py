@@ -1,4 +1,4 @@
-"""The agent's calculator (`rag.generation.calculator`): exact where it answers, explicit where it won't.
+"""The agent's calculator (`rag.agent.calculator`): exact where it answers, explicit where it won't.
 
 What these pin: arithmetic a filing question needs comes out right, and every
 input a model plausibly copies from a filing -- thousands separators, `$`, `%`
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from rag.generation.calculator import CalculatorError, evaluate, format_result
+from rag.agent.calculator import CalculatorError, evaluate, format_result
 
 
 @pytest.mark.parametrize(

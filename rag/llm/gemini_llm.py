@@ -50,8 +50,8 @@ from typing import Any
 
 import httpx
 
-from rag.generation.daily_budget import DailyRequestCounter
-from rag.generation.llm import (
+from rag.llm.daily_budget import DailyRequestCounter
+from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
     LLMUsage,

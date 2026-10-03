@@ -31,7 +31,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any, overload
 
-from rag.generation.llm import (
+from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
     LLMClient,

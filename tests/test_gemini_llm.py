@@ -13,9 +13,9 @@ import httpx
 import pytest
 
 from rag.config.settings import GEMINI_BASE_URL, LLMConfig
-from rag.generation.factory import get_llm_client
-from rag.generation.gemini_llm import GeminiDailyQuotaExhausted, GeminiLLMClient
-from rag.generation.llm import AssistantTurn, ChatMessage, ToolCall, ToolCallingLLM, ToolDefinition, ToolResult
+from rag.llm.factory import get_llm_client
+from rag.llm.gemini_llm import GeminiDailyQuotaExhausted, GeminiLLMClient
+from rag.llm.base import AssistantTurn, ChatMessage, ToolCall, ToolCallingLLM, ToolDefinition, ToolResult
 
 
 class _FakeClock:

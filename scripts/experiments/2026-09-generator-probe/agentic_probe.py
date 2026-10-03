@@ -37,8 +37,8 @@ from rag.eval.answer_eval import (  # noqa: E402
     _refusal_judge_prompt,
 )
 from rag.eval.dataset import EvalDataset  # noqa: E402
-from rag.generation.builder import build_chat_service  # noqa: E402
-from rag.generation.ollama_llm import OllamaLLMClient  # noqa: E402
+from rag.chat import build_chat_service  # noqa: E402
+from rag.llm.ollama_llm import OllamaLLMClient  # noqa: E402
 from rag.generation.prompts import _citation_label  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
 from rag.retrieval.builder import build_retriever  # noqa: E402

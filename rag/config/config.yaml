@@ -330,7 +330,7 @@ crag:
 
 # Milestone 19 -- agentic retrieval: the model calls search as a tool, as many
 # times as it needs, instead of the pipeline's single retrieve-then-generate.
-# Read only when `chat.mode: agentic` (rag/generation/agent.py), the default
+# Read only when `chat.mode: agentic` (rag/agent/service.py), the default
 # since ADR 0015 (docs/decisions/). Measured on edgar_md (docs/measured-results.md,
 # "Agentic retrieval on edgar_md"): with the 27b below, the loop completes
 # ~32/35 multi-hop and ~13/15 bridge/discovery questions against the

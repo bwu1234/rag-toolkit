@@ -15,8 +15,8 @@ import httpx
 import pytest
 
 from rag.config.settings import LLMConfig
-from rag.generation.factory import get_llm_client
-from rag.generation.llm import (
+from rag.llm.factory import get_llm_client
+from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
     LLMClient,
@@ -25,7 +25,7 @@ from rag.generation.llm import (
     ToolDefinition,
     ToolResult,
 )
-from rag.generation.ollama_llm import ContextOverflowError, OllamaLLMClient
+from rag.llm.ollama_llm import ContextOverflowError, OllamaLLMClient
 
 
 def _client_with_handler(handler, **kwargs) -> OllamaLLMClient:
@@ -351,7 +351,7 @@ def test_warns_when_a_prompt_nears_num_ctx(prompt_tokens: int, warns: bool, capl
     reply = {"message": {"role": "assistant", "content": "ok"}, "prompt_eval_count": prompt_tokens, "eval_count": 1}
     client = _client_with_handler(_recording_handler([], reply), num_ctx=32768)
 
-    with caplog.at_level(logging.WARNING, logger="rag.generation.ollama_llm"):
+    with caplog.at_level(logging.WARNING, logger="rag.llm.ollama_llm"):
         client.chat([ChatMessage("user", "q")])
 
     assert ("will raise ContextOverflowError" in caplog.text) is warns
@@ -361,7 +361,7 @@ def test_no_context_warning_without_num_ctx(caplog: pytest.LogCaptureFixture) ->
     reply = {"message": {"role": "assistant", "content": "ok"}, "prompt_eval_count": 10**6}
     client = _client_with_handler(_recording_handler([], reply))
 
-    with caplog.at_level(logging.WARNING, logger="rag.generation.ollama_llm"):
+    with caplog.at_level(logging.WARNING, logger="rag.llm.ollama_llm"):
         client.generate("q")
 
     assert caplog.text == ""

@@ -307,7 +307,7 @@ class _SpentChat(ChatService):
         self.asked: list[str] = []
 
     def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
-        from rag.generation.daily_budget import DailyRequestBudgetSpent
+        from rag.llm.daily_budget import DailyRequestBudgetSpent
 
         if self.asked:
             raise DailyRequestBudgetSpent("spent")

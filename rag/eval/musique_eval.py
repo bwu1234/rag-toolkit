@@ -51,7 +51,7 @@ from rag.eval.dataset import EvalDataset, EvalSample, ExpectedSpan
 from rag.eval.relevance import unmatched_spans
 from rag.events import EventSink
 from rag.generation.chat_service import ChatAnswer, ChatResponder, TurnTrace
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 from rag.generation.query_rewriter import ChatTurn
 from rag.observability.records import AgentToolCall
 from rag.query_filter import QueryFilter

@@ -20,10 +20,10 @@ from rag.config.settings import AgentConfig, ChatConfig, EmbeddingConfig, LLMCon
 from rag.events import EventSink, PipelineEvent
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
-from rag.generation.builder import build_agent_llm
-from rag.generation.gemini_llm import GeminiLLMClient
-from rag.generation.llm import AssistantTurn, ChatMessage, LLMClient, LLMUsage, ToolCallingLLM
-from rag.generation.ollama_llm import OllamaLLMClient
+from rag.agent.builder import build_agent_llm
+from rag.llm.gemini_llm import GeminiLLMClient
+from rag.llm.base import AssistantTurn, ChatMessage, LLMClient, LLMUsage, ToolCallingLLM
+from rag.llm.ollama_llm import OllamaLLMClient
 from rag.generation.prompts import parse_cited_passages
 from rag.observability.factory import config_fingerprint, get_turn_sink as build_turn_sink
 from rag.observability.records import FeedbackRecord, TurnRecord
@@ -206,7 +206,7 @@ def test_build_agent_llm_uses_agent_llm_when_set() -> None:
 def test_build_agent_llm_fails_at_build_time_for_a_provider_without_tools(monkeypatch: pytest.MonkeyPatch) -> None:
     # Every implemented provider can call tools now, so stand in for a future
     # adapter that can only `generate`.
-    monkeypatch.setattr("rag.generation.builder.get_llm_client", lambda config, num_ctx=None: _UsageLLM())
+    monkeypatch.setattr("rag.agent.builder.get_llm_client", lambda config, num_ctx=None: _UsageLLM())
     config = RagConfig(agent=AgentConfig(llm=LLMConfig(model="text-only")))
     with pytest.raises(ValueError, match="agent.llm selects provider 'ollama'"):
         build_agent_llm(config)

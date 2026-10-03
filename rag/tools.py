@@ -39,7 +39,7 @@ from rag.chunking.chunkers import carried_metadata
 from rag.config.settings import REPO_ROOT, CorpusSelection, RagConfig, load_config
 from rag.events import EventSink
 from rag.query_filter import DOCUMENT_ID, QueryFilter, check_filterable
-from rag.generation.llm import LLMClient, ToolDefinition
+from rag.llm.base import LLMClient, ToolDefinition
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.retriever import RetrievalResult, Retriever
 from rag.retrieval.factory import get_sparse_index, sparse_index_path
