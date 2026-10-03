@@ -187,6 +187,7 @@ def test_vanilla_config_disables_every_extra() -> None:
     assert cfg.retrieval.min_score == 0.0
     assert not cfg.chat.condense_history
     assert cfg.chat.prompt == "plain"
+    assert cfg.chat.mode == "pipeline"
     assert not cfg.crag.enabled
     assert not cfg.chunking.contextual.enabled
     assert cfg.chunking.header.template is None
@@ -204,7 +205,8 @@ def test_vanilla_config_inherits_everything_it_does_not_change() -> None:
         "chunking": {"strategy": "fixed", "header": {"template": None}},
         "retrieval": {"mode": "dense", "top_k": 5},
         "reranker": {"provider": "none"},
-        "chat": {"condense_history": False, "prompt": "plain"},
+        # Pinned: plain RAG has no agent loop, whatever config.yaml ships.
+        "chat": {"mode": "pipeline", "condense_history": False, "prompt": "plain"},
     }
     expected = RagConfig.model_validate(_deep_merge(default.model_dump(), changed))
     assert vanilla == expected
@@ -226,7 +228,11 @@ def test_flash_lite_configs_change_only_the_generator(version: str) -> None:
     assert (cfg.eval.judge.provider, cfg.eval.judge.model, cfg.eval.judge.temperature) == (
         "ollama", "gemma4:31b-mlx", 0.0,
     )
-    assert cfg.model_dump(exclude={"llm", "eval"}) == default.model_dump(exclude={"llm", "eval"})
+    # Pinned to the pipeline: the shipped agent would answer with the local
+    # 27b, not Flash-Lite, and the hosted agent row hasn't been run.
+    assert cfg.chat.mode == "pipeline"
+    exclude: dict = {"llm": True, "eval": True, "chat": {"mode"}}
+    assert cfg.model_dump(exclude=exclude) == default.model_dump(exclude=exclude)
 
 
 def test_flash_lite_configs_differ_only_in_the_model() -> None:
@@ -360,8 +366,14 @@ def test_agent_passage_cap_matches_the_mcp_server() -> None:
     assert AgentConfig().max_passage_chars == DEFAULT_MAX_CHARS
 
 
-def test_shipped_config_agent_section_matches_the_model_defaults() -> None:
-    assert load_config(DEFAULT_CONFIG_PATH).agent == AgentConfig()
+def test_shipped_config_agent_section_matches_the_model_defaults_but_its_model() -> None:
+    # ADR 0015: the agent is the default mode, with its own 27b. Every other
+    # agent setting is the model default (tests/test_m19_matrix.py holds the
+    # whole shipped config equal to the measured row).
+    shipped = load_config(DEFAULT_CONFIG_PATH)
+    assert shipped.chat.mode == "agentic"
+    assert shipped.agent.llm is not None and shipped.agent.llm.model == "qwen3.8:27b-mlx"
+    assert shipped.agent.model_copy(update={"llm": None}) == AgentConfig()
 
 
 @pytest.mark.parametrize("bad", [{"strategy": "tree"}, {"max_tool_calls": 0}, {"timeout_s": 0}, {"num_ctx": 512}])

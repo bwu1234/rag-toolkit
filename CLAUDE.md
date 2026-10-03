@@ -40,12 +40,16 @@ validated by pydantic models in `rag/config/settings.py`. Load it via
 `load_config()`. Don't hardcode model names, chunk sizes, or paths in pipeline
 code — read them from `RagConfig`.
 
-`chat.mode: agentic` swaps the retrieve-then-generate pipeline for an agent
-that calls search as a tool (`rag/generation/agent.py`, settings under
-`agent:`). Milestone 19 phase 4 measured it: with the 27b as `agent.llm` it
-closes most of the multi-hop gap, at 1–2 minutes per hard question, and the 9b
-agent gains nothing. So it is an opt-in mode for hard questions; the default
-stays `pipeline`.
+`chat.mode: agentic` (the default since
+[ADR 0015](docs/decisions/0015-agentic-default.md)) answers with an agent that
+calls search as a tool (`rag/generation/agent.py`, settings under `agent:`),
+instead of the retrieve-then-generate pipeline. With the 27b as `agent.llm`
+it closes most of the multi-hop gap, at 1–2 minutes per hard question; the 9b
+agent gains nothing, so never leave `agent.llm` null under agentic.
+`chat.mode: pipeline` (8–10 s) stays for baselines: `vanilla.yaml` and the
+Flash-Lite configs pin it. `answer_eval`/`multihop_eval` follow the config,
+so with `config.yaml` they now measure the agent; `run_answer_matrix.py` rows
+pin their mode from `ROW_BASELINE`, so recorded rows stay reproducible.
 
 A config file may start with `base: <path>` (relative to itself) to inherit
 another and list only what it changes — mappings merge, lists replace.

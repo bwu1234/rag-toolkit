@@ -415,6 +415,19 @@ def apply_overrides(config: RagConfig, overrides: dict[str, Any]) -> RagConfig:
     return updated
 
 
+#: What every recorded row ran on before ADR 0015 made `chat.mode: agentic`
+#: and a 27b `agent.llm` the shipped default. Each row starts from this, so a
+#: row means what it meant when measured: the CRAG rows never pinned
+#: `chat.mode`, and a dict `agent.llm` merges over the current value, so the
+#: shipped `think: low` would otherwise leak into every agent row.
+ROW_BASELINE: dict[str, Any] = {"chat.mode": "pipeline", "agent.llm": None}
+
+
+def row_config(config: RagConfig, overrides: dict[str, Any]) -> RagConfig:
+    """`config` reset to `ROW_BASELINE`, then a row's overrides applied."""
+    return apply_overrides(apply_overrides(config, ROW_BASELINE), overrides)
+
+
 def repeated(variants: list[Variant], times: int) -> list[Variant]:
     """Each variant `times` times, as `name #1` ... `name #N`; unchanged when `times` is 1."""
     if times <= 1:
@@ -1006,7 +1019,7 @@ def main() -> int:
     # against its set's fingerprint before anything runs: a mismatch found
     # after an hour of earlier variants would waste that hour.
     code = code_version()
-    configs = {v.name: apply_overrides(base, v.overrides) for v in variants}
+    configs = {v.name: row_config(base, v.overrides) for v in variants}
     # The oracle needs gold spans, so it skips any set without them (refusals).
     sets_for = {
         v.name: [n for n in sets if not v.oracle or all(s.expected_spans for s in datasets[n])]

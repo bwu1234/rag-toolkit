@@ -47,3 +47,10 @@ eval:
     base_url: http://localhost:11434
     temperature: 0.0
     timeout_s: 900
+
+chat:
+  # Pinned: config.yaml's agentic default would answer with its local 27b
+  # agent (`agent.llm`), not this model. Flash-Lite as the agent is the
+  # unmeasured hosted pair (run_answer_matrix.py --family m19-hosted), and
+  # each agent turn spends 2-7 requests of the daily budget instead of one.
+  mode: pipeline

@@ -492,6 +492,11 @@ mode for hard questions with the 27b at `think: low` (same quality, fewer
 tokens). The groundedness checker flagged 9 of 104 answers, 6 of them ones
 the judge passed, so it stays off.
 
+*Superseded (2026-10-03): agentic is now the default.*
+[ADR 0015](decisions/0015-agentic-default.md) makes the opposite latency call
+for research use, on the numbers below. It does not change the criterion
+above, and its outcome stands as recorded.
+
 *Re-run on `edgar_md` (2026-10-03): the same decision.* After chunking plan
 Phase 5 moved EDGAR evals to `edgar_md`, every row was re-run there
 ([numbers](measured-results.md#agentic-retrieval-on-edgar_md-milestone-19-re-run-after-chunking-plan-phase-5)).

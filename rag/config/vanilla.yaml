@@ -43,6 +43,9 @@ reranker:
   provider: none
 
 chat:
+  # Retrieve once, then generate: plain RAG has no agent loop, whatever
+  # config.yaml's `chat.mode` ships.
+  mode: pipeline
   # No follow-up rewriting: each turn's raw text is what gets embedded.
   condense_history: false
   # "Context + question" -- no citations, no instruction to refuse.

@@ -312,9 +312,13 @@ loop behind `chat.mode: agentic` (off by default). Phase 4 measured it
 (2026-10-01, [results](measured-results.md#agentic-retrieval-milestone-19-phase-4)):
 with the 27b the loop gains 6.7 of 35 multi-hop questions over the same model
 answering once, but at 1–2 minutes per hard question, and the 9b agent gains
-nothing. So agentic stays an opt-in mode for hard questions, not the default.
-Open: the Gemini Flash-Lite reference pair (built, not run, because it spends
-quota) and the MuSiQue outside check. The cost bullets
+nothing. So agentic stayed an opt-in mode for hard questions, not the
+default. **Superseded 2026-10-03:** [ADR 0015](decisions/0015-agentic-default.md)
+makes the 27b agent at `think: low` the default for research use, on the
+same per-set numbers, as a product call on latency ahead of an eval of that
+workload ([Milestone 27](#milestone-27--eval-coverage-and-judge-reliability),
+"A research-workload tier"). Open: the Gemini Flash-Lite reference pair
+(built, not run, because it spends quota) and the MuSiQue outside check. The cost bullets
 below were written before the interface change; `LLMClient` was kept, and
 tool calling was added as a `ToolCallingLLM` subclass instead.
 
@@ -782,6 +786,46 @@ the harness plan's publication.
   That implementation choice does not establish that generated context
   cannot help another workload. Query expansion and CRAG
   haven't been re-measured on it.*
+- **A research-workload tier, and re-deciding the default on it.**
+  [ADR 0015](decisions/0015-agentic-default.md) made the agent the default
+  for research use before any eval represents that use. The sets were
+  built for a lookup tool: 174 generated single-hop questions, 35 multi-hop
+  questions that name every entity, 15 bridge/discovery questions. Each is
+  written from the corpus's own chunks. None asks an open question whose
+  evidence spans many filings and periods, needs a derived figure, needs
+  the corpus enumerated, or crosses sources. The default should be decided on
+  the workload it serves, and today it is decided on a latency judgment.
+  - *The tier.* 60–100 hand-written, reviewed questions drawn from a stated
+    mix of research question kinds: lookup, entity-named comparison, bridge,
+    discovery/enumeration, derived computation, trend over periods, and out of
+    corpus. Each question gets per-hop evidence spans and a rubric. Fix the mix
+    weights before the first run, from the intended users' questions and the
+    turn log once it has them (next bullet), not from the results. Keep it
+    held out as the [evaluation rigor plan](evaluation-rigor-plan.md)
+    requires: nothing is tuned on it.
+  - *Rows.* `pipeline / 9b`, `pipeline / 27b`, `agentic react / 27b,
+    think=low`, its `+ list` and `+ calc` rows (unmeasured today), and
+    `oracle / 9b` as the ceiling. Score each kind separately and also as the
+    weighted aggregate. Report completion, evidence recall, refusals, and
+    latency p50/p95 per kind, not just means.
+  - *Decision rule, frozen before the run.* The agent stays the default if
+    its weighted completion gain over `pipeline / 9b` clears noise (paired
+    interval and sign test, as in phase 4) with refusals held. Otherwise a
+    new ADR supersedes 0015. The same run sets `agent.timeout_s` for
+    interactive use: the share of winning turns a 60 s or 90 s cap would
+    cut off.
+  - *Pipeline first, escalating to the agent* is the candidate that could
+    keep lookup turns at 8–10 s. Before building it, measure the escalation
+    signal offline: of the pipeline's failing turns on this tier, how many
+    does it flag, and how many passing turns does it escalate needlessly?
+    Build it only if that recall is high. The one self-check measured so
+    far, groundedness, caught 1 of 8 failures on `edgar_md`.
+  - *Cross-source questions* join the tier when the agent has a second
+    source (another corpus as its own tool, or web search). Until then, a
+    claim that the agent handles "research across databases" is untested.
+  - *Run with* the MuSiQue outside check (Milestone 19), which tests whether
+    the loop's gain transfers off EDGAR. Both, not either: MuSiQue has no
+    single-hop or refusal questions, and this tier is one corpus.
 - **Turn log → eval candidates.** Milestone 12 called logged queries with
   feedback "the cheapest source of new eval samples", but nothing converts
   them. Add a `rag.cli turns --export-candidates` path that writes thumbs-down

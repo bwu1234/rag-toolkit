@@ -1957,6 +1957,11 @@ Cost per answering turn, mean over runs, with the judge's calls excluded:
 - **Groundedness stays off.** It flagged 4 of 104 answers, and 1 of those
   was a judged failure. It passed 7 answers the judge failed, and it adds
   25–70% latency.
+- **Superseded as a default decision (2026-10-03).** [ADR 0015](decisions/0015-agentic-default.md)
+  ships `agentic react / 27b, think=low` as the default, on these numbers,
+  as a product call on latency. Its refusal re-check on the guarded code
+  (after the empty-answer guard above) passed 15/15 twice by the judge, 29/30
+  read by hand, with no empty answers. Numbers are in the ADR.
 
 **Decision.** Unchanged from phase 4. On quality, the loop with the 27b
 meets the default-flip criterion on `edgar_md` as well. The 7–9× latency on
