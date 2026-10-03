@@ -173,6 +173,10 @@ Design rationale, history, and planning live in `docs/`, read on demand:
 - **`docs/architecture.md`** — how index-time and query-time paths fit
   together and which entrypoint uses which layer. Read before a change that
   spans more than one stage.
+- **`docs/decisions/`** — architecture decision records (context, alternatives,
+  consequences) for the decisions that shape the system, plus a map from
+  every smaller decision to the section that argues it. Supersede a record
+  with a new one; never edit one to reverse it.
 - **`docs/milestone-notes.md`** — why each shipped component is built the way
   it is. Read before touching a component to see what tradeoff its current
   shape already encodes.
