@@ -27,6 +27,8 @@ from rag.config.settings import (
     VectorStoreConfig,
 )
 from rag.index_manifest import IndexManifestMismatch, index_manifest_path, read_index_manifest
+from rag.ingestion.loaders import CorpusLoadError, TextLoader
+from rag.ingestion.models import Document
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.sparse import BM25Index, bm25_index_path
 from rag.vectorstore.chroma_store import ChromaVectorStore
@@ -211,6 +213,102 @@ def test_shortened_document_loses_its_tail_chunks(corpus) -> None:
     after = {cid for cid in vectors if cid.startswith("long.txt::")}
     assert 0 < len(after) < len(before)
     assert vectors == sparse
+
+
+def _fail_to_load(monkeypatch: pytest.MonkeyPatch, name: str) -> None:
+    """Make the text loader raise on ``name``, as a corrupt or half-uploaded file would."""
+    real_load = TextLoader.load
+
+    def load(self: TextLoader, path: Path, *, corpus_root: Path) -> list[Document]:
+        if path.name == name:
+            raise ValueError(f"corrupt: {name}")
+        return real_load(self, path, corpus_root=corpus_root)
+
+    monkeypatch.setattr(TextLoader, "load", load)
+
+
+def test_a_file_that_fails_to_load_keeps_its_chunks(corpus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A bad upload over a good file must not purge that document from the index."""
+    config, _ = corpus
+    _index()
+    other_before = {cid for cid in _stored_ids(config)[0] if cid.startswith("other.txt::")}
+    assert other_before
+
+    _fail_to_load(monkeypatch, "other.txt")
+    with pytest.raises(CorpusLoadError, match="other.txt"):
+        _index()
+
+    vectors, sparse = _stored_ids(config)
+    assert other_before <= vectors
+    assert vectors == sparse
+
+
+def test_reset_is_refused_while_a_file_fails_to_load(corpus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """`--reset` empties the index before upserting, so deferring the purge
+    can't protect the failed file's chunks -- the run must not start."""
+    config, embedder = corpus
+    _index()
+    before = _stored_ids(config)
+    embedder.embedded = 0
+
+    _fail_to_load(monkeypatch, "other.txt")
+    with pytest.raises(CorpusLoadError, match="Nothing was reset"):
+        _index(reset=True)
+
+    assert _stored_ids(config) == before
+    assert embedder.embedded == 0
+
+
+def test_a_load_failure_still_indexes_the_other_files_but_defers_the_purge(
+    corpus, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config, _ = corpus
+    _index()
+    docs = _docs(config)
+    (docs / "long.txt").unlink()
+    (docs / "new.txt").write_text(_words(20), encoding="utf-8")
+    real_load = TextLoader.load
+    _fail_to_load(monkeypatch, "other.txt")
+
+    with pytest.raises(CorpusLoadError):
+        _index()
+
+    vectors, _ = _stored_ids(config)
+    assert any(cid.startswith("new.txt::") for cid in vectors), "good uploads still index"
+    assert any(cid.startswith("long.txt::") for cid in vectors), "the purge waits for a clean run"
+
+    monkeypatch.setattr(TextLoader, "load", real_load)  # the file is fixed
+    _index()
+
+    vectors, sparse = _stored_ids(config)
+    assert not any(cid.startswith("long.txt::") for cid in vectors)
+    assert any(cid.startswith("other.txt::") for cid in vectors)
+    assert vectors == sparse
+
+
+def test_a_corpus_where_every_file_fails_raises_instead_of_warning(
+    corpus, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config, _ = corpus
+    (_docs(config) / "long.txt").unlink()
+    _fail_to_load(monkeypatch, "other.txt")
+
+    with pytest.raises(CorpusLoadError, match="Nothing was indexed"):
+        _index()
+
+
+def test_cli_exits_non_zero_when_a_file_fails_to_load(
+    corpus, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _index()
+    _fail_to_load(monkeypatch, "other.txt")
+    monkeypatch.setattr(sys, "argv", ["rag.cli", "index"])
+
+    with pytest.raises(SystemExit) as exit_info:
+        rag.cli.main()
+
+    assert exit_info.value.code == 1
+    assert "other.txt" in capsys.readouterr().err
 
 
 def test_first_build_records_a_manifest(corpus) -> None:

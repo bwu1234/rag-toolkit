@@ -101,6 +101,18 @@ def test_load_corpus_dispatches_across_formats_and_skips_unsupported(tmp_path: P
     assert ids == {"a.md", "b.txt", "d.pdf#page=1", "d.pdf#page=2"}
 
 
+def test_load_corpus_reports_files_that_fail_to_load(tmp_path: Path) -> None:
+    (tmp_path / "good.txt").write_text("plain text", encoding="utf-8")
+    (tmp_path / "truncated.pdf").write_bytes(b"%PDF-1.7\n1 0 obj\n<<")
+    (tmp_path / "c.unsupported").write_text("not a failure", encoding="utf-8")
+    failed: list[Path] = []
+
+    docs = load_corpus(tmp_path, failed=failed)
+
+    assert [d.id for d in docs] == ["good.txt"]
+    assert failed == [(tmp_path / "truncated.pdf").resolve()]
+
+
 def test_load_corpus_raises_for_missing_directory(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         load_corpus(tmp_path / "does_not_exist")

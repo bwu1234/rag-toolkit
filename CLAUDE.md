@@ -104,7 +104,10 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   and after any chunking change.
 - Whole pipeline end to end: `scripts/demo.sh` (takes `--corpus`, `--question "..."`)
 - Build the index: `python -m rag.cli index`. Incremental: unchanged chunks
-  are skipped, and chunks of deleted/shortened documents are removed. Add
+  are skipped, and chunks of deleted/shortened documents are removed. If any
+  file fails to load, everything else still indexes but that removal is
+  skipped and the run exits 1, so a corrupt upload can't purge the document
+  it replaced. Add
   `--reset` to rebuild; it's **required** after changing the embedder,
   anything under `chunking.contextual`, `chunking.carry_metadata` or
   `chunking.header`, and the index manifest
