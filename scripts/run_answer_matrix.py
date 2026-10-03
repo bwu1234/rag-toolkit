@@ -167,7 +167,7 @@ from rag.generation.chat_service import ChatResponder  # noqa: E402
 from rag.generation.factory import get_llm_client  # noqa: E402
 from rag.generation.llm import LLMClient  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
-from rag.observability.records import AgentSearch  # noqa: E402
+from rag.observability.records import AgentToolCall  # noqa: E402
 from rag.observability.usage import metered_client  # noqa: E402
 
 logger = logging.getLogger(__name__)
@@ -525,7 +525,7 @@ def run_one(
         "samples": [
             {"id": r.sample_id, "passed": r.passed, "evidence_retrieved": r.evidence_retrieved,
              "grounded": r.grounded, "llm_calls": r.llm_calls, "latency_s": round(r.latency_s, 1),
-             "answer": r.actual_answer, **_searches(r.agent_searches)}
+             "answer": r.actual_answer, **_calls(r.agent_calls)}
             for r in report.sample_results
         ],
     }
@@ -595,7 +595,7 @@ def run_musique(
                 "llm_calls": r.llm_calls, "llm_ms": round(r.llm_ms),
                 "prompt_tokens": r.prompt_tokens, "completion_tokens": r.completion_tokens,
                 "latency_s": round(r.latency_s, 1), "answer": r.actual_answer,
-                **_searches(r.agent_searches),
+                **_calls(r.agent_calls),
             }
             for r in report.sample_results
         ],
@@ -660,20 +660,20 @@ def run_multihop(
                 "grounded": r.grounded,
                 "latency_s": round(r.latency_s, 1),
                 "answer": r.actual_answer,
-                **_searches(r.agent_searches),
+                **_calls(r.agent_calls),
             }
             for r in report.sample_results
         ],
     }
 
 
-def _searches(searches: list[AgentSearch]) -> dict[str, Any]:
+def _calls(calls: list[AgentToolCall]) -> dict[str, Any]:
     """An agentic sample's trajectory, for reading a run without re-running it.
 
-    Every search call, its query and filter as the model wrote them, and the
-    passages each returned. Absent on pipeline samples.
+    Every tool call, its arguments as the model wrote them, and what each
+    returned. Absent on pipeline samples.
     """
-    return {"searches": [asdict(s) for s in searches]} if searches else {}
+    return {"calls": [asdict(c) for c in calls]} if calls else {}
 
 
 def _round_or_none(value: float | None) -> float | None:

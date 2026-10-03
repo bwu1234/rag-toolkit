@@ -580,7 +580,7 @@ before it is adopted, next to its quality row.
   eight searches rewording a Delta query, because Delta's Q2 table ranked
   seventh under reranking and only five are shown. Every search call is now
   recorded per sample (`searches` in the matrix JSON,
-  `TurnRecord.agent_searches`), so whether the model filters, and how often a
+  `TurnRecord.agent_calls`), so whether the model filters, and how often a
   filter comes back empty, can be read from the run.
 - **Streaming the agent's intermediate steps**, which is Milestone 21's SSE work.
 - **A `planned_refine` strategy: a planned turn with one forced gap check.**

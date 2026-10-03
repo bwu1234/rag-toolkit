@@ -476,13 +476,13 @@ def _cmd_chat(args: argparse.Namespace) -> None:
             f"Agent ran {result.tool_calls} search(es) in {result.retrieval_attempts} round(s); "
             f"stopped: {result.stopped_reason}"
         )
-        for search in result.agent_searches:
+        for search in result.agent_calls:
             print(f"  step {search.step}: {search.query!r}")
             if search.filters:
                 print(f"    filter: {json.dumps(search.filters)}")
             elif search.filters_raw is not None:
                 print(f"    filter as sent: {json.dumps(search.filters_raw)}")
-            if search.status == "searched":
+            if search.status == "ran":
                 new = set(search.new_passages)
                 shown = " ".join(f"[{n}]" if n in new else f"([{n}])" for n in search.passages)
                 print(f"    -> {shown or 'nothing'}" + ("  (parenthesized: already shown)" if new != set(search.passages) else ""))

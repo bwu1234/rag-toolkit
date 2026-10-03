@@ -68,7 +68,7 @@ from rag.generation.prompts import (
     strip_citation_markers,
 )
 from rag.generation.query_rewriter import ChatTurn
-from rag.observability.records import AgentSearch, RetrievalAttempt, RetrievedPassage
+from rag.observability.records import AgentToolCall, RetrievalAttempt, RetrievedPassage
 from rag.observability.sink import TurnSink
 from rag.tools import RagTools, build_tool_specs
 from rag.vectorstore.base import ScoredChunk
@@ -155,7 +155,7 @@ class _Run:
     #: (Normalized query, the model's filter) -> the passage numbers its search returned.
     searched: dict[tuple[str, str], list[int]] = field(default_factory=dict)
     #: Every search call the model made, in order: the trajectory `ChatAnswer` reports.
-    searches: list[AgentSearch] = field(default_factory=list)
+    calls: list[AgentToolCall] = field(default_factory=list)
     rounds: int = 0
     steps: int = 0
     dropped_below_min_score: int = 0
@@ -166,7 +166,7 @@ class _Run:
     #: size before it -- what a context overflow rolls back.
     step_message_mark: int | None = None
     step_ledger_mark: int = 0
-    step_search_mark: int = 0
+    step_call_mark: int = 0
     answer: str = ""
 
 
@@ -322,7 +322,7 @@ class AgentService(ChatResponder):
             cited_chunk_ids=[chunks[n - 1].chunk_id for n in parse_cited_passages(run.answer, len(chunks))],
             tool_calls=len(run.queries),
             stopped_reason=stopped,
-            agent_searches=list(run.searches),
+            agent_calls=list(run.calls),
         )
 
     def _history(self, history: list[ChatTurn] | None) -> list[Message]:
@@ -411,12 +411,12 @@ class AgentService(ChatResponder):
         Every call gets a result -- providers pair them up, and Gemini rejects
         a step with a call left unanswered -- but only a new, valid query
         within budget and time spends a search. Every call is also recorded
-        in `run.searches`, refused or not.
+        in `run.calls`, refused or not.
         """
 
         run.step_message_mark = len(run.messages)
         run.step_ledger_mark = len(run.ledger)
-        run.step_search_mark = len(run.searches)
+        run.step_call_mark = len(run.calls)
         searched_this_step = False
         for call in calls:
             query = call.arguments.get("query")
@@ -425,8 +425,8 @@ class AgentService(ChatResponder):
             refusal = filter_error or self._refusal(run, call, model_filter)
             if refusal is not None:
                 content = refusal
-                run.searches.append(
-                    AgentSearch(
+                run.calls.append(
+                    AgentToolCall(
                         step=run.steps,
                         query=query if isinstance(query, str) else "",
                         status="error" if filter_error else "refused",
@@ -437,7 +437,7 @@ class AgentService(ChatResponder):
                 )
             else:
                 content = self._search(run, str(query), model_filter, raw_filters)
-                searched_this_step = searched_this_step or run.searches[-1].status == "searched"
+                searched_this_step = searched_this_step or run.calls[-1].status == "ran"
             run.messages.append(ToolResult(call=call, content=content))
         run.rounds += 1 if searched_this_step else 0
 
@@ -517,8 +517,8 @@ class AgentService(ChatResponder):
             # An argument the model got wrong: tell it, don't fail the turn.
             note = f"Search error: {exc}"
             emit(run.on_event, start, "search_refused", note)
-            run.searches.append(
-                AgentSearch(
+            run.calls.append(
+                AgentToolCall(
                     step=run.steps, query=query, status="error",
                     filters=_filter_dump(model_filter), filters_raw=raw_filters, note=note,
                 )
@@ -531,8 +531,8 @@ class AgentService(ChatResponder):
         numbers = [number for number, _, _ in entries]
         new = [number for number, _, is_new in entries if is_new]
         run.searched[(_normalize(query), _filter_key(model_filter))] = numbers
-        run.searches.append(
-            AgentSearch(
+        run.calls.append(
+            AgentToolCall(
                 step=run.steps,
                 query=query,
                 filters=_filter_dump(model_filter),
@@ -637,10 +637,10 @@ class AgentService(ChatResponder):
             if isinstance(message, ToolResult):
                 run.messages[index] = dataclasses.replace(message, content=note)
         run.ledger.truncate(run.step_ledger_mark)
-        run.searches[run.step_search_mark :] = [
+        run.calls[run.step_call_mark :] = [
             dataclasses.replace(search, passages=[], new_passages=[], chunk_ids=[], note=note)
-            if search.status == "searched" else search
-            for search in run.searches[run.step_search_mark :]
+            if search.status == "ran" else search
+            for search in run.calls[run.step_call_mark :]
         ]
         run.step_message_mark = None
         emit(run.on_event, time.monotonic(), "agent_overflow", "Context window full; answering from earlier passages")

@@ -212,7 +212,7 @@ and groundedness both need to see both sides of the retrieve/generate boundary.
    minus those arguments. It chooses the query, and with
    `agent.model_filters` (off by default, unmeasured) a metadata filter,
    which narrows the turn's `/chat` filter and can't widen it. Every call,
-   refused or not, is recorded on `ChatAnswer.agent_searches`: query and
+   refused or not, is recorded on `ChatAnswer.agent_calls`: query and
    filter as written, and the passages it returned.
 4. **A passage ledger numbers what the model sees**, in first-seen order and
    deduplicated by chunk id. It becomes `ChatAnswer.citations`, so `[n]`

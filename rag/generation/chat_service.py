@@ -31,7 +31,7 @@ from rag.generation.prompts import (
 )
 from rag.generation.query_rewriter import ChatTurn, QueryCondenser
 from rag.observability.records import (
-    AgentSearch,
+    AgentToolCall,
     RetrievalAttempt,
     RetrievedPassage,
     StageEvent,
@@ -163,7 +163,7 @@ class ChatAnswer:
     """Agentic only: searches actually run. Refused calls (duplicates, over the cap) don't count."""
     stopped_reason: StoppedReason | None = None
     """Agentic only: why the agent stopped searching. None for a pipeline turn."""
-    agent_searches: list[AgentSearch] = field(default_factory=list)
+    agent_calls: list[AgentToolCall] = field(default_factory=list)
     """Agentic only: every search call the model made, in order -- its query, filter and what came back."""
 
 
@@ -375,7 +375,7 @@ class ChatResponder(ABC):
             metadata=self._turn_metadata,
             tool_calls=answer.tool_calls if answer is not None else 0,
             stopped_reason=answer.stopped_reason if answer is not None else None,
-            agent_searches=answer.agent_searches if answer is not None else [],
+            agent_calls=answer.agent_calls if answer is not None else [],
         )
         try:
             self._turn_sink.record_turn(record)

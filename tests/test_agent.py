@@ -280,10 +280,10 @@ def test_context_overflow_rolls_back_the_last_step_and_answers_from_earlier_pass
     assert _tool_results(final_messages)[-1].content.startswith("Results not shown")
     assert final_messages[-1] == ChatMessage("user", AGENT_SYNTHESIS_INSTRUCTION)
     # The trace says the same: q2 searched, but showed the model nothing.
-    rolled_back = answer.agent_searches[-1]
-    assert (rolled_back.query, rolled_back.status, rolled_back.passages) == ("q2", "searched", [])
+    rolled_back = answer.agent_calls[-1]
+    assert (rolled_back.query, rolled_back.status, rolled_back.passages) == ("q2", "ran", [])
     assert rolled_back.note is not None and rolled_back.note.startswith("Results not shown")
-    assert answer.agent_searches[0].chunk_ids == ["c1"]
+    assert answer.agent_calls[0].chunk_ids == ["c1"]
 
 
 def test_overflow_with_nothing_to_roll_back_raises() -> None:
@@ -526,7 +526,7 @@ def test_a_model_filter_reaches_retrieval_and_narrows_the_turn_filter() -> None:
     assert tools.filters == [
         QueryFilter(equals={"ticker": "DAL"}, range={"period_end": {"gte": 20260630, "lte": 20260630}})
     ]
-    [search] = answer.agent_searches
+    [search] = answer.agent_calls
     # The trace keeps the model's own filter, as applied and as sent; the
     # turn's is on the record separately.
     assert search.filters == {"range": {"period_end": {"gte": 20260630, "lte": 20260630}}}
@@ -542,7 +542,7 @@ def test_a_model_filter_that_contradicts_the_turn_filter_is_an_error_not_a_searc
     )
 
     assert tools.searches == [] and answer.tool_calls == 0
-    [search] = answer.agent_searches
+    [search] = answer.agent_calls
     assert search.status == "error" and "ticker" in (search.note or "")
     assert _tool_results(llm.calls[1][0])[0].content.startswith("Search error:")
 
@@ -558,8 +558,8 @@ def test_the_same_query_under_another_filter_is_a_new_search_and_the_same_one_is
     answer = _agent(llm, tools, model_filters=True).ask("question")
 
     assert answer.tool_calls == 2
-    assert [s.status for s in answer.agent_searches] == ["searched", "searched", "refused"]
-    assert "[filter: ticker=DAL]" in (answer.agent_searches[2].note or "")
+    assert [s.status for s in answer.agent_calls] == ["ran", "ran", "refused"]
+    assert "[filter: ticker=DAL]" in (answer.agent_calls[2].note or "")
 
 
 def test_the_same_filter_written_in_another_order_is_a_repeat() -> None:
@@ -571,7 +571,7 @@ def test_the_same_filter_written_in_another_order_is_a_repeat() -> None:
     answer = _agent(llm, tools, model_filters=True).ask("question")
 
     assert answer.tool_calls == 1
-    assert [s.status for s in answer.agent_searches] == ["searched", "refused"]
+    assert [s.status for s in answer.agent_calls] == ["ran", "refused"]
 
 
 def test_an_invalid_filter_is_reported_to_the_model_without_spending_a_search() -> None:
@@ -581,7 +581,7 @@ def test_an_invalid_filter_is_reported_to_the_model_without_spending_a_search() 
     answer = _agent(llm, tools, model_filters=True).ask("question")
 
     assert tools.searches == []
-    [search] = answer.agent_searches
+    [search] = answer.agent_calls
     assert search.status == "error" and (search.note or "").startswith("Search error: invalid filters")
 
 
@@ -592,7 +592,7 @@ def test_a_filter_sent_while_model_filters_is_off_is_rejected_not_dropped() -> N
     answer = _agent(llm, tools).ask("question")
 
     assert tools.searches == []
-    assert answer.agent_searches[0].status == "error"
+    assert answer.agent_calls[0].status == "error"
 
 
 def test_a_filtered_search_matching_nothing_blames_the_filter_not_the_index() -> None:
@@ -619,10 +619,10 @@ def test_the_search_trace_records_every_call_with_its_step_passages_and_repeats(
 
     answer = _agent(llm, tools).ask("question")
 
-    rows = [(s.step, s.query, s.status, s.passages, s.new_passages, s.chunk_ids) for s in answer.agent_searches]
+    rows = [(s.step, s.query, s.status, s.passages, s.new_passages, s.chunk_ids) for s in answer.agent_calls]
     assert rows == [
-        (1, "q1", "searched", [1, 2], [1, 2], ["a", "b"]),
-        (2, "q2", "searched", [2, 3], [3], ["b", "c"]),
+        (1, "q1", "ran", [1, 2], [1, 2], ["a", "b"]),
+        (2, "q2", "ran", [2, 3], [3], ["b", "c"]),
         (2, "q1", "refused", [], [], []),
         (2, "", "refused", [], [], []),
     ]
@@ -636,8 +636,8 @@ def test_a_filter_sent_as_a_json_string_is_decoded() -> None:
     answer = _agent(llm, tools, model_filters=True).ask("question")
 
     assert tools.filters == [QueryFilter(equals={"ticker": "DAL"})]
-    assert answer.agent_searches[0].filters == {"equals": {"ticker": "DAL"}}
-    assert answer.agent_searches[0].filters_raw == '{"equals": {"ticker": "DAL"}}'
+    assert answer.agent_calls[0].filters == {"equals": {"ticker": "DAL"}}
+    assert answer.agent_calls[0].filters_raw == '{"equals": {"ticker": "DAL"}}'
 
 
 def test_an_invalid_filter_error_names_the_field_without_pydantic_boilerplate() -> None:
@@ -645,9 +645,9 @@ def test_an_invalid_filter_error_names_the_field_without_pydantic_boilerplate() 
 
     answer = _agent(llm, _FakeTools(), model_filters=True).ask("question")
 
-    first, second = (s.note or "" for s in answer.agent_searches)
+    first, second = (s.note or "" for s in answer.agent_calls)
     # A rejected filter has no applied form; what the model sent is the only record.
-    assert [(s.filters, s.filters_raw) for s in answer.agent_searches] == [
+    assert [(s.filters, s.filters_raw) for s in answer.agent_calls] == [
         (None, "not json"), (None, {"equals": {"ticker": 7}}),
     ]
     assert first == "Search error: invalid filters: not a JSON object."
