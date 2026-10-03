@@ -33,7 +33,7 @@ import streamlit as st
 
 from rag.config.settings import RagConfig, load_config
 from rag.events import PipelineEvent
-from rag.generation.builder import build_chat_service
+from rag.chat import build_chat_service
 from rag.generation.chat_service import ChatAnswer, ChatResponder
 from rag.logging_config import configure_logging
 from rag.observability.factory import get_turn_sink

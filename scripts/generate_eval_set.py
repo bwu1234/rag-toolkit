@@ -73,7 +73,7 @@ from rag.chunking.models import Chunk  # noqa: E402
 from rag.config.settings import RagConfig, load_config  # noqa: E402
 from rag.eval.dataset import EvalDataset, EvalSample, ExpectedSpan  # noqa: E402
 from rag.eval.relevance import normalize  # noqa: E402
-from rag.generation.factory import get_llm_client  # noqa: E402
+from rag.llm.factory import get_llm_client  # noqa: E402
 from rag.ingestion.cleaners import clean_documents  # noqa: E402
 from rag.ingestion.loaders import load_corpus  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402

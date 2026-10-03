@@ -10,10 +10,10 @@ not-yet-implemented error rather than `Unknown provider`.
 from __future__ import annotations
 
 from rag.config.settings import REPO_ROOT, LLMConfig
-from rag.generation.daily_budget import DailyRequestCounter
-from rag.generation.gemini_llm import GeminiLLMClient, api_key_from_env
-from rag.generation.llm import LLMClient
-from rag.generation.ollama_llm import OllamaLLMClient
+from rag.llm.daily_budget import DailyRequestCounter
+from rag.llm.gemini_llm import GeminiLLMClient, api_key_from_env
+from rag.llm.base import LLMClient
+from rag.llm.ollama_llm import OllamaLLMClient
 
 _KNOWN_BUT_UNIMPLEMENTED = {"anthropic", "openai"}
 

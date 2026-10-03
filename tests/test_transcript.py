@@ -13,9 +13,9 @@ from pathlib import Path
 
 import pytest
 
-from rag.generation.agent import AgentService
+from rag.agent.service import AgentService
 from rag.generation.chat_service import ChatService
-from rag.generation.llm import AssistantTurn, ChatMessage, LLMUsage, Message, ToolCall, ToolDefinition
+from rag.llm.base import AssistantTurn, ChatMessage, LLMUsage, Message, ToolCall, ToolDefinition
 from rag.observability.records import TurnRecord
 from rag.observability.transcript import _fence, render_turn_markdown, write_trace
 from rag.observability.usage import MeteredLLMClient, metered, metered_client

@@ -18,8 +18,8 @@ from rag.chunking.contextualizer import ChunkContextualizer
 from rag.chunking.models import Chunk, content_hash
 from rag.config.settings import CorpusSelection, RagConfig, load_config
 from rag.embedding.factory import get_embedder
-from rag.generation.builder import build_chat_service
-from rag.generation.factory import get_llm_client
+from rag.chat import build_chat_service
+from rag.llm.factory import get_llm_client
 from rag.index_manifest import (
     INDEX_SECTIONS,
     IndexManifest,

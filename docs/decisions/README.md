@@ -33,9 +33,10 @@ For how the pieces fit together at runtime, read
 | [0013](0013-turn-log-observability.md) | One append-only turn log, metered at the client, written only by human-facing entrypoints | Observability |
 | [0014](0014-mcp-server-scope.md) | MCP server: read-only tools, one protocol revision | Integration |
 | [0015](0015-agentic-default.md) | Agentic search is the default; supersedes 0009 | Generation |
+| [0016](0016-package-boundaries.md) | One repo; agent, pipeline and model clients as separate packages, one-way imports enforced in CI | Architecture |
 
 0001–0014 were recorded on 2026-10-03, after the fact, from the docs they
-link to. 0015 was decided that day.
+link to. 0015 and 0016 were decided that day.
 
 ### Adding a record
 

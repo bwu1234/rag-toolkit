@@ -15,9 +15,9 @@ from rag.chunking.models import Chunk
 from rag.config.settings import ChatConfig, CragConfig, RagConfig
 from rag.eval.dataset import EvalSample, ExpectedSpan
 from rag.eval.oracle import OracleRetriever, build_oracle_retriever, gold_chunks
-from rag.generation.builder import build_chat_service
+from rag.chat import build_chat_service
 from rag.generation.chat_service import ChatService
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 
 
 def _chunk(chunk_id: str, text: str, doc: str = "A.md") -> Chunk:

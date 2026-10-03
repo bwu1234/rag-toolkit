@@ -121,7 +121,7 @@ from rag.eval.dataset import (  # noqa: E402
     ExpectedSpan,
 )
 from rag.eval.relevance import normalize  # noqa: E402
-from rag.generation.factory import get_llm_client  # noqa: E402
+from rag.llm.factory import get_llm_client  # noqa: E402
 from rag.ingestion.cleaners import clean_documents  # noqa: E402
 from rag.ingestion.loaders import load_corpus  # noqa: E402
 from rag.ingestion.models import Document  # noqa: E402

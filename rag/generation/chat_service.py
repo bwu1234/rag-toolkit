@@ -21,7 +21,7 @@ from typing import Any, Literal
 from rag.events import EventSink, PipelineEvent, emit
 from rag.query_filter import QueryFilter
 from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryRewriter
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 from rag.config.settings import PromptStyle
 from rag.generation.prompts import (
     REGROUND_SYSTEM_PROMPT,

@@ -33,6 +33,12 @@ implementations can be swapped via config alone.
 Pipeline code never references concrete classes — only the interfaces and the
 config-driven factories. To add an implementation, use the `add-provider` skill.
 
+Package dependencies run one way: retrieval never imports the agent or the
+pipeline, and the agent reaches retrieval only through `rag.tools`.
+`lint-imports` enforces this (contracts in `pyproject.toml`, CI runs it; see
+[ADR 0016](docs/decisions/0016-package-boundaries.md)). If it fails, route
+the call through `rag.tools` rather than adding an exception.
+
 ## Config
 
 All component selection and tunables live in `rag/config/config.yaml`,
@@ -42,7 +48,7 @@ code — read them from `RagConfig`.
 
 `chat.mode: agentic` (the default since
 [ADR 0015](docs/decisions/0015-agentic-default.md)) answers with an agent that
-calls search as a tool (`rag/generation/agent.py`, settings under `agent:`),
+calls search as a tool (`rag/agent/service.py`, settings under `agent:`),
 instead of the retrieve-then-generate pipeline. With the 27b as `agent.llm`
 it closes most of the multi-hop gap, at 1–2 minutes per hard question; the 9b
 agent gains nothing, so never leave `agent.llm` null under agentic.
@@ -99,7 +105,8 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 
 - Tests: `pytest` (`-m "not live"` skips the few that call a local Ollama;
   they also skip themselves when it isn't running; the Gemini one spends quota
-  and runs only with `RAG_GEMINI_LIVE=1`). Before finishing, also run what CI runs: `ruff check .` and
+  and runs only with `RAG_GEMINI_LIVE=1`). Before finishing, also run what CI runs: `ruff check .`,
+  `lint-imports` (package boundaries) and
   `mypy --ignore-missing-imports rag` (mypy is scoped to `rag/` on purpose —
   tests use structural fakes that nominal typing flags falsely).
 - Chunk and index health: `python -m rag.cli index-report` (read-only, no

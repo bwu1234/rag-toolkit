@@ -197,7 +197,7 @@ class LLMConfig(BaseModel):
     # every request this machine sends to the model in `daily_request_log`
     # (relative to the repo) and refuses once the day's count reaches
     # `requests_per_day - requests_per_day_reserve`, so no one caller can spend
-    # the whole day (see rag.generation.daily_budget). None = no daily count.
+    # the whole day (see rag.llm.daily_budget). None = no daily count.
     requests_per_day: int | None = Field(default=None, gt=0)
     requests_per_day_reserve: int = Field(default=0, ge=0)
     daily_request_log: str = "data/logs/llm_daily_requests.json"
@@ -660,7 +660,7 @@ class AgentConfig(BaseModel):
     """Agentic retrieval (Milestone 19): the model searches as a tool, as often as it needs.
 
     Read only when `chat.mode: agentic` builds the agent
-    (`rag.generation.agent`); the pipeline never reads it. See
+    (`rag.agent.service`); the pipeline never reads it. See
     `docs/milestone-19-plan.md` for why each guard exists -- every one answers
     a failure the prototype showed.
     """

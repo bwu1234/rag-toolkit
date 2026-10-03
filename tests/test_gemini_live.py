@@ -14,8 +14,8 @@ import os
 import pytest
 
 from rag.config.settings import DEFAULT_CONFIG_PATH, load_config
-from rag.generation.factory import get_llm_client
-from rag.generation.llm import ChatMessage, ToolCallingLLM, ToolDefinition, ToolResult
+from rag.llm.factory import get_llm_client
+from rag.llm.base import ChatMessage, ToolCallingLLM, ToolDefinition, ToolResult
 
 pytestmark = [
     pytest.mark.live,

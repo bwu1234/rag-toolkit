@@ -50,7 +50,7 @@ from rag.generation.chat_service import (
     TurnTrace,
     to_citation,
 )
-from rag.generation.calculator import (
+from rag.agent.calculator import (
     CALCULATOR_DEFINITION,
     CALCULATOR_TOOL,
     CalculatorError,
@@ -58,7 +58,7 @@ from rag.generation.calculator import (
     format_result,
 )
 from rag.generation.crag import GroundednessChecker
-from rag.generation.llm import (
+from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
     ContextOverflowError,
@@ -68,8 +68,8 @@ from rag.generation.llm import (
     ToolDefinition,
     ToolResult,
 )
+from rag.agent.prompts import AGENT_SYNTHESIS_INSTRUCTION
 from rag.generation.prompts import (
-    AGENT_SYNTHESIS_INSTRUCTION,
     format_passage,
     parse_cited_passages,
     strip_citation_markers,

@@ -12,8 +12,8 @@ import pytest
 
 import rag.mcp.tools as mcp_tools
 from rag.config.settings import RagConfig
-from rag.generation.gemini_llm import _declaration
-from rag.generation.ollama_llm import _tool_to_wire
+from rag.llm.gemini_llm import _declaration
+from rag.llm.ollama_llm import _tool_to_wire
 from rag.mcp.fallback import FallbackServer
 from rag.retrieval.retriever import RetrievalResult
 from rag.tools import RagTools, ToolSpec, build_tool_specs

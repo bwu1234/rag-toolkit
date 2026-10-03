@@ -30,9 +30,9 @@ sys.path.insert(0, str(REPO))
 from rag.config.settings import load_config  # noqa: E402
 from rag.eval.answer_eval import run_answer_eval, subsample  # noqa: E402
 from rag.eval.dataset import EvalDataset  # noqa: E402
-from rag.generation.builder import build_chat_service  # noqa: E402
-from rag.generation.factory import get_llm_client  # noqa: E402
-from rag.generation.ollama_llm import OllamaLLMClient  # noqa: E402
+from rag.chat import build_chat_service  # noqa: E402
+from rag.llm.factory import get_llm_client  # noqa: E402
+from rag.llm.ollama_llm import OllamaLLMClient  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
 
 # Another Ollama client on this machine can force model reloads that drop an

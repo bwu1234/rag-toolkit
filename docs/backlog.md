@@ -223,7 +223,7 @@ land.
   (Secret Manager on Cloud Run), never from `config.yaml` or a committed file.
   Distinguish daily-quota exhaustion from transient rate limiting using provider error details and/or `Retry-After`; only report the daily budget as spent when that condition is confirmed.
   Hermetic tests against a mocked transport, like the Ollama adapter's.
-  **Shipped early** (`rag/generation/gemini_llm.py`) to run the Gemma 4 31B
+  **Shipped early** (`rag/llm/gemini_llm.py`) to run the Gemma 4 31B
   judge off the local GPU. It paces itself under `requests_per_minute` /
   `tokens_per_minute` and raises `GeminiDailyQuotaExhausted` only when the
   429's `QuotaFailure.quotaId` names a per-day quota. The in-app daily
@@ -242,7 +242,7 @@ land.
   ceiling of a few hundred turns a day on the whole deployment.
   - Keep an in-app daily counter that refuses at a margin below the quota, so
     one caller can't use up everyone's day. Milestone 28's per-key rate limit
-    covers bursts, not this. **Shipped** (`rag/generation/daily_budget.py`):
+    covers bursts, not this. **Shipped** (`rag/llm/daily_budget.py`):
     `llm.requests_per_day` and `requests_per_day_reserve` (500 and 50 in both
     Flash-Lite configs). Every process on one machine shares a count per
     model per Pacific day, in `data/logs/llm_daily_requests.json`. Replicas

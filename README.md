@@ -253,18 +253,21 @@ inherits.
 
 ```text
 rag/
+  agent/          the agentic responder: loop, prompts, calculator, builder
   api/            FastAPI app and routes
   chunking/       chunkers and the contextual-chunking cache
   config/         config.yaml and its pydantic settings
   embedding/      embedding adapters
   eval/           retrieval, answer, and multi-hop evaluation
-  generation/     prompts, LLM clients (Ollama, Gemini), chat service, CRAG, agent
+  generation/     the retrieve-then-generate pipeline: prompts, chat service, CRAG
   ingestion/      document loaders and cleaners
+  llm/            LLM clients (Ollama, Gemini), the tool-calling interface, daily budget
   mcp/            MCP server and transports
   observability/  turn records, LLM usage metering, feedback sink
   retrieval/      dense/sparse retrieval, RRF, rerankers, query expansion, document routing
   ui/             Streamlit UI
   vectorstore/    vector store adapters
+  chat.py         build_chat_service: picks the pipeline or the agent by chat.mode
   tools.py        the rag_search / rag_list_corpora tools, shared by MCP and the agent
   query_filter.py typed metadata filter (QueryFilter)
   index_manifest.py, index_report.py   index settings guard and health report

@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from rag.config.settings import QueryExpansionConfig, RerankerConfig, SparseIndexConfig
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 from rag.retrieval.cross_encoder_reranker import CrossEncoderReranker
 from rag.retrieval.expansion import (
     HyDEQueryExpander,

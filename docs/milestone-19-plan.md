@@ -166,7 +166,7 @@ Search count and cap-hit rate come with the agent in phase 3.
 **Done.** What shipped, and where it departs from the original bullets:
 
 - `ToolCallingLLM(LLMClient)` with `chat(messages, tools) -> AssistantTurn`
-  in `rag/generation/llm.py`, plus provider-neutral `ToolDefinition`,
+  in `rag/llm/base.py`, plus provider-neutral `ToolDefinition`,
   `ToolCall` (with the provider's call `id`), `ChatMessage` and `ToolResult`.
   The returned `AssistantTurn` is also the assistant message sent back on the
   next call, so tool calls and any `thinking` trace round-trip unchanged.
@@ -179,7 +179,7 @@ Search count and cap-hit rate come with the agent in phase 3.
 - `MeteredToolCallingLLM` in `rag/observability/usage.py`, and
   `metered_client()`, which picks the wrapper that matches the inner client.
   `build_chat_service` uses it. `build_agent_llm(config)` in
-  `rag/generation/builder.py` builds the agent's metered client from
+  `rag/agent/builder.py` builds the agent's metered client from
   `agent.llm or llm`, and raises at build time when the provider has no tool
   support. (That was Gemini until the Gemini adapter gained `chat()`; see
   the note after this list.)
@@ -276,7 +276,7 @@ selection would be measuring a different index.
 ### 3 — Agent loop
 
 **Done.** `chat.mode: agentic` builds an `AgentService`
-(`rag/generation/agent.py`), with both strategies, the ledger and every guard
+(`rag/agent/service.py`), with both strategies, the ledger and every guard
 from decision 6. What shipped, and where it departs from the original bullets:
 
 - **`ChatResponder`, a base class both responders share.** Decision 4 wanted
@@ -324,7 +324,7 @@ from decision 6. What shipped, and where it departs from the original bullets:
   On `ContextOverflowError`, the latest step's results are replaced with a
   note, their passages leave the ledger (so they can't be cited), and the
   forced turn answers. If there's no step to roll back, the error propagates.
-  `ContextOverflowError` moved to `rag/generation/llm.py` so the agent needn't
+  `ContextOverflowError` moved to `rag/llm/base.py` so the agent needn't
   import a concrete adapter.
 - **`stopped_reason` gained `empty`** (2026-10-03).
   - *The trigger.* On `edgar_md`, the 27b with default thinking returned
@@ -529,7 +529,7 @@ three things before adopting it:
   only the OpenAI, Anthropic and Google SDK APIs. `OllamaLLM` calls Ollama's
   native `/api/chat` over httpx, so the bridge would not see it. The fit here
   is an `inspect` `LLMClient` provider that delegates to Inspect's model API
-  (use the `add-provider` skill). Then `rag/generation/agent.py` runs
+  (use the `add-provider` skill). Then `rag/agent/service.py` runs
   unchanged and every call lands in the transcript.
 - **Pairing against the pipeline baseline.** Inspect reports each run's own
   standard error, not a paired difference. The default-flip criterion
@@ -681,7 +681,7 @@ documents, adds no ledger passages, isn't served over MCP, and spends no
 It answers a different failure: a figure the filings don't print (a
 percentage change between two printed amounts, a margin, a cross-company
 ratio) computed in the model's reasoning, unchecked.
-*Built, not measured (2026-10-03):* `rag.generation.calculator`, a safe `ast`
+*Built, not measured (2026-10-03):* `rag.agent.calculator`, a safe `ast`
 evaluator (numbers, `+ - * / // % **`, `abs`/`round`/`min`/`max`, bounded
 exponents and length). It refuses thousands separators, `$` and `%` with a
 message rather than misreading them: `max(4,109)` would otherwise be 109.

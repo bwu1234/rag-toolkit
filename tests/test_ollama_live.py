@@ -16,9 +16,9 @@ import httpx
 import pytest
 
 from rag.config.settings import load_config
-from rag.generation.builder import build_agent_llm
-from rag.generation.llm import ChatMessage, ToolDefinition, ToolResult
-from rag.generation.ollama_llm import ContextOverflowError, OllamaLLMClient
+from rag.agent.builder import build_agent_llm
+from rag.llm.base import ChatMessage, ToolDefinition, ToolResult
+from rag.llm.ollama_llm import ContextOverflowError, OllamaLLMClient
 from rag.observability.usage import metered
 
 pytestmark = pytest.mark.live

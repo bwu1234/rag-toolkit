@@ -18,7 +18,7 @@ from typing import Any
 
 import httpx
 
-from rag.generation.llm import (
+from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
     ContextOverflowError,

@@ -36,7 +36,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 
 logger = logging.getLogger(__name__)
 

@@ -52,7 +52,7 @@ from dataclasses import replace
 
 from rag.chunking.context_cache import ContextCache, fingerprint
 from rag.chunking.models import Chunk
-from rag.generation.llm import LLMClient
+from rag.llm.base import LLMClient
 from rag.ingestion.models import Document
 
 logger = logging.getLogger(__name__)

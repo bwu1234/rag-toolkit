@@ -55,10 +55,10 @@ from rag.config.settings import LLMConfig, LLMProvider, RagConfig, load_config
 from rag.eval.dataset import EvalDataset, EvalSample
 from rag.eval.relevance import sample_unmatched_spans
 from rag.eval.oracle import add_oracle_argument, build_oracle_retriever
-from rag.generation.builder import build_chat_service
+from rag.chat import build_chat_service
 from rag.generation.chat_service import ChatResponder
-from rag.generation.factory import get_llm_client
-from rag.generation.llm import LLMClient
+from rag.llm.factory import get_llm_client
+from rag.llm.base import LLMClient
 from rag.logging_config import configure_logging
 from rag.observability.records import AgentToolCall
 
