@@ -59,6 +59,47 @@ class RetrievalAttempt:
     """Documents `retrieval.document_routing` filtered this attempt to; empty if it didn't."""
 
 
+AgentSearchStatus = Literal["searched", "refused", "error"]
+"""What became of an agent's search call: run, refused by a loop guard, or rejected as invalid."""
+
+
+@dataclass(frozen=True)
+class AgentSearch:
+    """One `rag_search` call an agent's model made, as written, and what it got back.
+
+    The agent's trajectory in order: every call, including the ones a guard
+    refused (a repeat, the budget) and the ones with bad arguments, because
+    those are the decisions that explain how a turn spent its searches. A
+    `RetrievalAttempt` exists only for the calls that searched, and carries
+    the retrieval side (scores, candidate counts) instead.
+
+    `passages` are the ledger numbers the result showed, in rank order --
+    the `[n]` the answer cites -- and `new_passages` the ones it showed for
+    the first time; the rest came back as "already shown" stubs.
+    """
+
+    step: int
+    """Which model call asked for it, from 1. Calls from one step share it."""
+    query: str
+    status: AgentSearchStatus = "searched"
+    filters: dict[str, Any] | None = None
+    """The model's filter as applied: validated, dates as YYYYMMDD. None when it set none or it was invalid.
+    The turn's own filter is `query_filter`."""
+    filters_raw: Any = None
+    """The `filters` argument exactly as the model sent it -- a JSON-encoded string, an object, or
+    something invalid. What `filters` was parsed from, and the only record of a rejected one."""
+    note: str | None = None
+    """For a refused or rejected call, the reason the model was shown."""
+    passages: list[int] = field(default_factory=list)
+    new_passages: list[int] = field(default_factory=list)
+    chunk_ids: list[str] = field(default_factory=list)
+    """The chunk behind each of `passages`, in the same order."""
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AgentSearch:
+        return cls(**data)
+
+
 @dataclass(frozen=True)
 class StageEvent:
     """A persisted `PipelineEvent` -- the live UI trace, kept."""
@@ -110,6 +151,8 @@ class TurnRecord:
     """Agentic turns: searches run. Each one is also an entry in `attempts`."""
     stopped_reason: str | None = None
     """Agentic turns: `answered`, `cap`, `timeout` or `context`. None for a pipeline turn."""
+    agent_searches: list[AgentSearch] = field(default_factory=list)
+    """Agentic turns: every search call the model made, in order, refused ones included."""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

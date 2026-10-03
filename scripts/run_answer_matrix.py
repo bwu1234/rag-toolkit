@@ -128,7 +128,7 @@ import logging
 import re
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, get_args
 
@@ -167,6 +167,7 @@ from rag.generation.chat_service import ChatResponder  # noqa: E402
 from rag.generation.factory import get_llm_client  # noqa: E402
 from rag.generation.llm import LLMClient  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
+from rag.observability.records import AgentSearch  # noqa: E402
 from rag.observability.usage import metered_client  # noqa: E402
 
 logger = logging.getLogger(__name__)
@@ -282,12 +283,24 @@ M19_VARIANTS: list[Variant] = [
     Variant("oracle / 9b", _PIPELINE, oracle=True),
     Variant("agentic react / 9b", {**_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_9B}),
     Variant("agentic planned / 9b", {**_AGENTIC, "agent.strategy": "planned", "agent.llm": _AGENT_9B}),
+    # The model filters its own searches (`agent.model_filters`); pairs with
+    # `agentic react / 9b`. The milestone 19 plan's row: the 9b stops after one
+    # round, so a filter on that round is its only way to aim it.
+    Variant("agentic react / 9b + filters", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_9B, "agent.model_filters": True,
+    }),
     # The control for the 27b agent: the same model and settings answering once,
     # so pipeline / 27b vs agentic react / 27b is the loop alone.
     Variant("pipeline / 27b", {"chat.mode": "pipeline", "crag.enabled": False, "llm": _AGENT_27B}),
     Variant("agentic react / 27b", {**_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_27B}),
     Variant("agentic react / 27b, think=low", {
         **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
+    }),
+    # The same for the recommended opt-in agent; pairs with the row above, so
+    # the difference is the filter argument and its prompt hint.
+    Variant("agentic react / 27b, think=low + filters", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
+        "agent.model_filters": True,
     }),
     # The agent's checker reports a verdict and changes nothing, so this row's
     # answers match the plain 27b row's up to sampling; what it measures is
@@ -512,7 +525,7 @@ def run_one(
         "samples": [
             {"id": r.sample_id, "passed": r.passed, "evidence_retrieved": r.evidence_retrieved,
              "grounded": r.grounded, "llm_calls": r.llm_calls, "latency_s": round(r.latency_s, 1),
-             "answer": r.actual_answer}
+             "answer": r.actual_answer, **_searches(r.agent_searches)}
             for r in report.sample_results
         ],
     }
@@ -582,6 +595,7 @@ def run_musique(
                 "llm_calls": r.llm_calls, "llm_ms": round(r.llm_ms),
                 "prompt_tokens": r.prompt_tokens, "completion_tokens": r.completion_tokens,
                 "latency_s": round(r.latency_s, 1), "answer": r.actual_answer,
+                **_searches(r.agent_searches),
             }
             for r in report.sample_results
         ],
@@ -646,10 +660,20 @@ def run_multihop(
                 "grounded": r.grounded,
                 "latency_s": round(r.latency_s, 1),
                 "answer": r.actual_answer,
+                **_searches(r.agent_searches),
             }
             for r in report.sample_results
         ],
     }
+
+
+def _searches(searches: list[AgentSearch]) -> dict[str, Any]:
+    """An agentic sample's trajectory, for reading a run without re-running it.
+
+    Every search call, its query and filter as the model wrote them, and the
+    passages each returned. Absent on pipeline samples.
+    """
+    return {"searches": [asdict(s) for s in searches]} if searches else {}
 
 
 def _round_or_none(value: float | None) -> float | None:

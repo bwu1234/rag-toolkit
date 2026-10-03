@@ -543,7 +543,7 @@ leave the agentic rows on the run store with the rest.
 as it does the pipeline's ([known limitations](known-limitations.md)).
 Today that can corrupt an answer or steer the next search, but it can't
 trigger a side effect: the agent's only tool, `rag_search`, is read-only, and
-`corpus`, `top_k`, `max_chars` and `filters` are pinned. That is why
+`corpus`, `top_k`, `max_chars` and (by default) `filters` are pinned. That is why
 tool-hijack benchmarks (InjecAgent, ToolEmu, AgentHarm) don't apply yet.
 Four follow-ups below widen the surface: model-set filters let injected text
 narrow the search, the [navigation tools](#tool-surface-navigation-not-only-search)
@@ -569,6 +569,19 @@ before it is adopted, next to its quality row.
   `AgentService._search`. Intersect proposed filters with the caller's scope,
   never replace or widen it. Add a matrix row, `agentic react / 9b + filters`,
   to measure helpful narrowing versus filters that exclude the answer.
+  *Built, not measured (2026-10-03):* `agent.model_filters` (default off)
+  offers the argument, intersects it with the turn's filter
+  (`QueryFilter.intersect`; a contradiction is a tool error, not an empty
+  search), keys repeat-refusal on query and filter, and says "no passages
+  match the filter" rather than "the index is empty" when a filtered search
+  finds nothing. The matrix has `agentic react / 9b + filters` and
+  `agentic react / 27b, think=low + filters`, each paired with the row
+  without. The motivating trace: on `ad-airline-fuel` the 27b spent four of
+  eight searches rewording a Delta query, because Delta's Q2 table ranked
+  seventh under reranking and only five are shown. Every search call is now
+  recorded per sample (`searches` in the matrix JSON,
+  `TurnRecord.agent_searches`), so whether the model filters, and how often a
+  filter comes back empty, can be read from the run.
 - **Streaming the agent's intermediate steps**, which is Milestone 21's SSE work.
 - **A `planned_refine` strategy: a planned turn with one forced gap check.**
   After the planned searches, make one structured call ("which sub-question is

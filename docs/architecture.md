@@ -208,8 +208,12 @@ and groundedness both need to see both sides of the retrieve/generate boundary.
    answering call.
 3. **Every search goes through `RagTools.retrieve`**, the path MCP's
    `rag_search` uses, so it is `Retriever.retrieve` as above. The turn fixes
-   `corpus`, `top_k`, `max_chars` and `filters`; the model is offered the
-   MCP schema minus those arguments and chooses only the query.
+   `corpus`, `top_k` and `max_chars`; the model is offered the MCP schema
+   minus those arguments. It chooses the query, and with
+   `agent.model_filters` (off by default, unmeasured) a metadata filter,
+   which narrows the turn's `/chat` filter and can't widen it. Every call,
+   refused or not, is recorded on `ChatAnswer.agent_searches`: query and
+   filter as written, and the passages it returned.
 4. **A passage ledger numbers what the model sees**, in first-seen order and
    deduplicated by chunk id. It becomes `ChatAnswer.citations`, so `[n]`
    means the same thing in both modes.

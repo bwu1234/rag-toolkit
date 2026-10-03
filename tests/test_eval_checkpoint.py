@@ -18,6 +18,7 @@ from rag.eval.checkpoint import CheckpointMismatch, SampleCheckpoint
 from rag.eval.dataset import EvalDataset
 from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval
 from rag.generation.chat_service import ChatAnswer, ChatService
+from rag.observability.records import AgentSearch
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
@@ -124,6 +125,30 @@ def test_multihop_result_survives_a_json_round_trip() -> None:
     restored = MultihopSampleResult.from_dict(json.loads(json.dumps(original.to_dict())))
 
     assert restored == original
+
+
+def test_an_agent_trace_survives_the_checkpoint_and_lands_in_the_matrix_record() -> None:
+    searches = [
+        AgentSearch(step=1, query="fuel", filters={"equals": {"ticker": "DAL"}},
+                    passages=[1, 2], new_passages=[1, 2], chunk_ids=["a", "b"]),
+        AgentSearch(step=2, query="fuel", status="refused", note="Already searched"),
+    ]
+
+    class _Agent(_CountingChat):
+        def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+            return ChatAnswer(answer="a", agent_searches=searches)
+
+    multihop = run_multihop_eval(_multihop(1), _Agent(), _PassJudge()).sample_results[0]
+    answer = run_answer_eval(
+        EvalDataset.from_dicts([{"id": "s", "query": "q", "expected_answer": "a"}]), _Agent(), _PassJudge()
+    ).sample_results[0]
+
+    for result in (multihop, answer):
+        restored = type(result).from_dict(json.loads(json.dumps(result.to_dict())))
+        assert restored == result and restored.agent_searches == searches
+    record = run_answer_matrix._searches(multihop.agent_searches)
+    assert record["searches"][0]["query"] == "fuel" and record["searches"][1]["status"] == "refused"
+    assert run_answer_matrix._searches([]) == {}
 
 
 def test_multihop_reuses_completed_samples_without_asking_or_judging_them() -> None:

@@ -184,7 +184,7 @@ AGENT_SYSTEM_PROMPT = (
     "the whole conversation. Make every query standalone: name the specific "
     "entity, period, product or topic it is about, because the search sees "
     "only the query, not this conversation. A question about several entities "
-    "or periods needs a separate search for each. {iterate}\n\n"
+    "or periods needs a separate search for each.{filters} {iterate}\n\n"
     "Answer only from the passages, citing them inline as [n], e.g. [2] or "
     "[3][5]. Do not add facts from your own knowledge, not even as background "
     "or 'for reference'. If the passages don't answer the question, or answer "
@@ -204,7 +204,23 @@ _PLANNED_ITERATE = (
 )
 
 
-def agent_system_prompt(strategy: str, corpus_descriptions: list[tuple[str, str | None]]) -> str:
+# Only with `agent.model_filters` on. The tool's own `filters` description
+# says what the fields are; this says when to reach for one, and what to do
+# when it finds nothing -- the failure a self-chosen filter adds.
+_FILTERS_HINT = (
+    " When the question names a company or period, pass rag_search a filter "
+    "for it, so passages about other companies or periods can't crowd out the "
+    "one you need. If a filtered search finds nothing, check the filter's "
+    "values or search without it."
+)
+
+
+def agent_system_prompt(
+    strategy: str,
+    corpus_descriptions: list[tuple[str, str | None]],
+    *,
+    model_filters: bool = False,
+) -> str:
     """The agent's system prompt for `strategy`, naming the corpora it searches.
 
     The corpus description is what lets the model decide *whether* to search
@@ -215,7 +231,8 @@ def agent_system_prompt(strategy: str, corpus_descriptions: list[tuple[str, str 
     described = [f"- {name}: {' '.join(text.split())}" for name, text in corpus_descriptions if text]
     corpus = "\n\nThe corpus:\n" + "\n".join(described) if described else ""
     iterate = _PLANNED_ITERATE if strategy == "planned" else _REACT_ITERATE
-    return AGENT_SYSTEM_PROMPT.format(iterate=iterate, corpus=corpus)
+    filters = _FILTERS_HINT if model_filters else ""
+    return AGENT_SYSTEM_PROMPT.format(iterate=iterate, corpus=corpus, filters=filters)
 
 
 # Sent as its own user message before the forced tool-free turn. Where it goes

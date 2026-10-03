@@ -103,10 +103,10 @@
   from the shipped template (`index-report` shows the count).
 - **Metadata filters come only from the caller.** `POST /chat` and MCP
   `rag_search` take `filters`. The UI and `cli chat` don't, nothing extracts
-  them from question text (Milestone 20), and the agent's `filters` argument
-  is pinned to the turn's rather than chosen by the model (Milestone 19). The
-  measured gain from a period filter is therefore unavailable to most
-  traffic.
+  them from question text (Milestone 20), and the agent sets its own only
+  with `agent.model_filters`, which is off until its matrix rows and the
+  injection tier are run (Milestone 19 phase 5). The measured gain from a
+  period filter is therefore unavailable to most traffic.
 - **`data/corpora/baseline` is too small to evaluate against, and that is why the EDGAR
   corpus exists.** At 8 documents / 26,429 characters / 31 chunks, `top_k: 20`
   already retrieves ~65% of the corpus, so hit rate and recall@k are saturated

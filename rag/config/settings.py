@@ -694,6 +694,12 @@ class AgentConfig(BaseModel):
     # context window silently, and the shipped adapter otherwise sends no
     # window at all; 32768 is what the prototype ran with.
     num_ctx: int = Field(default=32768, ge=1024, description="Context window requested for agent calls (Ollama)")
+    # Off until measured. With it on, the model may pass `rag_search` a metadata
+    # filter (a ticker, a period) so other companies' and quarters'
+    # near-identical passages can't crowd the right one out of the top results;
+    # it narrows the turn's own filter and can't widen it. The risk it trades
+    # against: a wrong filter returns nothing, and the model must notice.
+    model_filters: bool = Field(default=False, description="Let the agent's model filter its own searches")
 
 
 class TurnLogConfig(BaseModel):
