@@ -158,6 +158,13 @@ class QueryFilter(BaseModel):
         for name, value in equals.items():
             if name in any_of and value not in any_of[name]:
                 raise ValueError(f"{name} can't equal {value!r} and be in {any_of[name]}")
+            if name in ranges:
+                try:
+                    numeric_value = int(value)
+                except ValueError:
+                    numeric_value = None
+                if numeric_value is None or not ranges[name].contains(numeric_value):
+                    raise ValueError(f"{name} can't equal {value!r} and be in {ranges[name]}")
         return QueryFilter(equals=equals, any_of=any_of, range=ranges)
 
     def describe(self) -> str:
