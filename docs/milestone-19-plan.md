@@ -482,6 +482,18 @@ mode for hard questions with the 27b at `think: low` (same quality, fewer
 tokens). The groundedness checker flagged 9 of 104 answers, 6 of them ones
 the judge passed, so it stays off.
 
+*Re-run on `edgar_md` (2026-10-03): the same decision.* After chunking plan
+Phase 5 moved EDGAR evals to `edgar_md`, every row was re-run there
+([numbers](measured-results.md#agentic-retrieval-on-edgar_md-milestone-19-re-run-after-chunking-plan-phase-5)).
+
+- **The 27b loop still gains.** +5.3 of 35 multi-hop (interval clear of
+  zero, sign test p 0.12) and +6.0 of 15 adaptive (p 0.016), reaching the
+  oracle on both sets.
+- **`think: low` clears both sets at p ≤ 0.031**, with fewer tokens.
+- **Default thinking returned an empty answer** to one refusal question in
+  every run.
+- **Hard questions take 60–84 s** against the pipeline's 8–10 s.
+
 **Outside evidence (proposed).** Every set above was written from this
 repo's own chunks. The public benchmarks plan drafts a
 [MuSiQue follow-on](public-benchmarks-plan.md#follow-on-multi-hop-and-agentic-retrieval-on-musique)

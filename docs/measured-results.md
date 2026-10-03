@@ -1856,6 +1856,111 @@ mode for hard questions** (`chat.mode: agentic` with the 27b at
 at the top of this file applies: one corpus, questions written from its own
 chunks, an LLM judge. The plan's MuSiQue follow-on is the outside check.
 
+### Agentic retrieval on `edgar_md` (Milestone 19, re-run after chunking plan Phase 5)
+
+**Setup.** The [phase 4](#agentic-retrieval-milestone-19-phase-4) rows,
+re-run on the new default: `edgar_md`, `structured` chunker. Everything
+else matches phase 4: the same four sets (answerable /40, refusals /15,
+multi-hop /35, adaptive /15), `--limit 40`, the same agent settings, judge
+`gemma4:31b-mlx`, and the same repeats (×3; `think=low` ×2; `+ groundedness`
+×1).
+
+- *Pairing.* Every row is paired against the
+  [`edgar_md` pipeline baseline](#edgar_md-pipeline-baseline-after-chunking-plan-phase-5).
+- *Provenance.* Run 2026-10-02 06:29 to 10-03 04:33 at `446d9c9`, from a
+  pinned worktree. Driver: `scripts/run_answer_matrix.py --family m19
+  --corpus edgar_md` with `--variant` per step.
+- *Raw records.* `data/eval/results_m19/answer_edgar_md__judge-gemma4-31b-mlx.*`.
+
+Counts are per run:
+
+| row | answerable /40 | refusals /15 | multi-hop /35 | adaptive /15 | evidence recall, multi-hop / adaptive |
+|---|---|---|---|---|---|
+| `pipeline / 9b` (shipped) | 37, 38, 37 | 15, 15, 15 | 25, 25, 24 | 7, 6, 7 | 0.85 / 0.69 |
+| `oracle / 9b` (gold chunks) | 39, 39, 39 | — | 32, 33, 32 | 12, 13, 13 | 1.00 / 1.00 |
+| `agentic react / 9b` | 37, 38, 37 | 15, 15, 15 | 28, 27, 27 | 6, 6, 6 | 0.91 / 0.58 |
+| `agentic planned / 9b` | 36, 36, 37 | 14, 14, 15 | 26, 26, 27 | 4, 6, 6 | 0.92 / 0.58 |
+| `pipeline / 27b` | 37, 38, 38 | 15, 15, 15 | 27, 26, 26 | 7, 7, 7 | 0.85 / 0.69 |
+| **`agentic react / 27b`** | 37, 37, 38 | 14, 13, 14 | **31, 32, 32** | **13, 14, 12** | **0.97 / 0.93** |
+| `agentic react / 27b, think=low` | 39, 38 | 15, 14 | 32, 33 | 13, 13 | 0.99 / 0.92 |
+| `agentic react / 27b + groundedness` | 38 | 14 | 31 | 13 | 0.99 / 0.96 |
+
+Paired comparisons, scored as in phase 4. Each question's score is its pass
+(or complete) rate over the row's runs. Each cell gives Δ in questions, the
+95% interval, wins/losses, and the exact sign-test p:
+
+| comparison | answerable | refusals | multi-hop | adaptive |
+|---|---|---|---|---|
+| react / 9b vs pipeline / 9b (loop, 9b) | +0.0 [−2.3, +2.3], 3/1 | +0.0, 0/0 | +2.7 [−3.0, +8.3], 7/5, p 0.77 | −0.7 [−4.2, +2.9], 2/2, p 1 |
+| planned / 9b vs pipeline / 9b | −1.0 [−3.2, +1.2], 1/2 | −0.7 [−2.0, +0.6], 0/1 | +1.7 [−4.0, +7.3], 7/4, p 0.55 | −1.3 [−4.8, +2.2], 1/3, p 0.62 |
+| pipeline / 27b vs pipeline / 9b (model) | +0.3 [−0.3, +1.0], 1/0 | +0.0, 0/0 | +1.7 [−0.5, +3.8], 3/0, p 0.25 | +0.3 [−0.3, +1.0], 1/0, p 1 |
+| **react / 27b vs pipeline / 27b (loop, 27b)** | −0.3 [−3.2, +2.5], 1/2 | −1.3 [−3.4, +0.7], 0/2 | **+5.3 [+1.0, +9.7], 6/1, p 0.12** | **+6.0 [+2.4, +9.6], 7/0, p 0.016** |
+| react / 27b vs pipeline / 9b (both) | +0.0 [−3.0, +3.0], 2/2 | −1.3 [−3.4, +0.7], 0/2 | +7.0 [+2.5, +11.5], 8/0, p 0.008 | +6.3 [+2.8, +9.8], 8/0, p 0.008 |
+| think=low vs pipeline / 27b | +0.8 [−1.2, +2.8], 1/1 | −0.5 [−1.5, +0.5], 0/1 | +6.2 [+1.9, +10.4], 7/0, p 0.016 | +6.0 [+2.2, +9.8], 6/0, p 0.031 |
+| think=low vs react / 27b | +1.2 [−0.8, +3.1], 2/0 | +0.8 [−1.2, +2.8], 1/1 | +0.8 [−1.2, +2.8], 1/1 | +0.0 [−1.0, +1.0], 1/1 |
+| oracle / 9b vs pipeline / 9b | +1.7 [−0.5, +3.8], 3/0 | — | +7.7 [+2.9, +12.4], 10/1, p 0.012 | +6.0 [+2.4, +9.6], 7/0, p 0.016 |
+
+Cost per answering turn, mean over runs, with the judge's calls excluded:
+
+| row | LLM calls: ans / ref / multi-hop / adaptive | s/turn, same order | prompt tokens: multi-hop / adaptive / refusals |
+|---|---|---|---|
+| `pipeline / 9b` | 1.0 / 1.0 / 1.0 / 1.0 | 8 / 8 / 8 / 10 | 1,347 / 1,333 / 1,408 |
+| `agentic react / 9b` | 2.0 / 2.0 / 2.0 / 2.1 | 9 / 10 / 14 / 12 | 4,463 / 4,118 / 3,814 |
+| `agentic planned / 9b` | 2.0 / 2.0 / 2.0 / 2.0 | 10 / 11 / 14 / 13 | 3,627 / 3,026 / 2,922 |
+| `pipeline / 27b` | 1.0 / 1.0 / 1.0 / 1.0 | 23 / 24 / 30 / 33 | 1,347 / 1,333 / 1,408 |
+| `agentic react / 27b` | 2.3 / 6.4 / 2.5 / 3.7 | 34 / 129 / 60 / 84 | 7,511 / 12,909 / 27,860 |
+| `agentic react / 27b, think=low` | 2.1 / 4.7 / 2.2 / 3.4 | 34 / 104 / 64 / 91 | 5,888 / 12,065 / 18,549 |
+| `agentic react / 27b + groundedness` | 3.2 / 7.2 / 3.4 / 5.3 | 58 / 162 / 86 / 121 | 9,655 / 19,877 / 32,480 |
+
+- **The loop's gain survives the move to `edgar_md`.** `react / 27b`
+  against `pipeline / 27b`:
+  - *Adaptive:* +6.0 of 15, 7 wins and 0 losses, p 0.016. That compares
+    with +5.7 on `edgar`.
+  - *Multi-hop:* +5.3 of 35, interval clear of zero. The sign test is 6/1,
+    p 0.12, and doesn't clear 95%. That compares with +6.7 on `edgar`.
+  - *Why multi-hop shrank, likely:* the `edgar_md` pipeline already finds
+    more multi-hop evidence (recall 0.85 vs 0.79), leaving less for the
+    loop to add. That reading is not tested here.
+  - *Against the ceiling:* the agent reaches the oracle on both sets (31.7
+    vs 32.3 multi-hop; 13.0 vs 12.7 adaptive).
+- **`think=low` is now the better 27b configuration.** Against `pipeline /
+  27b` it clears both hard sets (+6.2, p 0.016; +6.0, p 0.031) with
+  answerable and refusals held. It also uses 7–33% fewer prompt tokens than
+  default thinking (33% on refusals). Against default thinking directly it is within noise
+  everywhere. Phase 4 already shipped it as the recommended opt-in setting;
+  this run confirms that on `edgar_md`.
+- **Default thinking returned an empty answer to one refusal question every
+  time.**
+  - *The case.* On `neg-entity-lilly-pipeline` ("What did Eli Lilly say
+    about its incretin manufacturing capacity expansion?"; Lilly isn't in
+    the corpus), `react / 27b` stopped with an empty answer in all four of
+    its runs. That's the three repeats plus the groundedness row, each after
+    2 model calls and ~150 s.
+  - *Scoring.* The judge can't grade an empty answer, so it counts as a
+    fail. That is most of the row's refusal dip (13.7/15).
+  - *Who else passes.* Every other row declines this question correctly,
+    `think=low` included.
+  - *Cause unverified.* The records don't keep the raw model response, so
+    the cause isn't confirmed. The pattern fits the 27b spending its
+    4,096-token budget on reasoning before writing an answer.
+- **The 9b agent still gains nothing that clears noise.** `react / 9b` is
+  +2.7 on multi-hop (7/5, p 0.77) and both 9b strategies trail the pipeline
+  on adaptive. Recall rises on multi-hop and falls on adaptive (0.58 vs
+  0.69), as on `edgar`: the 9b runs one round of searching and stops.
+- **Cost is lower than on `edgar` but still the limit.** `react / 27b`
+  takes 60 s per multi-hop and 84 s per adaptive question (74 and 108 on
+  `edgar`), against 8–10 s for the pipeline. Prompts are smaller because
+  structured chunks are shorter. The slowest turn is still a refusal (129 s).
+- **Groundedness stays off.** It flagged 4 of 104 answers, and 1 of those
+  was a judged failure. It passed 7 answers the judge failed, and it adds
+  25–70% latency.
+
+**Decision.** Unchanged from phase 4. On quality, the loop with the 27b
+meets the default-flip criterion on `edgar_md` as well. The 7–9× latency on
+hard questions still rules it out as the default. `chat.mode` stays
+`pipeline`, and agentic remains the opt-in mode for hard questions, with the
+27b at `think: low`.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a
