@@ -243,6 +243,22 @@ def test_a_file_that_fails_to_load_keeps_its_chunks(corpus, monkeypatch: pytest.
     assert vectors == sparse
 
 
+def test_reset_is_refused_while_a_file_fails_to_load(corpus, monkeypatch: pytest.MonkeyPatch) -> None:
+    """`--reset` empties the index before upserting, so deferring the purge
+    can't protect the failed file's chunks -- the run must not start."""
+    config, embedder = corpus
+    _index()
+    before = _stored_ids(config)
+    embedder.embedded = 0
+
+    _fail_to_load(monkeypatch, "other.txt")
+    with pytest.raises(CorpusLoadError, match="Nothing was reset"):
+        _index(reset=True)
+
+    assert _stored_ids(config) == before
+    assert embedder.embedded == 0
+
+
 def test_a_load_failure_still_indexes_the_other_files_but_defers_the_purge(
     corpus, monkeypatch: pytest.MonkeyPatch
 ) -> None:

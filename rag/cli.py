@@ -132,7 +132,8 @@ def _cmd_index(args: argparse.Namespace) -> None:
 
     A file that fails to load still indexes everything else, but skips the
     stale-chunk purge and raises `CorpusLoadError` at the end (see
-    `_load_failure`).
+    `_load_failure`). With `--reset` it raises before writing anything, since
+    a reset would delete the failed file's chunks with no purge left to skip.
     """
 
     config = load_config(args.config)
@@ -140,9 +141,15 @@ def _cmd_index(args: argparse.Namespace) -> None:
 
     failed: list[Path] = []
     selection, documents, chunks = chunk_selected_corpora(config, args.corpus, failed=failed)
+    if failed and args.reset:
+        raise _load_failure(
+            failed,
+            "Nothing was reset or indexed: a rebuild would drop the documents in those "
+            "files from the index.",
+        )
     if not documents or not chunks:
         if failed:
-            raise _load_failure(failed, purge_skipped=False)
+            raise _load_failure(failed, "Nothing was indexed.")
         if not documents:
             logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
         else:
@@ -286,10 +293,10 @@ def _cmd_index(args: argparse.Namespace) -> None:
         f"+ {sparse.count()} sparse chunk(s) (dimensions={embedder.dimensions})"
     )
     if failed:
-        raise _load_failure(failed, purge_skipped=True)
+        raise _load_failure(failed, "Everything else was indexed, but stale chunks were not removed.")
 
 
-def _load_failure(failed: list[Path], *, purge_skipped: bool) -> CorpusLoadError:
+def _load_failure(failed: list[Path], outcome: str) -> CorpusLoadError:
     """The error `index` ends with when corpus files failed to load.
 
     Why this over the alternatives: aborting before any write would
@@ -297,14 +304,10 @@ def _load_failure(failed: list[Path], *, purge_skipped: bool) -> CorpusLoadError
     failed files' chunks would mean guessing the ids a file would have produced
     (a PDF yields one document per page; a BEIR file's ids aren't its path).
     Indexing what loaded and deferring the purge is safe for every loader.
+    `--reset` is the exception: it empties the index first, so it is refused.
     """
 
     files = "\n  ".join(str(path) for path in failed)
-    outcome = (
-        "Everything else was indexed, but stale chunks were not removed."
-        if purge_skipped
-        else "Nothing was indexed."
-    )
     return CorpusLoadError(
         f"{len(failed)} corpus file(s) failed to load (see the log above):\n  {files}\n"
         f"{outcome} Fix or remove the file(s) and re-run `index`."
