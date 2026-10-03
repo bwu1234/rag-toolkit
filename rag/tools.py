@@ -29,14 +29,16 @@ import logging
 import threading
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Annotated, Any, get_type_hints
 
 from pydantic import Field, create_model
 
+from rag.chunking.chunkers import carried_metadata
 from rag.config.settings import REPO_ROOT, CorpusSelection, RagConfig, load_config
 from rag.events import EventSink
-from rag.query_filter import QueryFilter
+from rag.query_filter import DOCUMENT_ID, QueryFilter, check_filterable
 from rag.generation.llm import LLMClient, ToolDefinition
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.retriever import RetrievalResult, Retriever
@@ -56,6 +58,12 @@ MAX_RESULTS = 20
 #: is a meaningful bite out of its context for passages it may well discard.
 #: Callers that want the whole span ask for it explicitly.
 DEFAULT_MAX_CHARS = 1200
+
+#: Documents per `rag_list_documents` call: by default enough for `edgar_md`'s
+#: 61 filings in one listing, and at most a bound a BEIR-sized corpus can't
+#: blow through. Past it the result says how many were left out.
+DEFAULT_LIST_LIMIT = 100
+MAX_LIST_LIMIT = 500
 
 
 def _refs(schema: Any) -> set[str]:
@@ -334,6 +342,73 @@ class RagTools:
                 )
         return payload
 
+    def list_documents(
+        self,
+        corpus: str | Sequence[str] | None = None,
+        filters: QueryFilter | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """List the selected corpora's documents with their metadata, optionally filtered.
+
+        Reads the documents' front matter from disk -- no embedder, no index,
+        no cleaning (31 ms for `edgar_md`'s 61 filings) -- so it answers "which
+        companies and periods exist" without ranking anything. A filter
+        applies exactly as it does to search: over `document_id` and the
+        `chunking.carry_metadata` fields, dates as YYYYMMDD.
+
+        `chars` is the document's length as loaded, before cleaning.
+
+        Raises `ValueError` for a bad argument (unknown corpus, a filter on a
+        field chunks don't store, `limit` out of range).
+        """
+
+        requested = DEFAULT_LIST_LIMIT if limit is None else limit
+        if not 1 <= requested <= MAX_LIST_LIMIT:
+            raise ValueError(f"limit must be between 1 and {MAX_LIST_LIMIT} (got {requested})")
+        config = self.config
+        names = [corpus] if isinstance(corpus, str) else (list(corpus) if corpus is not None else None)
+        carried_keys = config.chunking.carry_metadata
+        if filters is not None and filters.is_empty:
+            filters = None
+        if filters is not None:
+            check_filterable(filters, carried_keys)
+
+        # Imported here: the loaders pull in pypdf, which MCP's stdio handshake
+        # shouldn't wait for when no one lists documents.
+        from rag.ingestion.corpora import load_selected_corpora
+
+        selection, documents = load_selected_corpora(config, names, clean=False)
+        matched = [
+            document for document in documents
+            if filters is None
+            or filters.matches({DOCUMENT_ID: document.id, **carried_metadata(document, carried_keys)})
+        ]
+        listed = [
+            {
+                "document_id": document.id,
+                **{
+                    key: value.isoformat() if isinstance(value, date) else value
+                    for key, value in document.metadata.items()
+                    if key in carried_keys
+                },
+                "chars": len(document.text),
+            }
+            for document in matched[:requested]
+        ]
+        payload: dict[str, Any] = {
+            "corpora": list(selection.names),
+            "total": len(matched),
+            "returned": len(listed),
+            **({"filters": filters.model_dump(exclude_defaults=True)} if filters is not None else {}),
+            "documents": listed,
+        }
+        if len(matched) > len(listed):
+            payload["hint"] = (
+                f"Showing {len(listed)} of {len(matched)} documents. Narrow the list with filters "
+                "(e.g. a ticker or a period_end range)."
+            )
+        return payload
+
     def list_corpora(self) -> dict[str, Any]:
         """Describe every registered corpus and whether it has been indexed."""
 
@@ -428,6 +503,15 @@ the active retrieval settings. Call this before rag_search when you are unsure \
 what `corpus` to pass, or to check whether a corpus is indexed at all."""
 
 
+_LIST_DOCUMENTS_DESCRIPTION = """\
+List the documents in the corpus with their metadata (on EDGAR filings: \
+company, ticker, form, period_end, filed) and length. Nothing is ranked: this \
+answers what the corpus contains -- which companies, filings and periods \
+exist -- which a search cannot, since search only returns its best matches. \
+Use it for questions about a set ("which airlines", "every 10-Q for the June \
+2026 quarter"), and to check that something exists before searching for it."""
+
+
 def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
     """Bind `tools` into the list of tools the MCP transports and the agent serve.
 
@@ -496,11 +580,49 @@ def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
             filters = QueryFilter.model_validate(filters)
         return tools.search(query, corpus=corpus, top_k=top_k, max_chars=max_chars, filters=filters)
 
+    def rag_list_documents(
+        corpus: Annotated[
+            str | list[str] | None,
+            Field(
+                description=(
+                    "Corpus name to list, or several. Omit to use the configured active corpora. "
+                    "Call rag_list_corpora for valid names."
+                )
+            ),
+        ] = None,
+        filters: Annotated[
+            QueryFilter | None,
+            Field(
+                description=(
+                    "List only the documents whose metadata matches, in the same form as "
+                    'rag_search\'s filters, e.g. {"any_of": {"form": ["10-Q"]}, "range": '
+                    '{"period_end": {"gte": "2026-04-01", "lte": "2026-06-30"}}}. Omit to list everything.'
+                )
+            ),
+        ] = None,
+        limit: Annotated[
+            int | None,
+            Field(
+                ge=1,
+                le=MAX_LIST_LIMIT,
+                description=f"Most documents to return (default {DEFAULT_LIST_LIMIT}, at most {MAX_LIST_LIMIT}).",
+            ),
+        ] = None,
+    ) -> dict[str, Any]:
+        if filters is not None and not isinstance(filters, QueryFilter):
+            filters = QueryFilter.model_validate(filters)
+        return tools.list_documents(corpus=corpus, filters=filters, limit=limit)
+
     def rag_list_corpora() -> dict[str, Any]:
         return tools.list_corpora()
 
     return [
         ToolSpec(name="rag_search", description=_SEARCH_DESCRIPTION, handler=rag_search),
+        ToolSpec(
+            name="rag_list_documents",
+            description=_LIST_DOCUMENTS_DESCRIPTION,
+            handler=rag_list_documents,
+        ),
         ToolSpec(
             name="rag_list_corpora",
             description=_LIST_CORPORA_DESCRIPTION,

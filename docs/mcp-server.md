@@ -14,7 +14,7 @@ as a tool; this server is an outside agent calling ours.
 
 ## The tools
 
-Two, both read-only.
+Three, all read-only.
 
 ### `rag_search`
 
@@ -70,6 +70,24 @@ from an empty result list:
   from *the corpus genuinely doesn't cover this*. `RetrievalResult` is what
   makes the distinction available; without it an agent facing an unbuilt index
   concludes the documents say nothing on the subject.
+
+### `rag_list_documents`
+
+Lists the selected corpora's documents with their carried metadata (on EDGAR:
+`company`, `ticker`, `form`, `period_end`, `filed`, `accession`; dates as ISO
+strings) and `chars`, the document's length as loaded. Arguments: `corpus`,
+`filters` (the same `QueryFilter` as `rag_search`, applied to the same fields)
+and `limit` (default 100, at most 500). The response has `total` and
+`returned`, and a `hint` when the limit cut the list short.
+
+It answers what a ranked search can't: which companies, filings and periods the
+corpus holds. A search returns its best matches, so it can never show that
+something is *absent* — an agent asked "which airlines…" otherwise probes for
+carriers one search at a time. It reads documents from disk only — no
+embedder, no index — so it works before an index is built and lists what is
+on disk, not what was indexed (`index-report` says whether those agree).
+A PDF lists one entry per page, the same unit `rag_search` results and
+filters use.
 
 ### `rag_list_corpora`
 
@@ -190,7 +208,9 @@ since silent drift between the two is the way this arrangement breaks.
 - **Startup is lazy.** Nothing is built at import or at discovery. Under stdio a
   client expects a prompt `server/discover` response, and importing Chroma plus a
   sentence-transformers cross-encoder eagerly would spend seconds first. The
-  first `rag_search` pays that cost; `rag_list_corpora` never does.
+  first `rag_search` pays that cost; `rag_list_corpora` and
+  `rag_list_documents` never do (the document loaders are imported on the
+  first listing, not at startup).
 - **Retrievers are cached per corpus selection** and reused. The cross-encoder
   holds several hundred MB once loaded.
 - **`top_k` costs no rebuild.** Cached retrievers are built with `rerank_top_k`

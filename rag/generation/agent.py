@@ -68,7 +68,7 @@ from rag.generation.prompts import (
     strip_citation_markers,
 )
 from rag.generation.query_rewriter import ChatTurn
-from rag.observability.records import AgentSearch, RetrievalAttempt, RetrievedPassage
+from rag.observability.records import AgentToolCall, RetrievalAttempt, RetrievedPassage
 from rag.observability.sink import TurnSink
 from rag.tools import RagTools, build_tool_specs
 from rag.vectorstore.base import ScoredChunk
@@ -76,6 +76,7 @@ from rag.vectorstore.base import ScoredChunk
 logger = logging.getLogger(__name__)
 
 SEARCH_TOOL = "rag_search"
+LIST_TOOL = "rag_list_documents"
 
 #: `rag_search` arguments the turn decides, not the model. `corpus` is the
 #: turn's corpus selection (an eval's `--corpus`); a model free to widen it
@@ -87,6 +88,10 @@ SEARCH_TOOL = "rag_search"
 #: filter applies to every search; a model filter can only narrow it.
 PINNED_ARGUMENTS = ("corpus", "top_k", "max_chars")
 FILTERS_ARGUMENT = "filters"
+#: `rag_list_documents` arguments the turn decides: the corpus, as for search,
+#: and the size of a listing. Its `filters` is always the model's -- narrowing
+#: a listing is what the tool is for, and it changes no search results.
+LIST_PINNED_ARGUMENTS = ("corpus", "limit")
 
 
 class PassageLedger:
@@ -154,8 +159,12 @@ class _Run:
     queries: list[str] = field(default_factory=list)
     #: (Normalized query, the model's filter) -> the passage numbers its search returned.
     searched: dict[tuple[str, str], list[int]] = field(default_factory=dict)
-    #: Every search call the model made, in order: the trajectory `ChatAnswer` reports.
-    searches: list[AgentSearch] = field(default_factory=list)
+    #: The model's filter keys of the listings already run, for refusing a repeat.
+    listed: set[str] = field(default_factory=set)
+    #: Every tool call the model made, in order: the trajectory `ChatAnswer` reports.
+    calls: list[AgentToolCall] = field(default_factory=list)
+    #: Tool calls that ran -- searches and listings -- against `max_tool_calls`.
+    calls_run: int = 0
     rounds: int = 0
     steps: int = 0
     dropped_below_min_score: int = 0
@@ -166,7 +175,7 @@ class _Run:
     #: size before it -- what a context overflow rolls back.
     step_message_mark: int | None = None
     step_ledger_mark: int = 0
-    step_search_mark: int = 0
+    step_call_mark: int = 0
     answer: str = ""
 
 
@@ -198,6 +207,35 @@ def _filter_label(model_filter: QueryFilter | None) -> str:
 
 def _filter_dump(model_filter: QueryFilter | None) -> dict[str, Any] | None:
     return None if model_filter is None else model_filter.model_dump(exclude_defaults=True)
+
+
+def _render_listing(payload: Mapping[str, Any], model_filter: QueryFilter | None) -> str:
+    """A `list_documents` payload as the model reads it: one line per document.
+
+    Text, not the MCP JSON: a line per document costs a fraction of the
+    tokens, and the agent's other results are text too.
+    """
+
+    documents = payload["documents"]
+    if not documents:
+        if model_filter is not None:
+            return (
+                f"No documents match the filter ({model_filter.describe()}). Check its values "
+                "-- dates are compared exactly within a range -- or list without it."
+            )
+        return "No documents in the corpus."
+    head = f"{payload['total']} document(s){_filter_label(model_filter)}"
+    if payload["total"] > len(documents):
+        head += f"; showing the first {len(documents)}. Narrow the listing with a filter to see the rest"
+    lines = [
+        f"- {document['document_id']}: "
+        + "; ".join(
+            f"{key} {value}" for key, value in document.items() if key not in ("document_id", "chars")
+        )
+        + f"; {document['chars']:,} chars"
+        for document in documents
+    ]
+    return head + ":\n" + "\n".join(lines)
 
 
 def _log_empty(turn: AssistantTurn, where: str) -> None:
@@ -242,6 +280,7 @@ class AgentService(ChatResponder):
         max_passage_chars: int = 1200,
         max_history_turns: int = 6,
         model_filters: bool = False,
+        offered_tools: Sequence[str] = (SEARCH_TOOL,),
         groundedness_checker: GroundednessChecker | None = None,
         turn_sink: TurnSink | None = None,
         turn_metadata: Mapping[str, str] | None = None,
@@ -260,9 +299,17 @@ class AgentService(ChatResponder):
         self.model_filters = model_filters
         self._groundedness_checker = groundedness_checker
         self._clock = clock
-        spec = next(s for s in build_tool_specs(tools) if s.name == SEARCH_TOOL)
+        specs = {spec.name: spec for spec in build_tool_specs(tools)}
+        unknown = sorted(set(offered_tools) - {SEARCH_TOOL, LIST_TOOL})
+        if unknown or SEARCH_TOOL not in offered_tools:
+            raise ValueError(f"The agent offers {SEARCH_TOOL} and optionally {LIST_TOOL}; got {list(offered_tools)}")
         pinned = PINNED_ARGUMENTS if model_filters else (*PINNED_ARGUMENTS, FILTERS_ARGUMENT)
-        self.search_tool = spec.definition_without(*pinned)
+        self.search_tool = specs[SEARCH_TOOL].definition_without(*pinned)
+        self.list_tool = (
+            specs[LIST_TOOL].definition_without(*LIST_PINNED_ARGUMENTS) if LIST_TOOL in offered_tools else None
+        )
+        #: What the model is offered on every tool-bearing call, search first.
+        self.tool_definitions = [self.search_tool] + ([self.list_tool] if self.list_tool is not None else [])
 
     # -- the turn -----------------------------------------------------------
 
@@ -309,8 +356,8 @@ class AgentService(ChatResponder):
         if not run.answer.strip():
             logger.warning("Agent returned an empty answer for %r (stopped: %s)", query, stopped)
         logger.info(
-            "Agent answered %r: %d search(es) in %d round(s), %d passage(s) shown, stopped=%s",
-            query, len(run.queries), run.rounds, len(chunks), stopped,
+            "Agent answered %r: %d tool call(s), %d search round(s), %d passage(s) shown, stopped=%s",
+            query, run.calls_run, run.rounds, len(chunks), stopped,
         )
         return ChatAnswer(
             answer=run.answer,
@@ -320,9 +367,9 @@ class AgentService(ChatResponder):
             retrieval_attempts=run.rounds,
             grounded=grounded,
             cited_chunk_ids=[chunks[n - 1].chunk_id for n in parse_cited_passages(run.answer, len(chunks))],
-            tool_calls=len(run.queries),
+            tool_calls=run.calls_run,
             stopped_reason=stopped,
-            agent_searches=list(run.searches),
+            agent_calls=list(run.calls),
         )
 
     def _history(self, history: list[ChatTurn] | None) -> list[Message]:
@@ -348,7 +395,7 @@ class AgentService(ChatResponder):
             if run.hit_timeout or self._clock() >= run.deadline:
                 return self._finish(run, "timeout")
             try:
-                turn = self._call(run, [self.search_tool], "agent_step")
+                turn = self._call(run, self.tool_definitions, "agent_step")
             except ContextOverflowError:
                 if not self._roll_back_step(run):
                     raise
@@ -364,7 +411,7 @@ class AgentService(ChatResponder):
             self._run_calls(run, turn.tool_calls)
             # Out of searches means no tools next time, so the next call is the
             # forced one whether or not this step had a search refused.
-            if len(run.queries) >= self.max_tool_calls or run.steps >= self.max_tool_calls:
+            if run.calls_run >= self.max_tool_calls or run.steps >= self.max_tool_calls:
                 return self._finish(run, "cap")
 
     def _planned(self, run: _Run) -> StoppedReason:
@@ -378,7 +425,7 @@ class AgentService(ChatResponder):
         of planning (a greeting) is taken at its word, in one call.
         """
 
-        plan = self._call(run, [self.search_tool], "agent_plan")
+        plan = self._call(run, self.tool_definitions, "agent_plan")
         if not plan.tool_calls:
             if not plan.content.strip():
                 return self._recover_empty(run, plan)
@@ -409,51 +456,60 @@ class AgentService(ChatResponder):
         """Answer every call of one step, in order, and append the results.
 
         Every call gets a result -- providers pair them up, and Gemini rejects
-        a step with a call left unanswered -- but only a new, valid query
-        within budget and time spends a search. Every call is also recorded
-        in `run.searches`, refused or not.
+        a step with a call left unanswered -- but only a new, valid call within
+        budget and time runs. Every call is also recorded in `run.calls`,
+        refused or not.
         """
 
         run.step_message_mark = len(run.messages)
         run.step_ledger_mark = len(run.ledger)
-        run.step_search_mark = len(run.searches)
+        run.step_call_mark = len(run.calls)
         searched_this_step = False
         for call in calls:
-            query = call.arguments.get("query")
-            raw_filters = call.arguments.get(FILTERS_ARGUMENT)
-            model_filter, filter_error = self._model_filter(call)
-            refusal = filter_error or self._refusal(run, call, model_filter)
-            if refusal is not None:
-                content = refusal
-                run.searches.append(
-                    AgentSearch(
-                        step=run.steps,
-                        query=query if isinstance(query, str) else "",
-                        status="error" if filter_error else "refused",
-                        filters=_filter_dump(model_filter),
-                        filters_raw=raw_filters,
-                        note=refusal,
-                    )
-                )
+            if call.name == LIST_TOOL and self.list_tool is not None:
+                content = self._list(run, call)
             else:
-                content = self._search(run, str(query), model_filter, raw_filters)
-                searched_this_step = searched_this_step or run.searches[-1].status == "searched"
+                content = self._search_call(run, call)
+                searched_this_step = searched_this_step or (
+                    run.calls[-1].tool == SEARCH_TOOL and run.calls[-1].status == "ran"
+                )
             run.messages.append(ToolResult(call=call, content=content))
         run.rounds += 1 if searched_this_step else 0
 
-    def _model_filter(self, call: ToolCall) -> tuple[QueryFilter | None, str | None]:
-        """The filter the model asked for, validated -- or the error the model is shown instead.
+    def _search_call(self, run: _Run, call: ToolCall) -> str:
+        """One `rag_search` call (or a call to a tool not offered): run it, or say why not."""
 
-        An empty filter is no filter. With `model_filters` off the tool offers
-        no `filters` argument, so one sent anyway is an error, not ignored: a
-        silently dropped filter would make the result look narrower than it is.
+        query = call.arguments.get("query")
+        raw_filters = call.arguments.get(FILTERS_ARGUMENT)
+        model_filter, filter_error = self._parse_filter(raw_filters, offered=self.model_filters, error="Search error")
+        refusal = filter_error or self._refusal(run, call, model_filter)
+        if refusal is None:
+            return self._search(run, str(query), model_filter, raw_filters)
+        run.calls.append(
+            AgentToolCall(
+                step=run.steps,
+                tool=call.name,
+                query=query if isinstance(query, str) else "",
+                status="error" if filter_error else "refused",
+                filters=_filter_dump(model_filter),
+                filters_raw=raw_filters,
+                note=refusal,
+            )
+        )
+        return refusal
+
+    def _parse_filter(self, raw: Any, *, offered: bool, error: str) -> tuple[QueryFilter | None, str | None]:
+        """A tool's `filters` argument, validated -- or the error the model is shown instead.
+
+        An empty filter is no filter. When the tool doesn't offer `filters`, one
+        sent anyway is an error, not ignored: a silently dropped filter would
+        make the result look narrower than it is. `error` prefixes the message.
         """
 
-        raw = call.arguments.get(FILTERS_ARGUMENT)
         if raw is None:
             return None, None
-        if not self.model_filters:
-            return None, f"Search error: {SEARCH_TOOL} takes no '{FILTERS_ARGUMENT}' argument here."
+        if not offered:
+            return None, f"{error}: {SEARCH_TOOL} takes no '{FILTERS_ARGUMENT}' argument here."
         if isinstance(raw, str):
             # The 27b sends the object JSON-encoded, as a string, every time it
             # filters (first live run, `ad-airline-fuel`). Decode it rather than
@@ -461,24 +517,25 @@ class AgentService(ChatResponder):
             try:
                 raw = json.loads(raw)
             except json.JSONDecodeError:
-                return None, "Search error: invalid filters: not a JSON object."
+                return None, f"{error}: invalid filters: not a JSON object."
         try:
             model_filter = QueryFilter.model_validate(raw)
         except ValidationError as exc:
             problems = "; ".join(
-                f"{'.'.join(str(part) for part in error['loc']) or 'filters'}: {error['msg']}"
-                for error in exc.errors()
+                f"{'.'.join(str(part) for part in detail['loc']) or 'filters'}: {detail['msg']}"
+                for detail in exc.errors()
             )
-            return None, f"Search error: invalid filters: {problems}"
+            return None, f"{error}: invalid filters: {problems}"
         return (None if model_filter.is_empty else model_filter), None
 
     def _refusal(self, run: _Run, call: ToolCall, model_filter: QueryFilter | None) -> str | None:
-        """Why `call` won't run, as the tool result the model sees -- or None to run it."""
+        """Why a search call won't run, as the tool result the model sees -- or None to run it."""
 
         start = time.monotonic()
         query = call.arguments.get("query")
         if call.name != SEARCH_TOOL:
-            reason = f"Unknown tool {call.name!r}. The only tool is {SEARCH_TOOL}."
+            offered = ", ".join(tool.name for tool in self.tool_definitions)
+            reason = f"Unknown tool {call.name!r}. The tools are: {offered}."
         elif not isinstance(query, str) or not query.strip():
             reason = f"{SEARCH_TOOL} needs a non-empty 'query' string."
         elif (earlier := run.searched.get((_normalize(query), _filter_key(model_filter)))) is not None:
@@ -487,16 +544,80 @@ class AgentService(ChatResponder):
                 f"Already searched for {query!r}{_filter_label(model_filter)}; {found}. "
                 "Search for something different, or answer from the passages you have."
             )
-        elif len(run.queries) >= self.max_tool_calls:
-            run.hit_cap = True
-            reason = "Search budget for this question is used up; this search was not run."
-        elif self._clock() >= run.deadline:
-            run.hit_timeout = True
-            reason = "Out of time for this question; this search was not run."
         else:
-            return None
+            budget = self._budget_refusal(run, "search")
+            if budget is None:
+                return None
+            reason = budget
         emit(run.on_event, start, "search_refused", reason)
         return reason
+
+    def _budget_refusal(self, run: _Run, what: str) -> str | None:
+        """Why no tool call can run now -- the shared budget or the clock -- or None."""
+
+        if run.calls_run >= self.max_tool_calls:
+            run.hit_cap = True
+            return f"Tool budget for this question is used up; this {what} was not run."
+        if self._clock() >= run.deadline:
+            run.hit_timeout = True
+            return f"Out of time for this question; this {what} was not run."
+        return None
+
+    def _list(self, run: _Run, call: ToolCall) -> str:
+        """One `rag_list_documents` call: list the turn's documents, or say why not.
+
+        The listing goes to the model as text and into the trace; it is not a
+        passage, so it takes no ledger number and can't be cited. Scope is the
+        search's: the turn's corpora, and the turn's filter narrowed by the
+        model's.
+        """
+
+        start = time.monotonic()
+        raw_filters = call.arguments.get(FILTERS_ARGUMENT)
+        model_filter, filter_error = self._parse_filter(raw_filters, offered=True, error="Listing error")
+        key = _filter_key(model_filter)
+        refusal = filter_error
+        if refusal is None and key in run.listed:
+            refusal = (
+                f"Already listed documents{_filter_label(model_filter)}; the listing is above. "
+                "List with a different filter, or search."
+            )
+        if refusal is None:
+            refusal = self._budget_refusal(run, "listing")
+        payload: dict[str, Any] | None = None
+        if refusal is None:
+            try:
+                query_filter = run.query_filter
+                if model_filter is not None:
+                    query_filter = model_filter if query_filter is None else query_filter.intersect(model_filter)
+                payload = self._tools.list_documents(self._corpora, filters=query_filter)
+            except ValueError as exc:
+                filter_error = refusal = f"Listing error: {exc}"
+        if payload is None:
+            assert refusal is not None
+            emit(run.on_event, start, "search_refused", refusal)
+            run.calls.append(
+                AgentToolCall(
+                    step=run.steps, tool=LIST_TOOL, status="error" if filter_error else "refused",
+                    filters=_filter_dump(model_filter), filters_raw=raw_filters, note=refusal,
+                )
+            )
+            return refusal
+
+        run.calls_run += 1
+        run.listed.add(key)
+        documents = payload["documents"]
+        run.calls.append(
+            AgentToolCall(
+                step=run.steps, tool=LIST_TOOL, filters=_filter_dump(model_filter), filters_raw=raw_filters,
+                documents=[document["document_id"] for document in documents],
+            )
+        )
+        emit(
+            run.on_event, start, "list_documents",
+            f"Listed {len(documents)} of {payload['total']} document(s){_filter_label(model_filter)}",
+        )
+        return _render_listing(payload, model_filter)
 
     def _search(self, run: _Run, query: str, model_filter: QueryFilter | None, raw_filters: Any) -> str:
         """Run one search, number its passages, and render them for the model.
@@ -517,8 +638,8 @@ class AgentService(ChatResponder):
             # An argument the model got wrong: tell it, don't fail the turn.
             note = f"Search error: {exc}"
             emit(run.on_event, start, "search_refused", note)
-            run.searches.append(
-                AgentSearch(
+            run.calls.append(
+                AgentToolCall(
                     step=run.steps, query=query, status="error",
                     filters=_filter_dump(model_filter), filters_raw=raw_filters, note=note,
                 )
@@ -526,13 +647,14 @@ class AgentService(ChatResponder):
             return note
 
         run.queries.append(query)
+        run.calls_run += 1
         run.dropped_below_min_score += result.dropped_below_min_score
         entries = run.ledger.add(result.chunks)
         numbers = [number for number, _, _ in entries]
         new = [number for number, _, is_new in entries if is_new]
         run.searched[(_normalize(query), _filter_key(model_filter))] = numbers
-        run.searches.append(
-            AgentSearch(
+        run.calls.append(
+            AgentToolCall(
                 step=run.steps,
                 query=query,
                 filters=_filter_dump(model_filter),
@@ -637,10 +759,10 @@ class AgentService(ChatResponder):
             if isinstance(message, ToolResult):
                 run.messages[index] = dataclasses.replace(message, content=note)
         run.ledger.truncate(run.step_ledger_mark)
-        run.searches[run.step_search_mark :] = [
-            dataclasses.replace(search, passages=[], new_passages=[], chunk_ids=[], note=note)
-            if search.status == "searched" else search
-            for search in run.searches[run.step_search_mark :]
+        run.calls[run.step_call_mark :] = [
+            dataclasses.replace(search, passages=[], new_passages=[], chunk_ids=[], documents=[], note=note)
+            if search.status == "ran" else search
+            for search in run.calls[run.step_call_mark :]
         ]
         run.step_message_mark = None
         emit(run.on_event, time.monotonic(), "agent_overflow", "Context window full; answering from earlier passages")

@@ -473,21 +473,24 @@ def _cmd_chat(args: argparse.Namespace) -> None:
         print(f"Retrieved for: {result.rewritten_query!r}")
     if result.stopped_reason is not None:
         print(
-            f"Agent ran {result.tool_calls} search(es) in {result.retrieval_attempts} round(s); "
+            f"Agent ran {result.tool_calls} tool call(s), {result.retrieval_attempts} search round(s); "
             f"stopped: {result.stopped_reason}"
         )
-        for search in result.agent_searches:
-            print(f"  step {search.step}: {search.query!r}")
-            if search.filters:
-                print(f"    filter: {json.dumps(search.filters)}")
-            elif search.filters_raw is not None:
-                print(f"    filter as sent: {json.dumps(search.filters_raw)}")
-            if search.status == "searched":
-                new = set(search.new_passages)
-                shown = " ".join(f"[{n}]" if n in new else f"([{n}])" for n in search.passages)
-                print(f"    -> {shown or 'nothing'}" + ("  (parenthesized: already shown)" if new != set(search.passages) else ""))
+        for call in result.agent_calls:
+            is_search = call.tool == "rag_search"
+            print(f"  step {call.step}: " + (repr(call.query) if is_search else call.tool))
+            if call.filters:
+                print(f"    filter: {json.dumps(call.filters)}")
+            elif call.filters_raw is not None:
+                print(f"    filter as sent: {json.dumps(call.filters_raw)}")
+            if call.status != "ran":
+                print(f"    {call.status}: {call.note}")
+            elif is_search:
+                new = set(call.new_passages)
+                shown = " ".join(f"[{n}]" if n in new else f"([{n}])" for n in call.passages)
+                print(f"    -> {shown or 'nothing'}" + ("  (parenthesized: already shown)" if new != set(call.passages) else ""))
             else:
-                print(f"    {search.status}: {search.note}")
+                print(f"    -> {len(call.documents)} document(s): {', '.join(call.documents) or 'none'}")
     elif result.search_queries:
         print(f"Expanded into {len(result.search_queries)} search query/queries:")
         for rank, search_query in enumerate(result.search_queries, start=1):

@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Literal
 
 import yaml
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # Repo root = two levels up from this file (rag/config/settings.py -> repo/)
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -562,6 +562,8 @@ class RetrievalConfig(BaseModel):
 
 ChatMode = Literal["pipeline", "agentic"]
 AgentStrategy = Literal["react", "planned"]
+AgentTool = Literal["rag_search", "rag_list_documents"]
+_DEFAULT_AGENT_TOOLS: tuple[AgentTool, ...] = ("rag_search",)
 
 
 class ChatConfig(BaseModel):
@@ -700,6 +702,20 @@ class AgentConfig(BaseModel):
     # it narrows the turn's own filter and can't widen it. The risk it trades
     # against: a wrong filter returns nothing, and the model must notice.
     model_filters: bool = Field(default=False, description="Let the agent's model filter its own searches")
+    # The tools offered to the model, each one a matrix row before it is a
+    # default (docs/milestone-19-plan.md, "Tool surface"). `rag_list_documents`
+    # lists what the corpus contains, which no ranked search can enumerate.
+    # Every call, of any tool, counts toward `max_tool_calls`.
+    tools: list[AgentTool] = Field(
+        default_factory=lambda: list(_DEFAULT_AGENT_TOOLS), description="Tools offered to the agent's model"
+    )
+
+    @field_validator("tools")
+    @classmethod
+    def _search_is_offered(cls, value: list[AgentTool]) -> list[AgentTool]:
+        if "rag_search" not in value:
+            raise ValueError("agent.tools must include rag_search")
+        return list(dict.fromkeys(value))
 
 
 class TurnLogConfig(BaseModel):

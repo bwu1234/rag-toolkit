@@ -59,7 +59,7 @@ from rag.generation.builder import build_chat_service
 from rag.generation.chat_service import ChatResponder
 from rag.generation.llm import LLMClient
 from rag.logging_config import configure_logging
-from rag.observability.records import AgentSearch
+from rag.observability.records import AgentToolCall
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,7 @@ class MultihopSampleResult:
     #: CRAG's groundedness verdict on the answer; None when unchecked or inconclusive.
     grounded: bool | None = None
     #: Agentic turns: every search call the model made, in order. Empty for a pipeline turn.
-    agent_searches: list[AgentSearch] = field(default_factory=list)
+    agent_calls: list[AgentToolCall] = field(default_factory=list)
 
     @property
     def completeness(self) -> float:
@@ -175,8 +175,8 @@ class MultihopSampleResult:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> MultihopSampleResult:
         parts = [PartResult(**p) for p in data["part_results"]]
-        searches = [AgentSearch.from_dict(s) for s in data.get("agent_searches", [])]
-        return cls(**{**data, "part_results": parts, "agent_searches": searches})
+        searches = [AgentToolCall.from_dict(s) for s in data.get("agent_calls", [])]
+        return cls(**{**data, "part_results": parts, "agent_calls": searches})
 
 
 @dataclass
@@ -256,7 +256,7 @@ def run_multihop_eval(
                 prompt_tokens=answer.prompt_tokens,
                 completion_tokens=answer.completion_tokens,
                 grounded=answer.grounded,
-                agent_searches=answer.agent_searches,
+                agent_calls=answer.agent_calls,
             )
         )
         if on_result is not None:

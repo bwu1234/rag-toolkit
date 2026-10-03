@@ -81,7 +81,7 @@ def tools(fake_retriever: _FakeRetriever) -> RagTools:
 
 def test_exposes_only_read_only_tools(tools: RagTools) -> None:
     names = [spec.name for spec in build_tool_specs(tools)]
-    assert names == ["rag_search", "rag_list_corpora"]
+    assert names == ["rag_search", "rag_list_documents", "rag_list_corpora"]
 
 
 def test_search_schema_documents_every_argument(tools: RagTools) -> None:
@@ -364,11 +364,11 @@ def test_a_non_string_protocol_version_is_a_params_error(rpc: FallbackServer) ->
     assert rpc.handle(request)["error"]["code"] == -32602  # type: ignore[index]
 
 
-def test_tools_list_advertises_both_tools_as_read_only(rpc: FallbackServer) -> None:
+def test_tools_list_advertises_every_tool_as_read_only(rpc: FallbackServer) -> None:
     response = rpc.handle(_request("tools/list"))
     assert response is not None
     listed = response["result"]["tools"]
-    assert [t["name"] for t in listed] == ["rag_search", "rag_list_corpora"]
+    assert [t["name"] for t in listed] == ["rag_search", "rag_list_documents", "rag_list_corpora"]
     for tool in listed:
         assert tool["annotations"]["readOnlyHint"] is True
         assert tool["inputSchema"]["type"] == "object"
