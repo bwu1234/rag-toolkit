@@ -60,6 +60,7 @@ from rag.generation.chat_service import ChatResponder
 from rag.generation.factory import get_llm_client
 from rag.generation.llm import LLMClient
 from rag.logging_config import configure_logging
+from rag.observability.records import AgentSearch
 
 logger = logging.getLogger(__name__)
 
@@ -232,6 +233,8 @@ class AnswerSampleResult:
     llm_ms: float = 0.0
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
+    #: Agentic turns: every search call the model made, in order. Empty for a pipeline turn.
+    agent_searches: list[AgentSearch] = field(default_factory=list)
 
     @property
     def evidence_retrieved(self) -> bool | None:
@@ -245,7 +248,8 @@ class AnswerSampleResult:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AnswerSampleResult:
-        return cls(**data)
+        searches = [AgentSearch.from_dict(s) for s in data.get("agent_searches", [])]
+        return cls(**{**data, "agent_searches": searches})
 
 
 @dataclass
@@ -339,6 +343,7 @@ def run_answer_eval(
                 llm_ms=chat_answer.llm_ms,
                 prompt_tokens=chat_answer.prompt_tokens,
                 completion_tokens=chat_answer.completion_tokens,
+                agent_searches=chat_answer.agent_searches,
             )
         )
         if on_result is not None:

@@ -279,6 +279,11 @@ def test_context_overflow_rolls_back_the_last_step_and_answers_from_earlier_pass
     final_messages = llm.calls[-1][0]
     assert _tool_results(final_messages)[-1].content.startswith("Results not shown")
     assert final_messages[-1] == ChatMessage("user", AGENT_SYNTHESIS_INSTRUCTION)
+    # The trace says the same: q2 searched, but showed the model nothing.
+    rolled_back = answer.agent_searches[-1]
+    assert (rolled_back.query, rolled_back.status, rolled_back.passages) == ("q2", "searched", [])
+    assert rolled_back.note is not None and rolled_back.note.startswith("Results not shown")
+    assert answer.agent_searches[0].chunk_ids == ["c1"]
 
 
 def test_overflow_with_nothing_to_roll_back_raises() -> None:
@@ -488,3 +493,143 @@ def test_a_turn_filter_applies_to_every_agent_search_and_the_model_cannot_set_on
     assert tools.filters == [aapl, aapl]
     [tool] = llm.calls[0][1]
     assert "filters" not in tool.parameters["properties"]
+
+
+# --------------------------------------------------------------------------
+# Model-chosen filters (`agent.model_filters`) and the search trace
+# --------------------------------------------------------------------------
+
+
+def _filtered(query: str, filters: object) -> ToolCall:
+    return ToolCall(name="rag_search", arguments={"query": query, "filters": filters})
+
+
+def test_with_model_filters_off_the_tool_carries_no_filter_types() -> None:
+    tool_off = _agent(ScriptedToolLLM([]), _FakeTools()).search_tool
+    tool_on = _agent(ScriptedToolLLM([]), _FakeTools(), model_filters=True).search_tool
+
+    assert "$defs" not in tool_off.parameters
+    assert set(tool_on.parameters["properties"]) == {"query", "filters"}
+    assert set(tool_on.parameters["$defs"]) == {"QueryFilter", "IntRange"}
+
+
+def test_a_model_filter_reaches_retrieval_and_narrows_the_turn_filter() -> None:
+    tools = _FakeTools({"fuel": [_chunk("dal")]})
+    llm = ScriptedToolLLM([
+        _step(_filtered("fuel", {"range": {"period_end": {"gte": "2026-06-30", "lte": "2026-06-30"}}})),
+        _answer("[1]"),
+    ])
+    turn_filter = QueryFilter(equals={"ticker": "DAL"})
+
+    answer = _agent(llm, tools, model_filters=True).ask("question", query_filter=turn_filter)
+
+    assert tools.filters == [
+        QueryFilter(equals={"ticker": "DAL"}, range={"period_end": {"gte": 20260630, "lte": 20260630}})
+    ]
+    [search] = answer.agent_searches
+    # The trace keeps the model's own filter; the turn's is on the record separately.
+    assert search.filters == {"range": {"period_end": {"gte": 20260630, "lte": 20260630}}}
+
+
+def test_a_model_filter_that_contradicts_the_turn_filter_is_an_error_not_a_search() -> None:
+    tools = _FakeTools({"fuel": [_chunk("dal")]})
+    llm = ScriptedToolLLM([_step(_filtered("fuel", {"equals": {"ticker": "UAL"}})), _answer("Nothing.")])
+
+    answer = _agent(llm, tools, model_filters=True).ask(
+        "question", query_filter=QueryFilter(equals={"ticker": "DAL"})
+    )
+
+    assert tools.searches == [] and answer.tool_calls == 0
+    [search] = answer.agent_searches
+    assert search.status == "error" and "ticker" in (search.note or "")
+    assert _tool_results(llm.calls[1][0])[0].content.startswith("Search error:")
+
+
+def test_the_same_query_under_another_filter_is_a_new_search_and_the_same_one_is_refused() -> None:
+    tools = _FakeTools({"fuel": [_chunk("c")]})
+    dal, ual = {"equals": {"ticker": "DAL"}}, {"equals": {"ticker": "UAL"}}
+    llm = ScriptedToolLLM([
+        _step(_filtered("fuel", dal), _filtered("fuel", ual), _filtered("Fuel ", dal)),
+        _answer("[1]"),
+    ])
+
+    answer = _agent(llm, tools, model_filters=True).ask("question")
+
+    assert answer.tool_calls == 2
+    assert [s.status for s in answer.agent_searches] == ["searched", "searched", "refused"]
+    assert "[filter: ticker=DAL]" in (answer.agent_searches[2].note or "")
+
+
+def test_an_invalid_filter_is_reported_to_the_model_without_spending_a_search() -> None:
+    tools = _FakeTools({"fuel": [_chunk("c")]})
+    llm = ScriptedToolLLM([_step(_filtered("fuel", {"equals": {"ticker": 7}, "bogus": {}})), _answer("?")])
+
+    answer = _agent(llm, tools, model_filters=True).ask("question")
+
+    assert tools.searches == []
+    [search] = answer.agent_searches
+    assert search.status == "error" and (search.note or "").startswith("Search error: invalid filters")
+
+
+def test_a_filter_sent_while_model_filters_is_off_is_rejected_not_dropped() -> None:
+    tools = _FakeTools({"fuel": [_chunk("c")]})
+    llm = ScriptedToolLLM([_step(_filtered("fuel", {"equals": {"ticker": "DAL"}})), _answer("?")])
+
+    answer = _agent(llm, tools).ask("question")
+
+    assert tools.searches == []
+    assert answer.agent_searches[0].status == "error"
+
+
+def test_a_filtered_search_matching_nothing_blames_the_filter_not_the_index() -> None:
+    class _NoCandidates(_FakeTools):
+        def retrieve(self, query, corpus=None, top_k=None, *, query_filter=None, on_event=None):  # type: ignore[no-untyped-def]
+            selection, _ = super().retrieve(query, corpus, top_k, query_filter=query_filter, on_event=on_event)
+            return selection, RetrievalResult(chunks=[], candidate_count=0)
+
+    llm = ScriptedToolLLM([_step(_filtered("fuel", {"equals": {"ticker": "DLA"}})), _answer("?")])
+
+    _agent(llm, _NoCandidates(), model_filters=True).ask("question")
+
+    [result] = _tool_results(llm.calls[1][0])
+    assert result.content.startswith("No passages match the filter (ticker=DLA)")
+
+
+def test_the_search_trace_records_every_call_with_its_step_passages_and_repeats() -> None:
+    tools = _FakeTools({"q1": [_chunk("a"), _chunk("b")], "q2": [_chunk("b"), _chunk("c")]})
+    llm = ScriptedToolLLM([
+        _step(_search("q1")),
+        _step(_search("q2"), _search("q1"), ToolCall(name="rag_search", arguments={})),
+        _answer("[1][3]"),
+    ])
+
+    answer = _agent(llm, tools).ask("question")
+
+    rows = [(s.step, s.query, s.status, s.passages, s.new_passages, s.chunk_ids) for s in answer.agent_searches]
+    assert rows == [
+        (1, "q1", "searched", [1, 2], [1, 2], ["a", "b"]),
+        (2, "q2", "searched", [2, 3], [3], ["b", "c"]),
+        (2, "q1", "refused", [], [], []),
+        (2, "", "refused", [], [], []),
+    ]
+    assert answer.search_queries == ["q1", "q2"]
+
+
+def test_a_filter_sent_as_a_json_string_is_decoded() -> None:
+    tools = _FakeTools({"fuel": [_chunk("dal")]})
+    llm = ScriptedToolLLM([_step(_filtered("fuel", '{"equals": {"ticker": "DAL"}}')), _answer("[1]")])
+
+    answer = _agent(llm, tools, model_filters=True).ask("question")
+
+    assert tools.filters == [QueryFilter(equals={"ticker": "DAL"})]
+    assert answer.agent_searches[0].filters == {"equals": {"ticker": "DAL"}}
+
+
+def test_an_invalid_filter_error_names_the_field_without_pydantic_boilerplate() -> None:
+    llm = ScriptedToolLLM([_step(_filtered("fuel", "not json")), _step(_filtered("fuel", {"equals": {"ticker": 7}})), _answer("?")])
+
+    answer = _agent(llm, _FakeTools(), model_filters=True).ask("question")
+
+    first, second = (s.note or "" for s in answer.agent_searches)
+    assert first == "Search error: invalid filters: not a JSON object."
+    assert second == "Search error: invalid filters: equals.ticker: Input should be a valid string"

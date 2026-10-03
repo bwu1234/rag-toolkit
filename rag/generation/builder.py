@@ -163,13 +163,16 @@ def build_agent_service(
     return AgentService(
         build_agent_llm(config),
         RagTools(config=config, llm_client=utility_client),
-        system_prompt=agent_system_prompt(config.agent.strategy, descriptions),
+        system_prompt=agent_system_prompt(
+            config.agent.strategy, descriptions, model_filters=config.agent.model_filters
+        ),
         corpora=selection.names,
         strategy=config.agent.strategy,
         max_tool_calls=config.agent.max_tool_calls,
         timeout_s=config.agent.timeout_s,
         max_passage_chars=config.agent.max_passage_chars,
         max_history_turns=config.chat.max_history_turns,
+        model_filters=config.agent.model_filters,
         groundedness_checker=(
             GroundednessChecker(utility_client) if crag.enabled and crag.check_groundedness else None
         ),

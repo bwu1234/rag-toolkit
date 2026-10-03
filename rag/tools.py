@@ -58,6 +58,22 @@ MAX_RESULTS = 20
 DEFAULT_MAX_CHARS = 1200
 
 
+def _refs(schema: Any) -> set[str]:
+    """Names of the `#/$defs/...` definitions `schema` refers to directly."""
+
+    found: set[str] = set()
+    if isinstance(schema, dict):
+        ref = schema.get("$ref")
+        if isinstance(ref, str) and ref.startswith("#/$defs/"):
+            found.add(ref.removeprefix("#/$defs/"))
+        for value in schema.values():
+            found |= _refs(value)
+    elif isinstance(schema, list):
+        for value in schema:
+            found |= _refs(value)
+    return found
+
+
 @dataclass(frozen=True)
 class ToolSpec:
     """One tool: its wire identity plus the callable behind it."""
@@ -103,11 +119,22 @@ class ToolSpec:
             if name in required:
                 raise ValueError(f"{self.name} argument {name!r} is required and can't be pinned")
             del properties[name]
-        return ToolDefinition(
-            name=self.name,
-            description=self.description,
-            parameters={**schema, "properties": properties},
-        )
+        parameters = {**schema, "properties": properties}
+        if "$defs" in schema:
+            # Keep only the definitions a remaining property still reaches, so
+            # a pinned argument's types don't ride along in every prompt.
+            defs: dict[str, Any] = schema["$defs"]
+            reached: dict[str, Any] = {}
+            pending = _refs(properties)
+            while pending:
+                name = pending.pop()
+                if name not in reached and name in defs:
+                    reached[name] = defs[name]
+                    pending |= _refs(defs[name])
+            parameters["$defs"] = {name: defs[name] for name in defs if name in reached}
+            if not parameters["$defs"]:
+                del parameters["$defs"]
+        return ToolDefinition(name=self.name, description=self.description, parameters=parameters)
 
 
 def input_schema_for(handler: Callable[..., Any]) -> dict[str, Any]:

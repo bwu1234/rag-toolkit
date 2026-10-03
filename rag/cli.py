@@ -476,8 +476,16 @@ def _cmd_chat(args: argparse.Namespace) -> None:
             f"Agent ran {result.tool_calls} search(es) in {result.retrieval_attempts} round(s); "
             f"stopped: {result.stopped_reason}"
         )
-        for rank, search_query in enumerate(result.search_queries, start=1):
-            print(f"  {rank}. {search_query}")
+        for search in result.agent_searches:
+            print(f"  step {search.step}: {search.query!r}")
+            if search.filters:
+                print(f"    filter: {json.dumps(search.filters)}")
+            if search.status == "searched":
+                new = set(search.new_passages)
+                shown = " ".join(f"[{n}]" if n in new else f"([{n}])" for n in search.passages)
+                print(f"    -> {shown or 'nothing'}" + ("  (parenthesized: already shown)" if new != set(search.passages) else ""))
+            else:
+                print(f"    {search.status}: {search.note}")
     elif result.search_queries:
         print(f"Expanded into {len(result.search_queries)} search query/queries:")
         for rank, search_query in enumerate(result.search_queries, start=1):

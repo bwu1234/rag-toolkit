@@ -53,6 +53,7 @@ from rag.events import EventSink
 from rag.generation.chat_service import ChatAnswer, ChatResponder, TurnTrace
 from rag.generation.llm import LLMClient
 from rag.generation.query_rewriter import ChatTurn
+from rag.observability.records import AgentSearch
 from rag.query_filter import QueryFilter
 
 logger = logging.getLogger(__name__)
@@ -132,6 +133,8 @@ class MusiqueSampleResult:
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
     grounded: bool | None = None
+    #: Agentic turns: every search call the model made, in order. Empty for a pipeline turn.
+    agent_searches: list[AgentSearch] = field(default_factory=list)
 
     @property
     def evidence_recall(self) -> float:
@@ -144,7 +147,8 @@ class MusiqueSampleResult:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> MusiqueSampleResult:
-        return cls(**data)
+        searches = [AgentSearch.from_dict(s) for s in data.get("agent_searches", [])]
+        return cls(**{**data, "agent_searches": searches})
 
 
 @dataclass
@@ -230,6 +234,7 @@ def score_sample(
         prompt_tokens=answer.prompt_tokens,
         completion_tokens=answer.completion_tokens,
         grounded=answer.grounded,
+        agent_searches=answer.agent_searches,
     )
 
 

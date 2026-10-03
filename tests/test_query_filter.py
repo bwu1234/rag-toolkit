@@ -59,3 +59,46 @@ def test_filtering_on_a_field_chunks_do_not_store_is_an_error() -> None:
     check_filterable(QueryFilter(equals={"document_id": "a.md", "ticker": "AAPL"}), ["ticker"])
     with pytest.raises(ValueError, match="tickr"):
         check_filterable(QueryFilter(equals={"tickr": "AAPL"}), ["ticker"])
+
+
+# --------------------------------------------------------------------------
+# intersect: a narrower filter layered on a fixed one
+# --------------------------------------------------------------------------
+
+
+def test_intersect_combines_disjoint_conditions() -> None:
+    turn = QueryFilter(equals={"ticker": "DAL"})
+    model = QueryFilter(any_of={"form": ["10-Q"]}, range={"period_end": {"gte": "2026-01-01"}})
+
+    combined = turn.intersect(model)
+
+    assert combined == QueryFilter(
+        equals={"ticker": "DAL"}, any_of={"form": ["10-Q"]}, range={"period_end": {"gte": 20260101}}
+    )
+
+
+def test_intersect_narrows_shared_fields_and_never_widens() -> None:
+    turn = QueryFilter(any_of={"ticker": ["DAL", "UAL"]}, range={"period_end": {"gte": 20260101, "lte": 20261231}})
+    model = QueryFilter(any_of={"ticker": ["UAL", "LUV"]}, range={"period_end": {"gte": 20260401}})
+
+    combined = turn.intersect(model)
+
+    assert combined.any_of == {"ticker": ["UAL"]}
+    assert combined.range["period_end"] == IntRange(gte=20260401, lte=20261231)
+
+
+@pytest.mark.parametrize(
+    "turn, model",
+    [
+        (QueryFilter(equals={"ticker": "DAL"}), QueryFilter(equals={"ticker": "UAL"})),
+        (QueryFilter(any_of={"ticker": ["DAL"]}), QueryFilter(any_of={"ticker": ["UAL"]})),
+        (QueryFilter(any_of={"ticker": ["DAL"]}), QueryFilter(equals={"ticker": "UAL"})),
+        (
+            QueryFilter(range={"period_end": {"lte": 20251231}}),
+            QueryFilter(range={"period_end": {"gte": 20260101}}),
+        ),
+    ],
+)
+def test_intersect_refuses_filters_that_cannot_both_hold(turn: QueryFilter, model: QueryFilter) -> None:
+    with pytest.raises(ValueError):
+        turn.intersect(model)

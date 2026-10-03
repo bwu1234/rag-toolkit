@@ -122,6 +122,44 @@ class QueryFilter(BaseModel):
         # Chroma rejects `$and` with fewer than two operands.
         return clauses[0] if len(clauses) == 1 else {"$and": clauses}
 
+    def intersect(self, other: QueryFilter) -> QueryFilter:
+        """One filter a chunk passes exactly when it passes both `self` and `other`.
+
+        For a narrower filter layered on a fixed one -- the agent's own filter
+        on top of the turn's -- so the layer can narrow but never widen.
+
+        Raises:
+            ValueError: the two can't both hold (`ticker=AAPL` and
+                `ticker=MSFT`), so the result would match nothing. Reported
+                rather than searched: an empty result would read as "the
+                corpus doesn't cover this".
+        """
+
+        equals = dict(self.equals)
+        for name, value in other.equals.items():
+            if equals.setdefault(name, value) != value:
+                raise ValueError(f"{name} can't equal both {equals[name]!r} and {value!r}")
+        any_of = dict(self.any_of)
+        for name, options in other.any_of.items():
+            kept = [option for option in any_of.get(name, options) if option in options]
+            if not kept:
+                raise ValueError(f"{name} can't be in both {any_of[name]} and {options}")
+            any_of[name] = kept
+        ranges = dict(self.range)
+        for name, bounds in other.range.items():
+            if name in ranges:
+                lows = [b for b in (ranges[name].gte, bounds.gte) if b is not None]
+                highs = [b for b in (ranges[name].lte, bounds.lte) if b is not None]
+                low, high = max(lows, default=None), min(highs, default=None)
+                if low is not None and high is not None and low > high:
+                    raise ValueError(f"{name} ranges don't overlap: {ranges[name]} and {bounds}")
+                bounds = IntRange(gte=low, lte=high)
+            ranges[name] = bounds
+        for name, value in equals.items():
+            if name in any_of and value not in any_of[name]:
+                raise ValueError(f"{name} can't equal {value!r} and be in {any_of[name]}")
+        return QueryFilter(equals=equals, any_of=any_of, range=ranges)
+
     def describe(self) -> str:
         """Compact human-readable form for logs and trace events."""
         parts = [f"{name}={value}" for name, value in self.equals.items()]
