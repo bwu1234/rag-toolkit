@@ -303,6 +303,25 @@ Two consequences worth knowing:
   expansion queries, dropped/graded-out counts, retry queries, groundedness), so
   every caller sees it, not just the one passing `on_event`.
 
+## Package boundaries
+
+Dependencies run one way, and `lint-imports` enforces it in CI:
+
+```text
+rag.chat          picks pipeline or agent by chat.mode (build_chat_service)
+  rag.agent       the agent loop, its prompts, calculator and builder
+    rag.generation   the retrieve-then-generate pipeline, CRAG, shared answer types
+      rag.llm        model clients and the tool-calling interface
+```
+
+Each layer imports only the ones below it, so the pipeline never imports the
+agent and the model clients import neither. Retrieval (`retrieval`,
+`chunking`, `vectorstore`, `embedding`, `ingestion`, `tools`, `mcp`) imports
+`rag.llm` but nothing above it, and the agent reaches retrieval only through
+the `rag.tools` contract. Library code never imports an entrypoint. Why one
+repo, and what the split does and doesn't separate:
+[ADR 0016](decisions/0016-package-boundaries.md).
+
 ## Build vs. adopt
 
 Which layers this repo implements and which it takes from established tools.

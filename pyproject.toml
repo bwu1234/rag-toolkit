@@ -21,6 +21,8 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
+    # Enforces the package boundaries below in CI (`lint-imports`).
+    "import-linter>=2.0",
 ]
 # Optional so the core install stays lean: `rag.mcp` serves stdio without it
 # via a built-in JSON-RPC fallback. Installing it adds the official transports
@@ -43,6 +45,58 @@ markers = ["live: talks to a real local Ollama daemon"]
 # which has grown across releases and previously broke CI on a ruff bump with
 # no code changes on our side. E4/E7/E9/F matches ruff's historical default.
 select = ["E4", "E7", "E9", "F"]
+
+# Package boundaries, checked by `lint-imports` (CI runs it). The picture:
+# retrieval is a part the agent is built from, so the dependency runs one way,
+# and the agent reaches retrieval only through `rag.tools`. The reasoning is
+# ADR 0016. Contracts check indirect imports too unless they say otherwise.
+[tool.importlinter]
+root_package = "rag"
+
+[[tool.importlinter.contracts]]
+name = "Answering stack: chat > agent > generation > llm (imports run downward only)"
+type = "layers"
+# rag.chat picks the pipeline or the agent by chat.mode, so it sits above both.
+# rag.generation is the retrieve-then-generate pipeline plus the answer types
+# the agent shares; rag.llm is the model-client kernel, which imports none of
+# them. The agent and the pipeline never import each other's builders.
+layers = ["rag.chat", "rag.agent", "rag.generation", "rag.llm"]
+
+[[tool.importlinter.contracts]]
+name = "Retrieval never imports the answering stack"
+type = "forbidden"
+source_modules = [
+    "rag.retrieval", "rag.chunking", "rag.vectorstore", "rag.embedding",
+    "rag.ingestion", "rag.query_filter", "rag.index_manifest",
+    "rag.index_report", "rag.tools", "rag.mcp", "rag.llm",
+]
+forbidden_modules = ["rag.generation", "rag.agent", "rag.chat"]
+
+[[tool.importlinter.contracts]]
+name = "The agent reaches retrieval only through the rag.tools contract"
+type = "forbidden"
+source_modules = ["rag.agent"]
+forbidden_modules = [
+    "rag.retrieval", "rag.chunking", "rag.embedding", "rag.ingestion",
+    "rag.vectorstore",
+]
+# rag.tools itself imports retrieval, so indirect chains are the point of the
+# door and cannot be forbidden.
+allow_indirect_imports = true
+# Known debt: RagTools.retrieve returns ScoredChunk, so the agent names the
+# type. Re-export it from rag.tools to close this.
+ignore_imports = ["rag.agent.service -> rag.vectorstore.base"]
+
+[[tool.importlinter.contracts]]
+name = "Library code never imports an entrypoint"
+type = "forbidden"
+source_modules = [
+    "rag.retrieval", "rag.chunking", "rag.vectorstore", "rag.embedding",
+    "rag.ingestion", "rag.query_filter", "rag.index_manifest",
+    "rag.index_report", "rag.tools", "rag.mcp", "rag.llm", "rag.generation",
+    "rag.agent", "rag.chat", "rag.observability", "rag.config", "rag.events",
+]
+forbidden_modules = ["rag.api", "rag.ui", "rag.cli", "rag.eval"]
 
 [build-system]
 requires = ["setuptools>=68"]

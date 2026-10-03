@@ -46,6 +46,12 @@ jobs:
           # keeps CI stable across envs.
           mypy --ignore-missing-imports rag
 
+      - name: Package boundaries (import-linter)
+        run: |
+          # Contracts live in pyproject.toml ([tool.importlinter]); see
+          # docs/decisions/0016-package-boundaries.md.
+          lint-imports
+
       - name: Run tests
         run: |
           pytest -q
