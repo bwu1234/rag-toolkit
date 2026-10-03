@@ -1943,6 +1943,9 @@ Cost per answering turn, mean over runs, with the judge's calls excluded:
   - *Cause unverified.* The records don't keep the raw model response, so
     the cause isn't confirmed. The pattern fits the 27b spending its
     4,096-token budget on reasoning before writing an answer.
+  - *Guard added, not re-measured.* The agent now forces an answer turn
+    after an empty reply (`stopped_reason: empty`) and logs Ollama's stop
+    reason. The rows above ran before it.
 - **The 9b agent still gains nothing that clears noise.** `react / 9b` is
   +2.7 on multi-hop (7/5, p 0.77) and both 9b strategies trail the pipeline
   on adaptive. Recall rises on multi-hop and falls on adaptive (0.58 vs

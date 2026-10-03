@@ -214,9 +214,9 @@ and groundedness both need to see both sides of the retrieve/generate boundary.
    deduplicated by chunk id. It becomes `ChatAnswer.citations`, so `[n]`
    means the same thing in both modes.
 5. **Guards (`agent.*`)** end the searching: `max_tool_calls`, `timeout_s`,
-   a refused repeat query, and a context-window overflow. Each ends in one
-   tool-free call that must answer. `ChatAnswer.stopped_reason` says which
-   guard fired.
+   a refused repeat query, a context-window overflow, and a reply with
+   neither text nor a tool call. Each ends in one tool-free call that must
+   answer. `ChatAnswer.stopped_reason` says which guard fired.
 6. **Check groundedness (optional).** `crag.check_groundedness` checks the
    final answer against the ledger and only reports the verdict. CRAG's
    grader and retries don't apply.

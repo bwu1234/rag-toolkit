@@ -101,11 +101,13 @@ class OllamaLLMClient(ToolCallingLLM):
         payload = self._post_chat([_to_wire(m) for m in messages], [_tool_to_wire(t) for t in tools])
         message = payload["message"]
         thinking = message.get("thinking")
+        done_reason = payload.get("done_reason")
         return AssistantTurn(
             content=message["content"],
             tool_calls=tuple(_parse_tool_call(raw, payload) for raw in message.get("tool_calls") or ()),
             thinking=thinking if isinstance(thinking, str) and thinking else None,
             usage=self._usage(payload),
+            stop_reason=done_reason if isinstance(done_reason, str) else None,
         )
 
     def _post_chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:

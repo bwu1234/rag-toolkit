@@ -170,6 +170,22 @@ def _numbers_label(numbers: Sequence[int]) -> str:
     return ", ".join(f"[{n}]" for n in numbers)
 
 
+def _log_empty(turn: AssistantTurn, where: str) -> None:
+    """Say why a model call came back with nothing, as far as the provider reports it."""
+
+    reasoning = len(turn.thinking) if turn.thinking else 0
+    hint = (
+        " It stopped at max_tokens: reasoning can use the whole budget, so raise the "
+        "agent model's max_tokens or set think: low."
+        if turn.stop_reason == "length"
+        else ""
+    )
+    logger.warning(
+        "Model returned neither text nor a tool call at the %s (stop_reason=%s, %d reasoning chars).%s",
+        where, turn.stop_reason, reasoning, hint,
+    )
+
+
 class AgentService(ChatResponder):
     """Answers a turn by letting the model search as often as it needs, within guards.
 
@@ -303,11 +319,14 @@ class AgentService(ChatResponder):
                 if not self._roll_back_step(run):
                     raise
                 return self._finish(run, "context")
-            run.messages.append(turn)
             if not turn.tool_calls:
+                if not turn.content.strip():
+                    return self._recover_empty(run, turn)
+                run.messages.append(turn)
                 run.answer = turn.content
                 return "answered"
 
+            run.messages.append(turn)
             self._run_calls(run, turn.tool_calls)
             # Out of searches means no tools next time, so the next call is the
             # forced one whether or not this step had a search refused.
@@ -326,11 +345,14 @@ class AgentService(ChatResponder):
         """
 
         plan = self._call(run, [self.search_tool], "agent_plan")
-        run.messages.append(plan)
         if not plan.tool_calls:
+            if not plan.content.strip():
+                return self._recover_empty(run, plan)
+            run.messages.append(plan)
             run.answer = plan.content
             return "answered"
 
+        run.messages.append(plan)
         self._run_calls(run, plan.tool_calls)
         if run.hit_timeout:
             return self._finish(run, "timeout")
@@ -462,7 +484,24 @@ class AgentService(ChatResponder):
             reason = "context"
         run.messages.append(turn)
         run.answer = turn.content
+        if not turn.content.strip():
+            _log_empty(turn, "forced answer turn")
         return reason
+
+    def _recover_empty(self, run: _Run, turn: AssistantTurn) -> StoppedReason:
+        """A reply with neither text nor a tool call is not an answer: force one, once.
+
+        The 27b with default thinking did this on a refusal question in every
+        run of the Milestone 19 re-run on `edgar_md`, and the turn returned ""
+        as if answered. The empty turn is left out of the conversation -- it
+        carries nothing the model needs, and resending a reasoning trace that
+        filled `max_tokens` would only spend more of the window -- and the
+        forced synthesis turn gets one try. If that is empty too, the turn
+        returns empty, logged, rather than retrying without bound.
+        """
+
+        _log_empty(turn, "agent step")
+        return self._finish(run, "empty")
 
     def _roll_back_step(self, run: _Run) -> bool:
         """Blank the latest step's results after a context overflow; False if there is none.
