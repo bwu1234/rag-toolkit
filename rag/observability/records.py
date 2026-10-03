@@ -83,7 +83,11 @@ class AgentSearch:
     query: str
     status: AgentSearchStatus = "searched"
     filters: dict[str, Any] | None = None
-    """The filter the model asked for, normalized; None when it set none. The turn's own is `query_filter`."""
+    """The model's filter as applied: validated, dates as YYYYMMDD. None when it set none or it was invalid.
+    The turn's own filter is `query_filter`."""
+    filters_raw: Any = None
+    """The `filters` argument exactly as the model sent it -- a JSON-encoded string, an object, or
+    something invalid. What `filters` was parsed from, and the only record of a rejected one."""
     note: str | None = None
     """For a refused or rejected call, the reason the model was shown."""
     passages: list[int] = field(default_factory=list)

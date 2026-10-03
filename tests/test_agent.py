@@ -527,8 +527,10 @@ def test_a_model_filter_reaches_retrieval_and_narrows_the_turn_filter() -> None:
         QueryFilter(equals={"ticker": "DAL"}, range={"period_end": {"gte": 20260630, "lte": 20260630}})
     ]
     [search] = answer.agent_searches
-    # The trace keeps the model's own filter; the turn's is on the record separately.
+    # The trace keeps the model's own filter, as applied and as sent; the
+    # turn's is on the record separately.
     assert search.filters == {"range": {"period_end": {"gte": 20260630, "lte": 20260630}}}
+    assert search.filters_raw == {"range": {"period_end": {"gte": "2026-06-30", "lte": "2026-06-30"}}}
 
 
 def test_a_model_filter_that_contradicts_the_turn_filter_is_an_error_not_a_search() -> None:
@@ -623,6 +625,7 @@ def test_a_filter_sent_as_a_json_string_is_decoded() -> None:
 
     assert tools.filters == [QueryFilter(equals={"ticker": "DAL"})]
     assert answer.agent_searches[0].filters == {"equals": {"ticker": "DAL"}}
+    assert answer.agent_searches[0].filters_raw == '{"equals": {"ticker": "DAL"}}'
 
 
 def test_an_invalid_filter_error_names_the_field_without_pydantic_boilerplate() -> None:
@@ -631,5 +634,9 @@ def test_an_invalid_filter_error_names_the_field_without_pydantic_boilerplate() 
     answer = _agent(llm, _FakeTools(), model_filters=True).ask("question")
 
     first, second = (s.note or "" for s in answer.agent_searches)
+    # A rejected filter has no applied form; what the model sent is the only record.
+    assert [(s.filters, s.filters_raw) for s in answer.agent_searches] == [
+        (None, "not json"), (None, {"equals": {"ticker": 7}}),
+    ]
     assert first == "Search error: invalid filters: not a JSON object."
     assert second == "Search error: invalid filters: equals.ticker: Input should be a valid string"

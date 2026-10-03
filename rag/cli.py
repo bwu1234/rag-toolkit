@@ -480,6 +480,8 @@ def _cmd_chat(args: argparse.Namespace) -> None:
             print(f"  step {search.step}: {search.query!r}")
             if search.filters:
                 print(f"    filter: {json.dumps(search.filters)}")
+            elif search.filters_raw is not None:
+                print(f"    filter as sent: {json.dumps(search.filters_raw)}")
             if search.status == "searched":
                 new = set(search.new_passages)
                 shown = " ".join(f"[{n}]" if n in new else f"([{n}])" for n in search.passages)

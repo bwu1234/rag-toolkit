@@ -97,6 +97,10 @@ def test_intersect_narrows_shared_fields_and_never_widens() -> None:
             QueryFilter(range={"period_end": {"lte": 20251231}}),
             QueryFilter(range={"period_end": {"gte": 20260101}}),
         ),
+        (
+            QueryFilter(range={"period_end": {"gte": 20260101}}),
+            QueryFilter(equals={"period_end": "20250630"}),
+        ),
     ],
 )
 def test_intersect_refuses_filters_that_cannot_both_hold(turn: QueryFilter, model: QueryFilter) -> None:

@@ -412,6 +412,7 @@ class AgentService(ChatResponder):
         searched_this_step = False
         for call in calls:
             query = call.arguments.get("query")
+            raw_filters = call.arguments.get(FILTERS_ARGUMENT)
             model_filter, filter_error = self._model_filter(call)
             refusal = filter_error or self._refusal(run, call, model_filter)
             if refusal is not None:
@@ -422,11 +423,12 @@ class AgentService(ChatResponder):
                         query=query if isinstance(query, str) else "",
                         status="error" if filter_error else "refused",
                         filters=_filter_dump(model_filter),
+                        filters_raw=raw_filters,
                         note=refusal,
                     )
                 )
             else:
-                content = self._search(run, str(query), model_filter)
+                content = self._search(run, str(query), model_filter, raw_filters)
                 searched_this_step = searched_this_step or run.searches[-1].status == "searched"
             run.messages.append(ToolResult(call=call, content=content))
         run.rounds += 1 if searched_this_step else 0
@@ -488,7 +490,7 @@ class AgentService(ChatResponder):
         emit(run.on_event, start, "search_refused", reason)
         return reason
 
-    def _search(self, run: _Run, query: str, model_filter: QueryFilter | None) -> str:
+    def _search(self, run: _Run, query: str, model_filter: QueryFilter | None, raw_filters: Any) -> str:
         """Run one search, number its passages, and render them for the model.
 
         The model's filter narrows the turn's, never replaces it: a `/chat`
@@ -508,7 +510,10 @@ class AgentService(ChatResponder):
             note = f"Search error: {exc}"
             emit(run.on_event, start, "search_refused", note)
             run.searches.append(
-                AgentSearch(step=run.steps, query=query, status="error", filters=_filter_dump(model_filter), note=note)
+                AgentSearch(
+                    step=run.steps, query=query, status="error",
+                    filters=_filter_dump(model_filter), filters_raw=raw_filters, note=note,
+                )
             )
             return note
 
@@ -523,6 +528,7 @@ class AgentService(ChatResponder):
                 step=run.steps,
                 query=query,
                 filters=_filter_dump(model_filter),
+                filters_raw=raw_filters,
                 passages=numbers,
                 new_passages=new,
                 chunk_ids=[chunk.chunk_id for _, chunk, _ in entries],
