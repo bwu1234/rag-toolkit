@@ -179,9 +179,17 @@ def _numbers_label(numbers: Sequence[int]) -> str:
 
 
 def _filter_key(model_filter: QueryFilter | None) -> str:
-    """A filter as part of the repeat-search key: one query under two filters is two searches."""
+    """A filter as part of the repeat-search key: one query under two filters is two searches.
 
-    return "" if model_filter is None else model_filter.model_dump_json(exclude_defaults=True)
+    Canonical, so the same conditions written in another order are the same
+    key: fields sorted, and `any_of` values too (membership ignores order).
+    """
+
+    if model_filter is None:
+        return ""
+    dumped = model_filter.model_dump(exclude_defaults=True)
+    dumped["any_of"] = {name: sorted(options) for name, options in model_filter.any_of.items()}
+    return json.dumps(dumped, sort_keys=True)
 
 
 def _filter_label(model_filter: QueryFilter | None) -> str:

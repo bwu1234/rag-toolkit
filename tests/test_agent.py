@@ -562,6 +562,18 @@ def test_the_same_query_under_another_filter_is_a_new_search_and_the_same_one_is
     assert "[filter: ticker=DAL]" in (answer.agent_searches[2].note or "")
 
 
+def test_the_same_filter_written_in_another_order_is_a_repeat() -> None:
+    tools = _FakeTools({"fuel": [_chunk("c")]})
+    first = {"equals": {"ticker": "DAL", "form": "10-Q"}, "any_of": {"company": ["A", "B"]}}
+    reordered = {"any_of": {"company": ["B", "A"]}, "equals": {"form": "10-Q", "ticker": "DAL"}}
+    llm = ScriptedToolLLM([_step(_filtered("fuel", first), _filtered("fuel", reordered)), _answer("[1]")])
+
+    answer = _agent(llm, tools, model_filters=True).ask("question")
+
+    assert answer.tool_calls == 1
+    assert [s.status for s in answer.agent_searches] == ["searched", "refused"]
+
+
 def test_an_invalid_filter_is_reported_to_the_model_without_spending_a_search() -> None:
     tools = _FakeTools({"fuel": [_chunk("c")]})
     llm = ScriptedToolLLM([_step(_filtered("fuel", {"equals": {"ticker": 7}, "bogus": {}})), _answer("?")])
