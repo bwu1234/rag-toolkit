@@ -70,6 +70,20 @@ corpora:
       description: >
         BEIR NFCorpus: 3,633 medical abstracts, 323 test queries with graded
         labels (~38 relevant each). Pinned in its manifest.
+    musique-ans-dev:
+      documents_dir: data/corpora/musique-ans-dev/documents
+      clean: false
+      description: >
+        MuSiQue-Ans dev: 21,100 Wikipedia paragraphs pooled over 2,417 2-4 hop
+        questions; the confirmatory multi-hop set. Pinned in
+        data/corpora/musique-ans/manifest.json; index with
+        rag/config/musique.yaml.
+    musique-ans-train-tune:
+      documents_dir: data/corpora/musique-ans-train-tune/documents
+      clean: false
+      description: >
+        MuSiQue-Ans train slice for tuning: 25,777 paragraphs pooled over
+        2,417 questions sharing none with dev, 300 of them scored.
 
 embedding:
   # `ollama` (a local daemon) or `sentence_transformers` (the model runs in
