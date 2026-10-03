@@ -34,7 +34,9 @@ from rag.ingestion.corpora import chunk_selected_corpora, load_selected_corpora
 from rag.ingestion.loaders import CorpusLoadError
 from rag.logging_config import configure_logging
 from rag.observability.factory import get_turn_sink, turn_log_path
+from rag.observability.records import TurnRecord
 from rag.observability.sink import read_turn_log, turns_with_feedback
+from rag.observability.transcript import write_trace
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.factory import get_sparse_index, sparse_index_path
 from rag.vectorstore.factory import get_vector_store
@@ -464,7 +466,14 @@ def _cmd_chat(args: argparse.Namespace) -> None:
         agent_llm = config.agent.llm or config.llm
         print(f"Agent: {config.agent.strategy} on {agent_llm.provider}:{agent_llm.model}")
 
-    result = chat_service.ask(args.query)
+    records: list[TurnRecord] = []
+    try:
+        result = chat_service.ask(args.query, on_record=records.append if args.trace else None)
+    finally:
+        # Written even when the turn raised: a failing turn is the one worth reading.
+        if args.trace is not None and records:
+            write_trace(records[0], args.trace, context=[("Config", str(args.config or "rag/config/config.yaml"))])
+            print(f"Trace written to {args.trace}")
 
     # The CLI is single-shot, so `rewritten_query` is only ever set here if a
     # future caller passes history -- printed anyway so the two things the
@@ -656,6 +665,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     chat = subparsers.add_parser("chat", help="Ask a question and get a generated, cited answer (retrieve -> rerank -> generate)", parents=[corpus_args])
     chat.add_argument("query", help="The question to ask")
+    chat.add_argument(
+        "--trace", type=Path, default=None, metavar="PATH",
+        help="Write the whole turn -- system prompt, every LLM call and tool result, the answer -- "
+        "to PATH as Markdown (or as the raw record, for a .json PATH)",
+    )
     chat.set_defaults(func=_cmd_chat)
 
     turns = subparsers.add_parser("turns", help="Show recently logged chat turns and their feedback")

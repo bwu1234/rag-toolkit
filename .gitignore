@@ -65,3 +65,6 @@ data/benchmarks/
 # The isolated Pyserini reference environment (docs/beir-reference-protocol.md);
 # never a repo dependency.
 .venv-pyserini/
+
+# Per-question traces from scripts/trace_question.py -- local diagnostics.
+data/traces/

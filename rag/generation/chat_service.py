@@ -14,7 +14,7 @@ import dataclasses
 import logging
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -267,6 +267,7 @@ class ChatResponder(ABC):
         history: list[ChatTurn] | None = None,
         query_filter: QueryFilter | None = None,
         on_event: EventSink | None = None,
+        on_record: Callable[[TurnRecord], None] | None = None,
     ) -> ChatAnswer:
         """Answer `query`, measuring and (when a `TurnSink` is wired in) recording the turn.
 
@@ -285,6 +286,11 @@ class ChatResponder(ABC):
         attaches to. A turn that raises is recorded too (outcome `error`)
         before the exception propagates -- a failing turn is exactly the one
         worth finding in the log afterwards.
+
+        `on_record`, if given, asks for a transcript: every LLM call the turn
+        makes is kept verbatim (`TurnRecord.llm_exchanges`), and the turn's
+        record is passed to it -- failed turns included, before the exception
+        propagates. The turn sink still gets the record without the transcript.
         """
 
         turn_id = new_id()
@@ -302,7 +308,7 @@ class ChatResponder(ABC):
                 on_event(event)
 
         start = time.monotonic()
-        with metered() as meter:
+        with metered(capture=on_record is not None) as meter:
             try:
                 answer = self._answer(query, history, observe, trace, query_filter)
             except Exception as exc:
@@ -311,6 +317,7 @@ class ChatResponder(ABC):
                     turn_id, timestamp, query, history, None, trace, meter,
                     total_ms=(time.monotonic() - start) * 1000,
                     error=f"{type(exc).__name__}: {exc}",
+                    on_record=on_record,
                 )
                 raise
 
@@ -324,7 +331,10 @@ class ChatResponder(ABC):
             prompt_tokens=meter.prompt_tokens,
             completion_tokens=meter.completion_tokens,
         )
-        self._record(turn_id, timestamp, query, history, answer, trace, meter, total_ms=answer.total_ms or 0.0)
+        self._record(
+            turn_id, timestamp, query, history, answer, trace, meter,
+            total_ms=answer.total_ms or 0.0, on_record=on_record,
+        )
         return answer
 
     def _record(
@@ -339,14 +349,15 @@ class ChatResponder(ABC):
         *,
         total_ms: float,
         error: str | None = None,
+        on_record: Callable[[TurnRecord], None] | None = None,
     ) -> None:
-        """Write this turn's `TurnRecord` to the sink, if there is one.
+        """Write this turn's `TurnRecord` to the sink, if there is one, and hand it to `on_record`.
 
         A failed write is logged and swallowed: losing one log line is not a
         reason to fail the user's turn, which has already been answered.
         """
 
-        if self._turn_sink is None:
+        if self._turn_sink is None and on_record is None:
             return
         record = TurnRecord(
             turn_id=turn_id,
@@ -377,10 +388,13 @@ class ChatResponder(ABC):
             stopped_reason=answer.stopped_reason if answer is not None else None,
             agent_calls=answer.agent_calls if answer is not None else [],
         )
-        try:
-            self._turn_sink.record_turn(record)
-        except Exception:
-            logger.warning("Failed to record turn %s; the answer is unaffected", turn_id, exc_info=True)
+        if self._turn_sink is not None:
+            try:
+                self._turn_sink.record_turn(record)
+            except Exception:
+                logger.warning("Failed to record turn %s; the answer is unaffected", turn_id, exc_info=True)
+        if on_record is not None:
+            on_record(dataclasses.replace(record, llm_exchanges=list(meter.exchanges or [])))
 
 
 class ChatService(ChatResponder):
