@@ -76,7 +76,9 @@ class AgentToolCall:
     For `rag_search`, `passages` are the ledger numbers the result showed, in
     rank order -- the `[n]` the answer cites -- and `new_passages` the ones it
     showed for the first time; the rest came back as "already shown" stubs.
-    For `rag_list_documents`, `documents` are the ids it listed.
+    For `rag_list_documents`, `documents` are the ids it listed. For
+    `calculator`, `expression` is what the model asked for and `result` the
+    value it was shown.
     """
 
     step: int
@@ -98,6 +100,8 @@ class AgentToolCall:
     chunk_ids: list[str] = field(default_factory=list)
     """The chunk behind each of `passages`, in the same order."""
     documents: list[str] = field(default_factory=list)
+    expression: str | None = None
+    result: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AgentToolCall:

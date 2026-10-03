@@ -562,7 +562,7 @@ class RetrievalConfig(BaseModel):
 
 ChatMode = Literal["pipeline", "agentic"]
 AgentStrategy = Literal["react", "planned"]
-AgentTool = Literal["rag_search", "rag_list_documents"]
+AgentTool = Literal["rag_search", "rag_list_documents", "calculator"]
 _DEFAULT_AGENT_TOOLS: tuple[AgentTool, ...] = ("rag_search",)
 
 
@@ -705,7 +705,9 @@ class AgentConfig(BaseModel):
     # The tools offered to the model, each one a matrix row before it is a
     # default (docs/milestone-19-plan.md, "Tool surface"). `rag_list_documents`
     # lists what the corpus contains, which no ranked search can enumerate.
-    # Every call, of any tool, counts toward `max_tool_calls`.
+    # `calculator` evaluates arithmetic over the passages' figures. Searches and
+    # listings count toward `max_tool_calls`; calculations don't (they add no
+    # passages), but each step that makes one is still a model call.
     tools: list[AgentTool] = Field(
         default_factory=lambda: list(_DEFAULT_AGENT_TOOLS), description="Tools offered to the agent's model"
     )

@@ -487,7 +487,8 @@ def _cmd_chat(args: argparse.Namespace) -> None:
         )
         for call in result.agent_calls:
             is_search = call.tool == "rag_search"
-            print(f"  step {call.step}: " + (repr(call.query) if is_search else call.tool))
+            label = repr(call.query) if is_search else call.tool + (f" {call.expression}" if call.expression else "")
+            print(f"  step {call.step}: {label}")
             if call.filters:
                 print(f"    filter: {json.dumps(call.filters)}")
             elif call.filters_raw is not None:
@@ -498,6 +499,8 @@ def _cmd_chat(args: argparse.Namespace) -> None:
                 new = set(call.new_passages)
                 shown = " ".join(f"[{n}]" if n in new else f"([{n}])" for n in call.passages)
                 print(f"    -> {shown or 'nothing'}" + ("  (parenthesized: already shown)" if new != set(call.passages) else ""))
+            elif call.tool == "calculator":
+                print(f"    -> {call.result}")
             else:
                 print(f"    -> {len(call.documents)} document(s): {', '.join(call.documents) or 'none'}")
     elif result.search_queries:

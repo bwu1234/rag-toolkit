@@ -316,6 +316,13 @@ M19_VARIANTS: list[Variant] = [
         **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
         "agent.tools": ["rag_search", "rag_list_documents"],
     }),
+    # The calculator (`agent.tools`); pairs with `agentic react / 27b, think=low`.
+    # Only questions whose answer is a figure the filings don't print can move:
+    # read it by kind, not overall.
+    Variant("agentic react / 27b, think=low + calc", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
+        "agent.tools": ["rag_search", "calculator"],
+    }),
     # The agent's checker reports a verdict and changes nothing, so this row's
     # answers match the plain 27b row's up to sampling; what it measures is
     # whether the verdicts flag the answers the judge failed.

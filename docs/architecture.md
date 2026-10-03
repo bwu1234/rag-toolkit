@@ -214,7 +214,11 @@ and groundedness both need to see both sides of the retrieve/generate boundary.
    which narrows the turn's `/chat` filter and can't widen it. With
    `rag_list_documents` in `agent.tools` (also off by default) it can list the
    corpus's documents and their metadata; a listing is not a passage, so it
-   isn't cited, but it spends the same `max_tool_calls` budget. Every call,
+   isn't cited, but it spends the same `max_tool_calls` budget. With
+   `calculator` (off by default) it can evaluate arithmetic over the figures
+   it found (`rag.generation.calculator`, a safe `ast` evaluator, agent-only
+   and not served over MCP); a calculation adds no passages and spends no
+   budget. Every call,
    refused or not, is recorded on `ChatAnswer.agent_calls`: query and
    filter as written, and the passages it returned.
 4. **A passage ledger numbers what the model sees**, in first-seen order and

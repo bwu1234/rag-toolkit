@@ -168,6 +168,7 @@ def build_agent_service(
             descriptions,
             model_filters=config.agent.model_filters,
             list_documents="rag_list_documents" in config.agent.tools,
+            calculator="calculator" in config.agent.tools,
         ),
         corpora=selection.names,
         strategy=config.agent.strategy,

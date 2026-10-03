@@ -669,6 +669,23 @@ credited to one tool:
    FTS5 table can answer phrase queries. Build this tool only if the read rows
    still miss questions that name an exact term.
 
+**Beside navigation: `calculator(expression)`.** Not a navigation tool, so
+not in the list above and none of the constraints below apply: it reads no
+documents, adds no ledger passages, isn't served over MCP, and spends no
+`max_tool_calls` budget (each step that calculates is still a model call).
+It answers a different failure: a figure the filings don't print (a
+percentage change between two printed amounts, a margin, a cross-company
+ratio) computed in the model's reasoning, unchecked.
+*Built, not measured (2026-10-03):* `rag.generation.calculator`, a safe `ast`
+evaluator (numbers, `+ - * / // % **`, `abs`/`round`/`min`/`max`, bounded
+exponents and length). It refuses thousands separators, `$` and `%` with a
+message rather than misreading them: `max(4,109)` would otherwise be 109.
+Offered when `agent.tools` includes it, with one prompt sentence. Matrix
+row: `agentic react / 27b, think=low + calc`. The current sets mostly ask for
+figures the filings print (`ad-airline-fuel`'s 84.1%, 67% and 67.0% are all
+printed), so read the row by kind; a gain needs questions that make the model
+derive a number.
+
 **Constraints shared by all three:**
 
 - **Citations through the ledger.** Every read window and find snippet becomes
