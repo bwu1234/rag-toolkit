@@ -175,13 +175,22 @@ def get_loader_for(path: Path) -> Loader | None:
     return _LOADERS.get(path.suffix.lower())
 
 
-def load_corpus(corpus_dir: Path) -> list[Document]:
+class CorpusLoadError(Exception):
+    """Some corpus files could not be loaded, so the corpus on disk was only partly read."""
+
+
+def load_corpus(corpus_dir: Path, *, failed: list[Path] | None = None) -> list[Document]:
     """Walk `corpus_dir` recursively and load every file with a registered loader.
 
     Files with unsupported extensions (and dotfiles) are skipped with a debug
     log line rather than raising — a corpus directory routinely contains things
     like `.gitkeep`, `README` files, or formats not yet supported, and ingestion
     should degrade gracefully rather than fail the whole run over one file.
+
+    A supported file whose loader raises is skipped too, but it is not the same
+    as an absent file: its documents are missing from the result while the file
+    is still in the corpus. Pass ``failed`` to collect those paths -- the indexer
+    needs them so it doesn't purge the documents a bad upload replaced.
     """
 
     corpus_dir = corpus_dir.resolve()
@@ -206,6 +215,8 @@ def load_corpus(corpus_dir: Path) -> list[Document]:
         except Exception:
             logger.exception("Failed to load %s — skipping", path.relative_to(corpus_dir))
             skipped += 1
+            if failed is not None:
+                failed.append(path)
             continue
 
         documents.extend(loaded)

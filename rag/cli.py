@@ -11,6 +11,7 @@ import dataclasses
 import json
 import logging
 from collections import Counter
+from pathlib import Path
 
 from rag.chunking.context_cache import ContextCache, context_cache_path
 from rag.chunking.contextualizer import ChunkContextualizer
@@ -30,6 +31,7 @@ from rag.index_manifest import (
 from rag.index_report import IndexState, build_report, format_report
 from rag.ingestion.cleaners import clean_text
 from rag.ingestion.corpora import chunk_selected_corpora, load_selected_corpora
+from rag.ingestion.loaders import CorpusLoadError
 from rag.logging_config import configure_logging
 from rag.observability.factory import get_turn_sink, turn_log_path
 from rag.observability.sink import read_turn_log, turns_with_feedback
@@ -127,17 +129,24 @@ def _cmd_index(args: argparse.Namespace) -> None:
     contextual settings, carried metadata or header template can't be applied
     incrementally; the index manifest
     refuses the run until `--reset` rebuilds it (see `rag.index_manifest`).
+
+    A file that fails to load still indexes everything else, but skips the
+    stale-chunk purge and raises `CorpusLoadError` at the end (see
+    `_load_failure`).
     """
 
     config = load_config(args.config)
     paths = config.paths.resolved()
 
-    selection, documents, chunks = chunk_selected_corpora(config, args.corpus)
-    if not documents:
-        logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
-        return
-    if not chunks:
-        logger.warning("No chunks produced -- are the documents empty?")
+    failed: list[Path] = []
+    selection, documents, chunks = chunk_selected_corpora(config, args.corpus, failed=failed)
+    if not documents or not chunks:
+        if failed:
+            raise _load_failure(failed, purge_skipped=False)
+        if not documents:
+            logger.warning("No documents loaded -- is the corpus directory empty or unsupported?")
+        else:
+            logger.warning("No chunks produced -- are the documents empty?")
         return
 
     context_cache: ContextCache | None = None
@@ -251,11 +260,20 @@ def _cmd_index(args: argparse.Namespace) -> None:
 
     # Chunk ids are positional (`<doc>::chunk<n>`), so a deleted document leaves
     # all its chunks behind and a shortened one leaves its tail. Anything either
-    # index holds that this run didn't produce is stale.
+    # index holds that this run didn't produce is stale -- unless a file failed
+    # to load, when "didn't produce" also covers documents that are still in
+    # the corpus. A bad upload overwriting a good file would otherwise purge
+    # that document from the index, so the whole purge waits for a clean run.
     current_ids = {chunk.id for chunk in chunks}
     stale_vectors = sorted(store.ids() - current_ids)
     stale_sparse = sorted(sparse.ids() - current_ids)
-    if stale_vectors or stale_sparse:
+    if failed:
+        if stale_vectors or stale_sparse:
+            print(
+                f"  kept {max(len(stale_vectors), len(stale_sparse))} chunk(s) the corpus no longer "
+                f"produces: {len(failed)} file(s) failed to load, so some may still be in the corpus"
+            )
+    elif stale_vectors or stale_sparse:
         store.delete(stale_vectors)
         sparse.delete(stale_sparse)
         print(f"  removed {max(len(stale_vectors), len(stale_sparse))} stale chunk(s) no longer in the corpus")
@@ -266,6 +284,30 @@ def _cmd_index(args: argparse.Namespace) -> None:
     print(
         f"\nIndex now holds {store.count()} vector chunk(s) "
         f"+ {sparse.count()} sparse chunk(s) (dimensions={embedder.dimensions})"
+    )
+    if failed:
+        raise _load_failure(failed, purge_skipped=True)
+
+
+def _load_failure(failed: list[Path], *, purge_skipped: bool) -> CorpusLoadError:
+    """The error `index` ends with when corpus files failed to load.
+
+    Why this over the alternatives: aborting before any write would
+    let one bad file block every good upload behind it, and protecting only the
+    failed files' chunks would mean guessing the ids a file would have produced
+    (a PDF yields one document per page; a BEIR file's ids aren't its path).
+    Indexing what loaded and deferring the purge is safe for every loader.
+    """
+
+    files = "\n  ".join(str(path) for path in failed)
+    outcome = (
+        "Everything else was indexed, but stale chunks were not removed."
+        if purge_skipped
+        else "Nothing was indexed."
+    )
+    return CorpusLoadError(
+        f"{len(failed)} corpus file(s) failed to load (see the log above):\n  {files}\n"
+        f"{outcome} Fix or remove the file(s) and re-run `index`."
     )
 
 
@@ -620,6 +662,10 @@ def main() -> None:
     except IndexManifestMismatch as exc:
         # An expected, user-fixable condition: print the instructions, not a traceback.
         parser.exit(2, f"error: {exc}\n")
+    except CorpusLoadError as exc:
+        # Non-zero so a scheduled `index` run reports the bad file instead of
+        # passing; the loader already logged each traceback.
+        parser.exit(1, f"error: {exc}\n")
 
 
 if __name__ == "__main__":

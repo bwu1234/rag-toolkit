@@ -10,6 +10,7 @@ indexer would write, not on a lookalike.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from rag.chunking.chunkers import get_chunker
 from rag.chunking.models import Chunk
@@ -22,7 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 def load_selected_corpora(
-    config: RagConfig, corpora: list[str] | None, *, clean: bool = False
+    config: RagConfig,
+    corpora: list[str] | None,
+    *,
+    clean: bool = False,
+    failed: list[Path] | None = None,
 ) -> tuple[CorpusSelection, list[Document]]:
     """Load every document in the selected corpora, refusing id collisions.
 
@@ -40,6 +45,8 @@ def load_selected_corpora(
     namespacing would change every `document_id` in the corpus, invalidating the
     `expected_doc_ids` already recorded in the eval sets, to fix a problem the
     current corpora do not have.
+
+    ``failed`` collects the files whose loader raised (see `load_corpus`).
     """
 
     selection = config.corpus_selection(corpora)
@@ -48,7 +55,7 @@ def load_selected_corpora(
 
     for name, directory in zip(selection.names, selection.document_dirs):
         logger.info("Loading corpus %r from %s", name, directory)
-        loaded = load_corpus(directory)
+        loaded = load_corpus(directory, failed=failed)
         if clean:
             entry = config.corpora.registry.get(name)
             if entry is None or entry.clean:
@@ -69,15 +76,16 @@ def load_selected_corpora(
 
 
 def chunk_selected_corpora(
-    config: RagConfig, corpora: list[str] | None
+    config: RagConfig, corpora: list[str] | None, *, failed: list[Path] | None = None
 ) -> tuple[CorpusSelection, list[Document], list[Chunk]]:
     """Load, clean and chunk the selected corpora with the configured chunker.
 
     Cleaning follows each corpus's ``clean`` setting.
 
     Returns the *cleaned* documents, since chunk offsets index into their text.
+    ``failed`` collects the files whose loader raised (see `load_corpus`).
     """
 
-    selection, documents = load_selected_corpora(config, corpora, clean=True)
+    selection, documents = load_selected_corpora(config, corpora, clean=True, failed=failed)
     chunks = get_chunker(config.chunking).chunk(documents) if documents else []
     return selection, documents, chunks
