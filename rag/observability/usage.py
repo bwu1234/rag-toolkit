@@ -175,6 +175,9 @@ class MeteredToolCallingLLM(MeteredLLMClient, ToolCallingLLM):
                     tool_calls=reply.get("tool_calls", []), stop_reason=turn.stop_reason,
                     prompt_tokens=turn.usage.prompt_tokens if turn.usage else None,
                     completion_tokens=turn.usage.completion_tokens if turn.usage else None,
+                    raw_prompt=turn.raw.prompt if turn.raw else None,
+                    raw_output=turn.raw.output if turn.raw else None,
+                    chat_prompt_tokens=turn.raw.chat_prompt_tokens if turn.raw else None,
                 ))
         return turn
 

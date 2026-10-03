@@ -390,3 +390,9 @@ def test_llm_think_accepts_on_off_or_a_level(think: bool | str) -> None:
 def test_llm_think_rejects_an_unknown_level() -> None:
     with pytest.raises(ValidationError):
         LLMConfig(think="extreme")
+
+
+def test_llm_raw_mode_is_ollama_only() -> None:
+    assert LLMConfig(raw=True).raw
+    with pytest.raises(ValidationError, match="no raw mode"):
+        LLMConfig(provider="gemini", model="gemini-3.5-flash-lite", raw=True)

@@ -37,6 +37,7 @@ def get_llm_client(config: LLMConfig, *, num_ctx: int | None = None) -> LLMClien
             think=config.think,
             num_ctx=num_ctx,
             timeout=config.timeout_s,
+            raw=config.raw,
         )
 
     if config.provider == "gemini":

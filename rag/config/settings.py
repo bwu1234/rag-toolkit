@@ -207,6 +207,22 @@ class LLMConfig(BaseModel):
     # no thinkingConfig, which non-thinking models (hosted Gemma) require: the
     # API rejects the field for them.
     thinking_level: Literal["minimal", "low", "medium", "high"] | None = None
+    # Ollama only: render the prompt client-side and call /api/generate with
+    # `raw: true`, so each tool-calling turn carries the exact prompt text and
+    # the exact generated text (thinking and tool-call tags included) for a
+    # transcript. Same model and tokens as /api/chat; supported only for a
+    # model whose Modelfile names RENDERER qwen3.8 and PARSER qwen3.5 (the 27b),
+    # and checked against /api/chat's token count on every call
+    # (rag.llm.ollama_raw). Off by default; `trace_question.py --raw` turns it on.
+    raw: bool = False
+
+    @model_validator(mode="after")
+    def _raw_is_ollama_only(self) -> "LLMConfig":
+        if self.raw and self.provider != "ollama":
+            raise ValueError(
+                f"raw renders an Ollama model's prompt client-side; provider {self.provider!r} has no raw mode"
+            )
+        return self
 
     @model_validator(mode="after")
     def _provider_base_url(self) -> "LLMConfig":

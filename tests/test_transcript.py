@@ -16,7 +16,7 @@ import pytest
 from rag.agent.service import AgentService
 from rag.generation.chat_service import ChatService
 from rag.llm.base import AssistantTurn, ChatMessage, LLMUsage, Message, ToolCall, ToolDefinition
-from rag.observability.records import TurnRecord
+from rag.observability.records import LLMExchange, TurnRecord
 from rag.observability.transcript import _fence, render_turn_markdown, write_trace
 from rag.observability.usage import MeteredLLMClient, metered, metered_client
 from tests.fakes import ScriptedToolLLM
@@ -178,3 +178,56 @@ def test_variant_overrides_match_the_matrix_row_and_refuse_oracle_rows() -> None
         trace_question.variant_overrides("m19", "oracle / 9b")
     with pytest.raises(SystemExit, match="no variant"):
         trace_question.variant_overrides("m19", "nope")
+
+
+def _raw_exchange(prompt: str, output: str, *, chat_tokens: int | None = 10) -> LLMExchange:
+    return LLMExchange(
+        kind="chat", started_ms=0.0, elapsed_ms=1.0, messages=[{"role": "user", "content": "Q"}],
+        tools=[{"name": "rag_search", "description": "Search.", "parameters": {}}],
+        prompt_tokens=10, completion_tokens=3, raw_prompt=prompt, raw_output=output, chat_prompt_tokens=chat_tokens,
+    )
+
+
+def _raw_record(*exchanges: LLMExchange) -> TurnRecord:
+    return TurnRecord(turn_id="t", timestamp="now", query="Q", outcome="answered", answer="A", llm_exchanges=list(exchanges))
+
+
+def test_raw_calls_show_the_whole_first_prompt_then_only_what_each_call_added() -> None:
+    first = "<|im_start|>user\nQ<|im_end|>\n<|im_start|>assistant\n<think>\n"
+    output = "Search.\n</think>\n\n<tool_call>\n<function=rag_search>\n</function>\n</tool_call>"
+    added = "<|im_end|>\n<|im_start|>user\n<tool_response>\nPASSAGE\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n"
+
+    text = render_turn_markdown(_raw_record(_raw_exchange(first, output), _raw_exchange(first + output + added, "A")))
+
+    assert "| Raw mode | 2 call(s) rendered client-side; 2 checked against /api/chat, all token counts match |" in text
+    assert "#### Rendered prompt (10 tokens, as /api/chat counts it)\n\n```text\n" + first + "\n```" in text
+    assert "#### Raw output (3 tokens, unparsed)\n\n```text\n" + output + "\n```" in text
+    assert f"then {len(added):,} new chars" in text
+    assert "```text\n" + added + "\n```" in text
+    assert text.count("<|im_start|>user\nQ") == 1  # the first prompt isn't repeated
+
+
+def test_a_raw_prompt_that_doesnt_extend_the_last_one_says_where() -> None:
+    first = "<|im_start|>user\nQ<|im_end|>\n<|im_start|>assistant\n<think>\n"
+    # The model wrote text after its tool call, which the server drops when it re-renders the turn.
+    output = "Go.\n</think>\n\n<tool_call>\nX\n</tool_call> trailing"
+    second = first + "Go.\n</think>\n\n<tool_call>\nX\n</tool_call><|im_end|>\n"
+
+    text = render_turn_markdown(_raw_record(_raw_exchange(first, output), _raw_exchange(second, "A", chat_tokens=12)))
+
+    diverge = len(first + "Go.\n</think>\n\n<tool_call>\nX\n</tool_call>")
+    assert f"differs from the previous prompt and output at char {diverge:,}, inside the previous output" in text
+    assert "```text\n trailing\n```" in text
+    assert "**/api/chat counts 12** for the same messages" in text
+    assert "1 mismatched" in text
+
+
+def test_with_raw_agent_llm_turns_on_raw_for_the_agents_model_only() -> None:
+    from rag.config.settings import ChatConfig, RagConfig, load_config
+
+    config = trace_question.with_raw_agent_llm(load_config())
+
+    assert config.agent.llm is not None and config.agent.llm.raw
+    assert not config.llm.raw
+    with pytest.raises(SystemExit, match="pipeline"):
+        trace_question.with_raw_agent_llm(RagConfig(chat=ChatConfig(mode="pipeline")))

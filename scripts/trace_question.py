@@ -3,6 +3,7 @@
     python scripts/trace_question.py --id ad-airline-fuel --corpus edgar_md
     python scripts/trace_question.py --id ad-airline-fuel --corpus edgar_md \\
         --variant "agentic react / 27b, think=low"
+    python scripts/trace_question.py --id ad-airline-fuel --raw
 
 Finds the question by id in `data/eval/*.json` (or `--eval-set`), answers it
 through the configured responder -- or as one row of `run_answer_matrix.py`
@@ -10,6 +11,12 @@ runs it, with `--variant` -- and writes the trace: summary, answer next to the
 expected one, timeline, the agent's tool calls, retrieval scores, and every LLM
 call verbatim, system prompt and tool results included
 (`rag.observability.transcript`). A `.json` `--out` keeps the raw record instead.
+
+`--raw` runs the agent's model in raw mode (`llm.raw`): the trace then also
+shows each call's rendered prompt (chat template and special tokens) -- whole
+the first time, then only what each call added -- and the model's unparsed
+output, thinking and tool-call markup included. It needs a qwen3.8 model as
+`agent.llm` (the 27b), and adds a one-token `/api/chat` check per step.
 
 Nothing is judged and nothing goes to the turn log, as with the eval runners:
 this is for reading one turn, not scoring it. It runs the real models, so an
@@ -28,7 +35,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from rag.config.settings import load_config  # noqa: E402
+from rag.config.settings import RagConfig, load_config  # noqa: E402
 from rag.chat import build_chat_service  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
 from rag.observability.records import TurnRecord  # noqa: E402
@@ -74,6 +81,18 @@ def variant_overrides(family: str, name: str) -> dict[str, Any]:
     return variant.overrides
 
 
+def with_raw_agent_llm(config: RagConfig) -> RagConfig:
+    """`config` with the agent's model in raw mode; raises unless the turn will run on that model."""
+
+    if config.chat.mode != "agentic":
+        raise SystemExit("error: --raw covers the agent's model, and this config runs chat.mode: pipeline")
+    agent_llm = config.agent.llm or config.llm
+    if agent_llm.provider != "ollama":
+        raise SystemExit(f"error: --raw needs an Ollama model; the agent's model is on {agent_llm.provider!r}")
+    raw_llm = agent_llm.model_copy(update={"raw": True})
+    return config.model_copy(update={"agent": config.agent.model_copy(update={"llm": raw_llm})})
+
+
 def _slug(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9]+", "-", text).strip("-").lower()
 
@@ -90,6 +109,9 @@ def main() -> int:
     parser.add_argument("--variant", default=None,
                         help="Run as this row of scripts/run_answer_matrix.py (e.g. 'agentic react / 27b')")
     parser.add_argument("--family", default="m19", help="The matrix family --variant is from (default: m19)")
+    parser.add_argument("--raw", action="store_true",
+                        help="Render the agent model's prompts client-side and show the exact prompt and output "
+                        "text of every call (qwen3.8 on Ollama only)")
     parser.add_argument("--out", type=Path, default=None,
                         help=f"Where to write it (.md, or .json for the raw record). Default: {DEFAULT_OUT_DIR}/<id>.md")
     args = parser.parse_args()
@@ -107,10 +129,12 @@ def main() -> int:
         import run_answer_matrix as matrix
 
         config = matrix.row_config(config, variant_overrides(args.family, args.variant))
+    if args.raw:
+        config = with_raw_agent_llm(config)
     responder = build_chat_service(config, corpora=corpora)
 
     out = args.out or DEFAULT_OUT_DIR / (
-        args.id + (f"__{_slug(args.variant)}" if args.variant else "") + ".md"
+        args.id + (f"__{_slug(args.variant)}" if args.variant else "") + ("__raw" if args.raw else "") + ".md"
     )
     context = [
         ("Sample", f"{args.id} ({source})"),
