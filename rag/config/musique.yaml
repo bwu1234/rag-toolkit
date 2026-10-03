@@ -1,0 +1,34 @@
+# MuSiQue-Ans, the outside multi-hop check for Milestone 19
+# (docs/public-benchmarks-plan.md, MuSiQue follow-on):
+#
+#   python scripts/fetch_musique.py
+#   python scripts/musique_to_eval_set.py dev            # and train-tune
+#   python -m rag.cli --config rag/config/musique.yaml index --corpus musique-ans-dev
+#   python -m rag.cli --config rag/config/musique.yaml index-report --corpus musique-ans-dev
+#
+# The shipped pipeline (hybrid, bge-v2-m3 reranker, top_k 20 -> rerank_top_k 5,
+# the 9b generator), changed only where a paragraph corpus requires it, so the
+# Milestone 19 rows mean here what they mean on EDGAR. Unlike beir.yaml, which
+# is for retrieval scoring at depth 100 with no reranker.
+base: config.yaml
+
+paths:
+  # Its own index, apart from EDGAR's and the BEIR benchmark ones.
+  index_dir: data/index_musique
+
+chunking:
+  # One chunk per paragraph, text unchanged, so evidence recall is "was this
+  # supporting paragraph retrieved". The longest dev paragraph is 2,010 chars;
+  # the default 1,000-char chunker would split some, and the chunk header reads
+  # EDGAR front matter these paragraphs don't have.
+  strategy: none
+  carry_metadata: [title]
+  header:
+    template: null
+  contextual:
+    enabled: false
+
+vector_store:
+  # Near-exact dense search, as for BEIR (docs/measured-results.md,
+  # "HNSW `ef_search`"), so a row measures the retriever, not HNSW.
+  hnsw_ef_search: 1600
