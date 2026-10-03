@@ -233,7 +233,7 @@ class AnswerSampleResult:
     llm_ms: float = 0.0
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
-    #: Agentic turns: every search call the model made, in order. Empty for a pipeline turn.
+    #: Agentic turns: every agent tool call the model made, in order; search-specific details are present only for rag_search. Empty for a pipeline turn.
     agent_calls: list[AgentToolCall] = field(default_factory=list)
 
     @property
