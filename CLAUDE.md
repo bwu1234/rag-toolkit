@@ -125,6 +125,11 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   append every turn to `observability.turn_log.path` (default
   `data/logs/turns.jsonl`); `provider: none` logs nothing. The eval runners
   never do.
+- One turn end to end (system prompt, every LLM call and tool result, the
+  answer): `python scripts/trace_question.py --id ad-airline-fuel` replays an
+  eval question into `data/traces/<id>.md`; `--variant "agentic react / 27b,
+  think=low"` runs it as that `run_answer_matrix.py` row. For a free-form
+  question, `cli chat --trace out.md "..."`. Transcripts never go to the turn log.
 - Retrieval eval: `python -m rag.eval.retrieval_eval` (`-v` for per-sample;
   `--eval-set data/eval/edgar_eval_set.json --corpus edgar_md` for EDGAR).
   A BEIR qrels set (`scripts/beir_to_eval_set.py`) is scored `trec_eval`-style

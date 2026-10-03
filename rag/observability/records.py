@@ -105,6 +105,38 @@ class AgentToolCall:
 
 
 @dataclass(frozen=True)
+class LLMExchange:
+    """One LLM call a turn made, verbatim: what was sent and what came back.
+
+    Captured at the metering wrapper, so it covers every caller on the query
+    path -- condenser, expansion, CRAG, generation, every agent step -- without
+    any of them knowing. A `generate` call has `system` and `prompt`; a `chat`
+    call (the agent) has the whole conversation it was sent in `messages` and
+    the tools it was offered. Messages are plain dicts (`role`, `content`, and
+    `tool_calls`/`thinking` on assistant turns, `name` on tool results) so the
+    record stays JSON with nothing but `asdict`.
+    """
+
+    kind: Literal["generate", "chat"]
+    started_ms: float
+    """When the call started, in milliseconds since the turn began."""
+    elapsed_ms: float
+    system: str | None = None
+    prompt: str | None = None
+    messages: list[dict[str, Any]] = field(default_factory=list)
+    tools: list[dict[str, Any]] = field(default_factory=list)
+    """The tool definitions offered (`name`, `description`, `parameters`); empty on a forced answer."""
+    response: str = ""
+    thinking: str | None = None
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)
+    stop_reason: str | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    error: str | None = None
+    """Set when the call raised (a context overflow, a timeout); the response is then empty."""
+
+
+@dataclass(frozen=True)
 class StageEvent:
     """A persisted `PipelineEvent` -- the live UI trace, kept."""
 
@@ -157,6 +189,10 @@ class TurnRecord:
     """Agentic turns: `answered`, `cap`, `timeout` or `context`. None for a pipeline turn."""
     agent_calls: list[AgentToolCall] = field(default_factory=list)
     """Agentic turns: every search call the model made, in order, refused ones included."""
+    llm_exchanges: list[LLMExchange] | None = None
+    """Every LLM call verbatim, when the caller asked for a transcript (`ask(on_record=...)`).
+    None otherwise, and never written to the turn log: a transcript repeats every passage
+    the model was shown, once per agent step."""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
