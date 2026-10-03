@@ -106,7 +106,7 @@ def main() -> int:
     if args.variant is not None:
         import run_answer_matrix as matrix
 
-        config = matrix.apply_overrides(config, variant_overrides(args.family, args.variant))
+        config = matrix.row_config(config, variant_overrides(args.family, args.variant))
     responder = build_chat_service(config, corpora=corpora)
 
     out = args.out or DEFAULT_OUT_DIR / (

@@ -11,8 +11,9 @@ hybrid retrieval (dense vector search + BM25, fused with reciprocal rank
 fusion) → cross-encoder rerank → cited generation at query time. Each chunk is
 indexed behind a deterministic header naming its document (e.g. "Apple Inc.
 (AAPL) 10-K, period ended 2024-09-28"), and retrieval can be restricted by
-document metadata (company, period, form, …). An opt-in agentic mode lets the
-model call search as a tool instead of retrieving once. Each stage
+document metadata (company, period, form, …). By default an agent calls search
+as a tool, as often as a question needs, rather than retrieving once; the
+single-pass pipeline remains a config switch. Each stage
 sits behind an interface (`EmbeddingModel`, `VectorStore`, `Reranker`,
 `LLMClient`, `QueryExpander`, `Chunker`) and is selected in
 [rag/config/config.yaml](rag/config/config.yaml), so swapping an implementation

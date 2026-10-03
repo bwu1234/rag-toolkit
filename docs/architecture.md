@@ -100,9 +100,10 @@ Two layers, and callers pick which one they need:
   out. No LLM unless query expansion is on.
 - **A `ChatResponder`** (`rag/generation/chat_service.py`) — question in,
   answer with citations out. `chat.mode` picks which:
-  - **`ChatService`** (`pipeline`, the default) wraps a `Retriever` and adds
+  - **`ChatService`** (`pipeline`) wraps a `Retriever` and adds
     condensing, CRAG, generation and citations. The diagram below is this path.
-  - **`AgentService`** (`agentic`, `rag/generation/agent.py`) lets the model
+  - **`AgentService`** (`agentic`, the default since
+    [ADR 0015](decisions/0015-agentic-default.md); `rag/generation/agent.py`) lets the model
     call search as a tool, as often as it needs; see
     [below](#agentserviceask-chatmode-agentic).
 

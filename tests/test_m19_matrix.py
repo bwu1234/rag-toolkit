@@ -16,7 +16,7 @@ from typing import Any
 
 import pytest
 
-from rag.config.settings import LLMConfig, RagConfig
+from rag.config.settings import LLMConfig, RagConfig, load_config
 from rag.eval.dataset import EvalDataset
 from rag.generation.chat_service import ChatAnswer, ChatService
 
@@ -70,6 +70,37 @@ def test_the_27b_control_differs_from_the_27b_agent_in_the_loop_alone() -> None:
     pipeline, agent = rows["pipeline / 27b"], rows["agentic react / 27b"]
     assert pipeline.llm == agent.agent.llm
     assert (pipeline.chat.mode, agent.chat.mode) == ("pipeline", "agentic")
+
+
+# ---------------------------------------------------------------------------
+# Rows against the shipped config.yaml (ADR 0015 made agentic the default)
+# ---------------------------------------------------------------------------
+
+
+def test_the_shipped_config_is_the_measured_think_low_row() -> None:
+    shipped = load_config()
+    measured = matrix.row_config(shipped, _variant("agentic react / 27b, think=low").overrides)
+    assert measured == shipped
+
+
+def test_rows_built_on_the_shipped_config_do_not_inherit_its_agent() -> None:
+    # A dict `agent.llm` merges over the current value: without the row
+    # baseline, the shipped think=low would turn the default-thinking 27b row
+    # into a copy of the think=low one, and the 9b rows into a think=low 9b.
+    shipped = load_config()
+    on_shipped = {v.name: matrix.row_config(shipped, v.overrides) for v in matrix.M19_VARIANTS}
+    on_defaults = {v.name: matrix.row_config(RagConfig(), v.overrides) for v in matrix.M19_VARIANTS}
+    for name, config in on_shipped.items():
+        assert config.chat.mode == on_defaults[name].chat.mode, name
+        assert config.agent.llm == on_defaults[name].agent.llm, name
+    assert on_shipped["agentic react / 27b"].agent.llm.think is False  # type: ignore[union-attr]
+
+
+def test_crag_rows_stay_pipeline_rows_on_the_shipped_config() -> None:
+    # The CRAG rows predate `chat.mode` and never pinned it.
+    for v in matrix.VARIANTS:
+        config = matrix.row_config(load_config(), v.overrides)
+        assert (config.chat.mode, config.agent.llm) == ("pipeline", None), v.name
 
 
 def test_the_oracle_row_checkpoints_apart_from_the_pipeline_row() -> None:

@@ -1,6 +1,6 @@
 # 0009 — Always-retrieve pipeline by default; agentic search as an opt-in mode
 
-- **Status:** Accepted
+- **Status:** Superseded by [0015](0015-agentic-default.md) (2026-10-03)
 - **Recorded:** 2026-10-03, retroactively, from
   [Chat API notes](../milestone-notes.md#chat-api-notes-milestone-6),
   [Milestone 19 plan](../milestone-19-plan.md#decisions) and

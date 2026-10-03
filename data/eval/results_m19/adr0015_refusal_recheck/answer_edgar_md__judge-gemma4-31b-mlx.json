@@ -1,0 +1,4433 @@
+{
+  "corpus": "edgar_md (isolated)",
+  "collection": "rag_corpus__edgar_md",
+  "judge": "ollama:gemma4:31b-mlx",
+  "answerable_set": "data/eval/edgar_eval_set.json",
+  "refusal_set": "/Users/bwu19/rag-toolkit/data/eval/edgar_refusal_set.json",
+  "multihop_set": "data/eval/edgar_multihop_set.json",
+  "adaptive_set": "data/eval/edgar_adaptive_set.json",
+  "period_set": "data/eval/edgar_period_set.json",
+  "underspecified_set": "data/eval/edgar_underspecified_set.json",
+  "table_set": "data/eval/edgar_table_set.json",
+  "musique_set": "data/eval/musique_ans_train_tune.json",
+  "musique_sample": null,
+  "results": [
+    {
+      "variant": "agentic react / 27b, think=low #1",
+      "overrides": {
+        "chat.mode": "agentic",
+        "crag.enabled": false,
+        "llm.model": "qwen3.5:9b-mlx",
+        "agent.strategy": "react",
+        "agent.llm": {
+          "model": "qwen3.8:27b-mlx",
+          "max_tokens": 4096,
+          "timeout_s": 600,
+          "think": "low"
+        }
+      },
+      "generator": "ollama:qwen3.8:27b-mlx",
+      "mode": "agentic:react",
+      "retrieval": "configured",
+      "code": "c595818baa7b",
+      "refusals": {
+        "num_evaluated": 15,
+        "num_passed": 15,
+        "num_failed": 0,
+        "num_unparseable": 0,
+        "num_empty": 0,
+        "pass_rate": 1.0,
+        "pass_ci": [
+          0.7961,
+          1.0
+        ],
+        "by_kind": {},
+        "mean_latency_s": 93.3,
+        "mean_llm_calls": 4.8,
+        "mean_prompt_tokens": 15787.9,
+        "mean_completion_tokens": 664.3,
+        "groundedness": null,
+        "elapsed_s": 1629.2,
+        "resumed_samples": 0,
+        "failed_ids": [],
+        "failed_retrieval": 0,
+        "failed_generation": 0,
+        "failed_unattributed": 0,
+        "samples": [
+          {
+            "id": "neg-entity-tesla-margin",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 70.8,
+            "answer": "I was unable to find Tesla's automotive gross margin for the quarter ended June 2026 in the document corpus. After searching with multiple queries, the available filings in this corpus include companies such as Target, Apple, Costco, NVIDIA, and Johnson & Johnson, but do not appear to include any Tesla (TSLA) filings.\n\nSince the corpus doesn't contain Tesla's SEC filings, I cannot provide the requested figure. If you have access to a corpus that includes Tesla's 10-Q for the quarter ended June 30, 2026, that would contain the automotive segment gross margin data you're looking for.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Tesla automotive gross margin quarter ended June 2026",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "TGT_10-Q_2026-05-02.md::chunk16",
+                  "AAPL_10-Q_2026-06-27.md::chunk17",
+                  "COST_10-Q_2026-05-10.md::chunk23",
+                  "NVDA_10-K_2026-01-25.md::chunk11",
+                  "AAPL_10-Q_2026-06-27.md::chunk18"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Tesla automotive segment gross margin 2026",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  4,
+                  7,
+                  8,
+                  2
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8
+                ],
+                "chunk_ids": [
+                  "TGT_10-K_2026-01-31.md::chunk12",
+                  "NVDA_10-K_2026-01-25.md::chunk11",
+                  "COST_10-Q_2026-05-10.md::chunk28",
+                  "AAPL_10-Q_2026-03-28.md::chunk18",
+                  "AAPL_10-Q_2026-06-27.md::chunk17"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Tesla TSLA 10-Q 10-K automotive revenue gross profit",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "new_passages": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "chunk_ids": [
+                  "NVDA_10-K_2026-01-25.md::chunk31",
+                  "NVDA_10-Q_2025-07-27.md::chunk27",
+                  "NVDA_10-Q_2025-10-26.md::chunk27",
+                  "NVDA_10-Q_2025-10-26.md::chunk15",
+                  "NVDA_10-K_2025-01-26.md::chunk38"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Tesla Inc TSLA filing",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  14,
+                  15,
+                  16,
+                  17,
+                  18
+                ],
+                "new_passages": [
+                  14,
+                  15,
+                  16,
+                  17,
+                  18
+                ],
+                "chunk_ids": [
+                  "JNJ_10-K_2024-12-29.md::chunk15",
+                  "JNJ_10-K_2025-12-28.md::chunk16",
+                  "JNJ_10-K_2024-12-29.md::chunk13",
+                  "JNJ_10-K_2025-12-28.md::chunk15",
+                  "JNJ_10-K_2025-12-28.md::chunk17"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-lilly-pipeline",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 6,
+            "latency_s": 119.3,
+            "answer": "I searched the document corpus multiple times using various queries related to Eli Lilly and incretin manufacturing capacity, but I was unable to find any relevant passages. The corpus does not appear to contain any Eli Lilly (LLY) filings or any discussion of Eli Lilly's incretin manufacturing capacity expansion.\n\nThe filings I found in the corpus are from other companies (Johnson & Johnson, Merck, Pfizer, Chevron, NVIDIA, Apple, Costco, etc.), but none of them address Eli Lilly's incretin capacity plans.\n\nIf you have a specific Eli Lilly filing you'd like me to search for, or if this information might be in a different document set, let me know and I can try a different approach. Otherwise, I cannot answer this question from the available passages.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Eli Lilly incretin manufacturing capacity expansion",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "JNJ_10-K_2024-12-29.md::chunk10",
+                  "CVX_10-K_2024-12-31.md::chunk50",
+                  "MRK_10-Q_2025-09-30.md::chunk31",
+                  "MRK_10-K_2025-12-31.md::chunk48",
+                  "MRK_10-K_2025-12-31.md::chunk68"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Eli Lilly manufacturing capacity GLP-1 semaglutide tirzepatide",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "MRK_10-K_2024-12-31.md::chunk8",
+                  "MRK_10-K_2024-12-31.md::chunk98",
+                  "PFE_10-Q_2025-09-28.md::chunk7",
+                  "MRK_10-K_2024-12-31.md::chunk59",
+                  "MRK_10-K_2025-12-31.md::chunk76"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Eli Lilly LLY capacity expansion manufacturing site investment",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  1,
+                  12,
+                  13,
+                  14
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13,
+                  14
+                ],
+                "chunk_ids": [
+                  "JNJ_10-Q_2025-09-28.md::chunk14",
+                  "JNJ_10-K_2024-12-29.md::chunk10",
+                  "JNJ_10-Q_2026-06-28.md::chunk14",
+                  "JNJ_10-Q_2026-03-29.md::chunk7",
+                  "JNJ_10-Q_2026-06-28.md::chunk44"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Eli Lilly",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  15,
+                  16,
+                  5,
+                  17,
+                  3
+                ],
+                "new_passages": [
+                  15,
+                  16,
+                  17
+                ],
+                "chunk_ids": [
+                  "MRK_10-K_2024-12-31.md::chunk43",
+                  "MRK_10-Q_2025-09-30.md::chunk61",
+                  "MRK_10-K_2025-12-31.md::chunk68",
+                  "MRK_10-Q_2026-06-30.md::chunk10",
+                  "MRK_10-Q_2025-09-30.md::chunk31"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "incretin manufacturing capacity",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  18,
+                  1,
+                  19,
+                  20,
+                  21
+                ],
+                "new_passages": [
+                  18,
+                  19,
+                  20,
+                  21
+                ],
+                "chunk_ids": [
+                  "PFE_10-Q_2025-09-28.md::chunk66",
+                  "JNJ_10-K_2024-12-29.md::chunk10",
+                  "CVX_10-Q_2025-09-30.md::chunk31",
+                  "NVDA_10-K_2026-01-25.md::chunk15",
+                  "NVDA_10-K_2025-01-26.md::chunk23"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "Eli Lilly LLY 10-K 10-Q filing",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  22,
+                  23,
+                  24,
+                  25,
+                  26
+                ],
+                "new_passages": [
+                  22,
+                  23,
+                  24,
+                  25,
+                  26
+                ],
+                "chunk_ids": [
+                  "PFE_10-Q_2026-06-28.md::chunk65",
+                  "AAPL_10-Q_2026-03-28.md::chunk3",
+                  "COST_10-Q_2026-05-10.md::chunk49",
+                  "AAPL_10-Q_2026-06-27.md::chunk3",
+                  "COST_10-Q_2026-02-15.md::chunk47"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-goldman-trading",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 4,
+            "latency_s": 70.4,
+            "answer": "I'm sorry, but the document corpus I have access to does not contain any filings from Goldman Sachs Group. The available documents cover companies such as ExxonMobil, Microsoft, Johnson & Johnson, Costco, NVIDIA, Merck, and Apple, but not Goldman Sachs.\n\nAs a result, I cannot answer what drove the change in Goldman Sachs' trading revenue this quarter based on the documents in this corpus. If you have a Goldman Sachs filing (10-Q or 10-K) that could be added to the index, I'd be happy to help analyze it.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Goldman Sachs trading revenue change drivers this quarter",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "XOM_10-Q_2026-06-30.md::chunk11",
+                  "MSFT_10-K_2025-06-30.md::chunk10",
+                  "MSFT_10-K_2026-06-30.md::chunk10",
+                  "MSFT_10-Q_2026-03-31.md::chunk12",
+                  "JNJ_10-Q_2026-03-29.md::chunk18"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Goldman Sachs Group trading revenue",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2025-08-31.md::chunk50",
+                  "NVDA_10-K_2025-01-26.md::chunk33",
+                  "MRK_10-K_2025-12-31.md::chunk70",
+                  "JNJ_10-Q_2026-03-29.md::chunk49",
+                  "JNJ_10-Q_2026-06-28.md::chunk68"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Goldman Sachs Group Inc 10-Q 10-K",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk187",
+                  "COST_10-K_2025-08-31.md::chunk172",
+                  "COST_10-K_2025-08-31.md::chunk171",
+                  "COST_10-K_2024-09-01.md::chunk188",
+                  "AAPL_10-Q_2026-03-28.md::chunk3"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-coke-pricing",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 7,
+            "latency_s": 81.8,
+            "answer": "I was unable to find any information about Coca-Cola's pricing and mix impact on net revenues in the document corpus. After multiple searches, the results returned filings from Costco, Target, Pfizer, Johnson & Johnson, and Southwest Airlines, but no Coca-Cola (KO) filing appeared.\n\nIt's possible that a Coca-Cola filing is not included in this particular corpus, or that the specific language used in their filings doesn't match the search terms. If you have a specific filing or period in mind, I could try a more targeted search, but based on the available documents, I cannot answer this question.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Coca-Cola pricing and mix impact on net revenues",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "TGT_10-Q_2025-08-02.md::chunk14",
+                  "PFE_10-Q_2026-06-28.md::chunk29",
+                  "TGT_10-K_2026-01-31.md::chunk19",
+                  "COST_10-Q_2026-05-10.md::chunk6"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Coca-Cola net revenues pricing mix",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  3,
+                  1,
+                  7,
+                  5
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "COST_10-Q_2025-11-23.md::chunk5",
+                  "PFE_10-Q_2026-06-28.md::chunk29",
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "COST_10-Q_2026-02-15.md::chunk6",
+                  "COST_10-Q_2026-05-10.md::chunk6"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Coca-Cola Company net revenues pricing mix impact",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  3,
+                  8,
+                  2,
+                  5
+                ],
+                "new_passages": [
+                  8
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "PFE_10-Q_2026-06-28.md::chunk29",
+                  "PFE_10-Q_2025-09-28.md::chunk60",
+                  "TGT_10-Q_2025-08-02.md::chunk14",
+                  "COST_10-Q_2026-05-10.md::chunk6"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "The Coca-Cola Company 10-K net revenues",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "new_passages": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2025-08-31.md::chunk61",
+                  "JNJ_10-K_2024-12-29.md::chunk3",
+                  "JNJ_10-K_2025-12-28.md::chunk3",
+                  "COST_10-K_2024-09-01.md::chunk55",
+                  "LUV_10-K_2024-12-31.md::chunk1"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "Coca-Cola beverage pricing mix net revenue growth",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  1,
+                  3,
+                  14,
+                  15
+                ],
+                "new_passages": [
+                  14,
+                  15
+                ],
+                "chunk_ids": [
+                  "COST_10-Q_2025-11-23.md::chunk5",
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "PFE_10-Q_2026-06-28.md::chunk29",
+                  "TGT_10-Q_2025-08-02.md::chunk12",
+                  "TGT_10-Q_2026-05-02.md::chunk14"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 6,
+                "tool": "rag_search",
+                "query": "KO Coca-Cola net revenues pricing mix",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  3,
+                  7,
+                  5,
+                  16
+                ],
+                "new_passages": [
+                  16
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "PFE_10-Q_2026-06-28.md::chunk29",
+                  "COST_10-Q_2026-02-15.md::chunk6",
+                  "COST_10-Q_2026-05-10.md::chunk6",
+                  "COST_10-K_2025-08-31.md::chunk4"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-ford-ev",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 4,
+            "latency_s": 69.5,
+            "answer": "I'm sorry, but the document corpus I have access to does not contain any filings or information about Ford Motor Company's electric vehicle unit sales. The available documents are from **Target Corp**, **Chevron Corp**, and **ExxonMobil** \u2014 none of which report on Ford's EV sales.\n\nIf you have a Ford Motor filing (e.g., a 10-K or 10-Q) in the corpus, or if you'd like me to search for a different topic covered by these documents, let me know and I'll be happy to help.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Ford Motor electric vehicle unit sales",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "TGT_10-K_2026-01-31.md::chunk16",
+                  "CVX_10-Q_2025-09-30.md::chunk60",
+                  "CVX_10-K_2025-12-31.md::chunk81",
+                  "XOM_10-Q_2026-06-30.md::chunk34",
+                  "CVX_10-Q_2025-09-30.md::chunk61"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Ford Motor Company electric vehicle deliveries sales units",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  2,
+                  4,
+                  6,
+                  1,
+                  5
+                ],
+                "new_passages": [
+                  6
+                ],
+                "chunk_ids": [
+                  "CVX_10-Q_2025-09-30.md::chunk60",
+                  "XOM_10-Q_2026-06-30.md::chunk34",
+                  "TGT_10-K_2025-02-01.md::chunk13",
+                  "TGT_10-K_2026-01-31.md::chunk16",
+                  "CVX_10-Q_2025-09-30.md::chunk61"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Ford F-150 Lightning EV production sales",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  7,
+                  3,
+                  2,
+                  8,
+                  9
+                ],
+                "new_passages": [
+                  7,
+                  8,
+                  9
+                ],
+                "chunk_ids": [
+                  "CVX_10-K_2025-12-31.md::chunk10",
+                  "CVX_10-K_2025-12-31.md::chunk81",
+                  "CVX_10-Q_2025-09-30.md::chunk60",
+                  "CVX_10-Q_2025-09-30.md::chunk62",
+                  "CVX_10-K_2025-12-31.md::chunk4"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-netflix-subs",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 97.9,
+            "answer": "I searched the document corpus multiple times for information about Netflix's paid net subscriber additions, but the corpus does not appear to contain any Netflix filings. The available documents include filings from companies such as Costco, Microsoft, Johnson & Johnson, and NVIDIA, but no Netflix (NFX) filings were found.\n\nI'm unable to answer this question from the available documents. If you have a specific Netflix filing in mind, it may not be part of this corpus.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Netflix paid net subscriber additions",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2025-08-31.md::chunk159",
+                  "MSFT_10-Q_2025-12-31.md::chunk57",
+                  "COST_10-K_2024-09-01.md::chunk171",
+                  "MSFT_10-K_2025-06-30.md::chunk42",
+                  "MSFT_10-K_2026-06-30.md::chunk45"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Netflix subscriber additions paid members",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "COST_10-Q_2025-11-23.md::chunk18",
+                  "COST_10-Q_2026-02-15.md::chunk20",
+                  "COST_10-Q_2026-05-10.md::chunk20",
+                  "COST_10-K_2024-09-01.md::chunk18",
+                  "COST_10-K_2024-09-01.md::chunk8"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Netflix net additions subscribers streaming",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  3,
+                  11,
+                  12,
+                  13
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2025-08-31.md::chunk159",
+                  "COST_10-K_2024-09-01.md::chunk171",
+                  "JNJ_10-K_2024-12-29.md::chunk42",
+                  "JNJ_10-Q_2026-06-28.md::chunk52",
+                  "MSFT_10-Q_2025-12-31.md::chunk17"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Netflix NFX 10-Q 10-K subscriber",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  14,
+                  15,
+                  16,
+                  17,
+                  18
+                ],
+                "new_passages": [
+                  14,
+                  15,
+                  16,
+                  17,
+                  18
+                ],
+                "chunk_ids": [
+                  "NVDA_10-Q_2026-04-26.md::chunk2",
+                  "NVDA_10-Q_2025-10-26.md::chunk2",
+                  "COST_10-K_2024-09-01.md::chunk187",
+                  "COST_10-K_2025-08-31.md::chunk172",
+                  "COST_10-K_2024-09-01.md::chunk188"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-period-aapl-2015",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 4,
+            "latency_s": 75.1,
+            "answer": "I'm sorry, but the document corpus I have access to does not contain Apple's financial data for fiscal year 2015. The available filings cover more recent periods (fiscal years 2022 through 2026), and none of the passages include 2015 figures.\n\nBased on the passages found, the most recent historical data available is:\n\n- **Fiscal 2022:** Total net sales of $394,328 million [7]\n- **Fiscal 2023:** Total net sales of $383,285 million [7]\n- **Fiscal 2024:** Total net sales of $391,035 million [7]\n- **Fiscal 2025:** Total net sales of $416,161 million [1]\n\nThe corpus does not include a filing from Apple's fiscal year 2015 (ended September 26, 2015), so I cannot provide that figure from these documents. If you need that specific number, you would need to consult Apple's 10-K for the fiscal year ended September 26, 2015, which is not part of this indexed collection.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Apple total net sales fiscal year 2015",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "AAPL_10-K_2025-09-27.md::chunk7",
+                  "AAPL_10-K_2025-09-27.md::chunk9",
+                  "AAPL_10-Q_2026-06-27.md::chunk20",
+                  "AAPL_10-Q_2026-03-28.md::chunk21",
+                  "AAPL_10-Q_2025-12-27.md::chunk5"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Apple net sales 2015 2014 2013 annual report",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  2,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "chunk_ids": [
+                  "AAPL_10-K_2025-09-27.md::chunk9",
+                  "AAPL_10-Q_2026-03-28.md::chunk2",
+                  "AAPL_10-K_2024-09-28.md::chunk6",
+                  "AAPL_10-Q_2026-03-28.md::chunk15",
+                  "AAPL_10-Q_2026-06-27.md::chunk16"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Apple fiscal 2015 total net sales $233 billion",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  5,
+                  10,
+                  2,
+                  1,
+                  11
+                ],
+                "new_passages": [
+                  10,
+                  11
+                ],
+                "chunk_ids": [
+                  "AAPL_10-Q_2025-12-27.md::chunk5",
+                  "AAPL_10-Q_2025-12-27.md::chunk10",
+                  "AAPL_10-K_2025-09-27.md::chunk9",
+                  "AAPL_10-K_2025-09-27.md::chunk7",
+                  "AAPL_10-K_2025-09-27.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-period-msft-2018",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 68.7,
+            "answer": "I wasn't able to find Microsoft's research and development spending for fiscal 2018 in the available document corpus. The filings in this collection cover more recent periods (fiscal 2024\u20132026), and none of them include a comparison back to fiscal 2018.\n\nFor reference, the most recent data I did find shows:\n- **Fiscal 2025**: R&D expenses of **$32,488 million** (12% of revenue) [6]\n- **Fiscal 2026**: R&D expenses of **$35,562 million** (11% of revenue) [7]\n\nIf you need the fiscal 2018 figure, it would likely be found in Microsoft's 10-K for the period ended June 30, 2018, which is not part of this corpus.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Microsoft research and development spending fiscal 2018",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-12-31.md::chunk37",
+                  "MSFT_10-K_2026-06-30.md::chunk27",
+                  "MSFT_10-Q_2026-03-31.md::chunk38",
+                  "MSFT_10-Q_2026-03-31.md::chunk39",
+                  "MSFT_10-Q_2025-09-30.md::chunk29"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Microsoft research and development expenses 2018 10-K annual report",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  1,
+                  3,
+                  2,
+                  7
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "MSFT_10-K_2025-06-30.md::chunk26",
+                  "MSFT_10-Q_2025-12-31.md::chunk37",
+                  "MSFT_10-Q_2026-03-31.md::chunk38",
+                  "MSFT_10-K_2026-06-30.md::chunk27",
+                  "MSFT_10-K_2026-06-30.md::chunk26"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Microsoft 10-K fiscal year 2018 operating expenses research development",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  8,
+                  6,
+                  7,
+                  1,
+                  2
+                ],
+                "new_passages": [
+                  8
+                ],
+                "chunk_ids": [
+                  "MSFT_10-K_2026-06-30.md::chunk19",
+                  "MSFT_10-K_2025-06-30.md::chunk26",
+                  "MSFT_10-K_2026-06-30.md::chunk26",
+                  "MSFT_10-Q_2025-12-31.md::chunk37",
+                  "MSFT_10-K_2026-06-30.md::chunk27"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Microsoft fiscal 2018 2017 research development $15 billion",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  3,
+                  4,
+                  6,
+                  2
+                ],
+                "new_passages": [],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-12-31.md::chunk37",
+                  "MSFT_10-Q_2026-03-31.md::chunk38",
+                  "MSFT_10-Q_2026-03-31.md::chunk39",
+                  "MSFT_10-K_2025-06-30.md::chunk26",
+                  "MSFT_10-K_2026-06-30.md::chunk27"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-period-wmt-2030",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 2,
+            "latency_s": 38.5,
+            "answer": "The document corpus does not contain any comparable sales figures for Walmart's fiscal year 2030. The filings only report through fiscal year 2026 (period ended January 31, 2026), so fiscal 2030 is a future period that hasn't been reported yet.\n\nFor reference, the most recent comparable sales data available in the corpus is:\n\n- **Fiscal 2026** (ended Jan 31, 2026): Walmart U.S. comparable sales increased **4.3%** (with fuel), and Sam's Club U.S. increased **2.9%** [3].\n- **Fiscal 2025**: Walmart U.S. comparable sales increased **4.8%** [2][3].\n- **Fiscal 2024**: Walmart U.S. comparable sales increased **5.5%** [2][5].\n\nIf you'd like, I can pull the comparable sales figures for any of these reported fiscal years in more detail.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Walmart comparable sales fiscal year 2030",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "WMT_10-K_2026-01-31.md::chunk9",
+                  "WMT_10-K_2025-01-31.md::chunk15",
+                  "WMT_10-K_2026-01-31.md::chunk11",
+                  "WMT_10-K_2025-01-31.md::chunk46",
+                  "WMT_10-K_2025-01-31.md::chunk42"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-scope-wmt-board",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 7,
+            "latency_s": 86.3,
+            "answer": "Based on my searches of the available document corpus, I was unable to find a specific list of Walmart's board of directors members. The Walmart 10-K filings in this corpus (for fiscal years ended January 31, 2025 and 2026) reference the board of directors in the context of share repurchase authorizations [1] and other governance matters, but they do not include a roster of individual directors.\n\nTypically, this information is found in a company's **Proxy Statement (DEF 14A)**, which the 10-K filings incorporate by reference. It appears that Walmart's proxy statement is not included in this document corpus, so I cannot provide the names of the individuals who serve on Walmart's board of directors from the available sources.\n\nIf you have access to Walmart's most recent proxy statement (filed with the SEC), that would contain the full list of directors, their biographies, and committee assignments.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Walmart board of directors members",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "WMT_10-K_2026-01-31.md::chunk65",
+                  "WMT_10-K_2026-01-31.md::chunk62",
+                  "WMT_10-K_2026-01-31.md::chunk30",
+                  "WMT_10-K_2025-01-31.md::chunk0",
+                  "WMT_10-K_2026-01-31.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Walmart directors names board members governance",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  6,
+                  4,
+                  2,
+                  5
+                ],
+                "new_passages": [
+                  6
+                ],
+                "chunk_ids": [
+                  "WMT_10-K_2026-01-31.md::chunk65",
+                  "WMT_10-K_2025-01-31.md::chunk9",
+                  "WMT_10-K_2025-01-31.md::chunk0",
+                  "WMT_10-K_2026-01-31.md::chunk62",
+                  "WMT_10-K_2026-01-31.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Walmart board of directors chairman CEO executive officers",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "WMT_10-K_2025-01-31.md::chunk9",
+                  "WMT_10-K_2026-01-31.md::chunk1",
+                  "WMT_10-K_2025-01-31.md::chunk1",
+                  "MSFT_10-K_2025-06-30.md::chunk65",
+                  "WMT_10-K_2025-01-31.md::chunk7"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Walmart directors independent directors committee governance proxy",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  2
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13,
+                  14
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk181",
+                  "COST_10-K_2024-09-01.md::chunk179",
+                  "COST_10-K_2025-08-31.md::chunk167",
+                  "COST_10-K_2025-08-31.md::chunk168",
+                  "WMT_10-K_2026-01-31.md::chunk62"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "Walmart directors election proxy statement board members names",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  13,
+                  12,
+                  14,
+                  15
+                ],
+                "new_passages": [
+                  15
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk181",
+                  "COST_10-K_2025-08-31.md::chunk167",
+                  "COST_10-K_2024-09-01.md::chunk179",
+                  "COST_10-K_2025-08-31.md::chunk168",
+                  "COST_10-K_2024-09-01.md::chunk180"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 6,
+                "tool": "rag_search",
+                "query": "Walmart \"board of directors\" \"Dolores\" OR \"John\" OR \"David\" OR \"Jorge\" OR \"Karen\"",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  6,
+                  2,
+                  16,
+                  17
+                ],
+                "new_passages": [
+                  16,
+                  17
+                ],
+                "chunk_ids": [
+                  "WMT_10-K_2026-01-31.md::chunk65",
+                  "WMT_10-K_2025-01-31.md::chunk9",
+                  "WMT_10-K_2026-01-31.md::chunk62",
+                  "WMT_10-Q_2025-10-31.md::chunk51",
+                  "WMT_10-Q_2025-07-31.md::chunk51"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-scope-nvda-ceo-pay",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 98.1,
+            "answer": "Based on my searches of the document corpus, I was unable to find NVIDIA's CEO total compensation figure. The available NVIDIA filings in the corpus are **10-K and 10-Q reports**, which discuss compensation trends in aggregate (e.g., increases in \"compensation and benefits, including stock-based compensation\") but do not include a detailed executive compensation table for the CEO.\n\nSpecific CEO compensation data (salary, bonus, stock awards, total compensation) is typically disclosed in a **DEF 14A proxy statement**, which does not appear to be included in this corpus. The NVIDIA 10-K filings likely incorporate that information by reference from their proxy statement, similar to how Costco's 10-K does [9][13].\n\n**In short:** The passages available here don't contain NVIDIA's CEO total compensation figure. To find it, you would need to look at NVIDIA's DEF 14A (proxy statement) filing, which is not part of this document set.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "NVIDIA CEO total compensation",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "NVDA_10-K_2026-01-25.md::chunk33",
+                  "NVDA_10-Q_2025-07-27.md::chunk32",
+                  "NVDA_10-Q_2025-10-26.md::chunk32",
+                  "NVDA_10-Q_2025-07-27.md::chunk31",
+                  "NVDA_10-Q_2025-10-26.md::chunk31"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "NVIDIA CEO Jensen Huang compensation summary compensation table",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  1,
+                  2,
+                  5
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "NVDA_10-K_2025-01-26.md::chunk40",
+                  "NVDA_10-Q_2026-04-26.md::chunk26",
+                  "NVDA_10-K_2026-01-25.md::chunk33",
+                  "NVDA_10-Q_2025-07-27.md::chunk32",
+                  "NVDA_10-Q_2025-10-26.md::chunk31"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "NVIDIA executive compensation proxy statement CEO salary bonus stock award",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  1,
+                  7,
+                  8,
+                  9
+                ],
+                "new_passages": [
+                  8,
+                  9
+                ],
+                "chunk_ids": [
+                  "NVDA_10-K_2025-01-26.md::chunk40",
+                  "NVDA_10-K_2026-01-25.md::chunk33",
+                  "NVDA_10-Q_2026-04-26.md::chunk26",
+                  "NVDA_10-K_2026-01-25.md::chunk43",
+                  "COST_10-K_2025-08-31.md::chunk168"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "NVIDIA proxy statement DEF 14A executive compensation",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  10,
+                  9,
+                  11,
+                  12,
+                  13
+                ],
+                "new_passages": [
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2025-08-31.md::chunk171",
+                  "COST_10-K_2025-08-31.md::chunk168",
+                  "COST_10-K_2024-09-01.md::chunk186",
+                  "COST_10-K_2024-09-01.md::chunk184",
+                  "COST_10-K_2024-09-01.md::chunk180"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-scope-dal-risk-factors",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 121.4,
+            "answer": "I searched the corpus several times for Delta Air Lines' Item 1A \"Risk Factors,\" but the passages that come back do **not** contain the full text of that section. The Delta filings in this corpus surface mainly Management's Discussion & Analysis, financial statements, and notes \u2014 not the Item 1A risk-factor narrative.\n\nWhat I did find that is Delta-specific and risk-related:\n\n- **Goodwill/intangible impairment factors** (DAL 10-K, periods ended 2024-12-31 and 2025-12-31): factors that could cause impairment include (1) negative trends in market capitalization, (2) reduced profitability from lower passenger mile yields or higher input costs, (3) lower passenger demand from weakened U.S./global economies, (4) prolonged interruption to operations, (5) changes to the regulatory environment, (6) operational/performance changes by other airlines, and (7) strategic changes leading to diminished utilization of intangible assets [1][12].\n- **Fuel** (DAL 10-K, period ended 2025-12-31): fuel was ~17% of total operating expense in 2025, and jet fuel prices are volatile due to factors including geopolitical events [8].\n\nHowever, these are not the Item 1A risk factors themselves. The full list of risk factors Delta discloses in Item 1A (e.g., economic conditions, competition, labor, cybersecurity, government regulation, etc.) is **not present in the retrieved passages**, so I can't enumerate them from this corpus. For comparison, the corpus does contain a similar risk-factor summary for United Airlines [14][15][16], but that is a different company and not a substitute.\n\nIf you'd like, I can search for a specific risk topic (e.g., \"Delta fuel price risk,\" \"Delta labor risk,\" \"Delta cybersecurity risk\") to see whether any individual risk-factor passage is indexed, but I won't be able to reconstruct the complete Item 1A list from what's available here.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors Item 1A",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "UAL_10-K_2025-12-31.md::chunk9",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "COST_10-Q_2026-05-10.md::chunk47"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors summary of risks to our business",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  4,
+                  3,
+                  6,
+                  7
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk15",
+                  "DAL_10-Q_2025-09-30.md::chunk31"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Delta Air Lines 10-K Item 1A risk factors economic conditions fuel prices",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  8,
+                  9,
+                  10,
+                  7,
+                  11
+                ],
+                "new_passages": [
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk32",
+                  "WMT_10-K_2026-01-31.md::chunk4",
+                  "DAL_10-Q_2026-06-30.md::chunk27",
+                  "DAL_10-Q_2025-09-30.md::chunk31",
+                  "CVX_10-K_2024-12-31.md::chunk87"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors our business is affected by economic conditions competition labor",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  12,
+                  13,
+                  3,
+                  4
+                ],
+                "new_passages": [
+                  12,
+                  13
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "DAL_10-K_2024-12-31.md::chunk64",
+                  "DAL_10-Q_2025-09-30.md::chunk37",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2025-12-31.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors cybersecurity data privacy government regulation",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  14,
+                  15,
+                  16,
+                  4,
+                  3
+                ],
+                "new_passages": [
+                  14,
+                  15,
+                  16
+                ],
+                "chunk_ids": [
+                  "UAL_10-K_2024-12-31.md::chunk64",
+                  "UAL_10-Q_2026-03-31.md::chunk36",
+                  "UAL_10-Q_2025-09-30.md::chunk55",
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors summary of risk factors that could affect our business",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  4,
+                  3,
+                  7,
+                  10
+                ],
+                "new_passages": [],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-Q_2025-09-30.md::chunk31",
+                  "DAL_10-Q_2026-06-30.md::chunk27"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Delta Air Lines 10-K risk factors terrorism pandemic disease outbreak weather",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  4,
+                  3,
+                  6,
+                  2,
+                  17
+                ],
+                "new_passages": [
+                  17
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk15",
+                  "UAL_10-K_2025-12-31.md::chunk9",
+                  "DAL_10-Q_2026-06-30.md::chunk54"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-unanswerable-comparison",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 6,
+            "latency_s": 278.9,
+            "answer": "Based on the passages I was able to retrieve, **NVIDIA (NVDA)** had the highest operating margin among the companies I found data for. In its most recent quarter (ended April 26, 2026), NVIDIA reported an operating income margin of **65.6%** of revenue [14].\n\nHere's a comparison of the operating margins I found for the most recent quarters of the companies in the corpus:\n\n| Company | Most Recent Quarter | Operating Margin |\n|---|---|---|\n| NVIDIA (NVDA) | Ended Apr 26, 2026 | 65.6% [14] |\n| Target (TGT) | Ended May 2, 2026 | 4.5% [6] |\n| Delta Air Lines (DAL) | Not available as a margin % | \u2014 |\n| Microsoft (MSFT) | Not available as a margin % | \u2014 |\n\n**Important caveats:**\n\n- The corpus contains 61 filings, and I was only able to search for a subset of companies. I cannot confirm that no other company in the corpus has a higher operating margin than NVIDIA's 65.6%.\n- For **Delta Air Lines** and **Microsoft**, I found operating income dollar figures but not a directly stated operating margin percentage for their most recent quarters, so I cannot include them in the comparison.\n- \"Last quarter\" is ambiguous \u2014 it could mean the most recent quarter each company reported, or a specific calendar quarter. The figures above reflect each company's most recent reported quarter in the corpus.\n\nGiven the data available, NVIDIA's 65.6% operating margin is by far the highest, but I cannot rule out that another company in the corpus (one I didn't find) might have a higher margin.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "operating margin last quarter",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "NVDA_10-Q_2025-07-27.md::chunk16",
+                  "DAL_10-Q_2026-06-30.md::chunk24",
+                  "TGT_10-K_2026-01-31.md::chunk12",
+                  "TGT_10-Q_2025-11-01.md::chunk7",
+                  "TGT_10-Q_2025-08-02.md::chunk7"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "operating income margin rate",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  3,
+                  5,
+                  4,
+                  6,
+                  7
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "TGT_10-K_2026-01-31.md::chunk12",
+                  "TGT_10-Q_2025-08-02.md::chunk7",
+                  "TGT_10-Q_2025-11-01.md::chunk7",
+                  "TGT_10-Q_2026-05-02.md::chunk9",
+                  "TGT_10-Q_2026-05-02.md::chunk20"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "operating margin percentage",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  8,
+                  3,
+                  9,
+                  10,
+                  11
+                ],
+                "new_passages": [
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "chunk_ids": [
+                  "MSFT_10-K_2026-06-30.md::chunk26",
+                  "TGT_10-K_2026-01-31.md::chunk12",
+                  "MSFT_10-K_2025-06-30.md::chunk20",
+                  "MSFT_10-Q_2025-09-30.md::chunk28",
+                  "MSFT_10-Q_2025-12-31.md::chunk23"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "operating income as percent of revenue",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  10,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "new_passages": [
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-09-30.md::chunk28",
+                  "NVDA_10-Q_2025-07-27.md::chunk18",
+                  "NVDA_10-Q_2025-10-26.md::chunk18",
+                  "NVDA_10-Q_2026-04-26.md::chunk18",
+                  "MSFT_10-K_2025-06-30.md::chunk21"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "operating margin NVIDIA",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  16,
+                  17,
+                  18,
+                  1,
+                  19
+                ],
+                "new_passages": [
+                  16,
+                  17,
+                  18,
+                  19
+                ],
+                "chunk_ids": [
+                  "NVDA_10-Q_2026-04-26.md::chunk16",
+                  "NVDA_10-Q_2026-04-26.md::chunk12",
+                  "NVDA_10-Q_2025-10-26.md::chunk13",
+                  "NVDA_10-Q_2025-07-27.md::chunk16",
+                  "NVDA_10-K_2026-01-25.md::chunk11"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "operating income margin Delta Air Lines",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  2,
+                  20,
+                  21,
+                  22,
+                  23
+                ],
+                "new_passages": [
+                  20,
+                  21,
+                  22,
+                  23
+                ],
+                "chunk_ids": [
+                  "DAL_10-Q_2026-06-30.md::chunk24",
+                  "DAL_10-K_2025-12-31.md::chunk1",
+                  "DAL_10-K_2024-12-31.md::chunk1",
+                  "DAL_10-K_2025-12-31.md::chunk72",
+                  "DAL_10-Q_2025-09-30.md::chunk28"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "operating income margin Microsoft quarterly",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  24,
+                  25,
+                  26,
+                  27
+                ],
+                "new_passages": [
+                  24,
+                  25,
+                  26,
+                  27
+                ],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-12-31.md::chunk23",
+                  "MSFT_10-Q_2025-12-31.md::chunk33",
+                  "MSFT_10-Q_2026-03-31.md::chunk34",
+                  "MSFT_10-Q_2025-12-31.md::chunk21",
+                  "MSFT_10-Q_2025-09-30.md::chunk20"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "operating income margin rate 10-Q",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  5,
+                  4,
+                  6,
+                  28,
+                  29
+                ],
+                "new_passages": [
+                  28,
+                  29
+                ],
+                "chunk_ids": [
+                  "TGT_10-Q_2025-08-02.md::chunk7",
+                  "TGT_10-Q_2025-11-01.md::chunk7",
+                  "TGT_10-Q_2026-05-02.md::chunk9",
+                  "TGT_10-Q_2025-11-01.md::chunk6",
+                  "TGT_10-Q_2025-08-02.md::chunk6"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "operating margin Apple Amazon Meta",
+                "status": "refused",
+                "filters": null,
+                "filters_raw": null,
+                "note": "Tool budget for this question is used up; this search was not run.",
+                "passages": [],
+                "new_passages": [],
+                "chunk_ids": [],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-cross-corpus-acs-auth",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 3,
+            "latency_s": 52.8,
+            "answer": "The document corpus I have access to consists of SEC EDGAR filings (10-K and 10-Q reports from companies like Costco, Southwest Airlines, Microsoft, Apple, and Chevron). It does not contain any information about ACS API authentication or HTTP headers for API requests.\n\nI can't answer this question from the available documents. If you're asking about a specific ACS (e.g., a particular company's or service's API), you'd need to consult that service's API documentation directly. If you can clarify which ACS API you mean, I'm happy to search the corpus again in case it's referenced in one of the filings.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "ACS API authentication HTTP header",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk188",
+                  "LUV_10-K_2024-12-31.md::chunk3",
+                  "MSFT_10-K_2025-06-30.md::chunk5",
+                  "AAPL_10-Q_2025-12-27.md::chunk2",
+                  "AAPL_10-Q_2025-12-27.md::chunk4"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "ACS API request authentication token header",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  5,
+                  2,
+                  6,
+                  3
+                ],
+                "new_passages": [
+                  6
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk188",
+                  "AAPL_10-Q_2025-12-27.md::chunk4",
+                  "LUV_10-K_2024-12-31.md::chunk3",
+                  "CVX_10-K_2025-12-31.md::chunk27",
+                  "MSFT_10-K_2025-06-30.md::chunk5"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-cross-corpus-retention",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 4,
+            "latency_s": 70.8,
+            "answer": "The document corpus I have access to consists of SEC EDGAR filings (10-K and 10-Q reports from companies like Delta Air Lines, Costco, Johnson & Johnson, Pfizer, Chevron, and Target). These are financial and corporate disclosures, and they do not contain information about how long deleted objects are retained before permanent removal.\n\nThis question appears to relate to a technical system's data retention or deletion policy (e.g., a cloud storage service, database, or application), which is not covered by the filings in this corpus. I cannot answer it from the available documents.\n\nIf you could clarify which system, product, or document you're referring to, I'd be happy to search again with more specific terms.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "deleted objects retained before permanent removal",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk60",
+                  "DAL_10-K_2024-12-31.md::chunk66",
+                  "COST_10-K_2024-09-01.md::chunk69",
+                  "JNJ_10-K_2024-12-29.md::chunk32",
+                  "DAL_10-K_2025-12-31.md::chunk54"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "retention period deleted data permanent deletion",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "PFE_10-Q_2026-06-28.md::chunk123",
+                  "PFE_10-Q_2025-09-28.md::chunk150",
+                  "PFE_10-Q_2026-06-28.md::chunk112",
+                  "PFE_10-Q_2025-09-28.md::chunk139",
+                  "PFE_10-Q_2026-06-28.md::chunk129"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "soft delete recovery period objects storage",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "chunk_ids": [
+                  "CVX_10-K_2025-12-31.md::chunk88",
+                  "TGT_10-Q_2026-05-02.md::chunk15",
+                  "CVX_10-K_2024-12-31.md::chunk78",
+                  "TGT_10-K_2025-02-01.md::chunk18",
+                  "CVX_10-K_2024-12-31.md::chunk153"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "variant": "agentic react / 27b, think=low #2",
+      "overrides": {
+        "chat.mode": "agentic",
+        "crag.enabled": false,
+        "llm.model": "qwen3.5:9b-mlx",
+        "agent.strategy": "react",
+        "agent.llm": {
+          "model": "qwen3.8:27b-mlx",
+          "max_tokens": 4096,
+          "timeout_s": 600,
+          "think": "low"
+        }
+      },
+      "generator": "ollama:qwen3.8:27b-mlx",
+      "mode": "agentic:react",
+      "retrieval": "configured",
+      "code": "c595818baa7b",
+      "refusals": {
+        "num_evaluated": 15,
+        "num_passed": 15,
+        "num_failed": 0,
+        "num_unparseable": 0,
+        "num_empty": 0,
+        "pass_rate": 1.0,
+        "pass_ci": [
+          0.7961,
+          1.0
+        ],
+        "by_kind": {},
+        "mean_latency_s": 104.3,
+        "mean_llm_calls": 4.67,
+        "mean_prompt_tokens": 14832.7,
+        "mean_completion_tokens": 641.7,
+        "groundedness": null,
+        "elapsed_s": 1875.2,
+        "resumed_samples": 0,
+        "failed_ids": [],
+        "failed_retrieval": 0,
+        "failed_generation": 0,
+        "failed_unattributed": 0,
+        "samples": [
+          {
+            "id": "neg-entity-tesla-margin",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 97.7,
+            "answer": "I was unable to find any information about Tesla's automotive gross margin in the document corpus. After searching with multiple queries, the corpus does not appear to contain any Tesla (TSLA) filings. The available documents include filings from companies such as Target, Apple, Costco, NVIDIA, and Pfizer, but no Tesla filings are indexed.\n\nI cannot answer this question from the available documents. If you have a Tesla 10-Q or 10-K filing for the quarter ended June 2026, it would need to be added to the corpus for me to retrieve that figure.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Tesla automotive gross margin quarter ended June 2026",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "TGT_10-Q_2026-05-02.md::chunk16",
+                  "AAPL_10-Q_2026-06-27.md::chunk17",
+                  "COST_10-Q_2026-05-10.md::chunk23",
+                  "NVDA_10-K_2026-01-25.md::chunk11",
+                  "AAPL_10-Q_2026-06-27.md::chunk18"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Tesla automotive segment gross margin 2026",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  4,
+                  7,
+                  8,
+                  2
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8
+                ],
+                "chunk_ids": [
+                  "TGT_10-K_2026-01-31.md::chunk12",
+                  "NVDA_10-K_2026-01-25.md::chunk11",
+                  "COST_10-Q_2026-05-10.md::chunk28",
+                  "AAPL_10-Q_2026-03-28.md::chunk18",
+                  "AAPL_10-Q_2026-06-27.md::chunk17"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Tesla TSLA 10-Q 10-K filing",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "new_passages": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "chunk_ids": [
+                  "PFE_10-Q_2026-06-28.md::chunk65",
+                  "COST_10-Q_2026-02-15.md::chunk47",
+                  "COST_10-Q_2026-05-10.md::chunk49",
+                  "PFE_10-Q_2025-09-28.md::chunk5",
+                  "COST_10-Q_2025-11-23.md::chunk39"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Tesla Inc automotive gross margin percentage",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  2,
+                  8,
+                  14,
+                  15,
+                  16
+                ],
+                "new_passages": [
+                  14,
+                  15,
+                  16
+                ],
+                "chunk_ids": [
+                  "AAPL_10-Q_2026-06-27.md::chunk17",
+                  "AAPL_10-Q_2026-03-28.md::chunk18",
+                  "TGT_10-K_2025-02-01.md::chunk8",
+                  "COST_10-Q_2025-11-23.md::chunk21",
+                  "COST_10-K_2024-09-01.md::chunk21"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-lilly-pipeline",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 82.9,
+            "answer": "I searched the document corpus multiple times using various queries related to Eli Lilly's incretin manufacturing capacity expansion (including terms like \"incretin,\" \"GLP-1,\" \"tirzepatide,\" \"semaglutide,\" \"Mounjaro,\" and \"Zepretic\"), but I was unable to find any relevant passages.\n\nThe corpus I have access to contains SEC filings from companies such as Johnson & Johnson, Chevron, Merck, NVIDIA, and Apple, but it does not appear to include any Eli Lilly (LLY) filings or any discussion of Eli Lilly's incretin manufacturing capacity expansion.\n\nI cannot answer this question from the available documents. If you have a specific Eli Lilly filing or document you'd like me to search, or if this information exists in a different corpus, please let me know and I can try again.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Eli Lilly incretin manufacturing capacity expansion",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "JNJ_10-K_2024-12-29.md::chunk10",
+                  "CVX_10-K_2024-12-31.md::chunk50",
+                  "MRK_10-Q_2025-09-30.md::chunk31",
+                  "MRK_10-K_2025-12-31.md::chunk48",
+                  "MRK_10-K_2025-12-31.md::chunk68"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Eli Lilly manufacturing capacity expansion incretin GLP-1",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  3,
+                  6,
+                  7,
+                  8
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8
+                ],
+                "chunk_ids": [
+                  "JNJ_10-K_2024-12-29.md::chunk10",
+                  "MRK_10-Q_2025-09-30.md::chunk31",
+                  "MRK_10-Q_2026-03-31.md::chunk28",
+                  "MRK_10-K_2025-12-31.md::chunk76",
+                  "MRK_10-K_2025-12-31.md::chunk77"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Eli Lilly LLY manufacturing capacity",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  9,
+                  10,
+                  11,
+                  12
+                ],
+                "new_passages": [
+                  9,
+                  10,
+                  11,
+                  12
+                ],
+                "chunk_ids": [
+                  "JNJ_10-K_2024-12-29.md::chunk10",
+                  "NVDA_10-K_2025-01-26.md::chunk23",
+                  "NVDA_10-K_2026-01-25.md::chunk15",
+                  "AAPL_10-Q_2026-06-27.md::chunk24",
+                  "NVDA_10-Q_2025-07-27.md::chunk11"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Eli Lilly Mounjaro Zepretic semaglutide tirzepatide capacity",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  13,
+                  14,
+                  15,
+                  7,
+                  16
+                ],
+                "new_passages": [
+                  13,
+                  14,
+                  15,
+                  16
+                ],
+                "chunk_ids": [
+                  "MRK_10-Q_2025-09-30.md::chunk33",
+                  "MRK_10-K_2025-12-31.md::chunk50",
+                  "CVX_10-K_2024-12-31.md::chunk63",
+                  "MRK_10-K_2025-12-31.md::chunk76",
+                  "MRK_10-K_2024-12-31.md::chunk59"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-goldman-trading",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 4,
+            "latency_s": 72.3,
+            "answer": "I wasn't able to find any information about Goldman Sachs' trading revenue in the document corpus. The filings indexed here cover companies such as ExxonMobil, Microsoft, Johnson & Johnson, Pfizer, NVIDIA, and Target, but do not include any Goldman Sachs (GS) filings.\n\nAs a result, I can't tell you what drove the change in Goldman Sachs' trading revenue this quarter based on the available documents. If you have a Goldman Sachs 10-Q or 10-K filing that should be in the corpus, it may not yet be indexed. Otherwise, I'd recommend checking Goldman Sachs' most recent SEC filing directly for their trading revenue discussion.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Goldman Sachs trading revenue change drivers this quarter",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "XOM_10-Q_2026-06-30.md::chunk11",
+                  "MSFT_10-K_2025-06-30.md::chunk10",
+                  "MSFT_10-K_2026-06-30.md::chunk10",
+                  "MSFT_10-Q_2026-03-31.md::chunk12",
+                  "JNJ_10-Q_2026-03-29.md::chunk18"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Goldman Sachs GS trading revenue",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "JNJ_10-Q_2026-03-29.md::chunk49",
+                  "JNJ_10-Q_2026-06-28.md::chunk68",
+                  "JNJ_10-Q_2025-09-28.md::chunk72",
+                  "MSFT_10-K_2025-06-30.md::chunk18",
+                  "JNJ_10-K_2025-12-28.md::chunk64"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Goldman Sachs Group trading revenue net revenues",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "chunk_ids": [
+                  "PFE_10-Q_2025-09-28.md::chunk59",
+                  "NVDA_10-Q_2025-07-27.md::chunk19",
+                  "TGT_10-K_2025-02-01.md::chunk10",
+                  "NVDA_10-K_2025-01-26.md::chunk33",
+                  "MSFT_10-K_2025-06-30.md::chunk25"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-coke-pricing",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 6,
+            "latency_s": 118.6,
+            "answer": "Based on my searches of the document corpus, I was unable to find any information about Coca-Cola's description of pricing and mix impact on net revenues. The corpus does not appear to contain any filings from The Coca-Cola Company. The filings available in this corpus are from companies such as Costco, Target, Pfizer, and Merck.\n\nIf you have a specific Coca-Cola filing you'd like me to look up, or if you can clarify which company or document you're referring to, I'd be happy to search again.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Coca-Cola pricing and mix impact on net revenues",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "TGT_10-Q_2025-08-02.md::chunk14",
+                  "PFE_10-Q_2026-06-28.md::chunk29",
+                  "TGT_10-K_2026-01-31.md::chunk19",
+                  "COST_10-Q_2026-05-10.md::chunk6"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Coca-Cola net revenues pricing mix",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  3,
+                  1,
+                  7,
+                  5
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "COST_10-Q_2025-11-23.md::chunk5",
+                  "PFE_10-Q_2026-06-28.md::chunk29",
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "COST_10-Q_2026-02-15.md::chunk6",
+                  "COST_10-Q_2026-05-10.md::chunk6"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "The Coca-Cola Company net revenue pricing mix impact",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  5,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "COST_10-Q_2026-05-10.md::chunk6",
+                  "TGT_10-Q_2026-05-02.md::chunk7",
+                  "MRK_10-Q_2025-09-30.md::chunk43",
+                  "MRK_10-Q_2026-06-30.md::chunk10"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Coca-Cola Company 10-K 10-Q revenue",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  15
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2025-08-31.md::chunk171",
+                  "COST_10-K_2024-09-01.md::chunk188",
+                  "COST_10-K_2024-09-01.md::chunk184",
+                  "COST_10-K_2024-09-01.md::chunk187",
+                  "COST_10-K_2025-08-31.md::chunk172"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "Coca-Cola beverage company net revenue growth pricing",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  1,
+                  16,
+                  17,
+                  18
+                ],
+                "new_passages": [
+                  16,
+                  17,
+                  18
+                ],
+                "chunk_ids": [
+                  "COST_10-Q_2025-11-23.md::chunk5",
+                  "COST_10-K_2024-09-01.md::chunk3",
+                  "MRK_10-K_2025-12-31.md::chunk31",
+                  "COST_10-Q_2026-02-15.md::chunk16",
+                  "PFE_10-Q_2025-09-28.md::chunk133"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-ford-ev",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 4,
+            "latency_s": 107.9,
+            "answer": "Based on my searches of the document corpus, I was unable to find any information about Ford Motor's electric vehicle unit sales. The corpus contains filings from companies such as Target Corp, Chevron, ExxonMobil, and Costco Wholesale Corp, but does not appear to include any Ford Motor Company filings.\n\nThe only reference to electric vehicles in the results is a mention in a Chevron 10-Q [8] noting that \"electric vehicle and renewable fuel penetration\" is factored into their long-range supply and demand forecasts \u2014 but this is not a report of Ford's EV sales.\n\nI cannot answer this question from the available documents. If you have a Ford Motor filing in mind, it may not be part of this particular corpus.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Ford Motor electric vehicle unit sales",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "TGT_10-K_2026-01-31.md::chunk16",
+                  "CVX_10-Q_2025-09-30.md::chunk60",
+                  "CVX_10-K_2025-12-31.md::chunk81",
+                  "XOM_10-Q_2026-06-30.md::chunk34",
+                  "CVX_10-Q_2025-09-30.md::chunk61"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Ford Motor Company electric vehicle deliveries sales units",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  2,
+                  4,
+                  6,
+                  1,
+                  5
+                ],
+                "new_passages": [
+                  6
+                ],
+                "chunk_ids": [
+                  "CVX_10-Q_2025-09-30.md::chunk60",
+                  "XOM_10-Q_2026-06-30.md::chunk34",
+                  "TGT_10-K_2025-02-01.md::chunk13",
+                  "TGT_10-K_2026-01-31.md::chunk16",
+                  "CVX_10-Q_2025-09-30.md::chunk61"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Ford Motor F 10-K 10-Q electric vehicle",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "new_passages": [
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk187",
+                  "CVX_10-Q_2025-09-30.md::chunk9",
+                  "COST_10-K_2025-08-31.md::chunk172",
+                  "COST_10-K_2024-09-01.md::chunk188",
+                  "COST_10-K_2025-08-31.md::chunk171"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-entity-netflix-subs",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 104.4,
+            "answer": "I searched the document corpus multiple times for information about Netflix's paid net subscriber additions, but the corpus does not appear to contain any Netflix filings. The available documents are from companies such as Costco Wholesale and Microsoft, and none of them report Netflix subscriber data.\n\nI'm unable to answer this question from the available documents. If you have a specific Netflix filing (e.g., a 10-Q or 10-K) that should be in the corpus, it may not have been indexed. Otherwise, this question falls outside the scope of the current document set.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Netflix paid net subscriber additions",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2025-08-31.md::chunk159",
+                  "MSFT_10-Q_2025-12-31.md::chunk57",
+                  "COST_10-K_2024-09-01.md::chunk171",
+                  "MSFT_10-K_2025-06-30.md::chunk42",
+                  "MSFT_10-K_2026-06-30.md::chunk45"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Netflix subscriber additions paid members",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "COST_10-Q_2025-11-23.md::chunk18",
+                  "COST_10-Q_2026-02-15.md::chunk20",
+                  "COST_10-Q_2026-05-10.md::chunk20",
+                  "COST_10-K_2024-09-01.md::chunk18",
+                  "COST_10-K_2024-09-01.md::chunk8"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Netflix Inc subscriber growth net additions",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  12,
+                  13,
+                  14,
+                  1
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13,
+                  14
+                ],
+                "chunk_ids": [
+                  "MSFT_10-K_2026-06-30.md::chunk21",
+                  "MSFT_10-Q_2025-12-31.md::chunk27",
+                  "MSFT_10-K_2025-06-30.md::chunk22",
+                  "MSFT_10-Q_2026-03-31.md::chunk27",
+                  "COST_10-K_2025-08-31.md::chunk159"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Netflix streaming service subscribers",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  15,
+                  16,
+                  17,
+                  18,
+                  19
+                ],
+                "new_passages": [
+                  15,
+                  16,
+                  17,
+                  18,
+                  19
+                ],
+                "chunk_ids": [
+                  "MSFT_10-K_2025-06-30.md::chunk16",
+                  "MSFT_10-Q_2026-03-31.md::chunk33",
+                  "MSFT_10-K_2026-06-30.md::chunk12",
+                  "MSFT_10-Q_2026-03-31.md::chunk14",
+                  "MSFT_10-Q_2025-12-31.md::chunk14"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-period-aapl-2015",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 94.4,
+            "answer": "I'm sorry, but the document corpus I have access to does not contain Apple's total net sales for fiscal year 2015. The available filings in this corpus cover more recent periods (fiscal years 2023\u20132026), and none of the search results include data from fiscal year 2015.\n\nBased on the passages found, the most recent historical data available is for fiscal years 2023, 2024, and 2025, with total net sales of $383,285 million, $391,035 million, and $416,161 million, respectively [1][2].\n\nTo find Apple's fiscal year 2015 total net sales, you would need to consult Apple's 10-K filing for the fiscal year ended September 26, 2015, which is not included in this corpus.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Apple total net sales fiscal year 2015",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "AAPL_10-K_2025-09-27.md::chunk7",
+                  "AAPL_10-K_2025-09-27.md::chunk9",
+                  "AAPL_10-Q_2026-06-27.md::chunk20",
+                  "AAPL_10-Q_2026-03-28.md::chunk21",
+                  "AAPL_10-Q_2025-12-27.md::chunk5"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Apple net sales 2015 fiscal year annual report",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "AAPL_10-K_2025-09-27.md::chunk8",
+                  "AAPL_10-Q_2026-03-28.md::chunk2",
+                  "AAPL_10-Q_2025-12-27.md::chunk2",
+                  "AAPL_10-K_2025-09-27.md::chunk0",
+                  "AAPL_10-K_2024-09-28.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Apple 2015 total net sales $233 billion",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  2,
+                  11,
+                  12,
+                  13,
+                  1
+                ],
+                "new_passages": [
+                  11,
+                  12,
+                  13
+                ],
+                "chunk_ids": [
+                  "AAPL_10-K_2025-09-27.md::chunk9",
+                  "AAPL_10-Q_2025-12-27.md::chunk10",
+                  "AAPL_10-K_2025-09-27.md::chunk13",
+                  "AAPL_10-Q_2025-12-27.md::chunk12",
+                  "AAPL_10-K_2025-09-27.md::chunk7"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Apple fiscal 2015 annual results revenue",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  14,
+                  8,
+                  9,
+                  10,
+                  15
+                ],
+                "new_passages": [
+                  14,
+                  15
+                ],
+                "chunk_ids": [
+                  "AAPL_10-Q_2026-06-27.md::chunk7",
+                  "AAPL_10-Q_2025-12-27.md::chunk2",
+                  "AAPL_10-K_2025-09-27.md::chunk0",
+                  "AAPL_10-K_2024-09-28.md::chunk0",
+                  "AAPL_10-Q_2026-03-28.md::chunk4"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-period-msft-2018",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 6,
+            "latency_s": 102.4,
+            "answer": "I'm sorry, but the document corpus I have access to does not contain Microsoft's fiscal 2018 filings. The available Microsoft filings in this corpus cover fiscal years 2024 through 2026 (10-K and 10-Q reports from 2024\u20132026), and none of them include a comparison back to fiscal 2018.\n\nFor reference, the most recent R&D figures I can find in the corpus are:\n\n- **Fiscal 2026:** $35,562 million [7]\n- **Fiscal 2025:** $32,488 million [6]\n- **Fiscal 2024:** $29,510 million [6]\n\nTo find Microsoft's R&D spending for fiscal 2018, you would need to consult Microsoft's 10-K filing for the fiscal year ended June 30, 2018, which is not included in this corpus.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Microsoft research and development spending fiscal 2018",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-12-31.md::chunk37",
+                  "MSFT_10-K_2026-06-30.md::chunk27",
+                  "MSFT_10-Q_2026-03-31.md::chunk38",
+                  "MSFT_10-Q_2026-03-31.md::chunk39",
+                  "MSFT_10-Q_2025-09-30.md::chunk29"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Microsoft research and development expenses 2018 10-K annual report",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  1,
+                  3,
+                  2,
+                  7
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "MSFT_10-K_2025-06-30.md::chunk26",
+                  "MSFT_10-Q_2025-12-31.md::chunk37",
+                  "MSFT_10-Q_2026-03-31.md::chunk38",
+                  "MSFT_10-K_2026-06-30.md::chunk27",
+                  "MSFT_10-K_2026-06-30.md::chunk26"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Microsoft 10-K fiscal year 2018 operating expenses research development",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  8,
+                  6,
+                  7,
+                  1,
+                  2
+                ],
+                "new_passages": [
+                  8
+                ],
+                "chunk_ids": [
+                  "MSFT_10-K_2026-06-30.md::chunk19",
+                  "MSFT_10-K_2025-06-30.md::chunk26",
+                  "MSFT_10-K_2026-06-30.md::chunk26",
+                  "MSFT_10-Q_2025-12-31.md::chunk37",
+                  "MSFT_10-K_2026-06-30.md::chunk27"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Microsoft fiscal 2018 annual report revenue operating income",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "new_passages": [
+                  9,
+                  10,
+                  11,
+                  12,
+                  13
+                ],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-12-31.md::chunk33",
+                  "MSFT_10-Q_2026-03-31.md::chunk27",
+                  "MSFT_10-K_2025-06-30.md::chunk19",
+                  "MSFT_10-K_2026-06-30.md::chunk21",
+                  "MSFT_10-K_2026-06-30.md::chunk3"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "Microsoft 10-K 2018 2017 2016 research development expenses",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  1,
+                  2,
+                  7,
+                  3
+                ],
+                "new_passages": [],
+                "chunk_ids": [
+                  "MSFT_10-K_2025-06-30.md::chunk26",
+                  "MSFT_10-Q_2025-12-31.md::chunk37",
+                  "MSFT_10-K_2026-06-30.md::chunk27",
+                  "MSFT_10-K_2026-06-30.md::chunk26",
+                  "MSFT_10-Q_2026-03-31.md::chunk38"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-period-wmt-2030",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 2,
+            "latency_s": 41.5,
+            "answer": "The document corpus doesn't contain any data for Walmart's fiscal year 2030 \u2014 the most recent filing available is the 10-K for the period ended January 31, 2026 (fiscal 2026), so fiscal 2030 figures aren't in the source material and I can't provide them.\n\nFor reference, the latest comparable sales figures the corpus does contain are:\n\n- **Fiscal 2026** (ended Jan 31, 2026): Walmart U.S. comparable sales increased **4.3%** (with fuel); Sam's Club U.S. **2.9%** [3].\n- **Fiscal 2025**: Walmart U.S. **4.8%**; Sam's Club U.S. **4.7%** [3].\n- **Fiscal 2024**: Walmart U.S. **5.5%** [2][5].\n\nIf you meant a different (earlier) fiscal year, let me know and I can pull that specific figure.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Walmart comparable sales fiscal year 2030",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "WMT_10-K_2026-01-31.md::chunk9",
+                  "WMT_10-K_2025-01-31.md::chunk15",
+                  "WMT_10-K_2026-01-31.md::chunk11",
+                  "WMT_10-K_2025-01-31.md::chunk46",
+                  "WMT_10-K_2025-01-31.md::chunk42"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-scope-wmt-board",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 68.8,
+            "answer": "Based on my searches of the document corpus, I was unable to find a specific list of Walmart's board of directors members. The corpus contains Walmart's 10-K filings (for fiscal years ended January 31, 2025 and 2026), but the passages retrieved do not include a section enumerating the individual directors.\n\nBoard member lists are typically found in a company's **DEF 14A proxy statement** (filed with the SEC), rather than in the 10-K annual report. It's possible that the proxy statement is not part of this corpus, or that the relevant section wasn't retrieved.\n\n**What the passages do tell us:**\n- Walmart's Board of Directors authorizes share repurchase programs [1].\n- The Board approved a new $30.0 billion share repurchase authorization in February 2026 [1].\n\nHowever, the specific names of the directors are not available in the retrieved passages. If you need this information, I'd recommend checking Walmart's most recent DEF 14A proxy filing on the SEC's EDGAR website.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Walmart board of directors members",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "WMT_10-K_2026-01-31.md::chunk65",
+                  "WMT_10-K_2026-01-31.md::chunk62",
+                  "WMT_10-K_2026-01-31.md::chunk30",
+                  "WMT_10-K_2025-01-31.md::chunk0",
+                  "WMT_10-K_2026-01-31.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Walmart directors names board members governance",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  6,
+                  4,
+                  2,
+                  5
+                ],
+                "new_passages": [
+                  6
+                ],
+                "chunk_ids": [
+                  "WMT_10-K_2026-01-31.md::chunk65",
+                  "WMT_10-K_2025-01-31.md::chunk9",
+                  "WMT_10-K_2025-01-31.md::chunk0",
+                  "WMT_10-K_2026-01-31.md::chunk62",
+                  "WMT_10-K_2026-01-31.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Walmart board of directors chairman CEO independent directors",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  7,
+                  6,
+                  8,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  7,
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "MSFT_10-K_2025-06-30.md::chunk65",
+                  "WMT_10-K_2025-01-31.md::chunk9",
+                  "MSFT_10-K_2026-06-30.md::chunk70",
+                  "WMT_10-K_2026-01-31.md::chunk1",
+                  "WMT_10-K_2025-01-31.md::chunk1"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Walmart directors list names board composition",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  6,
+                  5,
+                  4
+                ],
+                "new_passages": [],
+                "chunk_ids": [
+                  "WMT_10-K_2026-01-31.md::chunk65",
+                  "WMT_10-K_2026-01-31.md::chunk62",
+                  "WMT_10-K_2025-01-31.md::chunk9",
+                  "WMT_10-K_2026-01-31.md::chunk0",
+                  "WMT_10-K_2025-01-31.md::chunk0"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-scope-nvda-ceo-pay",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 89.6,
+            "answer": "Based on my searches of the document corpus, I was unable to find specific information about NVIDIA's CEO total compensation. The available NVIDIA filings in this corpus are 10-K and 10-Q reports, which discuss general compensation and benefits expense as part of operating expenses (e.g., \"a 29% increase in compensation and benefits expense, including stock-based compensation, reflecting employee growth and compensation increases\" [1]), but they do not include the detailed executive compensation tables that would list a specific CEO's total compensation.\n\nSuch information is typically found in a **DEF 14A proxy statement** (which contains the Summary Compensation Table for named executive officers), and it does not appear to be included in this corpus. The 10-K filings reference that executive compensation details are incorporated by reference from the proxy statement, similar to how other companies in the corpus handle it [10].\n\nIf you need NVIDIA's CEO (Jensen Huang) total compensation, you would need to consult NVIDIA's most recent DEF 14A proxy filing, which is not part of this document set.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "NVIDIA CEO total compensation",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "NVDA_10-K_2026-01-25.md::chunk33",
+                  "NVDA_10-Q_2025-07-27.md::chunk32",
+                  "NVDA_10-Q_2025-10-26.md::chunk32",
+                  "NVDA_10-Q_2025-07-27.md::chunk31",
+                  "NVDA_10-Q_2025-10-26.md::chunk31"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "NVIDIA CEO summary compensation table Jensen Huang",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  6,
+                  7,
+                  1,
+                  8,
+                  9
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "chunk_ids": [
+                  "NVDA_10-K_2025-01-26.md::chunk40",
+                  "NVDA_10-Q_2026-04-26.md::chunk26",
+                  "NVDA_10-K_2026-01-25.md::chunk33",
+                  "NVDA_10-Q_2026-04-26.md::chunk16",
+                  "NVDA_10-Q_2025-07-27.md::chunk16"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "executive compensation proxy statement NVIDIA named executive officer",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  10,
+                  11,
+                  12,
+                  13,
+                  14
+                ],
+                "new_passages": [
+                  10,
+                  11,
+                  12,
+                  13,
+                  14
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2025-08-31.md::chunk168",
+                  "COST_10-K_2024-09-01.md::chunk180",
+                  "NVDA_10-Q_2026-04-26.md::chunk3",
+                  "NVDA_10-Q_2026-04-26.md::chunk4",
+                  "NVDA_10-Q_2025-07-27.md::chunk3"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "NVIDIA CEO compensation salary bonus stock award total",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  3,
+                  2,
+                  6,
+                  1,
+                  7
+                ],
+                "new_passages": [],
+                "chunk_ids": [
+                  "NVDA_10-Q_2025-10-26.md::chunk32",
+                  "NVDA_10-Q_2025-07-27.md::chunk32",
+                  "NVDA_10-K_2025-01-26.md::chunk40",
+                  "NVDA_10-K_2026-01-25.md::chunk33",
+                  "NVDA_10-Q_2026-04-26.md::chunk26"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-scope-dal-risk-factors",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 6,
+            "latency_s": 201.0,
+            "answer": "I was unable to find the full list of risk factors Delta Air Lines discloses in Item 1A of its 10-K filings. The passages retrieved from Delta's filings (e.g., [1], [3], [4], [6], [12], [18], [19], [20], [21], [23]) come from the **Management's Discussion and Analysis (Item 7)** and **financial statement notes** sections, not from the **Item 1A Risk Factors** section. They reference risk factors in passing (e.g., \"material risk factors included elsewhere in this Annual Report on Form 10-K\" [3][4]) but do not reproduce the actual risk factor text.\n\nThe risk factor content that did surface in the search results belongs to **United Airlines** (passages [13]\u2013[17], [22]), not Delta. Those list risks such as economic/market conditions, competition, technology reliance, cybersecurity, labor disputes, regulation, and litigation \u2014 but they are United's disclosures, not Delta's.\n\n**In short:** The corpus passages available to me do not contain the full Item 1A risk factor text for Delta Air Lines. I cannot provide that list without fabricating it. To get the complete risk factors, you would need to consult Delta's 10-K filing directly on SEC EDGAR (e.g., accession 0000027904-25-000004 for the 2024 filing or 0000027904-26-000013 for the 2025 filing), specifically the section headed \"Item 1A. Risk Factors.\"",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors Item 1A",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "UAL_10-K_2025-12-31.md::chunk9",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "COST_10-Q_2026-05-10.md::chunk47"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors summary of risks to our business",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  4,
+                  3,
+                  6,
+                  7
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk15",
+                  "DAL_10-Q_2025-09-30.md::chunk31"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "Delta Air Lines Item 1A risk factors economic conditions fuel costs",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  8,
+                  9,
+                  7,
+                  10,
+                  11
+                ],
+                "new_passages": [
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2024-12-31.md::chunk17",
+                  "DAL_10-Q_2026-06-30.md::chunk27",
+                  "DAL_10-Q_2025-09-30.md::chunk31",
+                  "WMT_10-K_2026-01-31.md::chunk4",
+                  "DAL_10-Q_2025-09-30.md::chunk32"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors summary of risks to our business operations",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  4,
+                  3,
+                  6,
+                  7,
+                  12
+                ],
+                "new_passages": [
+                  12
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk15",
+                  "DAL_10-Q_2025-09-30.md::chunk31",
+                  "DAL_10-K_2024-12-31.md::chunk60"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors cybersecurity data privacy labor",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  13,
+                  14,
+                  15,
+                  16,
+                  17
+                ],
+                "new_passages": [
+                  13,
+                  14,
+                  15,
+                  16,
+                  17
+                ],
+                "chunk_ids": [
+                  "UAL_10-K_2024-12-31.md::chunk64",
+                  "UAL_10-Q_2026-03-31.md::chunk36",
+                  "UAL_10-Q_2025-09-30.md::chunk55",
+                  "UAL_10-K_2025-12-31.md::chunk69",
+                  "UAL_10-Q_2026-06-30.md::chunk47"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Delta Air Lines DAL risk factors economic conditions could adversely affect",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  18,
+                  1,
+                  3,
+                  4,
+                  19
+                ],
+                "new_passages": [
+                  18,
+                  19
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2024-12-31.md::chunk64",
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "DAL_10-Q_2025-09-30.md::chunk37"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors competition pricing capacity",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  20,
+                  21,
+                  22,
+                  9
+                ],
+                "new_passages": [
+                  20,
+                  21,
+                  22
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "DAL_10-Q_2026-06-30.md::chunk6",
+                  "DAL_10-Q_2026-06-30.md::chunk16",
+                  "UAL_10-K_2024-12-31.md::chunk8",
+                  "DAL_10-Q_2026-06-30.md::chunk27"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors summary of risks to our business operations and financial condition",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  3,
+                  4,
+                  23,
+                  6
+                ],
+                "new_passages": [
+                  23
+                ],
+                "chunk_ids": [
+                  "DAL_10-K_2025-12-31.md::chunk58",
+                  "DAL_10-K_2024-12-31.md::chunk0",
+                  "DAL_10-K_2025-12-31.md::chunk0",
+                  "DAL_10-K_2024-12-31.md::chunk31",
+                  "DAL_10-K_2024-12-31.md::chunk15"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 5,
+                "tool": "rag_search",
+                "query": "Delta Air Lines risk factors pandemic disease outbreak terrorism",
+                "status": "refused",
+                "filters": null,
+                "filters_raw": null,
+                "note": "Tool budget for this question is used up; this search was not run.",
+                "passages": [],
+                "new_passages": [],
+                "chunk_ids": [],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-unanswerable-comparison",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 5,
+            "latency_s": 264.5,
+            "answer": "Based on the passages available, **NVIDIA (NVDA)** had the highest operating margin among the companies for which operating margin data is available.\n\n**NVIDIA's most recent quarter (ended Oct 26, 2025)** [24]:\n- Revenue: $57,006M\n- Operating income: $36,010M\n- **Operating margin \u2248 63.2%**\n\nFor comparison, the other companies with explicit operating margin figures in the passages:\n\n| Company | Most Recent Quarter | Operating Margin | Source |\n|---|---|---|---|\n| **NVIDIA** | Oct 26, 2025 | ~63.2% (calculated) | [24] |\n| **Southwest Airlines** | Jun 30, 2026 | 3.4% (as reported); 6.7% (excl. special items) | [12] |\n| **Target** | May 2, 2026 | 4.5% | [6] |\n\n**Important caveat:** The passages do not provide explicit operating margin percentages for several other companies in the corpus, including **Microsoft**, **Apple**, **Delta Air Lines**, **Costco**, and **Pfizer**. For Microsoft, the filings discuss operating income growth in dollar terms but don't state a margin percentage [9][10][23]. For Apple, the filings report gross margin percentages (50.1% for the quarter ended June 27, 2026) but not operating margin [18]. For Delta, Costco, and Pfizer, no operating margin figures were found in the retrieved passages.\n\nThat said, NVIDIA's ~63% operating margin is so far above the others that it is almost certainly the highest in the corpus, even among the companies for which I lack explicit figures.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "operating margin last quarter",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "NVDA_10-Q_2025-07-27.md::chunk16",
+                  "DAL_10-Q_2026-06-30.md::chunk24",
+                  "TGT_10-K_2026-01-31.md::chunk12",
+                  "TGT_10-Q_2025-11-01.md::chunk7",
+                  "TGT_10-Q_2025-08-02.md::chunk7"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "operating income margin rate percentage",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  3,
+                  5,
+                  6,
+                  4,
+                  7
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "TGT_10-K_2026-01-31.md::chunk12",
+                  "TGT_10-Q_2025-08-02.md::chunk7",
+                  "TGT_10-Q_2026-05-02.md::chunk9",
+                  "TGT_10-Q_2025-11-01.md::chunk7",
+                  "MSFT_10-Q_2025-09-30.md::chunk28"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "operating margin operating income as percentage of revenue",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "new_passages": [
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-09-30.md::chunk28",
+                  "MSFT_10-K_2026-06-30.md::chunk26",
+                  "MSFT_10-Q_2026-03-31.md::chunk34",
+                  "MSFT_10-Q_2025-12-31.md::chunk28",
+                  "MSFT_10-Q_2025-12-31.md::chunk33"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "operating income as a percent of revenue operating margin",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  7,
+                  8,
+                  11,
+                  12,
+                  3
+                ],
+                "new_passages": [
+                  12
+                ],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-09-30.md::chunk28",
+                  "MSFT_10-K_2026-06-30.md::chunk26",
+                  "MSFT_10-Q_2025-12-31.md::chunk33",
+                  "LUV_10-Q_2026-06-30.md::chunk49",
+                  "TGT_10-K_2026-01-31.md::chunk12"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "10-Q 10-K company filing",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  13,
+                  14,
+                  15,
+                  16,
+                  17
+                ],
+                "new_passages": [
+                  13,
+                  14,
+                  15,
+                  16,
+                  17
+                ],
+                "chunk_ids": [
+                  "AAPL_10-Q_2026-03-28.md::chunk3",
+                  "AAPL_10-Q_2026-06-27.md::chunk3",
+                  "COST_10-K_2024-09-01.md::chunk186",
+                  "PFE_10-Q_2025-09-28.md::chunk5",
+                  "COST_10-K_2025-08-31.md::chunk171"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Apple operating income margin percentage",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  18,
+                  19,
+                  20,
+                  21,
+                  22
+                ],
+                "new_passages": [
+                  18,
+                  19,
+                  20,
+                  21,
+                  22
+                ],
+                "chunk_ids": [
+                  "AAPL_10-Q_2026-06-27.md::chunk17",
+                  "AAPL_10-Q_2026-03-28.md::chunk18",
+                  "AAPL_10-Q_2025-12-27.md::chunk14",
+                  "AAPL_10-K_2024-09-28.md::chunk8",
+                  "AAPL_10-K_2025-09-27.md::chunk11"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "Microsoft operating income margin percentage of revenue",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  11,
+                  9,
+                  23,
+                  7,
+                  10
+                ],
+                "new_passages": [
+                  23
+                ],
+                "chunk_ids": [
+                  "MSFT_10-Q_2025-12-31.md::chunk33",
+                  "MSFT_10-Q_2026-03-31.md::chunk34",
+                  "MSFT_10-Q_2025-12-31.md::chunk23",
+                  "MSFT_10-Q_2025-09-30.md::chunk28",
+                  "MSFT_10-Q_2025-12-31.md::chunk28"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 4,
+                "tool": "rag_search",
+                "query": "NVIDIA operating income margin percentage",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  24,
+                  25,
+                  26,
+                  27,
+                  28
+                ],
+                "new_passages": [
+                  24,
+                  25,
+                  26,
+                  27,
+                  28
+                ],
+                "chunk_ids": [
+                  "NVDA_10-Q_2025-10-26.md::chunk13",
+                  "NVDA_10-Q_2025-07-27.md::chunk20",
+                  "NVDA_10-Q_2025-10-26.md::chunk20",
+                  "NVDA_10-K_2026-01-25.md::chunk24",
+                  "NVDA_10-K_2025-01-26.md::chunk32"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-cross-corpus-acs-auth",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 3,
+            "latency_s": 66.3,
+            "answer": "I searched the document corpus for information about authenticating an ACS API request, but the passages returned don't cover this topic. The corpus consists of SEC filings (10-K and 10-Q forms) from companies like Costco, Microsoft, Chevron, Apple, Merck, Southwest Airlines, Pfizer, and Delta Air Lines \u2014 none of which contain documentation about ACS API authentication headers.\n\nI can't answer this question from the available documents. If you're looking for ACS API authentication details, you'd need to consult the relevant API documentation or developer guide for that specific service.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "HTTP header authenticate ACS API request",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk188",
+                  "MSFT_10-K_2025-06-30.md::chunk5",
+                  "CVX_10-K_2025-12-31.md::chunk27",
+                  "AAPL_10-Q_2025-12-27.md::chunk4",
+                  "MRK_10-Q_2026-03-31.md::chunk11"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "ACS API authentication token bearer",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  6,
+                  7,
+                  8,
+                  2
+                ],
+                "new_passages": [
+                  6,
+                  7,
+                  8
+                ],
+                "chunk_ids": [
+                  "COST_10-K_2024-09-01.md::chunk188",
+                  "LUV_10-K_2024-12-31.md::chunk3",
+                  "PFE_10-Q_2026-06-28.md::chunk132",
+                  "DAL_10-Q_2026-03-31.md::chunk10",
+                  "MSFT_10-K_2025-06-30.md::chunk5"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          },
+          {
+            "id": "neg-cross-corpus-retention",
+            "passed": true,
+            "evidence_retrieved": null,
+            "grounded": null,
+            "llm_calls": 4,
+            "latency_s": 51.7,
+            "answer": "The document corpus (SEC EDGAR filings from companies like Pfizer, Target, Microsoft, Costco, and ExxonMobil) does not contain information about how long deleted objects are retained before permanent removal. These filings are financial reports (10-K and 10-Q) and don't address data retention policies for deleted objects.\n\nIf you're asking about a specific product's or system's deletion/retention policy, that information isn't available in this corpus. Could you clarify what context or system you're referring to? I may be able to help further if the question relates to something covered in these filings.",
+            "calls": [
+              {
+                "step": 1,
+                "tool": "rag_search",
+                "query": "deleted objects retention period before permanent removal",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "new_passages": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "chunk_ids": [
+                  "PFE_10-Q_2026-06-28.md::chunk123",
+                  "TGT_10-K_2025-02-01.md::chunk24",
+                  "PFE_10-Q_2025-09-28.md::chunk150",
+                  "TGT_10-K_2025-02-01.md::chunk41",
+                  "TGT_10-K_2026-01-31.md::chunk41"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 2,
+                "tool": "rag_search",
+                "query": "data retention policy deleted records permanent deletion",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  3,
+                  6,
+                  2,
+                  7
+                ],
+                "new_passages": [
+                  6,
+                  7
+                ],
+                "chunk_ids": [
+                  "PFE_10-Q_2026-06-28.md::chunk123",
+                  "PFE_10-Q_2025-09-28.md::chunk150",
+                  "PFE_10-Q_2026-06-28.md::chunk126",
+                  "TGT_10-K_2025-02-01.md::chunk24",
+                  "XOM_10-Q_2026-06-30.md::chunk9"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              },
+              {
+                "step": 3,
+                "tool": "rag_search",
+                "query": "retention period deleted items soft delete recovery window",
+                "status": "ran",
+                "filters": null,
+                "filters_raw": null,
+                "note": null,
+                "passages": [
+                  1,
+                  8,
+                  3,
+                  9,
+                  10
+                ],
+                "new_passages": [
+                  8,
+                  9,
+                  10
+                ],
+                "chunk_ids": [
+                  "PFE_10-Q_2026-06-28.md::chunk123",
+                  "COST_10-K_2024-09-01.md::chunk107",
+                  "PFE_10-Q_2025-09-28.md::chunk150",
+                  "MSFT_10-K_2026-06-30.md::chunk56",
+                  "MSFT_10-K_2025-06-30.md::chunk54"
+                ],
+                "documents": [],
+                "expression": null,
+                "result": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

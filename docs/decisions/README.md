@@ -32,9 +32,10 @@ For how the pieces fit together at runtime, read
 | [0012](0012-stateless-api-visible-interventions.md) | Stateless API; every silent intervention travels with the answer | API |
 | [0013](0013-turn-log-observability.md) | One append-only turn log, metered at the client, written only by human-facing entrypoints | Observability |
 | [0014](0014-mcp-server-scope.md) | MCP server: read-only tools, one protocol revision | Integration |
+| [0015](0015-agentic-default.md) | Agentic search is the default; supersedes 0009 | Generation |
 
-All of these were recorded on 2026-10-03, after the fact, from the docs they
-link to.
+0001–0014 were recorded on 2026-10-03, after the fact, from the docs they
+link to. 0015 was decided that day.
 
 ### Adding a record
 
