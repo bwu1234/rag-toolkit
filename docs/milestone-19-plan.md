@@ -629,6 +629,17 @@ credited to one tool:
    targets discovery questions and "which periods exist" questions.
    `rag_list_corpora` works at the corpus level; this works at the document
    level.
+   *Built, not measured (2026-10-03):* `RagTools.list_documents`, served over
+   MCP and offered to the agent when `agent.tools` includes it. The agent pins
+   `corpus` and `limit` and keeps `filters` (narrowing a listing changes no
+   search results). A listing spends one of `max_tool_calls` and takes no
+   ledger number. The motivating trace: on `ad-airline-fuel`, the 27b with
+   model filters spent about three of eight searches probing for American,
+   JetBlue and other carriers the corpus doesn't hold. Matrix rows:
+   `agentic react / 9b + list` and `agentic react / 27b, think=low + list`
+   (think=low instead of the default-thinking 27b named below, since the
+   `edgar_md` re-run made it the recommended setup). The per-call trace is now
+   `AgentToolCall`, with a `tool` field.
 2. **`rag_read_document(document_id, start?, max_chars?)`.** Returns a window
    of the document's cleaned text: the text that chunk offsets index into
    (`chunk_selected_corpora`). It comes with `start`, `end`, `length` and

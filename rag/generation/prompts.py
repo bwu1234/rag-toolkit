@@ -184,7 +184,7 @@ AGENT_SYSTEM_PROMPT = (
     "the whole conversation. Make every query standalone: name the specific "
     "entity, period, product or topic it is about, because the search sees "
     "only the query, not this conversation. A question about several entities "
-    "or periods needs a separate search for each.{filters} {iterate}\n\n"
+    "or periods needs a separate search for each.{filters}{listing} {iterate}\n\n"
     "Answer only from the passages, citing them inline as [n], e.g. [2] or "
     "[3][5]. Do not add facts from your own knowledge, not even as background "
     "or 'for reference'. If the passages don't answer the question, or answer "
@@ -215,11 +215,22 @@ _FILTERS_HINT = (
 )
 
 
+# Only when `agent.tools` offers rag_list_documents. The failure it answers:
+# asked for a set ("which airline..."), the 27b spent its searches probing for
+# carriers the corpus doesn't hold, since no ranked search says what's absent.
+_LISTING_HINT = (
+    " To learn what the corpus contains -- which companies, filings and "
+    "periods -- call rag_list_documents rather than searching for each "
+    "candidate; a question about a set (\"which airlines...\") starts there."
+)
+
+
 def agent_system_prompt(
     strategy: str,
     corpus_descriptions: list[tuple[str, str | None]],
     *,
     model_filters: bool = False,
+    list_documents: bool = False,
 ) -> str:
     """The agent's system prompt for `strategy`, naming the corpora it searches.
 
@@ -232,7 +243,8 @@ def agent_system_prompt(
     corpus = "\n\nThe corpus:\n" + "\n".join(described) if described else ""
     iterate = _PLANNED_ITERATE if strategy == "planned" else _REACT_ITERATE
     filters = _FILTERS_HINT if model_filters else ""
-    return AGENT_SYSTEM_PROMPT.format(iterate=iterate, corpus=corpus, filters=filters)
+    listing = _LISTING_HINT if list_documents else ""
+    return AGENT_SYSTEM_PROMPT.format(iterate=iterate, corpus=corpus, filters=filters, listing=listing)
 
 
 # Sent as its own user message before the forced tool-free turn. Where it goes

@@ -369,6 +369,12 @@ agent:
   # it. Off until measured: the `+ filters` rows of `run_answer_matrix.py
   # --family m19`, and the injection tier (docs/milestone-19-plan.md, phase 5).
   model_filters: false
+  # Tools offered to the model; rag_search is required. rag_list_documents lists
+  # the corpus's documents and their metadata (companies, forms, periods), for
+  # questions about a set ("which airlines...") that no ranked search can
+  # enumerate. Each call of either counts toward max_tool_calls. Not yet
+  # measured: the `+ list` rows of `run_answer_matrix.py --family m19`.
+  tools: [rag_search]
 
 # Milestone 12 -- persist every chat turn (queries, retrieved/kept/cited chunk
 # ids, CRAG verdicts, per-stage latency, LLM calls and tokens, the answer) and

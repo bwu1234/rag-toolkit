@@ -289,6 +289,13 @@ M19_VARIANTS: list[Variant] = [
     Variant("agentic react / 9b + filters", {
         **_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_9B, "agent.model_filters": True,
     }),
+    # The model can list the corpus's documents (`agent.tools`); pairs with
+    # `agentic react / 9b`. One listing is the kind of single decision the 9b
+    # does make (milestone 19 plan, "Tool surface").
+    Variant("agentic react / 9b + list", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": _AGENT_9B,
+        "agent.tools": ["rag_search", "rag_list_documents"],
+    }),
     # The control for the 27b agent: the same model and settings answering once,
     # so pipeline / 27b vs agentic react / 27b is the loop alone.
     Variant("pipeline / 27b", {"chat.mode": "pipeline", "crag.enabled": False, "llm": _AGENT_27B}),
@@ -301,6 +308,13 @@ M19_VARIANTS: list[Variant] = [
     Variant("agentic react / 27b, think=low + filters", {
         **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
         "agent.model_filters": True,
+    }),
+    # The same listing tool for the recommended opt-in agent; pairs with
+    # `agentic react / 27b, think=low`. The plan names `react / 27b + list`;
+    # think=low has since become the recommended 27b setup on `edgar_md`.
+    Variant("agentic react / 27b, think=low + list", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
+        "agent.tools": ["rag_search", "rag_list_documents"],
     }),
     # The agent's checker reports a verdict and changes nothing, so this row's
     # answers match the plain 27b row's up to sampling; what it measures is

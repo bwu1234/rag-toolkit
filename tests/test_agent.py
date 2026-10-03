@@ -652,3 +652,126 @@ def test_an_invalid_filter_error_names_the_field_without_pydantic_boilerplate() 
     ]
     assert first == "Search error: invalid filters: not a JSON object."
     assert second == "Search error: invalid filters: equals.ticker: Input should be a valid string"
+
+
+# --------------------------------------------------------------------------
+# rag_list_documents (`agent.tools`)
+# --------------------------------------------------------------------------
+
+
+_AIRLINES = [
+    {"document_id": "DAL_10-Q_2026-06-30.md", "company": "DELTA AIR LINES, INC.", "ticker": "DAL",
+     "form": "10-Q", "period_end": "2026-06-30", "chars": 57000},
+    {"document_id": "UAL_10-Q_2026-06-30.md", "company": "United Airlines Holdings, Inc.", "ticker": "UAL",
+     "form": "10-Q", "period_end": "2026-06-30", "chars": 61000},
+]
+
+
+class _ListingTools(_FakeTools):
+    """`_FakeTools` that also lists `documents`, recording the filter of each listing."""
+
+    def __init__(self, documents: list[dict[str, object]], results: dict[str, list[ScoredChunk]] | None = None) -> None:
+        super().__init__(results)
+        self.documents = documents
+        self.listings: list[object] = []
+
+    def list_documents(self, corpus=None, filters=None, limit=None):  # type: ignore[no-untyped-def]
+        self.listings.append(filters)
+        matched = [d for d in self.documents if filters is None or filters.matches(d)]
+        return {"corpora": ["edgar_md"], "total": len(matched), "returned": len(matched), "documents": matched}
+
+
+def _list_call(filters: object = None) -> ToolCall:
+    return ToolCall(name="rag_list_documents", arguments={} if filters is None else {"filters": filters})
+
+
+def test_the_listing_tool_is_offered_only_when_configured_with_corpus_and_limit_pinned() -> None:
+    default = _agent(ScriptedToolLLM([]), _ListingTools(_AIRLINES))
+    with_list = _agent(ScriptedToolLLM([]), _ListingTools(_AIRLINES), offered_tools=("rag_search", "rag_list_documents"))
+
+    assert [t.name for t in default.tool_definitions] == ["rag_search"]
+    assert [t.name for t in with_list.tool_definitions] == ["rag_search", "rag_list_documents"]
+    assert set(with_list.tool_definitions[1].parameters["properties"]) == {"filters"}
+    with pytest.raises(ValueError):
+        _agent(ScriptedToolLLM([]), _ListingTools(_AIRLINES), offered_tools=("rag_list_documents",))
+
+
+def test_a_listing_call_when_not_offered_is_refused_naming_the_tools() -> None:
+    tools = _ListingTools(_AIRLINES)
+    llm = ScriptedToolLLM([_step(_list_call()), _answer("?")])
+
+    answer = _agent(llm, tools).ask("question")
+
+    assert tools.listings == []
+    assert answer.agent_calls[0].status == "refused"
+    assert "The tools are: rag_search." in (answer.agent_calls[0].note or "")
+
+
+def test_a_listing_renders_a_line_per_document_spends_budget_but_no_search_round() -> None:
+    tools = _ListingTools(_AIRLINES)
+    llm = ScriptedToolLLM([_step(_list_call()), _answer("Delta and United.")])
+
+    answer = _agent(llm, tools, offered_tools=("rag_search", "rag_list_documents")).ask("Which airlines?")
+
+    [result] = _tool_results(llm.calls[1][0])
+    assert result.content.splitlines()[0] == "2 document(s):"
+    assert result.content.splitlines()[1] == (
+        "- DAL_10-Q_2026-06-30.md: company DELTA AIR LINES, INC.; ticker DAL; form 10-Q; "
+        "period_end 2026-06-30; 57,000 chars"
+    )
+    assert (answer.tool_calls, answer.retrieval_attempts, answer.citations) == (1, 0, [])
+    [call] = answer.agent_calls
+    assert (call.tool, call.status, call.documents) == (
+        "rag_list_documents", "ran", ["DAL_10-Q_2026-06-30.md", "UAL_10-Q_2026-06-30.md"],
+    )
+
+
+def test_a_listing_filter_narrows_the_turn_filter_and_a_repeat_is_refused() -> None:
+    tools = _ListingTools(_AIRLINES)
+    llm = ScriptedToolLLM([
+        _step(_list_call('{"equals": {"ticker": "UAL"}}'), _list_call({"equals": {"ticker": "UAL"}})),
+        _answer("United."),
+    ])
+
+    answer = _agent(llm, tools, offered_tools=("rag_search", "rag_list_documents")).ask(
+        "question", query_filter=QueryFilter(equals={"form": "10-Q"})
+    )
+
+    assert tools.listings == [QueryFilter(equals={"form": "10-Q", "ticker": "UAL"})]
+    assert [c.status for c in answer.agent_calls] == ["ran", "refused"]
+    assert answer.agent_calls[0].documents == ["UAL_10-Q_2026-06-30.md"]
+    assert "Already listed documents [filter: ticker=UAL]" in (answer.agent_calls[1].note or "")
+
+
+def test_a_filtered_listing_with_no_match_blames_the_filter() -> None:
+    llm = ScriptedToolLLM([_step(_list_call({"equals": {"ticker": "AAL"}})), _answer("No American.")])
+
+    _agent(llm, _ListingTools(_AIRLINES), offered_tools=("rag_search", "rag_list_documents")).ask("question")
+
+    [result] = _tool_results(llm.calls[1][0])
+    assert result.content.startswith("No documents match the filter (ticker=AAL)")
+
+
+def test_listings_and_searches_share_one_budget() -> None:
+    tools = _ListingTools(_AIRLINES, {"fuel": [_chunk("c")]})
+    llm = ScriptedToolLLM([_step(_list_call(), _search("fuel")), _answer("From the list.")])
+
+    answer = _agent(llm, tools, offered_tools=("rag_search", "rag_list_documents"), max_tool_calls=1).ask("q")
+
+    assert tools.searches == []
+    assert [c.status for c in answer.agent_calls] == ["ran", "refused"]
+    assert "Tool budget for this question is used up; this search was not run." == answer.agent_calls[1].note
+    assert answer.stopped_reason == "cap"
+
+
+def test_build_chat_service_offers_the_configured_tools_and_says_so_in_the_prompt() -> None:
+    config = RagConfig(
+        chat=ChatConfig(mode="agentic"),
+        agent=AgentConfig(llm=LLMConfig(provider="ollama", model="m"), tools=["rag_search", "rag_list_documents"]),
+    )
+
+    agent = build_chat_service(config)
+
+    assert isinstance(agent, AgentService)
+    assert [t.name for t in agent.tool_definitions] == ["rag_search", "rag_list_documents"]
+    assert "call rag_list_documents" in agent._system_prompt

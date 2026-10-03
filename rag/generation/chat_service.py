@@ -160,7 +160,7 @@ class ChatAnswer:
     completion_tokens: int | None = None
     """Generated tokens across those calls; None when the provider doesn't report them."""
     tool_calls: int = 0
-    """Agentic only: searches actually run. Refused calls (duplicates, over the cap) don't count."""
+    """Agentic only: tool calls actually run, searches and listings. Refused calls (duplicates, over the cap) don't count."""
     stopped_reason: StoppedReason | None = None
     """Agentic only: why the agent stopped searching. None for a pipeline turn."""
     agent_calls: list[AgentToolCall] = field(default_factory=list)
