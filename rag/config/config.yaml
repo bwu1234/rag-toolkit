@@ -372,8 +372,11 @@ agent:
   # Tools offered to the model; rag_search is required. rag_list_documents lists
   # the corpus's documents and their metadata (companies, forms, periods), for
   # questions about a set ("which airlines...") that no ranked search can
-  # enumerate. Each call of either counts toward max_tool_calls. Not yet
-  # measured: the `+ list` rows of `run_answer_matrix.py --family m19`.
+  # enumerate. Each call of either counts toward max_tool_calls. calculator
+  # evaluates arithmetic (a percentage change, a margin) over figures from the
+  # passages instead of the model doing it in its head; it isn't counted
+  # against max_tool_calls. Not yet measured: the `+ list` and `+ calc` rows of
+  # `run_answer_matrix.py --family m19`.
   tools: [rag_search]
 
 # Milestone 12 -- persist every chat turn (queries, retrieved/kept/cited chunk

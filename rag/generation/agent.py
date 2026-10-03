@@ -50,6 +50,13 @@ from rag.generation.chat_service import (
     TurnTrace,
     to_citation,
 )
+from rag.generation.calculator import (
+    CALCULATOR_DEFINITION,
+    CALCULATOR_TOOL,
+    CalculatorError,
+    evaluate,
+    format_result,
+)
 from rag.generation.crag import GroundednessChecker
 from rag.generation.llm import (
     AssistantTurn,
@@ -300,16 +307,22 @@ class AgentService(ChatResponder):
         self._groundedness_checker = groundedness_checker
         self._clock = clock
         specs = {spec.name: spec for spec in build_tool_specs(tools)}
-        unknown = sorted(set(offered_tools) - {SEARCH_TOOL, LIST_TOOL})
+        unknown = sorted(set(offered_tools) - {SEARCH_TOOL, LIST_TOOL, CALCULATOR_TOOL})
         if unknown or SEARCH_TOOL not in offered_tools:
-            raise ValueError(f"The agent offers {SEARCH_TOOL} and optionally {LIST_TOOL}; got {list(offered_tools)}")
+            raise ValueError(
+                f"The agent offers {SEARCH_TOOL} and optionally {LIST_TOOL} and {CALCULATOR_TOOL}; "
+                f"got {list(offered_tools)}"
+            )
         pinned = PINNED_ARGUMENTS if model_filters else (*PINNED_ARGUMENTS, FILTERS_ARGUMENT)
         self.search_tool = specs[SEARCH_TOOL].definition_without(*pinned)
         self.list_tool = (
             specs[LIST_TOOL].definition_without(*LIST_PINNED_ARGUMENTS) if LIST_TOOL in offered_tools else None
         )
+        self.calculator_tool = CALCULATOR_DEFINITION if CALCULATOR_TOOL in offered_tools else None
         #: What the model is offered on every tool-bearing call, search first.
-        self.tool_definitions = [self.search_tool] + ([self.list_tool] if self.list_tool is not None else [])
+        self.tool_definitions = [self.search_tool] + [
+            tool for tool in (self.list_tool, self.calculator_tool) if tool is not None
+        ]
 
     # -- the turn -----------------------------------------------------------
 
@@ -446,7 +459,7 @@ class AgentService(ChatResponder):
         turn = self._llm.chat(run.messages, tools)
         run.steps += 1 if tools else 0
         if turn.tool_calls:
-            message = f"Model asked for {len(turn.tool_calls)} search(es)"
+            message = f"Model asked for {len(turn.tool_calls)} tool call(s)"
         else:
             message = "Model answered" if turn.content.strip() else "Model returned an empty answer"
         emit(run.on_event, start, stage, message)
@@ -468,6 +481,8 @@ class AgentService(ChatResponder):
         for call in calls:
             if call.name == LIST_TOOL and self.list_tool is not None:
                 content = self._list(run, call)
+            elif call.name == CALCULATOR_TOOL and self.calculator_tool is not None:
+                content = self._calculate(run, call)
             else:
                 content = self._search_call(run, call)
                 searched_this_step = searched_this_step or (
@@ -618,6 +633,39 @@ class AgentService(ChatResponder):
             f"Listed {len(documents)} of {payload['total']} document(s){_filter_label(model_filter)}",
         )
         return _render_listing(payload, model_filter)
+
+    def _calculate(self, run: _Run, call: ToolCall) -> str:
+        """One `calculator` call: the expression's value, or what to fix.
+
+        Not counted against `max_tool_calls` -- it adds no passages, and a
+        search budget spent on arithmetic would make the tool look worse than
+        it is -- and never refused as a repeat: it's deterministic and cheap.
+        Each step that calculates is still a model step, which `react` caps.
+        """
+
+        start = time.monotonic()
+        expression = call.arguments.get("expression")
+        result: str | None = None
+        if not isinstance(expression, str):
+            note: str | None = f"{CALCULATOR_TOOL} needs an 'expression' string."
+        else:
+            try:
+                result = format_result(evaluate(expression))
+                note = None
+            except CalculatorError as exc:
+                note = f"Calculator error: {exc}."
+        run.calls.append(
+            AgentToolCall(
+                step=run.steps, tool=CALCULATOR_TOOL, status="ran" if result is not None else "error",
+                expression=expression if isinstance(expression, str) else None, result=result, note=note,
+            )
+        )
+        if result is None:
+            assert note is not None
+            emit(run.on_event, start, "search_refused", note)
+            return note
+        emit(run.on_event, start, "calculate", f"Calculated {expression} = {result}")
+        return f"{expression} = {result}"
 
     def _search(self, run: _Run, query: str, model_filter: QueryFilter | None, raw_filters: Any) -> str:
         """Run one search, number its passages, and render them for the model.

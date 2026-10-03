@@ -775,3 +775,80 @@ def test_build_chat_service_offers_the_configured_tools_and_says_so_in_the_promp
     assert isinstance(agent, AgentService)
     assert [t.name for t in agent.tool_definitions] == ["rag_search", "rag_list_documents"]
     assert "call rag_list_documents" in agent._system_prompt
+
+
+# --------------------------------------------------------------------------
+# Calculator
+# --------------------------------------------------------------------------
+
+
+def _calc(expression: object) -> ToolCall:
+    return ToolCall(name="calculator", arguments={"expression": expression})
+
+
+_WITH_CALC = ("rag_search", "calculator")
+
+
+def test_the_calculator_is_offered_only_when_configured() -> None:
+    default = _agent(ScriptedToolLLM([]), _FakeTools())
+    with_calc = _agent(ScriptedToolLLM([]), _FakeTools(), offered_tools=_WITH_CALC)
+
+    assert [t.name for t in default.tool_definitions] == ["rag_search"]
+    assert [t.name for t in with_calc.tool_definitions] == ["rag_search", "calculator"]
+    assert with_calc.tool_definitions[1].parameters["required"] == ["expression"]
+
+
+def test_a_calculation_returns_its_value_and_spends_no_search_budget() -> None:
+    tools = _FakeTools({"fuel": [_chunk("c")]})
+    llm = ScriptedToolLLM([
+        _step(_calc("(5110 - 2775) / 2775 * 100"), _search("fuel")),
+        _answer("Up 84.1% [1]."),
+    ])
+
+    answer = _agent(llm, tools, offered_tools=_WITH_CALC, max_tool_calls=1).ask("q")
+
+    [calc_result, _] = _tool_results(llm.calls[1][0])
+    assert calc_result.content == "(5110 - 2775) / 2775 * 100 = 84.1441441441"
+    assert tools.searches == [("fuel", ["baseline"])]  # the one budgeted call went to search
+    assert answer.tool_calls == 1
+    calc = answer.agent_calls[0]
+    assert (calc.tool, calc.status, calc.expression, calc.result) == (
+        "calculator", "ran", "(5110 - 2775) / 2775 * 100", "84.1441441441",
+    )
+
+
+def test_a_bad_expression_tells_the_model_what_to_fix() -> None:
+    llm = ScriptedToolLLM([_step(_calc("4,109 - 2,458"), _calc(42)), _answer("?")])
+
+    answer = _agent(llm, _FakeTools(), offered_tools=_WITH_CALC).ask("q")
+
+    first, second = _tool_results(llm.calls[1][0])
+    assert first.content.startswith("Calculator error: remove thousands separators")
+    assert second.content == "calculator needs an 'expression' string."
+    assert [(c.status, c.result) for c in answer.agent_calls] == [("error", None), ("error", None)]
+
+
+def test_a_calculator_call_when_not_offered_is_refused() -> None:
+    llm = ScriptedToolLLM([_step(_calc("1 + 1")), _answer("2")])
+
+    answer = _agent(llm, _FakeTools()).ask("q")
+
+    assert answer.agent_calls[0].status == "refused"
+    assert "Unknown tool 'calculator'" in (answer.agent_calls[0].note or "")
+
+
+def test_the_calculator_hint_is_in_the_prompt_only_when_offered() -> None:
+    def prompt(tools: list[str]) -> str:
+        config = RagConfig(
+            chat=ChatConfig(mode="agentic"),
+            agent=AgentConfig(llm=LLMConfig(provider="ollama", model="m"), tools=tools),  # type: ignore[arg-type]
+        )
+        agent = build_chat_service(config)
+        assert isinstance(agent, AgentService)
+        return agent._system_prompt
+
+    with_calc, without = prompt(["rag_search", "calculator"]), prompt(["rag_search"])
+    assert "call calculator" in with_calc
+    assert "calculator" not in without
+    # Off, the prompt is the one the measured rows ran with.
+    assert "citing them inline as [n], e.g. [2] or [3][5]. Do not add facts" in without

@@ -132,7 +132,7 @@ def _events(record: TurnRecord) -> str:
 
 
 def _agent_calls(record: TurnRecord) -> str:
-    lines = ["| Step | Tool | Query | Filter | Status | Result |", "|---|---|---|---|---|---|"]
+    lines = ["| Step | Tool | Query or expression | Filter | Status | Result |", "|---|---|---|---|---|---|"]
     for call in record.agent_calls:
         filters = json.dumps(call.filters) if call.filters else (
             f"as sent: {json.dumps(call.filters_raw)}" if call.filters_raw is not None else ""
@@ -141,11 +141,13 @@ def _agent_calls(record: TurnRecord) -> str:
             result = call.note or ""
         elif call.tool == "rag_list_documents":
             result = f"{len(call.documents)} document(s): {', '.join(call.documents)}"
+        elif call.tool == "calculator":
+            result = f"= {call.result}"
         else:
             new = set(call.new_passages)
             result = " ".join(f"[{n}]" if n in new else f"([{n}])" for n in call.passages) or "nothing"
         lines.append(
-            f"| {call.step} | {call.tool} | {_cell(call.query)} | {_cell(filters)} | {call.status} | {_cell(result)} |"
+            f"| {call.step} | {call.tool} | {_cell(call.expression or call.query)} | {_cell(filters)} | {call.status} | {_cell(result)} |"
         )
     lines.append("\nPassage numbers in parentheses were already shown by an earlier search.")
     return "\n".join(lines)
