@@ -34,7 +34,7 @@ def _chunk(chunk_id: str = "doc.md::0", *, text: str = "hello world", score: flo
         source=Path("data/corpora/baseline/documents/doc.md"),
         doc_type="markdown",
         score=score,
-        metadata={"page": 3},
+        metadata={"page": 3, "char_start": 120, "char_end": 131},
     )
 
 
@@ -81,7 +81,7 @@ def tools(fake_retriever: _FakeRetriever) -> RagTools:
 
 def test_exposes_only_read_only_tools(tools: RagTools) -> None:
     names = [spec.name for spec in build_tool_specs(tools)]
-    assert names == ["rag_search", "rag_list_documents", "rag_list_corpora"]
+    assert names == ["rag_search", "rag_list_documents", "rag_read_document", "rag_find", "rag_list_corpora"]
 
 
 def test_search_schema_documents_every_argument(tools: RagTools) -> None:
@@ -118,6 +118,8 @@ def test_search_returns_ranked_results_with_provenance(tools: RagTools) -> None:
     assert result["chunk_id"] == "doc.md::0"
     assert result["document_id"] == "doc.md"
     assert result["page"] == 3
+    # The offsets rag_read_document takes, to read around the hit.
+    assert (result["char_start"], result["char_end"]) == (120, 131)
     # Paths are JSON-hostile and absolute ones leak the developer's home dir.
     assert result["source"] == "data/corpora/baseline/documents/doc.md"
     assert isinstance(result["source"], str)
@@ -368,7 +370,7 @@ def test_tools_list_advertises_every_tool_as_read_only(rpc: FallbackServer) -> N
     response = rpc.handle(_request("tools/list"))
     assert response is not None
     listed = response["result"]["tools"]
-    assert [t["name"] for t in listed] == ["rag_search", "rag_list_documents", "rag_list_corpora"]
+    assert [t["name"] for t in listed] == ["rag_search", "rag_list_documents", "rag_read_document", "rag_find", "rag_list_corpora"]
     for tool in listed:
         assert tool["annotations"]["readOnlyHint"] is True
         assert tool["inputSchema"]["type"] == "object"
@@ -465,23 +467,56 @@ def test_sdk_and_fallback_publish_identical_schemas(tools: RagTools) -> None:
         assert set(sdk_schema.get("required", [])) == set(own.get("required", [])), name
 
 
-def test_mount_does_not_shadow_the_existing_api_routes() -> None:
+def test_mcp_does_not_shadow_the_existing_api_routes() -> None:
     """Regression: mounting the MCP sub-app at "/" swallowed /health and /docs.
 
     A Starlette Mount matches every path beneath its prefix, and mounts are
     matched in registration order -- so a root mount registered before the
-    route declarations below it wins every request. It belongs under "/mcp".
+    route declarations below it wins every request. MCP is one route instead.
     """
 
     pytest.importorskip("mcp")
 
     from rag.api.main import app
 
-    mounts = [route for route in app.routes if type(route).__name__ == "Mount"]
-    assert [mount.path for mount in mounts] == ["/mcp"]
-
+    assert not [route for route in app.routes if type(route).__name__ == "Mount"]
     paths = {getattr(route, "path", None) for route in app.routes}
-    assert {"/health", "/docs"} <= paths
+    assert {"/mcp", "/health", "/docs"} <= paths
+
+
+def test_mcp_is_served_at_the_documented_url_without_a_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regression: `POST /mcp` drew a 307 to `/mcp/`, the URL the mount really served.
+
+    Drives the real app over HTTP with its lifespan running, since the MCP
+    session manager only starts there. The chat service is faked out: only
+    the MCP wiring is under test.
+    """
+
+    pytest.importorskip("mcp")
+    from fastapi.testclient import TestClient
+
+    import rag.api.main as main
+
+    monkeypatch.setattr(main, "build_chat_service", lambda config, turn_sink=None: object())
+    monkeypatch.setattr(main, "get_turn_sink", lambda config: None)
+    # 2026-07-28 over HTTP is routed by these headers, which mirror the body.
+    headers = {
+        "Accept": "application/json, text/event-stream",
+        "MCP-Protocol-Version": PROTOCOL_VERSION,
+        "Mcp-Method": "server/discover",
+    }
+
+    # The default "testserver" host would be refused by DNS-rebinding protection.
+    with TestClient(main.app, base_url="http://localhost:8000") as client:
+        response = client.post(
+            "/mcp", json=_request("server/discover"), headers=headers, follow_redirects=False
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.text
+    # Plain JSON or a one-event SSE stream, whichever the SDK chose to answer with.
+    payload = json.loads(body[body.index("{"): body.rindex("}") + 1])
+    assert payload["result"]["supportedVersions"] == [PROTOCOL_VERSION]
 
 
 def test_sdk_serves_only_the_pinned_protocol_version() -> None:
@@ -520,7 +555,7 @@ def test_sdk_gate_refuses_a_handshake_era_request(tools: RagTools) -> None:
     assert excinfo.value.data == {"supported": [PROTOCOL_VERSION], "requested": "2025-06-18"}
 
 
-def test_sdk_marks_both_tools_read_only(tools: RagTools) -> None:
+def test_sdk_marks_every_tool_read_only(tools: RagTools) -> None:
     pytest.importorskip("mcp")
     import anyio
 

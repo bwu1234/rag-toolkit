@@ -24,8 +24,10 @@ never pay for (or require) the optional extra.
 from __future__ import annotations
 
 import dataclasses
+import difflib
 import inspect
 import logging
+import re
 import threading
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -36,6 +38,7 @@ from typing import Annotated, Any, get_type_hints
 from pydantic import Field, create_model
 
 from rag.chunking.chunkers import carried_metadata
+from rag.ingestion.models import Document
 from rag.config.settings import REPO_ROOT, CorpusSelection, RagConfig, load_config
 from rag.events import EventSink
 from rag.query_filter import DOCUMENT_ID, QueryFilter, check_filterable
@@ -64,6 +67,19 @@ DEFAULT_MAX_CHARS = 1200
 #: blow through. Past it the result says how many were left out.
 DEFAULT_LIST_LIMIT = 100
 MAX_LIST_LIMIT = 500
+
+#: Characters per `rag_read_document` window. The default is about 1.5k
+#: tokens, five search passages' worth: enough to see a whole table or the
+#: paragraphs around a hit. The cap fits `edgar_md`'s median filing (~48k)
+#: in one call for a caller with the context to spare; the largest (143k)
+#: still takes several, and `next_start` says where to continue.
+DEFAULT_READ_CHARS = 6000
+MAX_READ_CHARS = 50_000
+
+#: `rag_find` matches per call, and the text shown on each side of one.
+DEFAULT_FIND_RESULTS = 20
+MAX_FIND_RESULTS = 100
+FIND_CONTEXT_CHARS = 150
 
 
 def _refs(schema: Any) -> set[str]:
@@ -226,6 +242,9 @@ class RagTools:
         self._config: RagConfig | None = config
         self._llm_client = llm_client
         self._retrievers: dict[str, tuple[CorpusSelection, Retriever]] = {}
+        # Cleaned documents per corpus selection, for reading and finding:
+        # (selection, fingerprint of the files on disk, documents by id).
+        self._documents: dict[str, tuple[CorpusSelection, tuple[Any, ...], dict[str, Document]]] = {}
         # Reentrant: `_retriever_for` holds the lock and reads `.config`,
         # which takes it again.
         self._lock = threading.RLock()
@@ -347,6 +366,7 @@ class RagTools:
         corpus: str | Sequence[str] | None = None,
         filters: QueryFilter | None = None,
         limit: int | None = None,
+        offset: int = 0,
     ) -> dict[str, Any]:
         """List the selected corpora's documents with their metadata, optionally filtered.
 
@@ -358,13 +378,19 @@ class RagTools:
 
         `chars` is the document's length as loaded, before cleaning.
 
+        Pages by `offset` into the matching documents, which are in a stable
+        order (corpus, then path); the payload carries `next_offset` while
+        more remain. A corpus edited between pages can shift them.
+
         Raises `ValueError` for a bad argument (unknown corpus, a filter on a
-        field chunks don't store, `limit` out of range).
+        field chunks don't store, `limit` or `offset` out of range).
         """
 
         requested = DEFAULT_LIST_LIMIT if limit is None else limit
         if not 1 <= requested <= MAX_LIST_LIMIT:
             raise ValueError(f"limit must be between 1 and {MAX_LIST_LIMIT} (got {requested})")
+        if offset < 0:
+            raise ValueError(f"offset must be at least 0 (got {offset})")
         config = self.config
         names = [corpus] if isinstance(corpus, str) else (list(corpus) if corpus is not None else None)
         carried_keys = config.chunking.carry_metadata
@@ -386,26 +412,179 @@ class RagTools:
         listed = [
             {
                 "document_id": document.id,
-                **{
-                    key: value.isoformat() if isinstance(value, date) else value
-                    for key, value in document.metadata.items()
-                    if key in carried_keys
-                },
+                **_document_metadata(document, carried_keys),
                 "chars": len(document.text),
             }
-            for document in matched[:requested]
+            for document in matched[offset:offset + requested]
         ]
         payload: dict[str, Any] = {
             "corpora": list(selection.names),
             "total": len(matched),
+            "offset": offset,
             "returned": len(listed),
             **({"filters": filters.model_dump(exclude_defaults=True)} if filters is not None else {}),
             "documents": listed,
         }
-        if len(matched) > len(listed):
+        end = offset + len(listed)
+        if end < len(matched):
+            payload["next_offset"] = end
             payload["hint"] = (
-                f"Showing {len(listed)} of {len(matched)} documents. Narrow the list with filters "
-                "(e.g. a ticker or a period_end range)."
+                f"Showing documents {offset + 1}-{end} of {len(matched)}. Pass offset={end} for the "
+                "next page, or narrow the list with filters (e.g. a ticker or a period_end range)."
+            )
+        elif offset and not listed:
+            payload["hint"] = f"offset {offset} is past the last of {len(matched)} matching documents."
+        return payload
+
+    def _documents_for(self, corpus: str | Sequence[str] | None) -> tuple[CorpusSelection, dict[str, Document]]:
+        """The selection's documents by id, cleaned: the text chunk offsets index into.
+
+        Loading and cleaning `edgar_md` takes ~0.4 s, which an agent paging
+        through a filing would pay on every window, so the result is cached
+        per selection. The cache is checked against each file's size and
+        mtime on every call (a stat per file, well under a millisecond for
+        61), so an edited or re-fetched corpus is reloaded, not served stale.
+        """
+
+        config = self.config
+        names = [corpus] if isinstance(corpus, str) else (list(corpus) if corpus is not None else None)
+        selection = config.corpus_selection(names)
+        fingerprint = _fingerprint(selection.document_dirs)
+        with self._lock:
+            cached = self._documents.get(selection.slug)
+            if cached is not None and cached[1] == fingerprint:
+                return cached[0], cached[2]
+        # Imported here for the same reason as in `list_documents`.
+        from rag.ingestion.corpora import load_selected_corpora
+
+        selection, documents = load_selected_corpora(config, list(selection.names), clean=True)
+        by_id = {document.id: document for document in documents}
+        with self._lock:
+            self._documents[selection.slug] = (selection, fingerprint, by_id)
+        return selection, by_id
+
+    def read_document(
+        self,
+        document_id: str,
+        corpus: str | Sequence[str] | None = None,
+        start: int = 0,
+        max_chars: int | None = None,
+    ) -> dict[str, Any]:
+        """Return a window of one document's cleaned text, from `start`.
+
+        Offsets are characters into the same text the chunker split, so a
+        search hit's `char_start`/`char_end` point into it directly: read from
+        a little before `char_start` to see what surrounds a passage. The
+        index may be older than the files, though (`python -m rag.cli
+        index-report` says whether it is in sync); offsets from a stale index
+        land wherever they land in the current text.
+
+        Raises `ValueError` for an unknown document (with near misses named),
+        or `start`/`max_chars` out of range.
+        """
+
+        budget = DEFAULT_READ_CHARS if max_chars is None else max_chars
+        if not 1 <= budget <= MAX_READ_CHARS:
+            raise ValueError(f"max_chars must be between 1 and {MAX_READ_CHARS} (got {budget})")
+        selection, documents = self._documents_for(corpus)
+        document = documents.get(document_id)
+        if document is None:
+            raise ValueError(_unknown_document(document_id, documents, selection))
+        length = len(document.text)
+        if not 0 <= start < max(length, 1):
+            raise ValueError(f"start must be between 0 and {max(length - 1, 0)} for {document_id!r} (got {start})")
+
+        end = min(start + budget, length)
+        payload: dict[str, Any] = {
+            "document_id": document_id,
+            "corpora": list(selection.names),
+            **_document_metadata(document, self.config.chunking.carry_metadata),
+            "length": length,
+            "start": start,
+            "end": end,
+            "text": document.text[start:end],
+        }
+        if end < length:
+            payload["next_start"] = end
+        return payload
+
+    def find(
+        self,
+        phrase: str,
+        corpus: str | Sequence[str] | None = None,
+        document_id: str | None = None,
+        filters: QueryFilter | None = None,
+        max_results: int | None = None,
+    ) -> dict[str, Any]:
+        """Find every literal occurrence of `phrase` in the selected documents.
+
+        Case-insensitive, and any run of whitespace in `phrase` matches any
+        run in the text, so a figure that wraps across a line or a table cell
+        still matches. Nothing is ranked or embedded: matches come in document
+        order, then position, with offsets `rag_read_document` takes.
+
+        Raises `ValueError` for an empty phrase, an unknown document, a filter
+        on a field chunks don't store, or `max_results` out of range.
+        """
+
+        words = phrase.split()
+        if not words:
+            raise ValueError("phrase must not be empty")
+        requested = DEFAULT_FIND_RESULTS if max_results is None else max_results
+        if not 1 <= requested <= MAX_FIND_RESULTS:
+            raise ValueError(f"max_results must be between 1 and {MAX_FIND_RESULTS} (got {requested})")
+        carried_keys = self.config.chunking.carry_metadata
+        if filters is not None and filters.is_empty:
+            filters = None
+        if filters is not None:
+            check_filterable(filters, carried_keys)
+
+        selection, documents = self._documents_for(corpus)
+        if document_id is not None:
+            if document_id not in documents:
+                raise ValueError(_unknown_document(document_id, documents, selection))
+            candidates = [documents[document_id]]
+        else:
+            candidates = list(documents.values())
+        if filters is not None:
+            candidates = [
+                document for document in candidates
+                if filters.matches({DOCUMENT_ID: document.id, **carried_metadata(document, carried_keys)})
+            ]
+
+        pattern = re.compile(r"\s+".join(re.escape(word) for word in words), re.IGNORECASE)
+        matches: list[dict[str, Any]] = []
+        total = 0
+        documents_matched = 0
+        for document in candidates:
+            found = 0
+            for match in pattern.finditer(document.text):
+                found += 1
+                if len(matches) < requested:
+                    matches.append(_find_entry(document, match.start(), match.end()))
+            total += found
+            documents_matched += bool(found)
+
+        payload: dict[str, Any] = {
+            "phrase": phrase,
+            "corpora": list(selection.names),
+            **({"document_id": document_id} if document_id is not None else {}),
+            **({"filters": filters.model_dump(exclude_defaults=True)} if filters is not None else {}),
+            "documents_searched": len(candidates),
+            "documents_matched": documents_matched,
+            "total_matches": total,
+            "returned": len(matches),
+            "matches": matches,
+        }
+        if total > len(matches):
+            payload["hint"] = (
+                f"Showing the first {len(matches)} of {total} matches. Narrow with document_id or "
+                "filters, or use a longer phrase."
+            )
+        elif not total:
+            payload["hint"] = (
+                "No literal match. The wording may differ from the phrase: try a shorter phrase, "
+                "or rag_search for the idea rather than the words."
             )
         return payload
 
@@ -477,6 +656,11 @@ def _result_entry(rank: int, chunk: Any, max_chars: int) -> dict[str, Any]:
     page = chunk.metadata.get("page")
     if page is not None:
         entry["page"] = page
+    # Where the passage sits in its document's cleaned text: the offsets
+    # rag_read_document takes, to read around a hit.
+    for key in ("char_start", "char_end"):
+        if key in chunk.metadata:
+            entry[key] = int(chunk.metadata[key])
     # Present only when contextual chunking generated one at index time.
     if chunk.context:
         entry["context"] = chunk.context
@@ -487,6 +671,57 @@ def _result_entry(rank: int, chunk: Any, max_chars: int) -> dict[str, Any]:
     return entry
 
 
+def _fingerprint(directories: Sequence[Path]) -> tuple[Any, ...]:
+    """Every file under `directories` with its size and mtime: changes when the corpus does."""
+
+    entries: list[Any] = []
+    for directory in directories:
+        if not directory.is_dir():
+            entries.append((str(directory), None))
+            continue
+        for path in sorted(directory.rglob("*")):
+            if path.is_file():
+                stat = path.stat()
+                entries.append((str(path), stat.st_size, stat.st_mtime_ns))
+    return tuple(entries)
+
+
+def _document_metadata(document: Document, carried_keys: Sequence[str]) -> dict[str, Any]:
+    """A document's carried metadata, dates as ISO strings -- what a listing shows."""
+
+    return {
+        key: value.isoformat() if isinstance(value, date) else value
+        for key, value in document.metadata.items()
+        if key in carried_keys
+    }
+
+
+def _unknown_document(document_id: str, documents: dict[str, Document], selection: CorpusSelection) -> str:
+    """The error for a `document_id` the selection doesn't hold, naming near misses."""
+
+    close = difflib.get_close_matches(document_id, list(documents), n=3, cutoff=0.6)
+    suggestion = f" Did you mean: {', '.join(close)}?" if close else ""
+    return (
+        f"No document {document_id!r} in {selection.describe()}.{suggestion} "
+        "rag_list_documents lists the valid ids."
+    )
+
+
+def _find_entry(document: Document, start: int, end: int) -> dict[str, Any]:
+    """One `rag_find` match: its offsets and the text around it, on one line."""
+
+    before = max(start - FIND_CONTEXT_CHARS, 0)
+    after = min(end + FIND_CONTEXT_CHARS, len(document.text))
+    context = " ".join(document.text[before:after].split())
+    return {
+        "document_id": document.id,
+        "start": start,
+        "end": end,
+        "match": document.text[start:end],
+        "context": ("..." if before else "") + context + ("..." if after < len(document.text) else ""),
+    }
+
+
 _SEARCH_DESCRIPTION = """\
 Search the indexed document corpus and return the most relevant passages, \
 ranked best first. Runs the full retrieval pipeline (hybrid dense + BM25 \
@@ -494,7 +729,9 @@ search, then cross-encoder reranking) and returns raw passages with their \
 provenance -- it does not generate an answer.
 
 Use this to ground an answer in the user's own documents. Each result names \
-the document it came from, so you can cite exactly where a claim came from."""
+the document it came from, so you can cite exactly where a claim came from, \
+and its `char_start`/`char_end` in that document: pass them to \
+rag_read_document to read what surrounds a passage instead of searching again."""
 
 _LIST_CORPORA_DESCRIPTION = """\
 List the document corpora available to search, with a description of each, \
@@ -509,7 +746,24 @@ company, ticker, form, period_end, filed) and length. Nothing is ranked: this \
 answers what the corpus contains -- which companies, filings and periods \
 exist -- which a search cannot, since search only returns its best matches. \
 Use it for questions about a set ("which airlines", "every 10-Q for the June \
-2026 quarter"), and to check that something exists before searching for it."""
+2026 quarter"), and to check that something exists before searching for it. \
+Long listings come in pages: pass the result's `next_offset` as `offset`."""
+
+_READ_DOCUMENT_DESCRIPTION = """\
+Read a window of one document's text, starting at a character offset. Use it \
+to expand evidence you already have -- the rest of a table, the paragraphs \
+around a search hit (start a little before its `char_start`), or a filing \
+read front to back -- without searching again. The result gives `start`, \
+`end` and the document's `length`; while more remains it gives `next_start`, \
+which continues where this window stopped."""
+
+_FIND_DESCRIPTION = """\
+Find every occurrence of an exact phrase -- a name, a figure, a defined term \
+-- in the documents, case-insensitively. Unlike rag_search nothing is ranked, \
+so a match can't be crowded out by passages that merely share words with it; \
+a phrase that appears nowhere returns no matches, which a search can't show. \
+Each match gives its document, offsets (for rag_read_document) and the text \
+around it."""
 
 
 def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
@@ -608,10 +862,100 @@ def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
                 description=f"Most documents to return (default {DEFAULT_LIST_LIMIT}, at most {MAX_LIST_LIMIT}).",
             ),
         ] = None,
+        offset: Annotated[
+            int,
+            Field(
+                ge=0,
+                description=(
+                    "How many matching documents to skip, for the next page of a long listing: "
+                    "pass the previous result's `next_offset`. Default 0."
+                ),
+            ),
+        ] = 0,
     ) -> dict[str, Any]:
         if filters is not None and not isinstance(filters, QueryFilter):
             filters = QueryFilter.model_validate(filters)
-        return tools.list_documents(corpus=corpus, filters=filters, limit=limit)
+        return tools.list_documents(corpus=corpus, filters=filters, limit=limit, offset=offset)
+
+    def rag_read_document(
+        document_id: Annotated[
+            str,
+            Field(description="The document to read, as rag_search, rag_find or rag_list_documents names it."),
+        ],
+        start: Annotated[
+            int,
+            Field(
+                ge=0,
+                description=(
+                    "Character offset to start reading at (default 0, the beginning). Use a search "
+                    "result's `char_start` (minus some margin), a find match's `start`, or the "
+                    "previous window's `next_start`."
+                ),
+            ),
+        ] = 0,
+        max_chars: Annotated[
+            int | None,
+            Field(
+                ge=1,
+                le=MAX_READ_CHARS,
+                description=f"Window size in characters (default {DEFAULT_READ_CHARS}, at most {MAX_READ_CHARS}).",
+            ),
+        ] = None,
+        corpus: Annotated[
+            str | list[str] | None,
+            Field(
+                description=(
+                    "Corpus the document is in, or several. Omit to use the configured active corpora."
+                )
+            ),
+        ] = None,
+    ) -> dict[str, Any]:
+        return tools.read_document(document_id, corpus=corpus, start=start, max_chars=max_chars)
+
+    def rag_find(
+        phrase: Annotated[
+            str,
+            Field(
+                description=(
+                    "The exact words to find, e.g. a product name or a figure as printed (\"84.1%\"). "
+                    "Case and line breaks are ignored; nothing else is (no stemming or synonyms)."
+                )
+            ),
+        ],
+        document_id: Annotated[
+            str | None,
+            Field(description="Look only in this document. Omit to look in every selected document."),
+        ] = None,
+        filters: Annotated[
+            QueryFilter | None,
+            Field(
+                description=(
+                    "Look only in documents whose metadata matches, in the same form as "
+                    'rag_search\'s filters, e.g. {"equals": {"ticker": "DAL"}}. Omit to look everywhere.'
+                )
+            ),
+        ] = None,
+        max_results: Annotated[
+            int | None,
+            Field(
+                ge=1,
+                le=MAX_FIND_RESULTS,
+                description=(
+                    f"Most matches to return (default {DEFAULT_FIND_RESULTS}, at most {MAX_FIND_RESULTS}); "
+                    "`total_matches` counts them all."
+                ),
+            ),
+        ] = None,
+        corpus: Annotated[
+            str | list[str] | None,
+            Field(description="Corpus name to look in, or several. Omit to use the configured active corpora."),
+        ] = None,
+    ) -> dict[str, Any]:
+        if filters is not None and not isinstance(filters, QueryFilter):
+            filters = QueryFilter.model_validate(filters)
+        return tools.find(
+            phrase, corpus=corpus, document_id=document_id, filters=filters, max_results=max_results
+        )
 
     def rag_list_corpora() -> dict[str, Any]:
         return tools.list_corpora()
@@ -623,6 +967,8 @@ def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
             description=_LIST_DOCUMENTS_DESCRIPTION,
             handler=rag_list_documents,
         ),
+        ToolSpec(name="rag_read_document", description=_READ_DOCUMENT_DESCRIPTION, handler=rag_read_document),
+        ToolSpec(name="rag_find", description=_FIND_DESCRIPTION, handler=rag_find),
         ToolSpec(
             name="rag_list_corpora",
             description=_LIST_CORPORA_DESCRIPTION,

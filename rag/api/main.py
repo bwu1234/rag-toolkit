@@ -25,6 +25,9 @@ from rag.observability.factory import get_turn_sink
 
 logger = logging.getLogger(__name__)
 
+#: The one MCP endpoint URL, exactly as documented: no trailing slash.
+MCP_PATH = "/mcp"
+
 
 def _build_mcp_app() -> Starlette | None:
     """Build the MCP streamable-HTTP sub-app, or None if the SDK isn't installed.
@@ -38,10 +41,7 @@ def _build_mcp_app() -> Starlette | None:
     except ImportError:
         logger.info("`mcp` SDK not installed; /mcp endpoint disabled (pip install -e '.[mcp]')")
         return None
-    # Internal path "/" because the sub-app is mounted *under* "/mcp" below --
-    # the prefix comes from the mount, so asking for "/mcp" here too would
-    # serve the endpoint at "/mcp/mcp".
-    return mcp_http_app(path="/")
+    return mcp_http_app(path=MCP_PATH)
 
 
 _mcp_app = _build_mcp_app()
@@ -65,7 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # its task group in that lifespan, so without this chaining every /mcp
     # request fails with "Task group is not initialized".
     async with _mcp_app.router.lifespan_context(app):
-        logger.info("MCP streamable HTTP endpoint mounted at /mcp")
+        logger.info("MCP streamable HTTP endpoint served at %s", MCP_PATH)
         yield
 
 
@@ -77,10 +77,18 @@ app = FastAPI(
 )
 app.include_router(chat_router)
 if _mcp_app is not None:
-    # Mounted under its own prefix rather than at "/": a Mount at the root
-    # matches every path and, being registered before the routes declared
-    # below, would swallow /health and /docs.
-    app.mount("/mcp", _mcp_app)
+    # The sub-app's route is added to this app's router, not mounted. A Mount
+    # at "/mcp" serves its inner "/" at "/mcp/" only, so a request to the
+    # documented `/mcp` drew a 307 to `/mcp/` -- which a client that won't
+    # re-POST across a redirect never follows. A root Mount is no better: it
+    # matches every path and would swallow /health and /docs.
+    #
+    # Taking the routes alone drops the sub-app's middleware, so refuse to
+    # start if it ever has any (the SDK adds auth middleware when auth is
+    # configured) rather than silently serving MCP without it.
+    if _mcp_app.user_middleware:
+        raise RuntimeError("the MCP app now carries middleware; mount it instead of copying its routes")
+    app.router.routes.extend(_mcp_app.routes)
 
 
 @app.get("/", summary="Redirect to docs")

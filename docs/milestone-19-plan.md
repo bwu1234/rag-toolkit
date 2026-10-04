@@ -674,6 +674,14 @@ credited to one tool:
      beside the system prompt and earlier results. Reads are therefore
      windowed: a default of about 6k characters, under a per-turn budget
      `agent.max_read_chars` that is separate from `max_passage_chars`.
+   *Built for MCP, not offered to the agent (2026-10-04):*
+   `RagTools.read_document` (default 6,000 characters, at most 50,000, with
+   `next_start`), and `rag_search` results now carry `char_start`/`char_end`.
+   It reads the cleaned text, cached per selection and reloaded when files
+   change. Prompted by an outside agent using the MCP server, which had no way
+   to expand a hit except by searching again. Still open for the agent:
+   ledger passages keyed by offsets, `agent.max_read_chars`, scope checks
+   against the turn's filter, an `agent.tools` entry and the matrix row.
 3. **`rag_find(phrase, document_id?)`.** A literal, case-insensitive phrase
    search over the selected documents' cleaned text. It returns matches with
    offsets and a short surrounding context. Search can miss an exact name or
@@ -683,6 +691,11 @@ credited to one tool:
    milliseconds. At BEIR or MuSiQue scale, check first whether the contentless
    FTS5 table can answer phrase queries. Build this tool only if the read rows
    still miss questions that name an exact term.
+   *Built for MCP ahead of that gate, not offered to the agent (2026-10-04):*
+   `RagTools.find`, whitespace-flexible and case-insensitive, with `filters`
+   and `document_id` scoping. Outside agents asked for it; the gate above
+   still governs offering it to our agent. It scans `edgar_md` in about 20 ms
+   once loaded; at BEIR scale the FTS5 question above still applies.
 
 **Beside navigation: `calculator(expression)`.** Not a navigation tool, so
 not in the list above and none of the constraints below apply: it reads no

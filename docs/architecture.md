@@ -267,7 +267,7 @@ Two consequences worth knowing:
   server, `cli retrieve` and the retrieval eval never condense, grade, retry or
   check groundedness, whatever `crag.*` says. An MCP client gets exactly what
   `cli retrieve` prints.
-- **The API and the MCP HTTP transport share a process.** `/mcp` is mounted on
+- **The API and the MCP HTTP transport share a process.** `/mcp` is a route on
   the FastAPI app when the `mcp` extra is installed, but builds its own
   `Retriever`s rather than reusing the chat service's.
   ([MCP server](mcp-server.md))

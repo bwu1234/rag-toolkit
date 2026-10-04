@@ -96,9 +96,11 @@ LIST_TOOL = "rag_list_documents"
 PINNED_ARGUMENTS = ("corpus", "top_k", "max_chars")
 FILTERS_ARGUMENT = "filters"
 #: `rag_list_documents` arguments the turn decides: the corpus, as for search,
-#: and the size of a listing. Its `filters` is always the model's -- narrowing
-#: a listing is what the tool is for, and it changes no search results.
-LIST_PINNED_ARGUMENTS = ("corpus", "limit")
+#: and the size and page of a listing (one page of `DEFAULT_LIST_LIMIT`, which
+#: covers `edgar_md`; paging would also need repeat-refusal keyed by page).
+#: Its `filters` is always the model's -- narrowing a listing is what the tool
+#: is for, and it changes no search results.
+LIST_PINNED_ARGUMENTS = ("corpus", "limit", "offset")
 
 
 class PassageLedger:
