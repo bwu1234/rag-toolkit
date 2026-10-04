@@ -113,6 +113,7 @@ Then:
 - Update the `config.yaml` comment for any knob whose value or justification
   changed — a default set on evidence should say so inline, as `reranker.model`
   and `retrieval.min_score` already do.
-- Update the Milestone 11 line in `CLAUDE.md` only if the headline changes.
+- Update the "Measured-off features stay off" bullet in `CLAUDE.md` only if a
+  feature's on/off status changes.
 - **Only now** change a default. If the numbers do not clear noise, leave the
   feature off and say so.
