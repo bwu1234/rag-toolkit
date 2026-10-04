@@ -10,14 +10,11 @@ Every item keeps the project's existing rules: config-selected behind an
 interface, off by default until measured, hermetic tests, no second HTTP
 client / YAML parser / etc.
 
-**Deliberately not on this list: a query router.** Retrieval is unconditional
-by design (see the Chat API notes in `docs/milestone-notes.md`) — every
-question asked of a corpus Q&A tool is supposed to be corpus-shaped, so a
-classifier deciding whether to retrieve would add an LLM call and a failure
-mode to buy back a case that shouldn't arise. The version of that idea worth
-building is a different thing entirely — the model calling search itself —
-which is Milestone 19, and it subsumes routing rather than adding it as a
-stage. (`retrieval.document_routing`, from the
+**Routing scope.** The original corpus-Q&A pipeline retrieves unconditionally;
+Milestone 19's shipped agent decides when to search. A separate general-purpose
+query classifier remains deferred. Milestone 27 now proposes measuring a
+pipeline-to-agent escalation signal for the research workload before building
+that policy. (`retrieval.document_routing`, from the
 [chunking plan](chunking-indexing-plan.md)'s Phase 3b, is a different thing:
 it picks *which filing* to search, with no LLM call, and never decides
 *whether* to search.)
@@ -308,7 +305,7 @@ land.
 **In progress:** see [Milestone 19 plan](milestone-19-plan.md). Phases 0–3
 shipped: a fixed eval judge and the multi-hop set, `ToolCallingLLM` (Ollama
 and Gemini), one tool surface shared with MCP (`rag/tools.py`), and the agent
-loop behind `chat.mode: agentic` (off by default). Phase 4 measured it
+loop behind `chat.mode: agentic` (initially off by default). Phase 4 measured it
 (2026-10-01, [results](measured-results.md#agentic-retrieval-milestone-19-phase-4)):
 with the 27b the loop gains 6.7 of 35 multi-hop questions over the same model
 answering once, but at 1–2 minutes per hard question, and the 9b agent gains
@@ -322,11 +319,32 @@ workload ([Milestone 27](#milestone-27--eval-coverage-and-judge-reliability),
 below were written before the interface change; `LLMClient` was kept, and
 tool calling was added as a `ToolCallingLLM` subclass instead.
 
-**Next: navigation tools.** These are
+**Next capability experiments: navigation tools.** These are
 [`rag_list_documents`, `rag_read_document` and `rag_find`](milestone-19-plan.md#tool-surface-navigation-not-only-search),
 so the agent can list, read and find text in documents, not only run ranked
 search. They target the failures phase 4 showed: discovery questions, split
-tables and the cost of refusals.
+tables and the cost of refusals. Listing, calculator support and model-set
+filters are built but remain off and unmeasured; windowed read and literal
+find are planned. Measure each addition with its evidence/token budget and
+the injection tier before adoption.
+
+**Execution and output contracts (planned, 2026-10-03).** The
+[Milestone 19 contract](milestone-19-plan.md#execution-and-output-contracts)
+owns end-to-end deadlines with cancellation and reserved synthesis time,
+per-call/turn token budgets, context preflight, explicit empty-generation
+failure, invalid-citation reporting and the prompt's per-turn citation scope.
+It specifies adapter, guard and API/UI/CLI acceptance checks. These can
+proceed alongside navigation; current `timeout_s` is only a search budget,
+and a forced synthesis can still return empty.
+
+**Per-step retrieval utility (planned).** The
+[offline experiment](milestone-19-plan.md#per-step-retrieval-utility-and-stopping)
+forks diagnostic answers from recorded trajectory prefixes to measure each
+step's evidence and answer-quality contribution. Probes never change the
+original run. Use harness Phases 4/4a for artifacts and calibrated scoring,
+then evaluate stopping signals on a grouped confirmation set with policy
+overhead included. Adaptive stopping stays off until paired quality/cost
+criteria pass; novel chunk IDs alone are not evidence of progress.
 
 **Long-context baseline.** Retrieval has to beat simply reading the filing.
 On `edgar_md` the median filing is about 48k characters (~12k tokens) and the
@@ -353,8 +371,10 @@ pass alone can't separate the rows on period attribution; pair them with
 eval harness Phase 4a's citation scoring when it exists.
 
 **Proposed enhancement follow-ups:** tracked in
-[Milestone 19 phase 5](milestone-19-plan.md#enhancement-follow-ups), after the
-navigation tools. Prioritize calibrated claim/citation scoring, then an opt-in
+[Milestone 19 phase 5](milestone-19-plan.md#enhancement-follow-ups).
+Navigation remains the next capability experiment; execution contracts and
+offline scoring can proceed alongside it. Prioritize calibrated claim/citation
+scoring, then an opt-in
 bounded draft-check/repair loop; evaluate dynamic retriever routing
 separately. Two cheap rows test a wider search budget and a search-strategy
 prompt. Corpus routing within the caller's scope waits for a second real
@@ -365,6 +385,7 @@ Durable evidence memory, SQL/graph tools, learned retrieval policies, a
 trained search policy and multi-agent orchestration remain deferred. These
 follow-ups do not change defaults or delay measurement of the shipped loop.
 
+**Original design rationale (historical; current status above).**
 Expose search as a **tool the answering model calls**, rather than a stage that
 always runs before it. Unlike the rest of this list, this one *replaces* shipped
 behavior — it's the largest item here and the only one that can make the system
@@ -579,6 +600,10 @@ API/UI boundary rather than in retrieval:
   can already tell load-bearing passages from ignored ones. What's left is
   cosmetic: a `cited: bool` on each `Citation` instead of a separate id list,
   and having the UI de-emphasize uncited passages rather than drop them.
+  Invalid-marker reporting and per-turn numbering are separate correctness
+  requirements owned by the
+  [Milestone 19 output contract](milestone-19-plan.md#execution-and-output-contracts);
+  claim-to-passage support remains harness Phase 4a's calibrated metric.
 
 ### Milestone 22 — Reference-free eval metrics
 
@@ -820,6 +845,20 @@ the harness plan's publication.
     does it flag, and how many passing turns does it escalate needlessly?
     Build it only if that recall is high. The one self-check measured so
     far, groundedness, caught 1 of 8 failures on `edgar_md`.
+    Those are answer-judge failures, not eight established grounding errors.
+    Keep the same-model `pipeline / 27b` comparison to isolate orchestration
+    from the 9b-to-27b model change. Report route errors and selection overhead
+    by kind; choose signals and thresholds on development data, then freeze
+    them before the confirmation run. The September
+    [static/agentic comparison](https://arxiv.org/abs/2609.23056) motivates
+    measuring complementarity, not adopting its post-hoc selector here.
+  - *Stopping and budget selection.* Include the
+    [per-step utility experiment](milestone-19-plan.md#per-step-retrieval-utility-and-stopping)
+    and [execution contract](milestone-19-plan.md#execution-and-output-contracts)
+    when choosing interactive limits. Trajectory-based estimates of which
+    winning turns would be cut off are diagnostic; run the actual capped policy
+    with its reserved synthesis time before adoption. Keep probes and policy
+    tuning off the untouched confirmation set.
   - *Cross-source questions* join the tier when the agent has a second
     source (another corpus as its own tool, or web search). Until then, a
     claim that the agent handles "research across databases" is untested.
@@ -985,8 +1024,13 @@ rate limiting are what cover that case.
   instructions" text) to a separate eval tier, and report how often they
   work, in both modes. In agentic mode an injected passage can also steer
   the next searches, not just the answer, so record the queries the agent
-  issues after seeing one. Delimiters reduce injection; they don't prevent
-  it. Record the rate rather than claiming a fix.
+  issues after seeing one. Report answer contamination, search redirection,
+  attempted and successful scope violations, and excess tool calls/tokens and
+  latency separately, against clean matched cases. A bounded loop can still
+  waste its entire budget under an attack. Repeat the tier for expanded
+  list/read/find tools and model filters, verifying that caller scope holds.
+  Delimiters do not establish injection resistance; measure the effect and
+  clean-answer regressions before adoption.
   *Source for the planted text:* the RAG text-poisoning records (surface B1)
   of [ART-SafeBench](https://huggingface.co/datasets/Fujitsu/agentic-rag-redteam-bench).
   Check the record schema first: whether a record carries the poisoned

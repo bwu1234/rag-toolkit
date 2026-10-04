@@ -320,6 +320,11 @@ and Milestone 27's citation work to offline judging in Phase 4a:
   under an explicit citation requirement. Refusals and claim-free responses
   follow documented applicability rules rather than getting automatic perfect
   faithfulness or citation scores.
+  Preserve invalid marker occurrences as deterministic validation results;
+  an out-of-range marker discarded by `cited_chunk_ids` must not disappear
+  from evaluation. An empty generation or its user-facing failure message is
+  a generation failure, not a successful refusal. Runtime reporting is owned
+  by [Milestone 19's output contract](milestone-19-plan.md#execution-and-output-contracts).
 
 Answer relevance and context relevance remain Milestone 22's companion metrics
 and can use the same offline scoring interface. Their definitions, calibration
@@ -587,6 +592,13 @@ after its gaps are known.
   system messages, tools, query rewrites and retries. Create the annotation
   guide and retain question-review and independent label-review records for
   the calibration fixture under Measurement quality requirements.
+- Support [Milestone 19's per-step utility experiment](milestone-19-plan.md#per-step-retrieval-utility-and-stopping)
+  through these same artifacts: record step prefixes and ledger snapshots,
+  and link separately versioned diagnostic syntheses/judgments to their source
+  run and step. Probes cannot mutate the original transcript or read future
+  evidence; keep their cost apart from serving usage. Phase 4a supplies their
+  calibrated evidence/answer metrics. A stopping policy must include its own
+  inference overhead in serving cost and meet the plan's confirmation gate.
 - `run_answer_matrix.py` writes run folders, as in Phase 2.
 - Deliver the human calibration fixture and report, plus generation and judge
   repeat support and summaries under Measurement quality requirements.
@@ -606,6 +618,10 @@ after its gaps are known.
   Milestones 22 and 27. Extend calibration examples to cover correct figures
   with unsupported explanations, omitted required facts, incorrect period or
   units, and claims citing the wrong passage.
+- Include missing/invalid citation markers, correct claims citing irrelevant
+  passages, and empty-generation failures whose fallback wording resembles a
+  refusal. Deterministic validity and calibrated semantic support are separate
+  results; neither can substitute for the other.
 - Add optional reviewed answer points to compound questions while preserving
   existing simple questions and multi-hop scores. Each scorer produces its
   own immutable judgments and score revision.
