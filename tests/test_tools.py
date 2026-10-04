@@ -127,3 +127,26 @@ def test_rag_tools_uses_a_given_config_without_reading_disk(monkeypatch: pytest.
 def test_rag_tools_refuses_both_a_path_and_a_config() -> None:
     with pytest.raises(ValueError, match="not both"):
         RagTools("config.yaml", config=RagConfig())
+
+
+def test_description_notes_name_only_real_tools_and_arguments() -> None:
+    """A note keyed to a misspelt tool or argument would never be dropped."""
+
+    specs = {spec.name: spec for spec in build_tool_specs(RagTools(config=RagConfig()))}
+    for spec in specs.values():
+        for note in spec.notes:
+            assert set(note.tools) <= set(specs) - {spec.name}, (spec.name, note.tools)
+            assert set(note.arguments) <= set(spec.input_schema["properties"]), (spec.name, note.arguments)
+
+
+def test_mcp_gets_every_note_and_a_caller_only_the_ones_that_hold() -> None:
+    specs = {spec.name: spec for spec in build_tool_specs(RagTools(config=RagConfig()))}
+    search, listing = specs["rag_search"], specs["rag_list_documents"]
+
+    assert "rag_read_document" in search.description and "rag_read_document" in search.definition.description
+    assert "next_offset" in listing.description
+    assert search.definition_without(offered_tools=("rag_search",)).description == search.base_description
+    assert "rag_read_document" in search.definition_without(
+        offered_tools=("rag_search", "rag_read_document")
+    ).description
+    assert listing.definition_without("offset").description == listing.base_description

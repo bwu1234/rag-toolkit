@@ -316,9 +316,13 @@ class AgentService(ChatResponder):
                 f"got {list(offered_tools)}"
             )
         pinned = PINNED_ARGUMENTS if model_filters else (*PINNED_ARGUMENTS, FILTERS_ARGUMENT)
-        self.search_tool = specs[SEARCH_TOOL].definition_without(*pinned)
+        # Descriptions keep only the notes that hold for what this agent offers:
+        # no pointer to rag_read_document, no paging by a pinned `offset`.
+        self.search_tool = specs[SEARCH_TOOL].definition_without(*pinned, offered_tools=offered_tools)
         self.list_tool = (
-            specs[LIST_TOOL].definition_without(*LIST_PINNED_ARGUMENTS) if LIST_TOOL in offered_tools else None
+            specs[LIST_TOOL].definition_without(*LIST_PINNED_ARGUMENTS, offered_tools=offered_tools)
+            if LIST_TOOL in offered_tools
+            else None
         )
         self.calculator_tool = CALCULATOR_DEFINITION if CALCULATOR_TOOL in offered_tools else None
         #: What the model is offered on every tool-bearing call, search first.
