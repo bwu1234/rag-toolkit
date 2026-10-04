@@ -888,6 +888,14 @@ the harness plan's publication.
   coverage and omissions beside pass/fail, leaving one-fact questions simple.
   Store per-point judgments and version label changes; correctness and
   completeness do not substitute for checking grounding.
+- **Context reliance controls.** Add a closed-book row and a counterfactual
+  row on EDGAR: gold evidence with the asked figure swapped for a plausible
+  wrong value, built on the oracle. Score both deterministically into follows
+  context, parametric override, flags the conflict, or refuses. Without them,
+  a correct answer can't be told apart from one the model already knew. The
+  27b's Apple FY2015 leak shows the risk is real on public filings. Design in
+  the [evaluation rigor plan](evaluation-rigor-plan.md#context-reliance-closed-book-and-counterfactual-controls);
+  `ClosedBookResponder` exists, the counterfactual substitution does not.
 - **Conversational coverage.** Owned by
   [harness Phase 4c](eval-harness-plan.md#phase-4c--conversational-dataset-and-runner-estimate-pending).
   Add a separate reviewed conversation dataset covering elliptical follow-ups,
