@@ -40,6 +40,29 @@
   with identical wording can yield a passing answer, and a manual multi-hop
   audit found a false pass on period attribution. Judge calibration and
   evidence-aware scoring remain planned work.
+- **The agent's search budget is not an end-to-end deadline.**
+  `agent.timeout_s` is checked between calls, in-flight work can overrun it,
+  and forced synthesis is another call afterward. Passage character caps and
+  overflow recovery do not enforce an aggregate token budget or reserve output
+  space. Deadline propagation/cancellation, synthesis reserves and token/context
+  budgets are planned in [Milestone 19](milestone-19-plan.md#execution-and-output-contracts).
+- **Forced synthesis can still return empty.** The existing recovery guard
+  retries an empty ordinary response once; an empty forced response ends the
+  turn without a useful answer. Explicit generation-failure reporting across
+  API/UI/CLI and evals is part of the same planned contract. A fallback failure
+  message must not count as a correct corpus refusal.
+- **Citation validity is only partially reported.** `parse_cited_passages`
+  excludes out-of-range numbers from `cited_chunk_ids` but leaves them in the
+  answer text. There is no explicit invalid-marker result for consumers. The
+  agent prompt also promises numbering for the "whole conversation", although
+  each turn has a new ledger and history loses old markers. These are planned
+  output-contract fixes; semantic citation support still needs calibrated
+  evidence-aware scoring.
+- **Stopping quality is unmeasured.** Duplicate-query and step caps bound the
+  loop, but distinct queries may yield no useful new evidence. Final answer
+  metrics do not say which search helped or when sufficient evidence arrived.
+  [Per-step utility evaluation](milestone-19-plan.md#per-step-retrieval-utility-and-stopping)
+  is planned before adopting a quality-based stopping policy.
 - **The measured-off verdicts rest mostly on questions that name their
   subject.** Contextual chunking (Milestone 9), CRAG (Milestone 10) and query
   expansion were measured on the generated EDGAR set, where every question
@@ -61,13 +84,13 @@
   despite the system prompt forbidding it. Harmless — the identifying terms are
   still there and that's what's being indexed — but it wastes a few tokens of
   the `max_context_chars` budget on every chunk.
-- On the served path, the grader, the retry rewriter, the groundedness
-  checker, the condenser, the expanders, and the answering model are all the
-  *same* `llm` model. A groundedness check is only as good as the model
-  performing it, and a model checking output shaped like its own has an
-  obvious blind spot. Only the eval judge (`eval.judge`) and the agent's loop
-  (`agent.llm`) can run on a different model today; the runtime checker has
-  no setting of its own.
+- The pipeline generator and utility calls (grader, retry rewriter,
+  groundedness checker, condenser and expanders) share `llm`. The default
+  agent instead uses its configured `agent.llm`; `eval.judge` is separately
+  configurable too. The runtime checker has no model setting of its own and
+  is not calibrated as a general failure detector. On `edgar_md` it passed
+  seven answers the answer judge failed; those are not necessarily seven
+  grounding failures. It remains off pending calibrated evaluation.
 - CRAG's latency is not visible in `retrieval.min_score`-style tuning: enabling
   `grade_documents` multiplies the per-turn LLM calls by roughly
   `rerank_top_k`, and there's no batching or concurrency in the grader (one
@@ -150,8 +173,10 @@
 - In `pipeline` mode, conversation history is never shown to the *answering*
   model, only to the condenser. Questions whose answer depends on the thread
   rather than on the corpus ("summarize what you just told me") aren't served
-  by this design. `chat.mode: agentic` passes history to the model, but it
-  is unmeasured and off by default.
+  by this design. `chat.mode: agentic` passes history to the model and is now
+  the default under [ADR 0015](decisions/0015-agentic-default.md). Its
+  conversational quality remains unmeasured; the recorded multi-hop gains
+  are single-turn evidence, not conversation evaluation.
 - The cross-encoder reranker (`BAAI/bge-reranker-v2-m3`, the default) costs
   ~1.1 s/query on Apple Silicon and loads several hundred MB of weights; it
   will be slower on CPU-only hosts. A pure-LLM reranker behind the same

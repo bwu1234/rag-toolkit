@@ -8,6 +8,13 @@ to be true before each step counts as done.
 on the same eval sets. Comparing them is the deliverable. The agent becomes
 the default only if it beats the pipeline by more than noise.
 
+**Current status (2026-10-03):** phases 0–3 shipped and phase 4 measured
+the local rows. [ADR 0015](decisions/0015-agentic-default.md) makes
+`agentic react / 27b, think=low` the default for research use. The outside
+MuSiQue check and representative research-workload evaluation remain open.
+The pre-work and original decisions below retain their historical context;
+phase 5 specifies planned additions, not shipped behavior.
+
 ## What the pre-work measured
 
 Full numbers in [measured results](measured-results.md#generator-model-qwen359b-vs-qwen3827b-pre-milestone-19).
@@ -88,11 +95,13 @@ The parts that shape this plan:
    | wall-clock budget | `agent.timeout_s` | hard questions took minutes on a shared GPU |
    | per-passage char cap | reuse MCP's `DEFAULT_MAX_CHARS` | prompt tokens grew ~6× over the pipeline |
 
-7. **Grounding is enforced by the prompt, checked by the eval, and not yet
-   gated at runtime.** The system prompt forbids outside knowledge *including
+7. **Grounding is requested by the prompt; evidence-aware evaluation and
+   runtime gating remain planned.** The system prompt forbids outside knowledge *including
    "for reference"* (the 27b's FY2015 leak). Reusing CRAG's
    `GroundednessChecker` on the final answer stays switchable and measured
-   separately, per the backlog. The CRAG table says not to assume it helps.
+   separately, per the backlog. The answer judge checks reference-answer
+   correctness, not whether cited evidence supports each claim. The CRAG table
+   says not to assume the runtime checker helps.
 
 8. **History goes to the model; the condenser is bypassed in agentic mode.**
    Condensing exists because retrieval was stateless. The agent sees the real
@@ -494,10 +503,11 @@ the judge passed, so it stays off.
 
 *Superseded (2026-10-03): agentic is now the default.*
 [ADR 0015](decisions/0015-agentic-default.md) makes the opposite latency call
-for research use, on the numbers below. It does not change the criterion
-above, and its outcome stands as recorded.
+for research use, on the numbers below. The earlier latency decision remains
+historical; the new default is subject to Milestone 27's research-workload
+confirmation and the outside check.
 
-*Re-run on `edgar_md` (2026-10-03): the same decision.* After chunking plan
+*Re-run on `edgar_md` (2026-10-03): evidence for ADR 0015.* After chunking plan
 Phase 5 moved EDGAR evals to `edgar_md`, every row was re-run there
 ([numbers](measured-results.md#agentic-retrieval-on-edgar_md-milestone-19-re-run-after-chunking-plan-phase-5)).
 
@@ -728,12 +738,13 @@ These are proposed experiments, not shipped capabilities or prerequisites for
 phase 4. Keep the current baseline and defaults unchanged. Implement one
 intervention at a time after failure analysis identifies its target; adopt it
 only with paired quality and cost evidence on the same corpus and questions.
-The priorities below order this additional work. The
-[navigation tools](#tool-surface-navigation-not-only-search) come before all
-of it: they target the failures phase 4 actually showed (discovery questions,
-split tables, refusal cost), and items 1 and 2 address grounding failures that
-have not been measured yet. `planned_refine` stays conditional, as written
-above.
+The [navigation tools](#tool-surface-navigation-not-only-search) remain the
+next capability experiments: they target discovery questions, split tables
+and refusal cost. The [execution and output contracts](#execution-and-output-contracts)
+below and offline evidence scoring can proceed independently. Calibrated
+scoring must precede runtime repair or quality-based stopping; injection
+evaluation gates adoption of expanded tools. `planned_refine` stays
+conditional, as written above.
 
 1. **Measure grounding and citation failures before adding runtime gates.**
    Reuse [eval harness Phase 4a](eval-harness-plan.md#phase-4a--grounding-completeness-and-citation-scoring-estimate-pending)
@@ -821,6 +832,103 @@ above.
      need a description field, because the model routes on what the listing
      says.
 
+#### Execution and output contracts
+
+**Planned additions from the 2026-10-03 review.** These close observable
+runtime gaps without changing the measured baseline in this documentation
+update. Implementations belong in the existing agent, provider and response
+interfaces; retain the package boundaries in ADR 0016.
+
+- **End-to-end deadline.** Keep the meaning of `agent.timeout_s` as the
+  existing search budget; introduce a separately named, config-validated turn
+  deadline and synthesis reserve. Propagate remaining time through model,
+  retrieval and optional checker/repair calls, including retries. Start no
+  search that consumes the synthesis reserve, and start no model call after
+  the total deadline. Bound or cancel in-flight work through supported provider
+  mechanisms; abandoning a waiting thread alone is not cancellation. Document
+  any backend that cannot stop its work, including possible continuing compute
+  or charges, and distinguish caller response time from backend termination.
+  When no synthesis time remains, return an explicit incomplete/failure
+  outcome instead of making another unbudgeted call. Record which budget ended
+  the turn and distinguish deadline expiry from an upstream failure.
+- **Token and context budgets.** Add explicit per-call and aggregate turn
+  budgets, counting repeated prompt tokens, generated tokens and all utility
+  calls. Preflight the assembled history, tool schemas, passages and synthesis
+  instruction with room reserved for output. Use provider tokenization where
+  available; record conservative estimates and missing usage rather than
+  presenting character counts or unknown counts as exact tokens. Preserve
+  passage identities and citation mappings when reducing context; never retain
+  a citation to evidence removed before the model saw it. Keep overflow recovery
+  as a fallback. Do not silently compact evidence into unverified summaries.
+- **Empty output is a generation failure.** After the bounded recovery attempt,
+  a blank/whitespace-only synthesis must have an explicit failure outcome and
+  a useful API/UI/CLI message. Keep the raw empty model output and provider stop
+  reason in the trace. A generation failure is neither a successful answer nor
+  a refusal based on missing evidence; evals must not award refusal credit for
+  a fallback message. Preserve the original cap/timeout/context trigger
+  separately from the final generation outcome.
+- **Citation validation and turn scope.** Validate answer markers against the
+  final ledger and report invalid references separately from missing required
+  citations and semantic support failures. Keep raw answer text for inspection;
+  do not silently drop invalid markers and report a clean answer. Surface the
+  validation state to consumers. Any model repair uses the same remaining
+  budgets and stays separate from deterministic marker validation. Correct the
+  prompt's "whole conversation" numbering promise to "current turn": the
+  ledger resets on each ask, and old history markers are stripped. Re-measure
+  prompt changes in the affected answer modes before adoption.
+
+**Acceptance:** hermetic tests cover slow/stalled retrieval and model calls,
+expiry before and during synthesis, checker/repair retries, long histories,
+tool schemas near the context limit, missing token usage, and empty output
+after cap/timeout/overflow. Verify the advertised cancellation behavior with
+each supported adapter, including cleanup of in-flight work. Test invalid,
+mixed valid/invalid and absent citations, plus two turns that both use `[1]`
+for different passages. API, CLI, UI, logs and evals must agree on the outcome.
+Replay the existing guard cases without widening caller scope or resetting
+budgets. Freeze candidate interactive budgets before the confirmation run;
+report p50/p95 latency, cut-off winning turns, completeness and refusal quality
+on Milestone 27's workload. No 60 s or 90 s default is implied by this plan.
+
+#### Per-step retrieval utility and stopping
+
+**Planned offline experiment, then an optional serving policy.** Extend the
+existing harness artifacts and calibrated scorers, not the live agent's
+conversation, to ask what each additional retrieval step contributed.
+
+- Capture each step's exact message prefix, ledger, evidence actually shown,
+  tool results, stop reason and cumulative usage. Fork a diagnostic synthesis
+  from each prefix with only evidence available at that step; never feed its
+  answer or verdict back into the original trajectory. Save these probes and
+  their judgments as separate, versioned artifacts. Report probe/judge cost
+  separately from the original serving cost.
+- Measure new supporting evidence, required-answer-point coverage, correctness
+  and citation support at each step, and the change from the previous step.
+  Novel chunk IDs alone do not establish useful progress; a repeated passage
+  can also support a newly resolved inference. Report failures introduced by
+  later steps as well as improvements, by question kind. Do not require one
+  exact tool sequence when several valid trajectories solve the task.
+- Use development trajectories to test stopping signals and freeze thresholds
+  before a grouped confirmation set. No gold labels or future-step evidence
+  may enter a serving signal. Compare natural stopping, fixed step/time budgets
+  and candidate adaptive stopping with matched models, tools and retrieval
+  settings; include policy overhead in the candidate's total cost. Keep
+  questions, conversations and repeats grouped in uncertainty calculations.
+- **Acceptance:** first reproduce step scores offline from stored artifacts
+  without a live index. Then demonstrate a paired latency/token improvement
+  with a predeclared acceptable bound on loss of correctness, completeness,
+  citation support and refusal quality. Report premature stops and p50/p95
+  cost per tier, using calibrated metrics. Remain diagnostic/off by default
+  if quality or the confirmation interval does not meet the rule.
+
+The September 2026 study
+[Predicting Partial Answer Quality and Utility in Agentic RAG](https://arxiv.org/abs/2609.16453)
+motivates probing intermediate answers and testing early stopping. Its results
+do not establish a useful stopping signal for this repository. Scoring and
+artifact ownership stay with [eval harness Phases 4/4a](eval-harness-plan.md#phase-4--answer-side-generate-and-judge-as-separate-steps-15-days);
+the representative workload stays with Milestone 27.
+
+#### Deferred approaches
+
 **Deferred: training the search policy, and multi-agent orchestration.**
 
 - *Training the search policy.* The largest published gains come from models
@@ -858,9 +966,11 @@ These are design references, not evidence that the additions improve this repo.
 
 ## Open questions
 
-- **Interactive latency budget.** With the 27b, hard questions took minutes on
-  this M2 Max. Is agentic mode meant for the API/UI, or batch and MCP-style
-  use? The answer decides whether `timeout_s` is 60 or 600.
+- **Interactive latency budget.** ADR 0015 serves the agent in the API/UI,
+  while the 600 s search budget remains sized for batch measurement. Select
+  an interactive budget on Milestone 27's research workload using the
+  [deadline and token contract](#execution-and-output-contracts); do not assume
+  a shorter cap preserves the searches responsible for the measured gains.
 - **Hosted model as a reference point.** Running the phase 4 matrix once with a
   frontier model would separate "the method doesn't help" from "the local
   model can't drive it". Gemini Flash-Lite can now drive the agent on the free

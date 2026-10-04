@@ -1858,6 +1858,11 @@ chunks, an LLM judge. The plan's MuSiQue follow-on is the outside check.
 
 ### Agentic retrieval on `edgar_md` (Milestone 19, re-run after chunking plan Phase 5)
 
+**Current default:** [ADR 0015](decisions/0015-agentic-default.md), accepted
+2026-10-03, ships `agentic react / 27b, think=low` for research use. The
+tables and original latency decision below describe the experiment before
+that switch; they remain unchanged as historical measurement evidence.
+
 **Setup.** The [phase 4](#agentic-retrieval-milestone-19-phase-4) rows,
 re-run on the new default: `edgar_md`, `structured` chunker. Everything
 else matches phase 4: the same four sets (answerable /40, refusals /15,
@@ -1876,7 +1881,7 @@ Counts are per run:
 
 | row | answerable /40 | refusals /15 | multi-hop /35 | adaptive /15 | evidence recall, multi-hop / adaptive |
 |---|---|---|---|---|---|
-| `pipeline / 9b` (shipped) | 37, 38, 37 | 15, 15, 15 | 25, 25, 24 | 7, 6, 7 | 0.85 / 0.69 |
+| `pipeline / 9b` (default at measurement) | 37, 38, 37 | 15, 15, 15 | 25, 25, 24 | 7, 6, 7 | 0.85 / 0.69 |
 | `oracle / 9b` (gold chunks) | 39, 39, 39 | — | 32, 33, 32 | 12, 13, 13 | 1.00 / 1.00 |
 | `agentic react / 9b` | 37, 38, 37 | 15, 15, 15 | 28, 27, 27 | 6, 6, 6 | 0.91 / 0.58 |
 | `agentic planned / 9b` | 36, 36, 37 | 14, 14, 15 | 26, 26, 27 | 4, 6, 6 | 0.92 / 0.58 |
@@ -1963,7 +1968,8 @@ Cost per answering turn, mean over runs, with the judge's calls excluded:
   (after the empty-answer guard above) passed 15/15 twice by the judge, 29/30
   read by hand, with no empty answers. Numbers are in the ADR.
 
-**Decision.** Unchanged from phase 4. On quality, the loop with the 27b
+**Original decision (superseded by ADR 0015).** Unchanged from phase 4 at
+measurement time. On quality, the loop with the 27b
 meets the default-flip criterion on `edgar_md` as well. The 7–9× latency on
 hard questions still rules it out as the default. `chat.mode` stays
 `pipeline`, and agentic remains the opt-in mode for hard questions, with the
