@@ -48,5 +48,7 @@ PROTOCOL_VERSION = "2026-07-28"
 INSTRUCTIONS = """\
 Retrieval over a local document corpus. Call rag_list_corpora to see what is \
 searchable, then rag_search to pull ranked passages with their source paths. \
-Search results are raw passages, not answers -- read them and cite the \
-`document_id` of whatever you use."""
+rag_list_documents shows which documents exist; rag_read_document reads around \
+a hit (by its `char_start`) instead of searching again; rag_find locates an \
+exact name or figure. Results are raw text, not answers -- read them and cite \
+the `document_id` of whatever you use."""

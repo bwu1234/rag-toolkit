@@ -70,11 +70,44 @@ def test_a_filter_on_document_id_works(tools: RagTools) -> None:
     assert [d["document_id"] for d in payload["documents"]] == ["notes.txt"]
 
 
-def test_the_limit_truncates_and_says_how_many_were_left_out(tools: RagTools) -> None:
+def test_the_limit_truncates_and_says_how_to_get_the_next_page(tools: RagTools) -> None:
     payload = tools.list_documents(limit=1)
 
-    assert (payload["total"], payload["returned"]) == (4, 1)
-    assert "Showing 1 of 4" in payload["hint"]
+    assert (payload["total"], payload["offset"], payload["returned"], payload["next_offset"]) == (4, 0, 1, 1)
+    assert "documents 1-1 of 4" in payload["hint"] and "offset=1" in payload["hint"]
+
+
+def test_pages_cover_every_document_once_in_a_stable_order(tools: RagTools) -> None:
+    pages: list[str] = []
+    offset: int | None = 0
+    while offset is not None:
+        payload = tools.list_documents(limit=3, offset=offset)
+        pages += [d["document_id"] for d in payload["documents"]]
+        offset = payload.get("next_offset")
+
+    assert pages == [d["document_id"] for d in tools.list_documents()["documents"]]
+    assert len(pages) == len(set(pages)) == 4
+    assert "hint" not in payload  # the last page
+
+
+def test_pagination_applies_after_the_filter(tools: RagTools) -> None:
+    payload = tools.list_documents(filters=QueryFilter(equals={"ticker": "DAL"}), limit=1, offset=1)
+
+    assert (payload["total"], payload["returned"]) == (2, 1)
+    assert payload["documents"][0]["ticker"] == "DAL"
+    assert "next_offset" not in payload
+
+
+def test_an_offset_past_the_end_lists_nothing_and_says_so(tools: RagTools) -> None:
+    payload = tools.list_documents(offset=10)
+
+    assert (payload["total"], payload["returned"]) == (4, 0)
+    assert "past the last of 4" in payload["hint"]
+
+
+def test_a_negative_offset_is_an_argument_error(tools: RagTools) -> None:
+    with pytest.raises(ValueError, match="offset must be at least 0"):
+        tools.list_documents(offset=-1)
 
 
 @pytest.mark.parametrize("limit", [0, MAX_LIST_LIMIT + 1])
@@ -97,6 +130,7 @@ def test_the_tool_validates_a_raw_filter_and_documents_every_argument(tools: Rag
     spec = next(s for s in build_tool_specs(tools) if s.name == "rag_list_documents")
 
     payload = spec.handler(filters={"equals": {"ticker": "UAL"}})
+    assert spec.handler(limit=1, offset=3)["documents"][0]["document_id"] == "notes.txt"
 
     assert [d["document_id"] for d in payload["documents"]] == ["UAL_10-Q_2026-06-30.md"]
     for name, prop in spec.input_schema["properties"].items():

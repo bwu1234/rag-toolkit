@@ -164,9 +164,11 @@ A chat interface over the same pipeline, with citations and thumbs up/down.
 
 ### MCP server
 
-Exposes retrieval to an external agent as two read-only tools: `rag_search`
-(ranked passages, no generated answer; takes the same optional `filters`) and
-`rag_list_corpora`.
+Exposes retrieval to an external agent as read-only tools: `rag_search`
+(ranked passages, no generated answer; takes the same optional `filters`),
+`rag_list_documents` (paged), `rag_read_document` (a window of a document's
+text, e.g. around a search hit), `rag_find` (literal phrase search) and
+`rag_list_corpora`. Over HTTP the endpoint is `http://127.0.0.1:8000/mcp`.
 
 ```bash
 python -m rag.mcp              # stdio; works on the core install

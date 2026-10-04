@@ -324,8 +324,10 @@ tool calling was added as a `ToolCallingLLM` subclass instead.
 so the agent can list, read and find text in documents, not only run ranked
 search. They target the failures phase 4 showed: discovery questions, split
 tables and the cost of refusals. Listing, calculator support and model-set
-filters are built but remain off and unmeasured; windowed read and literal
-find are planned. Measure each addition with its evidence/token budget and
+filters are built but remain off and unmeasured. Windowed read and literal
+find are built in the shared tool surface and served over MCP (2026-10-04),
+but not yet offered to our agent: that needs ledger citations and a read
+budget. Measure each addition with its evidence/token budget and
 the injection tier before adoption.
 
 **Execution and output contracts (planned, 2026-10-03).** The
@@ -1031,9 +1033,9 @@ rate limiting are what cover that case.
 
 - **Auth.** An API-key check as a FastAPI dependency (`APIKeyHeader`,
   constant-time compare, keys from the environment, never `config.yaml`) on
-  `/chat` and `/feedback`. `/health` stays open. `/mcp` is a mounted
-  sub-app, which router dependencies don't reach, so it needs the same check
-  as ASGI middleware. Test it: a request to `/mcp` without a key must fail.
+  `/chat` and `/feedback`. `/health` stays open. `/mcp` is a plain
+  Starlette route (the SDK's app), which FastAPI dependencies don't reach, so
+  it needs the same check as ASGI middleware. Test it: a request to `/mcp` without a key must fail.
   *The right mechanism for more than one team* is an auth proxy or gateway
   (OIDC) in front, with the app trusting it. Key auth is the step before that
   and won't have to be removed when the proxy arrives.

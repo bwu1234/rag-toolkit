@@ -14,7 +14,9 @@ as a tool; this server is an outside agent calling ours.
 
 ## The tools
 
-Three, all read-only.
+Five, all read-only: `rag_search` ranks passages; `rag_list_documents`,
+`rag_read_document` and `rag_find` navigate documents without ranking; and
+`rag_list_corpora` describes what can be searched.
 
 ### `rag_search`
 
@@ -54,7 +56,9 @@ what outrank the right one.
 Each result carries `rank`, `score`, `chunk_id`, `document_id`, `source`
 (repo-relative), and `text`, plus `page`, `context` and `header` (the
 chunk's document header, from `chunking.header`) when present, and
-`truncated`/`full_length` when the passage was cut.
+`truncated`/`full_length` when the passage was cut. `char_start`/`char_end`
+place the passage in its document's cleaned text: pass them to
+`rag_read_document` to read around a hit instead of searching again.
 
 `text` is the indexed document text, unescaped and without delimiters. Treat
 it as untrusted data, not instructions: a passage can contain text written to
@@ -77,8 +81,11 @@ Lists the selected corpora's documents with their carried metadata (on EDGAR:
 `company`, `ticker`, `form`, `period_end`, `filed`, `accession`; dates as ISO
 strings) and `chars`, the document's length as loaded. Arguments: `corpus`,
 `filters` (the same `QueryFilter` as `rag_search`, applied to the same fields)
-and `limit` (default 100, at most 500). The response has `total` and
-`returned`, and a `hint` when the limit cut the list short.
+`limit` (default 100, at most 500) and `offset` (default 0). The response has
+`total`, `offset` and `returned`; while documents remain past this page it
+also has `next_offset` (pass it as `offset`) and a `hint`. Pages are in a
+stable order (corpus, then path) and paginate the *filtered* list. A corpus
+edited between pages can shift them; nothing pins a snapshot.
 
 It answers what a ranked search can't: which companies, filings and periods the
 corpus holds. A search returns its best matches, so it can never show that
@@ -88,6 +95,46 @@ embedder, no index — so it works before an index is built and lists what is
 on disk, not what was indexed (`index-report` says whether those agree).
 A PDF lists one entry per page, the same unit `rag_search` results and
 filters use.
+
+### `rag_read_document`
+
+Returns a window of one document's text: `document_id` (required), `start`
+(character offset, default 0), `max_chars` (default 6000, at most 50,000) and
+`corpus`. The response has `start`, `end`, `length`, the window's `text`, the
+document's carried metadata, and `next_start` while text remains, so
+consecutive calls rebuild the document exactly.
+
+The text is the *cleaned* text the chunker split, so a search hit's
+`char_start`/`char_end` index straight into it: start a few hundred
+characters before `char_start` to see the paragraph or table around a
+passage. A chunk's `text` is that span stripped of surrounding whitespace, or,
+for the second and later pieces of a split table, the span with the table's
+header rows in front. Offsets come from the index and the text from disk, so
+they agree only while the index is in sync (`python -m rag.cli index-report`).
+An unknown `document_id` is a tool error naming close matches.
+
+### `rag_find`
+
+A literal phrase search: `phrase` (required), `document_id` or `filters` to
+narrow it, `max_results` (default 20, at most 100) and `corpus`. Matching is
+case-insensitive and any whitespace in the phrase matches any run of
+whitespace, so a figure split across a line or table cell still matches;
+nothing else is normalized (no stemming, no synonyms), and regex characters
+are literal. Matches come in document order, then position, each with
+`document_id`, `start`/`end` (offsets for `rag_read_document`), the exact
+`match` and about 150 characters of `context` either side. `total_matches`
+and `documents_matched` count everything even when `max_results` cut the list.
+
+Use it for an exact name or figure that ranked search can crowd out: hybrid
+ranking scores term overlap and the reranker reorders, so "Enflonsia" or a
+dollar amount can fall below the top five. It can also show that a phrase
+appears *nowhere*, which a search can't. It scans the text linearly: about
+20 ms for `edgar_md`'s 3.5M characters once loaded.
+
+Both tools load and clean the selected corpora on first use (about 0.4 s for
+`edgar_md`) and cache them per corpus selection, reloading when any file's
+size or modification time changes. Like `rag_list_documents`, they read from
+disk and need no index or embedder.
 
 ### `rag_list_corpora`
 
@@ -179,8 +226,16 @@ dependencies, and an agent spawning a bare `python` will not find them.
 
 ### Streamable HTTP
 
-Mounted at `/mcp` on the existing FastAPI app, so `uvicorn rag.api.main:app`
-serves `POST /chat` and MCP from one warm process. This is the better choice
+Served at `http://127.0.0.1:8000/mcp` (no trailing slash) on the existing
+FastAPI app, so `uvicorn rag.api.main:app` serves `POST /chat` and MCP from
+one warm process. `/mcp/` redirects to `/mcp`; point clients at the URL
+without the slash, since a client that won't re-send a POST across a redirect
+never reaches the server. On the 2026-07-28 revision the SDK routes HTTP
+requests by header, so each POST carries `MCP-Protocol-Version: 2026-07-28`
+and an `Mcp-Method` header matching the body's method (a conforming client
+sends both). Without them the SDK treats the POST as the 2025 session era and
+answers `400 Bad Request: Missing session ID` -- a misleading message for a
+missing header, and the first thing to check when a hand-rolled client fails. This is the better choice
 when several agents share a machine: components are built once and the
 cross-encoder's weights are loaded once, instead of per subprocess.
 
@@ -208,9 +263,9 @@ since silent drift between the two is the way this arrangement breaks.
 - **Startup is lazy.** Nothing is built at import or at discovery. Under stdio a
   client expects a prompt `server/discover` response, and importing Chroma plus a
   sentence-transformers cross-encoder eagerly would spend seconds first. The
-  first `rag_search` pays that cost; `rag_list_corpora` and
-  `rag_list_documents` never do (the document loaders are imported on the
-  first listing, not at startup).
+  first `rag_search` pays that cost; `rag_list_corpora` and the navigation
+  tools never do (the document loaders are imported on first use, not at
+  startup).
 - **Retrievers are cached per corpus selection** and reused. The cross-encoder
   holds several hundred MB once loaded.
 - **`top_k` costs no rebuild.** Cached retrievers are built with `rerank_top_k`
@@ -221,11 +276,17 @@ since silent drift between the two is the way this arrangement breaks.
   and `configure_logging` takes a `stream` argument so the MCP entrypoint logs
   to stderr. A single stray line on stdout is a parse error that ends the
   session.
-- **The HTTP mount needs its lifespan chained.** ASGI delivers lifespan events
-  to the outermost app only, and the MCP session manager starts its task group
-  there; `rag/api/main.py` chains it, without which every request fails with
-  "Task group is not initialized". It is also mounted under `/mcp` rather than
-  `/` — a root mount matches every path and would swallow `/health` and `/docs`.
+- **The HTTP endpoint needs its lifespan chained.** ASGI delivers lifespan
+  events to the outermost app only, and the MCP session manager starts its
+  task group there; `rag/api/main.py` chains it, without which every request
+  fails with "Task group is not initialized".
+- **It is a route, not a mount.** `rag/api/main.py` adds the SDK app's one
+  route to the API's router. Mounting it at `/mcp` served it at `/mcp/` only
+  (`POST /mcp` drew a 307), and mounting it at `/` would match every path and
+  swallow `/health` and `/docs`. Copying the route drops the SDK app's
+  middleware, so startup refuses if it ever has any (the SDK adds auth
+  middleware when auth is configured). `tests/test_mcp.py` drives
+  `POST /mcp` over HTTP with the lifespan running.
 - **DNS-rebinding protection is on.** Streamable HTTP rejects Host headers
   outside `DEFAULT_ALLOWED_HOSTS` (loopback) with a 421. Serving anywhere else
   means passing `allowed_hosts` to `mcp_http_app`.
