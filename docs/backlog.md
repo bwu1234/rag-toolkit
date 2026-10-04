@@ -582,7 +582,7 @@ graph LR
 
 ### Milestone 21 — Streaming & citation fidelity
 
-Two answer-delivery gaps, grouped because both sit at the `ChatService` →
+Three answer-delivery gaps, grouped because all sit at the `ChatService` →
 API/UI boundary rather than in retrieval:
 
 - **SSE streaming.** `/chat` and the UI wait for the full generation call
@@ -594,6 +594,27 @@ API/UI boundary rather than in retrieval:
   pipeline-trace fields only make sense once generation finishes, so the
   stream is answer-text-only — the existing non-streaming response stays the
   source of truth for citations.
+- **Agent progress and answer streaming.** The bullet above was written for
+  the pipeline's single 8–10 s generation call. Under `chat.mode: agentic`
+  (the default since [ADR 0015](decisions/0015-agentic-default.md)) a hard
+  question takes 1–2 minutes over several model and tool calls, so progress
+  matters more than the answer's tokens. `AgentService` already emits a
+  `PipelineEvent` per step (`search` with its query and new passage numbers,
+  `list_documents`, `calculate`, `search_refused`), and the UI renders them
+  live through `on_event`. Gaps:
+  - Events fire when a step *finishes*. Add a start event before each model
+    call and each search (e.g. "Searching 'DAL fuel expense Q2 2025'…"), so
+    the long model calls in between don't look like a hang.
+  - The API and `cli chat` show nothing until the turn ends. `POST
+    /chat/stream` carries the same events as typed SSE messages (`step`,
+    then answer `token`s, then a final `done` with the full `ChatResponse`),
+    and `cli chat` prints steps to stderr.
+  - Stream only the final synthesis's text: tokens from a call that may
+    still turn out to be a tool call aren't part of the answer. That needs
+    a streaming method on `ToolCallingLLM` as well as `LLMClient`.
+  - A client disconnecting mid-stream must cancel the turn under the
+    [Milestone 19 execution contract](milestone-19-plan.md#execution-and-output-contracts)'s
+    deadline rules, not leave it running.
 - **Active citation filtering.** *Mostly shipped with Milestone 12:*
   `ChatService` parses the `[n]` markers, and `ChatAnswer`/`ChatResponse`
   report `cited_chunk_ids` next to the full `citations` list, so a consumer
