@@ -8,6 +8,13 @@ instruction-tuned chat models are actually trained to be steered.
 
 The same endpoint serves tool calling (`chat()`), so one adapter implements
 both `generate` and `ToolCallingLLM.chat`.
+
+With `raw=True`, `chat()` instead renders the prompt itself
+(`rag.llm.ollama_raw`, a port of the model's Go renderer and parser) and calls
+`/api/generate` with `raw: true`, so the turn carries the exact prompt text
+and the exact generated text (`AssistantTurn.raw`) -- what a transcript needs
+to show the model's real input and output tokens. Same model, same tokens,
+same sampling options; only who renders the prompt changes.
 """
 
 from __future__ import annotations
@@ -18,12 +25,14 @@ from typing import Any
 
 import httpx
 
+from rag.llm import ollama_raw
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
     ContextOverflowError,
     LLMUsage,
     Message,
+    RawCompletion,
     ToolCall,
     ToolCallingLLM,
     ToolDefinition,
@@ -61,6 +70,17 @@ class OllamaLLMClient(ToolCallingLLM):
     0.34.4: a 6.9k-token prompt under `num_ctx: 4096` came back as 2,050
     prompt tokens and a wrong answer. The MLX engine ignores per-request
     `num_ctx` and did not truncate even a 43k-token prompt.)
+
+    `raw` switches `chat()` to client-side rendering through `/api/generate`
+    (see the module docstring). It is checked against the model on first use:
+    the Modelfile must name the renderer and parser `ollama_raw` ports, or the
+    call raises rather than send a prompt the model wasn't trained on. Every
+    raw call is followed by a one-token `/api/chat` call with the same
+    messages, whose prompt token count lands in `RawCompletion.
+    chat_prompt_tokens` -- a mismatch means the port no longer renders what
+    Ollama does, and is logged. It costs one extra call per step, mostly served
+    from the prompt cache. `generate()` is unaffected: raw mode is for the
+    agent's model, which only calls `chat()`.
     """
 
     def __init__(
@@ -73,6 +93,7 @@ class OllamaLLMClient(ToolCallingLLM):
         think: ThinkSetting = False,
         num_ctx: int | None = None,
         timeout: float = 120.0,
+        raw: bool = False,
     ) -> None:
         self.model = model
         self.base_url = base_url.rstrip("/")
@@ -80,6 +101,9 @@ class OllamaLLMClient(ToolCallingLLM):
         self.max_tokens = max_tokens
         self.think = think
         self.num_ctx = num_ctx
+        self.raw = raw
+        self._thinking_spec: ollama_raw.ThinkingSpec | None = None
+        self._raw_checked = False
         # `trust_env=False`: see `OllamaEmbedder` -- a loopback connection to
         # Ollama should never go through the system proxy.
         self._client = httpx.Client(base_url=self.base_url, timeout=timeout, trust_env=False)
@@ -98,6 +122,8 @@ class OllamaLLMClient(ToolCallingLLM):
         return message["content"], self._usage(payload)
 
     def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:
+        if self.raw:
+            return self._chat_raw([_to_wire(m) for m in messages], [_tool_to_wire(t) for t in tools])
         payload = self._post_chat([_to_wire(m) for m in messages], [_tool_to_wire(t) for t in tools])
         message = payload["message"]
         thinking = message.get("thinking")
@@ -110,28 +136,119 @@ class OllamaLLMClient(ToolCallingLLM):
             stop_reason=done_reason if isinstance(done_reason, str) else None,
         )
 
-    def _post_chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-        options: dict[str, Any] = {"temperature": self.temperature, "num_predict": self.max_tokens}
-        body: dict[str, Any] = {
-            "model": self.model,
-            "messages": messages,
-            "stream": False,
-            "think": self.think,
-            "options": options,
+    def _chat_raw(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> AssistantTurn:
+        """`chat()` with the prompt rendered here and sent to `/api/generate` verbatim."""
+
+        self._check_raw_model()
+        think = ollama_raw.resolve_think(self.think, self._thinking_spec)
+        prompt = ollama_raw.render(messages, tools, think)
+        body: dict[str, Any] = {"model": self.model, "prompt": prompt, "raw": True, "stream": False}
+        payload = self._post("/api/generate", self._with_options(body), "response")
+        output = payload["response"]
+        try:
+            parsed = ollama_raw.parse(output, tools, think)
+        except ValueError as exc:
+            raise RuntimeError(f"Could not parse raw output from model={self.model!r}: {exc}") from exc
+
+        usage = self._usage(payload)
+        # The same request through /api/chat, generating one token: Ollama
+        # renders it itself, and its prompt token count should equal ours.
+        check = self._post_chat(messages, tools, num_predict=1)
+        chat_tokens = _optional_int(check.get("prompt_eval_count"))
+        if chat_tokens is not None and usage.prompt_tokens is not None and chat_tokens != usage.prompt_tokens:
+            logger.warning(
+                "Raw prompt is %d tokens but /api/chat counts %d for the same messages (model=%s): "
+                "the client-side renderer has drifted from Ollama's",
+                usage.prompt_tokens, chat_tokens, self.model,
+            )
+        done_reason = payload.get("done_reason")
+        return AssistantTurn(
+            content=parsed.content,
+            tool_calls=tuple(ToolCall(name=c.name, arguments=c.arguments) for c in parsed.tool_calls),
+            thinking=parsed.thinking or None,
+            usage=usage,
+            stop_reason=done_reason if isinstance(done_reason, str) else None,
+            raw=RawCompletion(prompt=prompt, output=output, chat_prompt_tokens=chat_tokens),
+        )
+
+    def _check_raw_model(self) -> None:
+        """Refuse raw mode for a model whose renderer and parser `ollama_raw` doesn't port."""
+
+        if self._raw_checked:
+            return
+        try:
+            response = self._client.post("/api/show", json={"model": self.model})
+            response.raise_for_status()
+            show = response.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise RuntimeError(f"Failed to read model={self.model!r} from Ollama at {self.base_url}: {exc}") from exc
+        modelfile = show.get("modelfile", "") if isinstance(show, dict) else ""
+        directives = dict(
+            line.split(" ", 1) for line in modelfile.splitlines() if line.startswith(("RENDERER ", "PARSER "))
+        )
+        wanted = {"RENDERER": ollama_raw.RENDERER, "PARSER": ollama_raw.PARSER}
+        if {k: directives.get(k) for k in wanted} != wanted:
+            raise RuntimeError(
+                f"Raw mode renders prompts client-side and supports only models with "
+                f"RENDERER {ollama_raw.RENDERER} and PARSER {ollama_raw.PARSER}; model={self.model!r} has "
+                f"RENDERER {directives.get('RENDERER')} and PARSER {directives.get('PARSER')}."
+            )
+        self._thinking_spec = ollama_raw.ThinkingSpec.from_show(show)
+        try:
+            version = self._client.get("/api/version").json().get("version")
+        except (httpx.HTTPError, ValueError, AttributeError):
+            version = None
+        if version != ollama_raw.PORTED_FROM_OLLAMA:
+            logger.warning(
+                "Raw mode's renderer is ported from Ollama %s but the daemon is %s; each call's "
+                "prompt token count is still checked against /api/chat",
+                ollama_raw.PORTED_FROM_OLLAMA, version,
+            )
+        self._raw_checked = True
+
+    def _with_options(self, body: dict[str, Any], *, num_predict: int | None = None) -> dict[str, Any]:
+        options: dict[str, Any] = {
+            "temperature": self.temperature,
+            "num_predict": self.max_tokens if num_predict is None else num_predict,
         }
+        body["options"] = options
         if self.num_ctx is not None:
             options["num_ctx"] = self.num_ctx
             # Fail rather than silently drop the start of the prompt; see the
             # class docstring. Only alongside `num_ctx`, so the pipeline's
             # requests stay exactly as they were measured.
             body["truncate"] = False
+        return body
+
+    def _post_chat(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        *,
+        num_predict: int | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            "think": self.think,
+        }
         # Omitted rather than sent empty when there are none: a turn offered no
         # tools must answer in text, which is how the agent forces synthesis.
         if tools:
             body["tools"] = tools
+        payload = self._post("/api/chat", self._with_options(body, num_predict=num_predict), "message")
+        message = payload.get("message")
+        if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+            raise RuntimeError(
+                f"Unexpected response shape from Ollama /api/chat: expected a "
+                f"{{'message': {{'content': str}}}} object, got {payload!r}"
+            )
+        return payload
 
+    def _post(self, path: str, body: dict[str, Any], field: str) -> dict[str, Any]:
         try:
-            response = self._client.post("/api/chat", json=body)
+            response = self._client.post(path, json=body)
             if response.status_code == 400 and "exceed" in response.text and "context" in response.text:
                 raise ContextOverflowError(
                     f"Prompt exceeds the {self.num_ctx}-token context window requested for "
@@ -145,12 +262,12 @@ class OllamaLLMClient(ToolCallingLLM):
             ) from exc
 
         payload = response.json()
-        message = payload.get("message") if isinstance(payload, dict) else None
-        if not isinstance(message, dict) or not isinstance(message.get("content"), str):
+        if not isinstance(payload, dict) or field not in payload:
             raise RuntimeError(
-                f"Unexpected response shape from Ollama /api/chat: expected a "
-                f"{{'message': {{'content': str}}}} object, got {payload!r}"
+                f"Unexpected response shape from Ollama {path}: expected a {field!r} field, got {payload!r}"
             )
+        if field == "response" and not isinstance(payload["response"], str):
+            raise RuntimeError(f"Unexpected response shape from Ollama {path}: got {payload!r}")
         return payload
 
     def _usage(self, payload: dict[str, Any]) -> LLMUsage:

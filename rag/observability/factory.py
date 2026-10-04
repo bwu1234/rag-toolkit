@@ -36,6 +36,7 @@ def config_fingerprint(config: RagConfig) -> str:
 
     `llm.thinking_level` is excluded only while unset, so adding the field
     didn't re-key every turn already logged; setting it changes the hash.
+    `raw` (on `llm` and `agent.llm`) likewise, while it is off.
     `embedding.query_instruction` and `embedding.revision` are handled the same way, as are
     `chunking.carry_metadata`, `chunking.header`, `reranker.include_header`
     and `vector_store.hnsw_ef_search` while each is at its default.
@@ -56,8 +57,12 @@ def config_fingerprint(config: RagConfig) -> str:
         exclude["agent"] = True
         exclude["chat"] = {"mode"}
     elif config.agent.llm is not None:
-        exclude["agent"] = {"llm": budget}
-    exclude["llm"] = budget | ({"thinking_level"} if config.llm.thinking_level is None else set())
+        exclude["agent"] = {"llm": budget | ({"raw"} if not config.agent.llm.raw else set())}
+    exclude["llm"] = (
+        budget
+        | ({"thinking_level"} if config.llm.thinking_level is None else set())
+        | ({"raw"} if not config.llm.raw else set())
+    )
     embedding_new = {
         name for name in ("query_instruction", "revision") if getattr(config.embedding, name) is None
     }

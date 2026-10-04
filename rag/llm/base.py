@@ -109,6 +109,22 @@ class ChatMessage:
 
 
 @dataclass(frozen=True)
+class RawCompletion:
+    """The exact text one call sent the model and the exact text it generated.
+
+    Only a client that renders the prompt itself can report it (Ollama with
+    `raw: true`); a chat API renders server-side and returns parsed pieces.
+    `chat_prompt_tokens` is what the provider's own chat endpoint counted for
+    the same messages: equal to the turn's `usage.prompt_tokens` when the
+    client-side rendering matches the server's. None when it wasn't checked.
+    """
+
+    prompt: str
+    output: str
+    chat_prompt_tokens: int | None = None
+
+
+@dataclass(frozen=True)
 class AssistantTurn:
     """What the model returned for one `chat()` call.
 
@@ -128,6 +144,9 @@ class AssistantTurn:
     # Why the provider stopped generating, as it names it (Ollama's
     # `done_reason`: "stop", or "length" at `max_tokens`). None when not reported.
     stop_reason: str | None = None
+    # The rendered prompt and unparsed output, from a client in raw mode. Not
+    # part of the conversation: adapters send back only the parsed fields.
+    raw: RawCompletion | None = None
 
 
 @dataclass(frozen=True)

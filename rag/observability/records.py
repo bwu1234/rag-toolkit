@@ -138,6 +138,14 @@ class LLMExchange:
     completion_tokens: int | None = None
     error: str | None = None
     """Set when the call raised (a context overflow, a timeout); the response is then empty."""
+    raw_prompt: str | None = None
+    """The prompt exactly as the model read it (chat template rendered, special tokens as text).
+    Only from a client in raw mode (`llm.raw`); None otherwise."""
+    raw_output: str | None = None
+    """Everything the model generated, unparsed: thinking, tool-call markup and answer."""
+    chat_prompt_tokens: int | None = None
+    """Raw mode's check: the prompt tokens `/api/chat` counted for the same messages.
+    Equal to `prompt_tokens` when the client-side rendering matches the server's."""
 
 
 @dataclass(frozen=True)

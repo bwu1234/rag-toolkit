@@ -476,7 +476,7 @@ def test_config_fingerprint_keys_on_the_agent_section_in_agentic_mode() -> None:
 def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None:
     gemini = LLMConfig(provider="gemini", model="gemini-3.5-flash-lite")
     unset = RagConfig(llm=gemini)
-    # None of `llm.thinking_level`, `agent`, `chat.mode`, `embedding.query_instruction`
+    # None of `llm.thinking_level`, `llm.raw`, `agent`, `chat.mode`, `embedding.query_instruction`
     # or the chunk header fields existed when the turns already logged were hashed.
     as_before = hashlib.sha256(
         unset.model_dump_json(
@@ -484,7 +484,7 @@ def test_config_fingerprint_keys_on_thinking_level_only_once_it_is_set() -> None
                 "observability": True,
                 "eval": True,
                 "agent": True,
-                "llm": {"thinking_level", "requests_per_day", "requests_per_day_reserve", "daily_request_log"},
+                "llm": {"thinking_level", "raw", "requests_per_day", "requests_per_day_reserve", "daily_request_log"},
                 "chat": {"mode"},
                 "embedding": {"query_instruction", "revision"},
                 "chunking": {"carry_metadata", "header"},
@@ -522,7 +522,7 @@ def test_config_fingerprint_keys_on_query_instruction_only_once_it_is_set() -> N
                 "observability": True,
                 "eval": True,
                 "agent": True,
-                "llm": {"thinking_level", "requests_per_day", "requests_per_day_reserve", "daily_request_log"},
+                "llm": {"thinking_level", "raw", "requests_per_day", "requests_per_day_reserve", "daily_request_log"},
                 "chat": {"mode"},
                 "embedding": {"query_instruction", "revision"},
                 "chunking": {"carry_metadata", "header"},
@@ -636,3 +636,14 @@ def test_config_fingerprint_keys_on_ef_search_only_off_chromas_default() -> None
     # 100 is what every turn logged before the setting existed searched with.
     assert config_fingerprint(default) == config_fingerprint(RagConfig())
     assert config_fingerprint(wider) != config_fingerprint(default)
+
+
+def test_config_fingerprint_keys_on_raw_mode_only_once_it_is_on() -> None:
+    agentic = ChatConfig(mode="agentic")
+    agent_llm = LLMConfig(model="qwen3.8:27b-mlx", think="low")
+    off = RagConfig(chat=agentic, agent=AgentConfig(llm=agent_llm))
+    on = RagConfig(chat=agentic, agent=AgentConfig(llm=agent_llm.model_copy(update={"raw": True})))
+
+    assert "raw" not in off.model_dump_json(exclude={"llm": {"raw"}, "agent": {"llm": {"raw"}}})
+    assert config_fingerprint(on) != config_fingerprint(off)
+    assert config_fingerprint(RagConfig(llm=LLMConfig(raw=True))) != config_fingerprint(RagConfig())

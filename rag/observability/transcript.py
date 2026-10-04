@@ -9,6 +9,14 @@ first, then how it got there, then each model call exactly as sent.
 An agent resends its whole conversation on every step, so each `chat` call
 shows only the messages added since the previous call; the first shows them
 all, the system prompt included.
+
+A turn run in raw mode (`llm.raw`) also has each call's rendered prompt -- the
+chat template applied, special tokens as text -- and the model's unparsed
+output. The first call shows the whole prompt; each later one shows only what
+follows the previous prompt and output, which is what the model's prompt cache
+can reuse. Where the next prompt doesn't start with them (the server
+re-rendered the previous reply differently from how the model wrote it), the
+trace says where and shows both sides.
 """
 
 from __future__ import annotations
@@ -118,6 +126,16 @@ def _summary(record: TurnRecord, context: Sequence[tuple[str, str]]) -> str:
         rows.append(("Grounded", f"{record.grounded} (checks: {record.groundedness_checks})"))
     rows.append(("Total", _seconds(record.total_ms)))
     rows.append(("LLM", f"{record.llm_calls} call(s), {_seconds(record.llm_ms)}, {_tokens(record.prompt_tokens, record.completion_tokens)}"))
+    raw = [e for e in record.llm_exchanges or () if e.raw_prompt is not None]
+    if raw:
+        checked = [e for e in raw if e.chat_prompt_tokens is not None]
+        drifted = sum(e.chat_prompt_tokens != e.prompt_tokens for e in checked)
+        verdict = (
+            "not checked" if not checked
+            else f"{len(checked)} checked against /api/chat, "
+            + ("all token counts match" if not drifted else f"**{drifted} mismatched**")
+        )
+        rows.append(("Raw mode", f"{len(raw)} call(s) rendered client-side; {verdict}"))
     if record.stopped_reason is not None:
         rows.append(("Tool calls run", str(record.tool_calls)))
     return "| | |\n|---|---|\n" + "\n".join(f"| {_cell(key)} | {_cell(value)} |" for key, value in rows)
@@ -190,6 +208,7 @@ def _exchanges(exchanges: Sequence[LLMExchange] | None) -> str:
         return "_The turn made no LLM calls._"
     blocks = []
     previous_chat: LLMExchange | None = None
+    previous_raw: LLMExchange | None = None
     previous_tools: list[dict[str, Any]] | None = None
     for number, exchange in enumerate(exchanges, start=1):
         head = (
@@ -203,11 +222,72 @@ def _exchanges(exchanges: Sequence[LLMExchange] | None) -> str:
             body += ["#### Prompt", _fence(exchange.prompt or "")]
         else:
             body.append(_tools_offered(exchange.tools, previous_tools))
-            body += _new_messages(exchange, previous_chat)
+            messages = _new_messages(exchange, previous_chat)
+            if exchange.raw_prompt is None:
+                body += messages
+            else:
+                body.append(_details("Messages sent (structured)", "\n\n".join(messages), fence=False))
+                body += _raw_prompt(exchange, previous_raw)
+                body += _raw_output(exchange)
+                previous_raw = exchange
             previous_chat, previous_tools = exchange, exchange.tools
         body += _reply(exchange)
         blocks.append("\n\n".join(body))
     return "\n\n".join(blocks)
+
+
+def _token_check(exchange: LLMExchange) -> str:
+    if exchange.chat_prompt_tokens is None or exchange.prompt_tokens is None:
+        return f"{exchange.prompt_tokens or '?'} tokens"
+    if exchange.chat_prompt_tokens == exchange.prompt_tokens:
+        return f"{exchange.prompt_tokens:,} tokens, as /api/chat counts it"
+    return (
+        f"{exchange.prompt_tokens:,} tokens, but **/api/chat counts {exchange.chat_prompt_tokens:,}** for the "
+        "same messages: the client-side renderer no longer matches Ollama's"
+    )
+
+
+def _common_prefix(a: str, b: str) -> int:
+    size = 0
+    for x, y in zip(a, b):
+        if x != y:
+            break
+        size += 1
+    return size
+
+
+def _raw_prompt(exchange: LLMExchange, previous: LLMExchange | None) -> list[str]:
+    """The rendered prompt: whole the first time, then only what follows the previous prompt and output."""
+
+    prompt = exchange.raw_prompt or ""
+    if previous is None or previous.raw_prompt is None:
+        return [f"#### Rendered prompt ({_token_check(exchange)})", _fence(prompt)]
+    before = previous.raw_prompt + (previous.raw_output or "")
+    same = _common_prefix(before, prompt)
+    if same == len(before):
+        return [
+            f"#### Rendered prompt: the previous prompt and output, then {len(prompt) - same:,} new chars "
+            f"({_token_check(exchange)})",
+            _fence(prompt[same:]),
+        ]
+    where = "the previous prompt" if same < len(previous.raw_prompt) else "the previous output"
+    return [
+        f"#### Rendered prompt: differs from the previous prompt and output at char {same:,}, inside "
+        f"{where} ({_token_check(exchange)})",
+        "The server re-rendered the conversation, so this prompt doesn't extend the last one there "
+        "(and the prompt cache can't reuse anything after that point). The previous prompt and output, "
+        "from that char on:",
+        _fence(before[same:]),
+        "This prompt, from that char on:",
+        _fence(prompt[same:]),
+    ]
+
+
+def _raw_output(exchange: LLMExchange) -> list[str]:
+    if exchange.error:
+        return []
+    tokens = "?" if exchange.completion_tokens is None else f"{exchange.completion_tokens:,}"
+    return [f"#### Raw output ({tokens} tokens, unparsed)", _fence(exchange.raw_output or "")]
 
 
 def _tools_offered(tools: list[dict[str, Any]], previous: list[dict[str, Any]] | None) -> str:
@@ -284,5 +364,5 @@ def _reply(exchange: LLMExchange) -> list[str]:
     return out
 
 
-def _details(summary: str, text: str) -> str:
-    return f"<details><summary>{summary}</summary>\n\n{_fence(text)}\n\n</details>"
+def _details(summary: str, text: str, *, fence: bool = True) -> str:
+    return f"<details><summary>{summary}</summary>\n\n{_fence(text) if fence else text}\n\n</details>"
