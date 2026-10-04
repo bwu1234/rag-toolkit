@@ -150,7 +150,11 @@ Review that the evidence entails the answer, entity and period are correct,
 all valid alternative sources are accepted, and apparent negatives are truly
 unsupported. Review successes and failures with the system variant hidden.
 Use a second reviewer on a stratified subset and disputed cases; retain
-disagreements and their resolution. Version label fixes and rerun both sides
+disagreements and their resolution. Report inter-reviewer agreement on that
+subset before adjudication (Cohen's κ on accept/reject and on each label
+field, with raw percent agreement and n), because κ on a heavily imbalanced
+verdict can be low while the reviewers almost always agree. Today every set has
+one reviewer, so no agreement figure exists. Version label fixes and rerun both sides
 of affected comparisons rather than silently changing one baseline.
 
 ## 4. Separate correctness, completeness, and evidence support
@@ -178,6 +182,54 @@ labels are the reference. Report agreement, false-pass and false-fail rates,
 their denominators, and uncertainty by category. Recalibrate after judge or
 rubric changes; model size and temperature zero do not establish reliability.
 Adjudicate consequential disagreements before using them for a default change.
+
+### Context reliance: closed-book and counterfactual controls
+
+A correct answer does not show that retrieval did any work. EDGAR 10-Ks are
+public and likely in the generators' training data, and the 27b has already
+added a remembered figure to a correct refusal
+([parametric leakage](measured-results.md#generator-model-qwen359b-vs-qwen3827b-pre-milestone-19)).
+Answer pass rates therefore need two controls that measure whether the answer
+depends on the supplied context.
+
+- **Closed-book row.** The same questions with no retrieval, through
+  `ClosedBookResponder` (`closed-book / 9b`, `closed-book / 27b` in
+  `run_answer_matrix.py`; built for MuSiQue, never run on EDGAR). Its pass
+  rate shows which facts the generator already knows. Run it beside every
+  answer row on a public corpus.
+- **Counterfactual row.** Hand the generator its gold evidence with the asked
+  figure replaced by a plausible wrong value. If the answer still reports the
+  real value, the model answered from memory and ignored the context. Build it
+  on the oracle (`rag/eval/oracle.py`), which already selects each question's
+  gold chunks and sends them through the pipeline's own prompt. To keep the
+  edit consistent:
+  - Restrict it to samples whose span states a figure (124 of the 174
+    generated questions). Leave out derived quantities a reader could use to
+    recompute the original, or edit them too.
+  - Change every occurrence of the figure in all supplied chunks. Pick a
+    value with the same units and magnitude that appears nowhere in the
+    corpus for that entity, so neither the real value nor any other true
+    figure can match by accident. Record the original and substituted values
+    and a seed per sample.
+  - For agentic rows, apply the same substitution to search results inside
+    the tool layer (any returned chunk containing the gold span), so the
+    agent can't sidestep it by searching again.
+- **Scoring.** Deterministic, with no judge. Classify each answer as
+  *follows context* (the substituted value), *parametric override* (the
+  original value), *flags the conflict*, *refuses* or *other*. Report the
+  override rate both overall and among questions the closed-book row answers
+  correctly. Only known facts can leak, so the conditional rate is the
+  faithfulness measure, and the unconditional rate also depends on how much
+  the model knows. Read the flagged-conflict cases by hand: noticing the
+  inconsistency is acceptable behavior, not a failure.
+- **Reading it.** A high override rate means answer pass overstates what
+  retrieval contributes, and answer-side comparisons between retrieval
+  variants are diluted by questions the model can answer without them.
+  Expect it to grow with model size. Report it per generator and mode, and
+  treat it as a property of the generator and prompt, never a retrieval
+  result. It complements the evidence judge: that checks whether claims are
+  supported, while this checks whether the model would use contrary
+  evidence.
 
 ## 5. Compare variants without overstating confidence
 
@@ -226,7 +278,10 @@ metric, and a financial-document result does not establish enterprise quality.
    corpus and labels. Record actual counts and gaps for every task family.
 3. **Baselines:** run the shipped pipeline and a pinned vanilla comparator
    on the new suite; refresh multi-hop. Include repeats, costs, human checks
-   of passes and failures, and calibrated judge results.
+   of passes and failures, and calibrated judge results. Add closed-book
+   and counterfactual rows for each generator
+   ([context reliance](#context-reliance-closed-book-and-counterfactual-controls))
+   so answer pass can be read against what the model already knows.
 4. **Targeted comparisons:** choose a candidate on development data for an
    observed failure class, then run the frozen comparison. Revisit CRAG or
    expansion where the tasks plausibly need them; leave defaults unchanged
