@@ -478,9 +478,22 @@ def test_the_search_tool_the_agent_offers_is_the_mcp_schema_projected() -> None:
     mcp = next(s for s in build_tool_specs(tools) if s.name == "rag_search").definition
     offered: ToolDefinition = _agent(ScriptedToolLLM([]), tools).search_tool
 
-    assert (offered.name, offered.description) == (mcp.name, mcp.description)
+    assert offered.name == mcp.name
+    # The MCP text plus notes for tools the agent doesn't offer (rag_read_document).
+    assert mcp.description.startswith(offered.description)
     assert offered.parameters["properties"]["query"] == mcp.parameters["properties"]["query"]
     assert offered.parameters["required"] == mcp.parameters["required"] == ["query"]
+
+
+@pytest.mark.parametrize("offered_tools", [("rag_search",), ("rag_search", "rag_list_documents", "calculator")])
+def test_offered_descriptions_never_name_a_tool_or_argument_the_agent_lacks(offered_tools: tuple[str, ...]) -> None:
+    """The shared descriptions point MCP clients at reading and paging; the agent has neither."""
+
+    agent = _agent(ScriptedToolLLM([]), _ListingTools(_AIRLINES), offered_tools=offered_tools)
+
+    for tool in agent.tool_definitions:
+        for absent in ("rag_read_document", "rag_find", "char_start", "offset"):
+            assert absent not in tool.description, (tool.name, absent)
 
 
 def test_a_turn_filter_applies_to_every_agent_search_and_the_model_cannot_set_one() -> None:

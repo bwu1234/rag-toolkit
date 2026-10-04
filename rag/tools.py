@@ -29,7 +29,7 @@ import inspect
 import logging
 import re
 import threading
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -99,12 +99,55 @@ def _refs(schema: Any) -> set[str]:
 
 
 @dataclass(frozen=True)
+class DescriptionNote:
+    """A sentence of a tool's description that only holds when other parts are offered.
+
+    A description that tells the model to call a tool it doesn't have, or to
+    pass an argument the caller pinned, steers it toward calls that fail. MCP
+    serves every tool and argument, so it gets every note; the agent offers a
+    subset and gets only the notes that hold for it.
+    """
+
+    text: str
+    #: Other tools the sentence names.
+    tools: tuple[str, ...] = ()
+    #: This tool's arguments the sentence names.
+    arguments: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class ToolSpec:
-    """One tool: its wire identity plus the callable behind it."""
+    """One tool: its wire identity plus the callable behind it.
+
+    `base_description` is the text the tool always carries; `notes` add
+    sentences that depend on what else is offered.
+    """
 
     name: str
-    description: str
+    base_description: str
     handler: Callable[..., dict[str, Any]]
+    notes: tuple[DescriptionNote, ...] = ()
+
+    @property
+    def description(self) -> str:
+        """The description with every note: what MCP serves, every tool and argument offered."""
+
+        return self.description_for()
+
+    def description_for(
+        self, *, offered_tools: Collection[str] | None = None, pinned: Collection[str] = ()
+    ) -> str:
+        """The description, keeping only the notes whose tools are offered and arguments aren't pinned.
+
+        `offered_tools` None means every tool is offered.
+        """
+
+        kept = [
+            note.text for note in self.notes
+            if (offered_tools is None or set(note.tools) <= set(offered_tools))
+            and not set(note.arguments) & set(pinned)
+        ]
+        return " ".join([self.base_description, *kept])
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -123,7 +166,7 @@ class ToolSpec:
 
         return ToolDefinition(name=self.name, description=self.description, parameters=self.input_schema)
 
-    def definition_without(self, *pinned: str) -> ToolDefinition:
+    def definition_without(self, *pinned: str, offered_tools: Collection[str] | None = None) -> ToolDefinition:
         """`definition`, minus arguments the caller fixes itself.
 
         A projection of the same schema, not a second one: every remaining
@@ -132,6 +175,10 @@ class ToolSpec:
         they belong to the turn (the eval's `--corpus`, the prompt-size
         guards), not to the model. Only optional arguments can be pinned; a
         required one has no value to fall back on.
+
+        The description drops the notes that name a pinned argument or a tool
+        outside `offered_tools` (None: every tool), so it never points the
+        model at something it can't call.
         """
 
         schema = self.input_schema
@@ -158,7 +205,8 @@ class ToolSpec:
             parameters["$defs"] = {name: defs[name] for name in defs if name in reached}
             if not parameters["$defs"]:
                 del parameters["$defs"]
-        return ToolDefinition(name=self.name, description=self.description, parameters=parameters)
+        description = self.description_for(offered_tools=offered_tools, pinned=pinned)
+        return ToolDefinition(name=self.name, description=description, parameters=parameters)
 
 
 def input_schema_for(handler: Callable[..., Any]) -> dict[str, Any]:
@@ -729,9 +777,13 @@ search, then cross-encoder reranking) and returns raw passages with their \
 provenance -- it does not generate an answer.
 
 Use this to ground an answer in the user's own documents. Each result names \
-the document it came from, so you can cite exactly where a claim came from, \
-and its `char_start`/`char_end` in that document: pass them to \
-rag_read_document to read what surrounds a passage instead of searching again."""
+the document it came from, so you can cite exactly where a claim came from."""
+
+_SEARCH_READ_NOTE = DescriptionNote(
+    "Each result also gives its `char_start`/`char_end` in that document: pass them to "
+    "rag_read_document to read what surrounds a passage instead of searching again.",
+    tools=("rag_read_document",),
+)
 
 _LIST_CORPORA_DESCRIPTION = """\
 List the document corpora available to search, with a description of each, \
@@ -746,8 +798,12 @@ company, ticker, form, period_end, filed) and length. Nothing is ranked: this \
 answers what the corpus contains -- which companies, filings and periods \
 exist -- which a search cannot, since search only returns its best matches. \
 Use it for questions about a set ("which airlines", "every 10-Q for the June \
-2026 quarter"), and to check that something exists before searching for it. \
-Long listings come in pages: pass the result's `next_offset` as `offset`."""
+2026 quarter"), and to check that something exists before searching for it."""
+
+_LIST_PAGES_NOTE = DescriptionNote(
+    "Long listings come in pages: pass the result's `next_offset` as `offset`.",
+    arguments=("offset",),
+)
 
 _READ_DOCUMENT_DESCRIPTION = """\
 Read a window of one document's text, starting at a character offset. Use it \
@@ -762,8 +818,12 @@ Find every occurrence of an exact phrase -- a name, a figure, a defined term \
 -- in the documents, case-insensitively. Unlike rag_search nothing is ranked, \
 so a match can't be crowded out by passages that merely share words with it; \
 a phrase that appears nowhere returns no matches, which a search can't show. \
-Each match gives its document, offsets (for rag_read_document) and the text \
-around it."""
+Each match gives its document, offsets and the text around it."""
+
+_FIND_READ_NOTE = DescriptionNote(
+    "Pass a match's `start` to rag_read_document to read more around it.",
+    tools=("rag_read_document",),
+)
 
 
 def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
@@ -961,17 +1021,9 @@ def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
         return tools.list_corpora()
 
     return [
-        ToolSpec(name="rag_search", description=_SEARCH_DESCRIPTION, handler=rag_search),
-        ToolSpec(
-            name="rag_list_documents",
-            description=_LIST_DOCUMENTS_DESCRIPTION,
-            handler=rag_list_documents,
-        ),
-        ToolSpec(name="rag_read_document", description=_READ_DOCUMENT_DESCRIPTION, handler=rag_read_document),
-        ToolSpec(name="rag_find", description=_FIND_DESCRIPTION, handler=rag_find),
-        ToolSpec(
-            name="rag_list_corpora",
-            description=_LIST_CORPORA_DESCRIPTION,
-            handler=rag_list_corpora,
-        ),
+        ToolSpec("rag_search", _SEARCH_DESCRIPTION, rag_search, notes=(_SEARCH_READ_NOTE,)),
+        ToolSpec("rag_list_documents", _LIST_DOCUMENTS_DESCRIPTION, rag_list_documents, notes=(_LIST_PAGES_NOTE,)),
+        ToolSpec("rag_read_document", _READ_DOCUMENT_DESCRIPTION, rag_read_document),
+        ToolSpec("rag_find", _FIND_DESCRIPTION, rag_find, notes=(_FIND_READ_NOTE,)),
+        ToolSpec("rag_list_corpora", _LIST_CORPORA_DESCRIPTION, rag_list_corpora),
     ]
