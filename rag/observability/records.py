@@ -17,8 +17,27 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-TurnOutcome = Literal["answered", "blank_query", "empty_index", "below_min_score", "graded_out", "error"]
-"""How a turn ended. Every value but `answered` and `error` means generation was skipped."""
+TurnOutcome = Literal[
+    "answered", "blank_query", "empty_index", "below_min_score", "graded_out", "generation_failed", "error"
+]
+"""How a turn ended. `generation_failed`: generation ran but produced no answer
+(see `GenerationFailure`). `error`: the turn raised. Every other value but
+`answered` means generation was skipped."""
+
+GenerationFailure = Literal["empty_output", "deadline", "context", "token_budget"]
+"""Why a turn that set out to generate an answer has none.
+
+`empty_output`: the model returned no text, after the agent's one recovery
+attempt. `deadline`: the turn deadline left no time to write the answer, or
+ran out while it was being written. `context`: the prompt can't fit the
+model's context window even with nothing more added. `token_budget`:
+`agent.max_turn_tokens` leaves no room for the answering call.
+
+None of these is a refusal. A refusal is the model judging, from the
+evidence, that the corpus can't answer; a generation failure is the system
+not producing an answer at all, and the eval runners score it as a failure
+whatever the sample expects.
+"""
 
 Rating = Literal["up", "down"]
 
@@ -198,7 +217,15 @@ class TurnRecord:
     tool_calls: int = 0
     """Agentic turns: tool calls run (searches and listings). Each search is also an entry in `attempts`."""
     stopped_reason: str | None = None
-    """Agentic turns: `answered`, `cap`, `timeout` or `context`. None for a pipeline turn."""
+    """Agentic turns: what ended the searching (`StoppedReason`). None for a pipeline turn."""
+    generation_failure: GenerationFailure | None = None
+    """Why generation produced no answer, when `outcome` is `generation_failed`."""
+    final_stop_reason: str | None = None
+    """The provider's stop reason on the turn's last model call (`length` at max_tokens), when reported."""
+    invalid_citations: list[int] = field(default_factory=list)
+    """`[n]` markers in the answer that name no passage the model was shown."""
+    estimated_usage_calls: int = 0
+    """Agentic turns: model calls whose tokens the provider didn't report, counted by estimate in the budgets."""
     agent_calls: list[AgentToolCall] = field(default_factory=list)
     """Agentic turns: every search call the model made, in order, refused ones included."""
     llm_exchanges: list[LLMExchange] | None = None

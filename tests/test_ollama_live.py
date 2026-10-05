@@ -89,3 +89,38 @@ def test_prompt_over_num_ctx_raises_instead_of_being_truncated() -> None:
 
     with pytest.raises(ContextOverflowError):
         client.chat([ChatMessage("user", too_long)])
+
+
+def test_a_request_cut_off_by_the_deadline_returns_on_time_and_frees_the_model() -> None:
+    """The cancellation `rag.deadline` advertises for Ollama, against the real daemon.
+
+    Two checks. The caller gets `DeadlineExceeded` close to the deadline, not
+    when the generation would have finished. And a follow-up request is answered
+    promptly: Ollama stops generating when its client disconnects, so the
+    abandoned 2,048-token generation isn't still occupying the model. That
+    second check can't fail falsely, but with parallel request slots
+    (`OLLAMA_NUM_PARALLEL` > 1) it passes even if generation continued, so it
+    is evidence, not proof; the daemon's source is (`mlxrunner/pipeline.go`).
+    """
+
+    import time
+
+    from rag.deadline import DeadlineExceeded, deadline_scope
+
+    config = load_config()
+    if config.llm.provider != "ollama":
+        pytest.skip("llm is not served by Ollama")
+    _require_model(config.llm.base_url, config.llm.model)
+    client = OllamaLLMClient(config.llm.model, config.llm.base_url, max_tokens=2048, timeout=120.0)
+    long_job = [ChatMessage("user", "Count from 1 to 3000, one number per line, with no other text.")]
+    client.chat([ChatMessage("user", "Say ok.")])  # loaded, so the deadline measures generation only
+
+    started = time.monotonic()
+    with deadline_scope(time.monotonic() + 3.0, label="turn"), pytest.raises(DeadlineExceeded):
+        client.chat(long_job)
+    assert time.monotonic() - started < 5.0
+
+    short = OllamaLLMClient(config.llm.model, config.llm.base_url, max_tokens=1, timeout=120.0)
+    started = time.monotonic()
+    short.chat([ChatMessage("user", "Say ok.")])
+    assert time.monotonic() - started < 10.0

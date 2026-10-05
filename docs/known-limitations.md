@@ -40,24 +40,25 @@
   with identical wording can yield a passing answer, and a manual multi-hop
   audit found a false pass on period attribution. Judge calibration and
   evidence-aware scoring remain planned work.
-- **The agent's search budget is not an end-to-end deadline.**
-  `agent.timeout_s` is checked between calls, in-flight work can overrun it,
-  and forced synthesis is another call afterward. Passage character caps and
-  overflow recovery do not enforce an aggregate token budget or reserve output
-  space. Deadline propagation/cancellation, synthesis reserves and token/context
-  budgets are planned in [Milestone 19](milestone-19-plan.md#execution-and-output-contracts).
-- **Forced synthesis can still return empty.** The existing recovery guard
-  retries an empty ordinary response once; an empty forced response ends the
-  turn without a useful answer. Explicit generation-failure reporting across
-  API/UI/CLI and evals is part of the same planned contract. A fallback failure
-  message must not count as a correct corpus refusal.
-- **Citation validity is only partially reported.** `parse_cited_passages`
-  excludes out-of-range numbers from `cited_chunk_ids` but leaves them in the
-  answer text. There is no explicit invalid-marker result for consumers. The
-  agent prompt also promises numbering for the "whole conversation", although
-  each turn has a new ledger and history loses old markers. These are planned
-  output-contract fixes; semantic citation support still needs calibrated
-  evidence-aware scoring.
+- **Interactive time and token budgets are unchosen.** The agent's turn
+  deadline (`agent.turn_deadline_s`, 900 s) bounds a stuck turn and cuts off
+  in-flight Ollama calls. It was sized past every measured run, not for
+  interactive use, and `agent.max_turn_tokens` is off. Picking either from
+  the share of winning turns they'd cut off is Milestone 27's research tier.
+  A cut-off Gemini call is assumed to keep running server-side, and the
+  in-process reranker can't be interrupted
+  ([execution contracts](milestone-19-plan.md#execution-and-output-contracts)).
+- **Token preflight is an estimate past the last reported call.** Only the
+  part of a prompt the provider hasn't counted is estimated, and the estimate
+  is set to over-count (2.5 characters per token). A tokenizer much denser
+  than that could still overflow, which the Ollama adapter's 400 handling
+  catches. The Gemini window isn't configured, so Gemini isn't preflighted.
+- **The agent prompt still says passage numbers hold for the "whole
+  conversation".** Each turn has a new ledger, and replayed history loses its
+  markers. Correcting the wording changes the prompt, so it waits for its own
+  paired measurement. Invalid markers are now reported
+  (`ChatAnswer.invalid_citations`), but semantic citation support still needs
+  calibrated, evidence-aware scoring.
 - **Stopping quality is unmeasured.** Duplicate-query and step caps bound the
   loop, but distinct queries may yield no useful new evidence. Final answer
   metrics do not say which search helped or when sufficient evidence arrived.

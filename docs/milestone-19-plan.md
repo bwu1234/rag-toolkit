@@ -847,10 +847,65 @@ conditional, as written above.
 
 #### Execution and output contracts
 
-**Planned additions from the 2026-10-03 review.** These close observable
-runtime gaps without changing the measured baseline in this documentation
-update. Implementations belong in the existing agent, provider and response
-interfaces; retain the package boundaries in ADR 0016.
+**Shipped 2026-10-05, except the prompt's citation-scope wording** (the last
+bullet: a prompt change, which needs its own paired measurement first). The
+defaults change no measured row: the deadline sits past the search budget,
+which still ends first, and the token budget is off. As built:
+
+- *Deadline.* `rag.deadline` holds the turn's deadline in a context
+  variable, the way `rag.observability.usage` holds its meter, so it reaches
+  every network call without a `timeout` argument on `LLMClient`,
+  `EmbeddingModel` and everything between them. The Ollama chat and embedding
+  adapters and the Gemini adapter send the time left as the request timeout,
+  and report a timeout the deadline set as `DeadlineExceeded`, not an
+  upstream failure. Gemini's pacing and retry waits refuse to sleep past it,
+  and a request with no time left is never sent or charged to the daily
+  counter. `agent.turn_deadline_s` (900) and `agent.synthesis_reserve_s`
+  (120) are new; `agent.timeout_s` keeps its meaning. A step or search still
+  running at the reserve is cut off (stop reason `deadline`), and the answer
+  call gets the reserve, cut off at the deadline.
+- *Cancellation, per backend.* Ollama stops generating when its client
+  disconnects: both runners check the request context at every token
+  (`mlxrunner/pipeline.go`, `llm/llama_server.go`, read on main against the
+  installed 0.35.1). `tests/test_ollama_live.py` checks the caller side, and
+  that the model is free again right afterwards. Whether Google stops a
+  `generateContent` call whose connection closed isn't documented, so a
+  cut-off Gemini call is assumed to run on and count against quota. The
+  in-process reranker, Chroma and the sparse index can't be interrupted. For
+  them, a search starts only if the longest one so far would end before the
+  reserve.
+- *Token and context budgets.* `ToolCallingLLM.context_limits()` reports
+  the window (Ollama's `num_ctx`; unknown for Gemini) and the output cap.
+  Every call is preflighted. The prefix the latest call's usage covered is
+  exact, and what was appended since is estimated at 2.5 characters per
+  token, chosen to over-count EDGAR's digit-heavy text. A step that won't fit
+  is rolled back before it's sent, and the oldest history is dropped
+  (reported as an event) so the first prompt fits. Gemini's `countTokens` is
+  not called: it would add a request per step for a window that isn't
+  configured. `agent.max_turn_tokens` (off) counts every call, including
+  utility calls metered during searches and the check. Searching stops
+  while the answer still fits, and the groundedness check is skipped when
+  its estimate won't fit. Calls with unreported usage are counted by
+  estimate (`TurnRecord.estimated_usage_calls`), while the reported token
+  totals stay unknown rather than mixing estimates in.
+- *Generation failure.* `ChatAnswer.generation_failure` (`empty_output`,
+  `deadline`, `context`, `token_budget`), turn outcome `generation_failed`,
+  and a message saying it isn't a finding about the documents, in both modes.
+  The stop reason keeps the trigger, and `TurnRecord.final_stop_reason` keeps
+  the provider's. The API, CLI and UI show it. `answer_eval`,
+  `multihop_eval` and MuSiQue score it as a failure without calling the
+  judge or extractor, so the message can never earn refusal credit. A
+  context overflow with nothing to roll back is now this failure, where it
+  used to raise.
+- *Citation validation.* `ChatAnswer.invalid_citations` lists out-of-range
+  markers, which stay in the text, in both modes. That is deterministic and
+  only about markers; whether a cited passage supports its claim is
+  Phase 4a's.
+
+What remains: the prompt wording below, and choosing interactive budgets on
+Milestone 27's workload (the acceptance paragraph's last sentences).
+
+**Planned additions from the 2026-10-03 review** (the specification the above implements):
 
 - **End-to-end deadline.** Keep the meaning of `agent.timeout_s` as the
   existing search budget; introduce a separately named, config-validated turn

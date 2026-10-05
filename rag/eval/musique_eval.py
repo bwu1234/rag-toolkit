@@ -135,6 +135,9 @@ class MusiqueSampleResult:
     grounded: bool | None = None
     #: Agentic turns: every search call the model made, in order. Empty for a pipeline turn.
     agent_calls: list[AgentToolCall] = field(default_factory=list)
+    #: Set when the turn produced no answer (`ChatAnswer.generation_failure`):
+    #: nothing is extracted from its message, so it scores zero.
+    generation_failure: str | None = None
 
     @property
     def evidence_recall(self) -> float:
@@ -209,7 +212,9 @@ def score_sample(
     sample: EvalSample, answer: ChatAnswer, extractor: LLMClient, latency_s: float
 ) -> MusiqueSampleResult:
     golds = golds_of(sample)
-    extracted = extract_answer(extractor, sample.query, answer.answer)
+    failed = answer.generation_failure is not None
+    # A failure's explanatory message is not an answer to extract from.
+    extracted = "" if failed else extract_answer(extractor, sample.query, answer.answer)
     retrieved = [c.text for c in answer.citations]
     steps = sample.extra.get("parts") or []
     hop_found = [
@@ -223,7 +228,7 @@ def score_sample(
         extracted=extracted,
         em=best_exact_match(extracted, golds),
         f1=best_f1(extracted, golds),
-        contains=contains_answer(answer.answer, golds),
+        contains=False if failed else contains_answer(answer.answer, golds),
         evidence_total=len(sample.expected_spans),
         missing_spans=unmatched_spans(list(sample.expected_spans), retrieved),
         hop_found=hop_found,
@@ -235,6 +240,7 @@ def score_sample(
         completion_tokens=answer.completion_tokens,
         grounded=answer.grounded,
         agent_calls=answer.agent_calls,
+        generation_failure=answer.generation_failure,
     )
 
 

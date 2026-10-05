@@ -38,6 +38,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from rag.deadline import DeadlineExceeded
 from rag.llm.base import LLMClient
 from rag.vectorstore.base import ScoredChunk
 
@@ -237,6 +238,11 @@ class GroundednessChecker:
         )
         try:
             reply = self._llm_client.generate(prompt, system=GROUNDEDNESS_SYSTEM_PROMPT)
+        except DeadlineExceeded as exc:
+            # The agent's turn deadline cut the check off: inconclusive, like
+            # any failed check, but expected -- no traceback.
+            logger.warning("Groundedness check for %r cut off: %s", query, exc)
+            return None
         except Exception:  # noqa: BLE001 -- fail open; see module docstring
             logger.exception("Groundedness check failed for query %r", query)
             return None

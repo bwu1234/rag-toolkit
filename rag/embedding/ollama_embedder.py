@@ -11,6 +11,8 @@ import logging
 
 import httpx
 
+from rag import deadline
+
 from rag.embedding.base import EmbeddingModel
 
 logger = logging.getLogger(__name__)
@@ -49,6 +51,7 @@ class OllamaEmbedder(EmbeddingModel):
         # would be both pointless and (in proxied environments) a source of
         # spurious connection failures or missing-dependency errors.
         self._client = httpx.Client(base_url=self.base_url, timeout=timeout, trust_env=False)
+        self._timeout = timeout
         self._dimensions = dimensions
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -79,10 +82,15 @@ class OllamaEmbedder(EmbeddingModel):
         return self._dimensions
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
+        # Inside an agent turn, the request gets only the time the turn has
+        # left (`rag.deadline`); everywhere else, the configured timeout.
+        timeout = deadline.request_timeout(self._timeout, "an embedding request")
         try:
-            response = self._client.post("/api/embed", json={"model": self.model, "input": texts})
+            response = self._client.post("/api/embed", json={"model": self.model, "input": texts}, timeout=timeout)
             response.raise_for_status()
         except httpx.HTTPError as exc:
+            if isinstance(exc, httpx.TimeoutException):
+                deadline.raise_if_cut_short("an embedding request", timeout, self._timeout, exc)
             raise RuntimeError(
                 f"Failed to get embeddings from Ollama at {self.base_url} "
                 f"(model={self.model!r}): {exc}"

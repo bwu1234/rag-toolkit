@@ -330,14 +330,15 @@ but not yet offered to our agent: that needs ledger citations and a read
 budget. Measure each addition with its evidence/token budget and
 the injection tier before adoption.
 
-**Execution and output contracts (planned, 2026-10-03).** The
-[Milestone 19 contract](milestone-19-plan.md#execution-and-output-contracts)
-owns end-to-end deadlines with cancellation and reserved synthesis time,
-per-call/turn token budgets, context preflight, explicit empty-generation
-failure, invalid-citation reporting and the prompt's per-turn citation scope.
-It specifies adapter, guard and API/UI/CLI acceptance checks. These can
-proceed alongside navigation; current `timeout_s` is only a search budget,
-and a forced synthesis can still return empty.
+**Execution and output contracts (shipped 2026-10-05).** The
+[Milestone 19 contract](milestone-19-plan.md#execution-and-output-contracts):
+a turn deadline (`agent.turn_deadline_s`) that cuts off in-flight calls and
+reserves time for the answer, context preflight, an optional turn token
+budget, an explicit generation failure in place of an empty answer
+(scored as a failure by every eval), and invalid-citation reporting. Still
+open: the prompt's per-turn citation-scope wording, which waits for a paired
+measurement, and interactive budget values, which Milestone 27's research
+tier chooses.
 
 **Per-step retrieval utility (planned).** The
 [offline experiment](milestone-19-plan.md#per-step-retrieval-utility-and-stopping)

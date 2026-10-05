@@ -703,8 +703,32 @@ class AgentConfig(BaseModel):
     # Checked before every model call and search, so it stops the searching;
     # an in-flight call isn't interrupted, and the forced-synthesis turn that
     # follows is one more call. It bounds when the agent stops looking, not
-    # the turn's exact length.
+    # the turn's exact length; `turn_deadline_s` bounds that.
     timeout_s: float = Field(default=600.0, gt=0, description="Wall-clock budget for one agent turn's searching")
+    # The hard end of a turn, unlike `timeout_s`: a model step or search still
+    # running at `turn_deadline_s - synthesis_reserve_s` is cut off (Ollama
+    # stops generating when its client disconnects), and the answering call
+    # gets the reserve, cut off at the deadline itself. A turn with no time
+    # left to answer is a generation failure, reported as one. Sized so no
+    # measured run reaches it (phase 4's hard questions took 1-2 minutes; the
+    # search budget above ends first at 600 s): a bound on a stuck turn, not
+    # an interactive budget. Milestone 27's research tier picks that from the
+    # share of winning turns a cap would cut off. None: no deadline.
+    turn_deadline_s: float | None = Field(
+        default=900.0, gt=0, description="Hard wall-clock limit on one agent turn, answer included"
+    )
+    synthesis_reserve_s: float = Field(
+        default=120.0, ge=0, description="Seconds at the end of turn_deadline_s kept for writing the answer"
+    )
+    # Every token the turn's calls cost -- prompts re-sent at each step,
+    # replies, and the utility calls (query expansion, the groundedness
+    # check) -- counted from provider usage, estimated where it isn't
+    # reported. Searching stops while the answer still fits. Off by default:
+    # local tokens cost nothing, and no budget has been measured; it exists
+    # for hosted models, where they cost quota.
+    max_turn_tokens: int | None = Field(
+        default=None, ge=1, description="Token budget for one agent turn, utility calls included"
+    )
     # Matches the MCP server's `DEFAULT_MAX_CHARS` (a test holds them equal):
     # agent prompts grew ~6x over the pipeline's in the prototype.
     max_passage_chars: int = Field(default=1200, ge=1, description="Per-passage character cap in search results")
@@ -727,6 +751,15 @@ class AgentConfig(BaseModel):
     tools: list[AgentTool] = Field(
         default_factory=lambda: list(_DEFAULT_AGENT_TOOLS), description="Tools offered to the agent's model"
     )
+
+    @model_validator(mode="after")
+    def _reserve_fits_the_deadline(self) -> "AgentConfig":
+        if self.turn_deadline_s is not None and self.synthesis_reserve_s >= self.turn_deadline_s:
+            raise ValueError(
+                f"agent.synthesis_reserve_s ({self.synthesis_reserve_s}) must be less than "
+                f"agent.turn_deadline_s ({self.turn_deadline_s})"
+            )
+        return self
 
     @field_validator("tools")
     @classmethod

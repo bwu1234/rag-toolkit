@@ -172,6 +172,21 @@ class ContextOverflowError(RuntimeError):
     """
 
 
+@dataclass(frozen=True)
+class ContextLimits:
+    """How many tokens one request may hold: the whole window, and the share output may take.
+
+    What the agent preflights each call against: a prompt plus `max_output`
+    must fit in `window`, or the call would overflow (Ollama's llama.cpp
+    engine: a 400) or have no room left to answer. `window` is None when the
+    client doesn't know it (a hosted model's, unless configured); `max_output`
+    still sizes the room the agent's token budget keeps for each reply.
+    """
+
+    window: int | None
+    max_output: int
+
+
 class ToolCallingLLM(LLMClient):
     """An `LLMClient` that can also hold a multi-turn conversation with tools.
 
@@ -194,3 +209,13 @@ class ToolCallingLLM(LLMClient):
         """
 
         raise NotImplementedError
+
+    def context_limits(self) -> ContextLimits | None:
+        """The request's token limits, or None when this client doesn't know them.
+
+        A concrete default so a test fake or a provider with no declared window
+        needs no code; the agent then skips its preflight and relies on the
+        provider's own overflow error.
+        """
+
+        return None

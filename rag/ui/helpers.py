@@ -78,6 +78,13 @@ def format_answer_notices(answer: ChatAnswer) -> list[str]:
     # that actually needs their attention.
     if answer.grounded is False:
         notices.append("⚠️ This answer failed its groundedness check — treat it as unverified")
+    if answer.generation_failure is not None:
+        notices.append(
+            f"⛔ No answer was generated ({answer.generation_failure}) — this is not a finding about the documents"
+        )
+    if answer.invalid_citations:
+        markers = ", ".join(f"[{n}]" for n in answer.invalid_citations)
+        notices.append(f"⚠️ Cites {markers}, which name no passage the model was shown")
     return notices
 
 

@@ -153,6 +153,9 @@ class MultihopSampleResult:
     grounded: bool | None = None
     #: Agentic turns: every search call the model made, in order. Empty for a pipeline turn.
     agent_calls: list[AgentToolCall] = field(default_factory=list)
+    #: Set when the turn produced no answer (`ChatAnswer.generation_failure`):
+    #: scored as a failure without a judge call, never as a refusal.
+    generation_failure: str | None = None
 
     @property
     def completeness(self) -> float:
@@ -231,6 +234,10 @@ def run_multihop_eval(
 
         part_results = []
         for part in parts:
+            if answer.generation_failure is not None:
+                note = f"[not judged: generation failed ({answer.generation_failure})]"
+                part_results.append(PartResult(label=part.label, passed=False, judge_output=note))
+                continue
             out = judge.generate(
                 _part_judge_prompt(sample.query, part.label, part.answer, answer.answer),
                 system=_PART_JUDGE_SYSTEM_PROMPT,
@@ -257,6 +264,7 @@ def run_multihop_eval(
                 completion_tokens=answer.completion_tokens,
                 grounded=answer.grounded,
                 agent_calls=answer.agent_calls,
+                generation_failure=answer.generation_failure,
             )
         )
         if on_result is not None:
@@ -284,7 +292,7 @@ def summarize(results: list[MultihopSampleResult]) -> MultihopReport:
         complete_rate=avg([float(r.complete) for r in results]),
         mean_completeness=avg([r.completeness for r in results]),
         evidence_recall=avg([r.evidence_recall for r in results]),
-        num_empty=sum(1 for r in results if not r.actual_answer.strip()),
+        num_empty=sum(1 for r in results if r.generation_failure or not r.actual_answer.strip()),
         num_unparseable=sum(1 for r in results for p in r.part_results if p.passed is None),
         mean_latency_s=avg([r.latency_s for r in results]),
         mean_retrieval_rounds=avg([float(r.retrieval_rounds) for r in results]),
@@ -312,7 +320,7 @@ def print_report(report: MultihopReport, *, verbose: bool = False) -> None:
     for kind, rate in report.complete_rate_by_kind.items():
         print(f"    complete, {kind:<16} {rate:.3f}")
     if report.num_empty:
-        print(f"  Empty answers: {report.num_empty}")
+        print(f"  No answer (empty or generation failed): {report.num_empty}")
     if report.num_unparseable:
         print(f"  Unparseable part verdicts: {report.num_unparseable}")
     print(f"  Mean latency  {report.mean_latency_s:.1f}s per turn, "

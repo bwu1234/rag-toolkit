@@ -25,10 +25,12 @@ from typing import Any
 
 import httpx
 
+from rag import deadline
 from rag.llm import ollama_raw
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
+    ContextLimits,
     ContextOverflowError,
     LLMUsage,
     Message,
@@ -107,6 +109,7 @@ class OllamaLLMClient(ToolCallingLLM):
         # `trust_env=False`: see `OllamaEmbedder` -- a loopback connection to
         # Ollama should never go through the system proxy.
         self._client = httpx.Client(base_url=self.base_url, timeout=timeout, trust_env=False)
+        self._timeout = timeout
 
     def generate(self, prompt: str, *, system: str | None = None) -> str:
         return self.generate_with_usage(prompt, system=system)[0]
@@ -135,6 +138,12 @@ class OllamaLLMClient(ToolCallingLLM):
             usage=self._usage(payload),
             stop_reason=done_reason if isinstance(done_reason, str) else None,
         )
+
+    def context_limits(self) -> ContextLimits | None:
+        # No window without `num_ctx`: it's then the daemon's default, which
+        # this client doesn't know. The MLX engine ignores `num_ctx`, so there
+        # this is the window the agent *declares*, not a hard limit.
+        return ContextLimits(window=self.num_ctx, max_output=self.max_tokens)
 
     def _chat_raw(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> AssistantTurn:
         """`chat()` with the prompt rendered here and sent to `/api/generate` verbatim."""
@@ -247,8 +256,13 @@ class OllamaLLMClient(ToolCallingLLM):
         return payload
 
     def _post(self, path: str, body: dict[str, Any], field: str) -> dict[str, Any]:
+        # Inside an agent turn the request gets only the time the turn has left
+        # (`rag.deadline`). When that runs out httpx closes the connection, and
+        # Ollama stops generating at the next token once its client is gone.
+        what = f"a {self.model} call"
+        timeout = deadline.request_timeout(self._timeout, what)
         try:
-            response = self._client.post(path, json=body)
+            response = self._client.post(path, json=body, timeout=timeout)
             if response.status_code == 400 and "exceed" in response.text and "context" in response.text:
                 raise ContextOverflowError(
                     f"Prompt exceeds the {self.num_ctx}-token context window requested for "
@@ -256,6 +270,8 @@ class OllamaLLMClient(ToolCallingLLM):
                 )
             response.raise_for_status()
         except httpx.HTTPError as exc:
+            if isinstance(exc, httpx.TimeoutException):
+                deadline.raise_if_cut_short(what, timeout, self._timeout, exc)
             raise RuntimeError(
                 f"Failed to get a chat completion from Ollama at {self.base_url} "
                 f"(model={self.model!r}): {exc}"
