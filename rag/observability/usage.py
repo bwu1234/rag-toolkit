@@ -34,6 +34,7 @@ from typing import Any, overload
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
+    ContextLimits,
     LLMClient,
     LLMUsage,
     Message,
@@ -93,6 +94,16 @@ def metered(*, capture: bool = False) -> Iterator[UsageMeter]:
         _ACTIVE_METER.reset(token)
 
 
+def active_meter() -> UsageMeter | None:
+    """The meter of the turn running in this context, or None outside `metered()`.
+
+    Read by the agent to hold a turn to `agent.max_turn_tokens`: the meter is
+    the one place that sees every call the turn makes, utility calls included.
+    """
+
+    return _ACTIVE_METER.get()
+
+
 class MeteredLLMClient(LLMClient):
     """Delegates to another `LLMClient`, recording each call into the active `UsageMeter`.
 
@@ -146,6 +157,9 @@ class MeteredToolCallingLLM(MeteredLLMClient, ToolCallingLLM):
 
     def __init__(self, inner: ToolCallingLLM) -> None:
         super().__init__(inner)
+
+    def context_limits(self) -> ContextLimits | None:
+        return self.inner.context_limits()
 
     def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:
         start = time.monotonic()

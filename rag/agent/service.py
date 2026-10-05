@@ -18,6 +18,12 @@ Three pieces carry the design (`docs/milestone-19-plan.md`, decisions 5, 6, 9):
   spending a search, a wall-clock budget, a per-passage character cap, and
   answering from what's already shown when the prompt outgrows the context
   window.
+- **Execution contracts** (`docs/milestone-19-plan.md`, "Execution and output
+  contracts"): a turn deadline that bounds calls in flight, with time
+  reserved for the answer; a preflight of every prompt against the model's
+  context window, with room left for its output; an optional token budget for
+  the whole turn; and a turn that produces no answer reported as a
+  generation failure, never as an empty answer or a refusal.
 - **Two strategies over the same ledger and guards.** `react` lets the model
   decide after every result; `planned` takes one round of searches from a
   single planning call, then forces the answer -- exactly two model calls.
@@ -32,6 +38,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
+import math
 import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -40,10 +47,12 @@ from typing import Any
 from pydantic import ValidationError
 
 from rag.config.settings import AgentStrategy
+from rag.deadline import DeadlineExceeded, deadline_scope
 from rag.events import EventSink, emit
 from rag.query_filter import QueryFilter
 from rag.generation.chat_service import (
     BLANK_QUERY_ANSWER,
+    GENERATION_FAILURE_ANSWERS,
     ChatAnswer,
     ChatResponder,
     StoppedReason,
@@ -61,6 +70,7 @@ from rag.generation.crag import GroundednessChecker
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
+    ContextLimits,
     ContextOverflowError,
     Message,
     ToolCall,
@@ -71,12 +81,14 @@ from rag.llm.base import (
 from rag.agent.prompts import AGENT_SYNTHESIS_INSTRUCTION
 from rag.generation.prompts import (
     format_passage,
+    invalid_citations,
     parse_cited_passages,
     strip_citation_markers,
 )
 from rag.generation.query_rewriter import ChatTurn
-from rag.observability.records import AgentToolCall, RetrievalAttempt, RetrievedPassage
+from rag.observability.records import AgentToolCall, GenerationFailure, RetrievalAttempt, RetrievedPassage
 from rag.observability.sink import TurnSink
+from rag.observability.usage import active_meter
 from rag.tools import RagTools, build_tool_specs
 from rag.vectorstore.base import ScoredChunk
 
@@ -101,6 +113,15 @@ FILTERS_ARGUMENT = "filters"
 #: Its `filters` is always the model's -- narrowing a listing is what the tool
 #: is for, and it changes no search results.
 LIST_PINNED_ARGUMENTS = ("corpus", "limit", "offset")
+
+#: Characters per token assumed wherever the provider hasn't counted. Low on
+#: purpose: English prose runs about 4, but the Qwen tokenizers split numbers
+#: into single digits, and EDGAR passages are dense with figures, so 2.5
+#: over-counts rather than under. Only the part of a prompt the provider
+#: hasn't already counted is estimated (see `_Run.prompt_prefix`).
+ESTIMATE_CHARS_PER_TOKEN = 2.5
+#: Tokens a chat template adds around each message (role markers, separators).
+MESSAGE_OVERHEAD_TOKENS = 8
 
 
 class PassageLedger:
@@ -160,9 +181,16 @@ class _Run:
 
     messages: list[Message]
     ledger: PassageLedger
-    deadline: float
+    #: `agent.timeout_s` from the start: no model step or search starts after it.
+    search_until: float
     on_event: EventSink
     trace: TurnTrace
+    #: The turn deadline less the synthesis reserve: no step or search starts
+    #: after it, and one still running is cut off at it. None without a deadline.
+    reserve_at: float | None = None
+    #: The turn deadline: no model call starts after it, and the answering
+    #: call is cut off at it. None without a deadline.
+    hard_deadline: float | None = None
     #: The turn's metadata filter, applied to every search.
     query_filter: QueryFilter | None = None
     queries: list[str] = field(default_factory=list)
@@ -180,6 +208,25 @@ class _Run:
     #: A search was refused for budget or time -- the guard cut something off.
     hit_cap: bool = False
     hit_timeout: bool = False
+    #: A search was refused or cut off at the synthesis reserve.
+    hit_deadline: bool = False
+    #: The longest search so far: one isn't started unless this much time is
+    #: left before the reserve, since in-process reranking can't be interrupted.
+    longest_search_s: float = 0.0
+    #: (messages sent, prompt tokens the provider counted for them, tools
+    #: offered) on the latest call that reported usage: the exact part of the
+    #: next prompt, so only what was appended since is estimated.
+    prompt_prefix: tuple[int, int, bool] | None = None
+    #: Tokens this turn's agent calls cost, as reported (or estimated where not).
+    agent_tokens: int = 0
+    #: Tokens the utility calls inside searches and the groundedness check cost.
+    utility_tokens: int = 0
+    #: Agent calls whose usage the provider didn't report, so were estimated.
+    estimated_usage_calls: int = 0
+    #: Oldest history messages dropped so the first prompt fits the window.
+    history_dropped: int = 0
+    final_stop_reason: str | None = None
+    failure: GenerationFailure | None = None
     #: Where the latest step's tool results start in `messages`, and the ledger
     #: size before it -- what a context overflow rolls back.
     step_message_mark: int | None = None
@@ -247,6 +294,35 @@ def _render_listing(payload: Mapping[str, Any], model_filter: QueryFilter | None
     return head + ":\n" + "\n".join(lines)
 
 
+def _call_chars(call: ToolCall) -> int:
+    return len(call.name) + len(json.dumps(call.arguments))
+
+
+def _message_chars(message: Message) -> int:
+    """The characters of one message a prompt carries, for estimating its tokens."""
+
+    if isinstance(message, ChatMessage):
+        return len(message.content)
+    if isinstance(message, ToolResult):
+        return len(message.content) + _call_chars(message.call)
+    return len(message.content) + len(message.thinking or "") + sum(_call_chars(c) for c in message.tool_calls)
+
+
+def _tool_chars(tools: Sequence[ToolDefinition]) -> int:
+    return sum(len(tool.name) + len(tool.description) + len(json.dumps(tool.parameters)) for tool in tools)
+
+
+def _estimate_tokens(chars: int, messages: int = 0) -> int:
+    return math.ceil(chars / ESTIMATE_CHARS_PER_TOKEN) + messages * MESSAGE_OVERHEAD_TOKENS
+
+
+def _meter_tokens() -> int:
+    meter = active_meter()
+    if meter is None:
+        return 0
+    return (meter.prompt_tokens or 0) + (meter.completion_tokens or 0)
+
+
 def _log_empty(turn: AssistantTurn, where: str) -> None:
     """Say why a model call came back with nothing, as far as the provider reports it."""
 
@@ -273,7 +349,16 @@ class AgentService(ChatResponder):
     verdict on `ChatAnswer.grounded` -- check only, no regeneration, so its
     effect can be measured on its own (plan decision 7).
 
-    `clock` exists for tests: the timeout guard reads it, not `time` directly.
+    Time is bounded three ways. `timeout_s` is the search budget: checked
+    before each model step and search, as it always was. `turn_deadline_s`,
+    when set, is the hard end of the turn, of which the last
+    `synthesis_reserve_s` belong to the answer: a step or search still running
+    at the reserve is cut off (`rag.deadline`), and the answering call is cut
+    off at the deadline itself. `max_turn_tokens`, when set, bounds every
+    token the turn's calls cost, utility calls included, and stops the
+    searching while there's still room for the answer.
+
+    `clock` exists for tests: the guards read it, not `time` directly.
     """
 
     def __init__(
@@ -286,6 +371,9 @@ class AgentService(ChatResponder):
         strategy: AgentStrategy = "react",
         max_tool_calls: int = 8,
         timeout_s: float = 600.0,
+        turn_deadline_s: float | None = None,
+        synthesis_reserve_s: float = 0.0,
+        max_turn_tokens: int | None = None,
         max_passage_chars: int = 1200,
         max_history_turns: int = 6,
         model_filters: bool = False,
@@ -296,6 +384,10 @@ class AgentService(ChatResponder):
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         super().__init__(turn_sink=turn_sink, turn_metadata=turn_metadata)
+        if turn_deadline_s is not None and synthesis_reserve_s >= turn_deadline_s:
+            raise ValueError(
+                f"synthesis_reserve_s ({synthesis_reserve_s}) must be less than turn_deadline_s ({turn_deadline_s})"
+            )
         self._llm = llm
         self._tools = tools
         self._system_prompt = system_prompt
@@ -303,6 +395,10 @@ class AgentService(ChatResponder):
         self.strategy: AgentStrategy = strategy
         self.max_tool_calls = max_tool_calls
         self.timeout_s = timeout_s
+        self.turn_deadline_s = turn_deadline_s
+        self.synthesis_reserve_s = synthesis_reserve_s
+        self.max_turn_tokens = max_turn_tokens
+        self._limits: ContextLimits | None = llm.context_limits()
         self.max_passage_chars = max_passage_chars
         self.max_history_turns = max_history_turns
         self.model_filters = model_filters
@@ -352,34 +448,43 @@ class AgentService(ChatResponder):
             trace.outcome = "blank_query"
             return ChatAnswer(answer=BLANK_QUERY_ANSWER, citations=[], retrieval_attempts=0)
 
+        started = self._clock()
+        hard = started + self.turn_deadline_s if self.turn_deadline_s is not None else None
         run = _Run(
             messages=[ChatMessage("system", self._system_prompt), *self._history(history), ChatMessage("user", query)],
             ledger=PassageLedger(self.max_passage_chars),
-            deadline=self._clock() + self.timeout_s,
+            search_until=started + self.timeout_s,
             on_event=on_event,
             trace=trace,
             query_filter=query_filter,
+            reserve_at=hard - self.synthesis_reserve_s if hard is not None else None,
+            hard_deadline=hard,
         )
-        stopped = self._react(run) if self.strategy == "react" else self._planned(run)
+        if self._fit_history(run):
+            stopped = self._react(run) if self.strategy == "react" else self._planned(run)
+        else:
+            stopped = self._fail(run, "context", "context")
 
         chunks = run.ledger.chunks
         trace.shown_chunk_ids = [chunk.chunk_id for chunk in chunks]
-        grounded: bool | None = None
-        if self._groundedness_checker is not None and chunks and run.answer.strip():
-            start = time.monotonic()
-            grounded = self._groundedness_checker.check(query, chunks, run.answer)
-            trace.groundedness_checks.append(grounded)
-            label = "inconclusive" if grounded is None else ("grounded" if grounded else "UNGROUNDED")
-            emit(on_event, start, "crag_groundedness", f"Groundedness check: {label}")
+        trace.final_stop_reason = run.final_stop_reason
+        trace.estimated_usage_calls = run.estimated_usage_calls
+        grounded = self._check_groundedness(run, query, chunks) if run.failure is None else None
 
-        if not run.answer.strip():
-            logger.warning("Agent returned an empty answer for %r (stopped: %s)", query, stopped)
+        answer = run.answer
+        if run.failure is not None:
+            trace.outcome = "generation_failed"
+            answer = GENERATION_FAILURE_ANSWERS[run.failure]
+            logger.warning(
+                "Agent produced no answer for %r: generation failed (%s) after stopping on %s",
+                query, run.failure, stopped,
+            )
         logger.info(
             "Agent answered %r: %d tool call(s), %d search round(s), %d passage(s) shown, stopped=%s",
             query, run.calls_run, run.rounds, len(chunks), stopped,
         )
         return ChatAnswer(
-            answer=run.answer,
+            answer=answer,
             citations=[to_citation(chunk) for chunk in chunks],
             dropped_below_min_score=run.dropped_below_min_score,
             search_queries=list(run.queries),
@@ -389,7 +494,64 @@ class AgentService(ChatResponder):
             tool_calls=run.calls_run,
             stopped_reason=stopped,
             agent_calls=list(run.calls),
+            generation_failure=run.failure,
+            invalid_citations=invalid_citations(run.answer, len(chunks)),
         )
+
+    def _check_groundedness(self, run: _Run, query: str, chunks: list[ScoredChunk]) -> bool | None:
+        """The optional check of the answer against the ledger, inside the turn's budgets.
+
+        Skipped, not run late or over budget, when the deadline has passed or
+        its estimated cost (the passages and the answer, plus a one-word reply)
+        won't fit what's left of `max_turn_tokens`: its verdict annotates an
+        answer the caller already has, and isn't worth the overrun. A check cut
+        off at the deadline is inconclusive, as any failed check is.
+        """
+
+        if self._groundedness_checker is None or not chunks or not run.answer.strip():
+            return None
+        start = time.monotonic()
+        if run.hard_deadline is not None and self._clock() >= run.hard_deadline:
+            emit(run.on_event, start, "crag_groundedness", "Groundedness check skipped: out of time")
+            return None
+        if self.max_turn_tokens is not None:
+            cost = _estimate_tokens(sum(len(chunk.text) for chunk in chunks) + len(query) + len(run.answer), 2)
+            if self._tokens_used(run) + cost > self.max_turn_tokens:
+                emit(run.on_event, start, "crag_groundedness", "Groundedness check skipped: over the token budget")
+                return None
+        before = _meter_tokens()
+        with deadline_scope(run.hard_deadline, label="turn", clock=self._clock):
+            grounded = self._groundedness_checker.check(query, chunks, run.answer)
+        run.utility_tokens += _meter_tokens() - before
+        run.trace.groundedness_checks.append(grounded)
+        label = "inconclusive" if grounded is None else ("grounded" if grounded else "UNGROUNDED")
+        emit(run.on_event, start, "crag_groundedness", f"Groundedness check: {label}")
+        return grounded
+
+    def _fit_history(self, run: _Run) -> bool:
+        """Drop the oldest history until the first prompt fits the window; False if it never does.
+
+        Dropped whole exchanges at a time, oldest first, and reported as an
+        event and on the trace: the alternative is a first call the provider
+        rejects, or (on an engine that truncates) one that silently loses the
+        system prompt. The current question is never dropped.
+        """
+
+        while not self._fits_window(self._estimate_prompt(run, self.tool_definitions)):
+            # messages: [system, *history, user]; history starts at index 1.
+            if len(run.messages) <= 2:
+                return False
+            del run.messages[1]
+            run.history_dropped += 1
+            while len(run.messages) > 2 and isinstance(run.messages[1], AssistantTurn):
+                del run.messages[1]
+                run.history_dropped += 1
+        if run.history_dropped:
+            emit(
+                run.on_event, time.monotonic(), "history_trimmed",
+                f"Dropped the oldest {run.history_dropped} history message(s) to fit the context window",
+            )
+        return True
 
     def _history(self, history: list[ChatTurn] | None) -> list[Message]:
         turns = (history or [])[-self.max_history_turns :] if self.max_history_turns else []
@@ -411,14 +573,21 @@ class AgentService(ChatResponder):
         """
 
         while True:
-            if run.hit_timeout or self._clock() >= run.deadline:
-                return self._finish(run, "timeout")
+            stop = self._time_stop(run)
+            if stop is not None:
+                return self._finish(run, stop)
+            estimate = self._estimate_prompt(run, self.tool_definitions)
+            if not self._fits_window(estimate):
+                return self._overflowed(run)
+            if not self._within_token_budget(run, estimate, then_answer=True):
+                return self._finish(run, "tokens")
             try:
-                turn = self._call(run, self.tool_definitions, "agent_step")
+                turn = self._call(run, self.tool_definitions, "agent_step", until=run.reserve_at, label="search")
             except ContextOverflowError:
-                if not self._roll_back_step(run):
-                    raise
-                return self._finish(run, "context")
+                return self._overflowed(run)
+            except DeadlineExceeded:
+                run.hit_deadline = True
+                return self._finish(run, "deadline")
             if not turn.tool_calls:
                 if not turn.content.strip():
                     return self._recover_empty(run, turn)
@@ -433,6 +602,24 @@ class AgentService(ChatResponder):
             if run.calls_run >= self.max_tool_calls or run.steps >= self.max_tool_calls:
                 return self._finish(run, "cap")
 
+    def _time_stop(self, run: _Run) -> StoppedReason | None:
+        """Which time budget, if any, says no further step may start."""
+
+        now = self._clock()
+        if run.hit_deadline or (run.reserve_at is not None and now >= run.reserve_at):
+            run.hit_deadline = True
+            return "deadline"
+        if run.hit_timeout or now >= run.search_until:
+            return "timeout"
+        return None
+
+    def _overflowed(self, run: _Run) -> StoppedReason:
+        """The next step's prompt is too long: answer without its latest results, or fail."""
+
+        if self._roll_back_step(run):
+            return self._finish(run, "context")
+        return self._fail(run, "context", "context")
+
     def _planned(self, run: _Run) -> StoppedReason:
         """One planning call, every planned search back to back, one answering call.
 
@@ -444,7 +631,16 @@ class AgentService(ChatResponder):
         of planning (a greeting) is taken at its word, in one call.
         """
 
-        plan = self._call(run, self.tool_definitions, "agent_plan")
+        estimate = self._estimate_prompt(run, self.tool_definitions)
+        if not self._within_token_budget(run, estimate, then_answer=True):
+            return self._finish(run, "tokens")
+        try:
+            plan = self._call(run, self.tool_definitions, "agent_plan", until=run.reserve_at, label="search")
+        except ContextOverflowError:
+            return self._fail(run, "context", "context")
+        except DeadlineExceeded:
+            run.hit_deadline = True
+            return self._finish(run, "deadline")
         if not plan.tool_calls:
             if not plan.content.strip():
                 return self._recover_empty(run, plan)
@@ -454,15 +650,47 @@ class AgentService(ChatResponder):
 
         run.messages.append(plan)
         self._run_calls(run, plan.tool_calls)
+        if run.hit_deadline:
+            return self._finish(run, "deadline")
         if run.hit_timeout:
             return self._finish(run, "timeout")
         return self._finish(run, "cap" if run.hit_cap else "answered")
 
     # -- one model call, one step's tool calls ------------------------------
 
-    def _call(self, run: _Run, tools: Sequence[ToolDefinition], stage: str) -> AssistantTurn:
+    def _call(
+        self, run: _Run, tools: Sequence[ToolDefinition], stage: str, *, until: float | None, label: str
+    ) -> AssistantTurn:
+        """One model call, cut off at `until` (labelled `label`), its tokens counted against the turn.
+
+        A call the deadline cuts off reports no usage, but its prompt was
+        processed: it's counted by estimate, like any call the provider didn't
+        report.
+        """
+
         start = time.monotonic()
-        turn = self._llm.chat(run.messages, tools)
+        estimate = self._estimate_prompt(run, tools)
+        sent = len(run.messages)
+        try:
+            with deadline_scope(until, label=label, clock=self._clock):
+                turn = self._llm.chat(run.messages, tools)
+        except DeadlineExceeded as exc:
+            run.estimated_usage_calls += 1
+            run.agent_tokens += estimate
+            emit(run.on_event, start, stage, f"Model call cut off: {exc}")
+            raise
+        usage = turn.usage
+        reply = _estimate_tokens(_message_chars(turn))
+        if usage is None or usage.prompt_tokens is None:
+            run.estimated_usage_calls += 1
+            run.agent_tokens += estimate + reply
+        else:
+            run.prompt_prefix = (sent, usage.prompt_tokens, bool(tools))
+            completion = usage.completion_tokens
+            if completion is None:
+                run.estimated_usage_calls += 1
+            run.agent_tokens += usage.prompt_tokens + (reply if completion is None else completion)
+        run.final_stop_reason = turn.stop_reason
         run.steps += 1 if tools else 0
         if turn.tool_calls:
             message = f"Model asked for {len(turn.tool_calls)} tool call(s)"
@@ -574,12 +802,22 @@ class AgentService(ChatResponder):
         return reason
 
     def _budget_refusal(self, run: _Run, what: str) -> str | None:
-        """Why no tool call can run now -- the shared budget or the clock -- or None."""
+        """Why no tool call can run now -- the shared budget or the clock -- or None.
+
+        A search isn't started unless the longest one so far would still end
+        before the synthesis reserve: the embedder can be cut off, but the
+        in-process reranker can't, so a search begun at the edge would eat
+        time that belongs to the answer.
+        """
 
         if run.calls_run >= self.max_tool_calls:
             run.hit_cap = True
             return f"Tool budget for this question is used up; this {what} was not run."
-        if self._clock() >= run.deadline:
+        now = self._clock()
+        if run.reserve_at is not None and now + run.longest_search_s >= run.reserve_at:
+            run.hit_deadline = True
+            return f"Out of time for this question; this {what} was not run."
+        if now >= run.search_until:
             run.hit_timeout = True
             return f"Out of time for this question; this {what} was not run."
         return None
@@ -681,13 +919,31 @@ class AgentService(ChatResponder):
         """
 
         start = time.monotonic()
+        clock_start = self._clock()
+        before = _meter_tokens()
         try:
             query_filter = run.query_filter
             if model_filter is not None:
                 query_filter = model_filter if query_filter is None else query_filter.intersect(model_filter)
-            _, result = self._tools.retrieve(
-                query, self._corpora, query_filter=query_filter, on_event=run.on_event
+            with deadline_scope(run.reserve_at, label="search", clock=self._clock):
+                _, result = self._tools.retrieve(
+                    query, self._corpora, query_filter=query_filter, on_event=run.on_event
+                )
+        except DeadlineExceeded as exc:
+            # It spent the time, so it counts against the budget; it showed
+            # the model nothing, so it adds no passages.
+            run.hit_deadline = True
+            run.calls_run += 1
+            run.utility_tokens += _meter_tokens() - before
+            note = f"Out of time for this question; this search was cut off ({exc})."
+            emit(run.on_event, start, "search_refused", note)
+            run.calls.append(
+                AgentToolCall(
+                    step=run.steps, query=query, status="refused",
+                    filters=_filter_dump(model_filter), filters_raw=raw_filters, note=note,
+                )
             )
+            return note
         except ValueError as exc:
             # An argument the model got wrong: tell it, don't fail the turn.
             note = f"Search error: {exc}"
@@ -700,6 +956,8 @@ class AgentService(ChatResponder):
             )
             return note
 
+        run.longest_search_s = max(run.longest_search_s, self._clock() - clock_start)
+        run.utility_tokens += _meter_tokens() - before
         run.queries.append(query)
         run.calls_run += 1
         run.dropped_below_min_score += result.dropped_below_min_score
@@ -767,18 +1025,85 @@ class AgentService(ChatResponder):
         """
 
         run.messages.append(ChatMessage("user", AGENT_SYNTHESIS_INSTRUCTION))
-        try:
-            turn = self._call(run, [], "agent_answer")
-        except ContextOverflowError:
-            if not self._roll_back_step(run):
-                raise
-            turn = self._call(run, [], "agent_answer")
-            reason = "context"
+        rolled_back = False
+        while True:
+            if run.hard_deadline is not None and self._clock() >= run.hard_deadline:
+                return self._fail(run, reason, "deadline")
+            estimate = self._estimate_prompt(run, ())
+            if not self._fits_window(estimate):
+                if not rolled_back and self._roll_back_step(run):
+                    rolled_back, reason = True, "context"
+                    continue
+                return self._fail(run, reason, "context")
+            if not self._within_token_budget(run, estimate, then_answer=False):
+                return self._fail(run, reason, "token_budget")
+            try:
+                turn = self._call(run, [], "agent_answer", until=run.hard_deadline, label="turn")
+            except ContextOverflowError:
+                if not rolled_back and self._roll_back_step(run):
+                    rolled_back, reason = True, "context"
+                    continue
+                return self._fail(run, reason, "context")
+            except DeadlineExceeded:
+                return self._fail(run, reason, "deadline")
+            break
         run.messages.append(turn)
-        run.answer = turn.content
         if not turn.content.strip():
             _log_empty(turn, "forced answer turn")
+            return self._fail(run, reason, "empty_output")
+        run.answer = turn.content
         return reason
+
+    def _fail(self, run: _Run, reason: StoppedReason, failure: GenerationFailure) -> StoppedReason:
+        """End the turn with no answer: `failure` says why, `reason` stays what stopped the searching."""
+
+        run.failure = failure
+        run.answer = ""
+        emit(run.on_event, time.monotonic(), "generation_failed", f"No answer: generation failed ({failure})")
+        return reason
+
+    # -- budgets ------------------------------------------------------------
+
+    def _estimate_prompt(self, run: _Run, tools: Sequence[ToolDefinition]) -> int:
+        """Tokens the next call's prompt will hold: counted by the provider where it can be.
+
+        The prefix the latest reported call sent is exact; what was appended
+        since (its reply, tool results, the synthesis instruction) is estimated
+        at `ESTIMATE_CHARS_PER_TOKEN`. Before any call reports, the whole
+        prompt is estimated, tool schemas included.
+        """
+
+        count, tokens, had_tools = run.prompt_prefix or (0, 0, False)
+        appended = run.messages[count:]
+        estimate = tokens + _estimate_tokens(sum(_message_chars(m) for m in appended), len(appended))
+        if tools and not had_tools:
+            estimate += _estimate_tokens(_tool_chars(tools))
+        return estimate
+
+    def _fits_window(self, prompt_tokens: int) -> bool:
+        """Whether a prompt leaves room for a full-length reply in the model's context window."""
+
+        limits = self._limits
+        if limits is None or limits.window is None:
+            return True
+        return prompt_tokens + limits.max_output <= limits.window
+
+    def _tokens_used(self, run: _Run) -> int:
+        return run.agent_tokens + run.utility_tokens
+
+    def _within_token_budget(self, run: _Run, prompt_tokens: int, *, then_answer: bool) -> bool:
+        """Whether one more call of `prompt_tokens` fits `max_turn_tokens`.
+
+        With `then_answer`, it must also leave room for the answering call
+        after it, which re-sends at least the same prompt: the searching stops
+        while the answer is still affordable, rather than spending the budget
+        and failing at the end.
+        """
+
+        if self.max_turn_tokens is None:
+            return True
+        call = prompt_tokens + (self._limits.max_output if self._limits is not None else 0)
+        return self._tokens_used(run) + call * (2 if then_answer else 1) <= self.max_turn_tokens
 
     def _recover_empty(self, run: _Run, turn: AssistantTurn) -> StoppedReason:
         """A reply with neither text nor a tool call is not an answer: force one, once.
@@ -789,7 +1114,8 @@ class AgentService(ChatResponder):
         carries nothing the model needs, and resending a reasoning trace that
         filled `max_tokens` would only spend more of the window -- and the
         forced synthesis turn gets one try. If that is empty too, the turn
-        returns empty, logged, rather than retrying without bound.
+        is a generation failure (`empty_output`), logged, rather than retrying
+        without bound.
         """
 
         _log_empty(turn, "agent step")

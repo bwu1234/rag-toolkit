@@ -235,6 +235,9 @@ class AnswerSampleResult:
     completion_tokens: int | None = None
     #: Agentic turns: every agent tool call the model made, in order; search-specific details are present only for rag_search. Empty for a pipeline turn.
     agent_calls: list[AgentToolCall] = field(default_factory=list)
+    #: Set when the turn produced no answer (`ChatAnswer.generation_failure`):
+    #: scored as a failure without a judge call, never as a refusal.
+    generation_failure: str | None = None
 
     @property
     def evidence_retrieved(self) -> bool | None:
@@ -280,7 +283,7 @@ class AnswerEvalReport:
     num_unparseable: int
     pass_rate: float         # num_passed / num_evaluated (0.0 if 0 evaluated)
     sample_results: list[AnswerSampleResult]
-    num_empty: int = 0       # turns that produced no answer text
+    num_empty: int = 0       # turns that produced no answer: empty text, or a generation failure
     mean_latency_s: float = 0.0
     #: Samples whose gold spans were all in the prompt: a FAIL here is generation.
     evidence_retrieved: EvidenceBucket = field(default_factory=EvidenceBucket)
@@ -317,12 +320,20 @@ def run_answer_eval(
         started = time.monotonic()
         chat_answer = chat_service.ask(sample.query)
         latency = time.monotonic() - started
-        judge_system, judge_prompt = judge_for(sample)
-        judge_out = llm_client.generate(
-            judge_prompt(sample.query, sample.expected_answer, chat_answer.answer),
-            system=judge_system,
-        )
-        verdict = _parse_verdict(judge_out)
+        verdict: bool | None
+        if chat_answer.generation_failure is not None:
+            # No answer to judge. Its explanatory message must not reach the
+            # refusal judge, which would rightly see "I couldn't answer" as a
+            # refusal and pass it.
+            judge_out = f"[not judged: generation failed ({chat_answer.generation_failure})]"
+            verdict = False
+        else:
+            judge_system, judge_prompt = judge_for(sample)
+            judge_out = llm_client.generate(
+                judge_prompt(sample.query, sample.expected_answer, chat_answer.answer),
+                system=judge_system,
+            )
+            verdict = _parse_verdict(judge_out)
         passages = [(citation.document_id, citation.text) for citation in chat_answer.citations]
 
         results.append(
@@ -344,6 +355,7 @@ def run_answer_eval(
                 prompt_tokens=chat_answer.prompt_tokens,
                 completion_tokens=chat_answer.completion_tokens,
                 agent_calls=chat_answer.agent_calls,
+                generation_failure=chat_answer.generation_failure,
             )
         )
         if on_result is not None:
@@ -362,7 +374,7 @@ def run_answer_eval(
         num_unparseable=unparseable,
         pass_rate=passed / n if n > 0 else 0.0,
         sample_results=results,
-        num_empty=sum(1 for r in results if not r.actual_answer.strip()),
+        num_empty=sum(1 for r in results if r.generation_failure or not r.actual_answer.strip()),
         mean_latency_s=sum(r.latency_s for r in results) / n if n > 0 else 0.0,
         evidence_retrieved=_bucket([r for r in results if r.evidence_retrieved is True]),
         evidence_missed=_bucket([r for r in results if r.evidence_retrieved is False]),
@@ -385,7 +397,7 @@ def print_report(report: AnswerEvalReport, *, verbose: bool = False) -> None:
     if report.num_unparseable:
         print(f"  Unparseable verdicts: {report.num_unparseable}")
     if report.num_empty:
-        print(f"  Empty answers: {report.num_empty}")
+        print(f"  No answer (empty or generation failed): {report.num_empty}")
     print(f"  Mean latency  {report.mean_latency_s:.1f}s per turn (generation only)")
     found, missed = report.evidence_retrieved, report.evidence_missed
     if found.num_evaluated or missed.num_evaluated:

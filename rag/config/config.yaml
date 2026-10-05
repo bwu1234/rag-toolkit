@@ -362,6 +362,17 @@ agent:
   # agent serves the UI, whether it should get ~60 s instead is still open
   # (and unmeasured -- a lower cap cuts off the searches that win).
   timeout_s: 600
+  # The hard end of a turn: a step or search still running when only
+  # synthesis_reserve_s is left is cut off, and the answer gets that reserve.
+  # A turn with no time left to answer reports a generation failure instead of
+  # an empty answer. Set past every measured run (the search budget above ends
+  # first), so it bounds a stuck turn; an interactive value is Milestone 27's
+  # to choose. null: no deadline.
+  turn_deadline_s: 900
+  synthesis_reserve_s: 120
+  # Token budget for a whole turn, utility calls included; searching stops
+  # while the answer still fits. null: unbounded (local tokens cost nothing).
+  max_turn_tokens: null
   # Per-passage character cap in search results (matches the MCP server).
   max_passage_chars: 1200
   # Context window requested on every agent call. Ollama drops the overflow of

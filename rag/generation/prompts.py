@@ -155,6 +155,25 @@ def parse_cited_passages(answer: str, passage_count: int) -> list[int]:
     return cited
 
 
+def invalid_citations(answer: str, passage_count: int) -> list[int]:
+    """The `[n]` numbers in `answer` outside `1..passage_count`, in first-seen order.
+
+    The other half of `parse_cited_passages`: those it drops, reported rather
+    than discarded, so a consumer can tell an answer that cited nothing real
+    from one that cited nothing at all. Deterministic, and only about the
+    markers: whether a valid `[n]` supports its claim is a separate,
+    judged question (eval harness Phase 4a).
+    """
+
+    invalid: list[int] = []
+    for match in _CITATION_MARKER.finditer(answer):
+        for part in match.group(1).split(","):
+            number = int(part)
+            if not 1 <= number <= passage_count and number not in invalid:
+                invalid.append(number)
+    return invalid
+
+
 def strip_citation_markers(text: str) -> str:
     """Remove `[n]` markers, e.g. from an earlier answer replayed as history.
 

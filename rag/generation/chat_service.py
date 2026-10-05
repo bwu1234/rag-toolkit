@@ -26,12 +26,14 @@ from rag.config.settings import PromptStyle
 from rag.generation.prompts import (
     REGROUND_SYSTEM_PROMPT,
     build_prompt,
+    invalid_citations,
     parse_cited_passages,
     system_prompt_for,
 )
 from rag.generation.query_rewriter import ChatTurn, QueryCondenser
 from rag.observability.records import (
     AgentToolCall,
+    GenerationFailure,
     RetrievalAttempt,
     RetrievedPassage,
     StageEvent,
@@ -102,14 +104,43 @@ class Citation:
     page: int | None = None
 
 
-StoppedReason = Literal["answered", "cap", "timeout", "context", "empty"]
-"""How an agent turn ended: the model chose to answer, or a guard made it.
+StoppedReason = Literal["answered", "cap", "timeout", "deadline", "tokens", "context", "empty"]
+"""What ended an agent turn's searching: the model chose to answer, or a guard made it.
 
-`cap` is `agent.max_tool_calls`, `timeout` is `agent.timeout_s`, `context` is
-a prompt that outgrew the model's context window, and `empty` is a model that
-stopped with neither text nor a tool call. All but `answered` end with the
-forced tool-free turn.
+`cap` is `agent.max_tool_calls`, and `timeout` is `agent.timeout_s`, the
+search budget, reached between calls. `deadline` is the turn deadline less
+its synthesis reserve, which also cuts off a model step or search still in
+flight. `tokens` is `agent.max_turn_tokens` leaving room only for the answer.
+`context` is a prompt that outgrew the model's context window, and `empty` a
+model that stopped with neither text nor a tool call. All but `answered` end
+with the forced tool-free turn.
+
+This is the trigger, kept apart from the result: whether that forced turn
+produced an answer is `ChatAnswer.generation_failure`.
 """
+
+#: What a turn whose generation failed says instead of an answer. Written for
+#: the person asking: what happened and what to do, never a claim about the
+#: corpus -- these are not refusals, and nothing here says the corpus lacks
+#: the answer.
+GENERATION_FAILURE_ANSWERS: dict[GenerationFailure, str] = {
+    "empty_output": (
+        "I couldn't produce an answer: the model returned no text. This is a generation "
+        "failure, not a finding about the documents -- try asking again."
+    ),
+    "deadline": (
+        "I ran out of time before I could write an answer. This is a time limit, not a "
+        "finding about the documents -- try a narrower question, or ask again."
+    ),
+    "context": (
+        "I couldn't produce an answer: the conversation and the passages found no longer fit "
+        "the model's context window. Start a new conversation or ask a narrower question."
+    ),
+    "token_budget": (
+        "I couldn't produce an answer within this question's token budget. This is a cost "
+        "limit, not a finding about the documents -- try a narrower question."
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -165,6 +196,11 @@ class ChatAnswer:
     """Agentic only: why the agent stopped searching. None for a pipeline turn."""
     agent_calls: list[AgentToolCall] = field(default_factory=list)
     """Agentic only: every search call the model made, in order -- its query, filter and what came back."""
+    generation_failure: GenerationFailure | None = None
+    """Set when generation ran and produced no answer; `answer` then explains, and is not a refusal."""
+    invalid_citations: list[int] = field(default_factory=list)
+    """`[n]` markers in `answer` that name no passage the model was shown, in first-seen order.
+    Left in the text as written, so a consumer can see them; never mapped to a citation."""
 
 
 @dataclass
@@ -181,6 +217,10 @@ class TurnTrace:
     shown_chunk_ids: list[str] = field(default_factory=list)
     outcome: TurnOutcome = "answered"
     query_filter: dict[str, Any] | None = None
+    #: The provider's stop reason on the last model call, when it reports one.
+    final_stop_reason: str | None = None
+    #: Agent calls whose usage the provider didn't report, counted by estimate.
+    estimated_usage_calls: int = 0
 
 
 def _stage_totals(events: list[PipelineEvent]) -> dict[str, float]:
@@ -387,6 +427,10 @@ class ChatResponder(ABC):
             tool_calls=answer.tool_calls if answer is not None else 0,
             stopped_reason=answer.stopped_reason if answer is not None else None,
             agent_calls=answer.agent_calls if answer is not None else [],
+            generation_failure=answer.generation_failure if answer is not None else None,
+            final_stop_reason=trace.final_stop_reason,
+            invalid_citations=answer.invalid_citations if answer is not None else [],
+            estimated_usage_calls=trace.estimated_usage_calls,
         )
         if self._turn_sink is not None:
             try:
@@ -517,6 +561,14 @@ class ChatService(ChatResponder):
 
         answer, grounded = self._generate_grounded(search_query, chunks, prompt, on_event, trace)
         citations = [to_citation(chunk) for chunk in chunks]
+        failure: GenerationFailure | None = None
+        if not answer.strip():
+            # Blank is not an answer, and not a refusal: say what happened.
+            logger.warning("Generation returned no text for %r", query)
+            failure = "empty_output"
+            trace.outcome = "generation_failed"
+            answer = GENERATION_FAILURE_ANSWERS[failure]
+            grounded = None
         # `citations` stays every passage shown, in prompt order -- that's the
         # numbering the answer's `[n]` markers refer to. Which of them the model
         # actually relied on is reported separately.
@@ -543,6 +595,8 @@ class ChatService(ChatResponder):
             retrieval_attempts=corrected.attempts,
             grounded=grounded,
             cited_chunk_ids=cited_chunk_ids,
+            generation_failure=failure,
+            invalid_citations=invalid_citations(answer, len(chunks)),
         )
 
     def _retrieve_with_correction(

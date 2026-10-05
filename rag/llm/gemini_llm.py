@@ -50,10 +50,12 @@ from typing import Any
 
 import httpx
 
+from rag import deadline
 from rag.llm.daily_budget import DailyRequestCounter
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
+    ContextLimits,
     LLMUsage,
     Message,
     ToolCall,
@@ -121,6 +123,7 @@ class GeminiLLMClient(ToolCallingLLM):
         self._client = httpx.Client(
             base_url=self.base_url, timeout=timeout, headers={"x-goog-api-key": api_key}
         )
+        self._timeout = timeout
         # (timestamp, tokens) per request sent in the last `_WINDOW_S`.
         self._window: deque[tuple[float, int]] = deque()
         # Injectable so tests can drive the pacing without real waits.
@@ -142,6 +145,12 @@ class GeminiLLMClient(ToolCallingLLM):
         payload, usage = self._generate(contents, system, declarations, estimate)
         text, calls = _response_parts(payload, max_tokens=self.max_tokens)
         return AssistantTurn(content=text, tool_calls=calls, usage=usage)
+
+    def context_limits(self) -> ContextLimits | None:
+        # The window isn't configured for hosted models (Flash-Lite's is about
+        # 1M tokens, far past any agent turn); an overflow would come back as
+        # the API's own 400.
+        return ContextLimits(window=None, max_output=self.max_tokens)
 
     def _generate(
         self,
@@ -191,14 +200,22 @@ class GeminiLLMClient(ToolCallingLLM):
     def _post_with_retries(self, body: dict[str, object], estimate: int) -> dict[str, object]:
         path = f"/v1beta/models/{self.model}:generateContent"
         attempt = 0
+        what = f"a {self.model} call"
         while True:
             self._wait_for_capacity(estimate)
+            # Checked before the daily counter is charged: a request the turn
+            # has no time left for shouldn't spend a day's request.
+            timeout = deadline.request_timeout(self._timeout, what)
             if self.daily_counter is not None:
                 self.daily_counter.take()  # raises DailyRequestBudgetSpent at the limit
             self._window.append((self._clock(), estimate))
             try:
-                response = self._client.post(path, json=body)
+                response = self._client.post(path, json=body, timeout=timeout)
             except httpx.HTTPError as exc:
+                # Closing the connection ends the wait, not necessarily Google's
+                # generation: assume a cut-off call still ran and counted.
+                if isinstance(exc, httpx.TimeoutException):
+                    deadline.raise_if_cut_short(what, timeout, self._timeout, exc)
                 raise RuntimeError(
                     f"Failed to reach the Gemini API at {self.base_url} (model={self.model!r}): {exc}"
                 ) from exc
@@ -220,6 +237,7 @@ class GeminiLLMClient(ToolCallingLLM):
                     f"(model={self.model!r}) after {attempt + 1} attempt(s): {_error_message(response)}"
                 )
             delay = _retry_delay(response) or min(2.0**attempt, 30.0)
+            deadline.check_wait(delay, f"retrying HTTP {response.status_code} for {self.model!r}")
             logger.warning(
                 "Gemini HTTP %d for %s; retrying in %.1fs (attempt %d/%d)",
                 response.status_code, self.model, delay, attempt + 1, self.max_retries,
@@ -249,6 +267,7 @@ class GeminiLLMClient(ToolCallingLLM):
                 return
             # Wait for the oldest entry to age out, then re-check.
             wait = _WINDOW_S - (now - self._window[0][0])
+            deadline.check_wait(wait, f"waiting for {self.model!r}'s per-minute quota")
             logger.debug("Pacing %s under its per-minute quota: waiting %.1fs", self.model, wait)
             self._sleep(max(wait, 0.01))
 

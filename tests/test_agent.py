@@ -17,7 +17,7 @@ from rag.config.settings import AgentConfig, ChatConfig, CorpusSelection, CragCo
 from rag.events import EventSink, PipelineEvent
 from rag.agent.service import AgentService, PassageLedger
 from rag.chat import build_chat_service
-from rag.generation.chat_service import BLANK_QUERY_ANSWER
+from rag.generation.chat_service import BLANK_QUERY_ANSWER, GENERATION_FAILURE_ANSWERS
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
@@ -286,13 +286,15 @@ def test_context_overflow_rolls_back_the_last_step_and_answers_from_earlier_pass
     assert answer.agent_calls[0].chunk_ids == ["c1"]
 
 
-def test_overflow_with_nothing_to_roll_back_raises() -> None:
+def test_overflow_with_nothing_to_roll_back_is_a_context_generation_failure() -> None:
     class _Overflow(ScriptedToolLLM):
         def chat(self, messages, tools=()):  # type: ignore[no-untyped-def]
             raise ContextOverflowError("too long")
 
-    with pytest.raises(ContextOverflowError):
-        _agent(_Overflow([]), _FakeTools()).ask("question")
+    answer = _agent(_Overflow([]), _FakeTools()).ask("question")
+
+    assert (answer.generation_failure, answer.stopped_reason) == ("context", "context")
+    assert answer.answer == GENERATION_FAILURE_ANSWERS["context"]
 
 
 # --------------------------------------------------------------------------
@@ -335,8 +337,11 @@ def test_an_empty_forced_turn_is_not_retried_again(caplog: pytest.LogCaptureFixt
     with caplog.at_level(logging.WARNING, logger="rag.agent.service"):
         answer = _agent(llm, _FakeTools({"q": [_chunk("c")]})).ask("question")
 
-    # One recovery attempt, then the turn ends empty rather than looping.
-    assert (answer.answer, answer.stopped_reason, len(llm.calls)) == ("", "empty", 3)
+    # One recovery attempt, then a generation failure rather than a loop -- or
+    # an empty answer passed off as one.
+    assert (answer.generation_failure, answer.stopped_reason, len(llm.calls)) == ("empty_output", "empty", 3)
+    assert answer.answer == GENERATION_FAILURE_ANSWERS["empty_output"]
+    assert answer.cited_chunk_ids == [] and answer.invalid_citations == []
     # The log says why, as far as the provider reported it.
     assert "stop_reason=length, 900 reasoning chars" in caplog.text
     assert "raise the agent model's max_tokens or set think: low" in caplog.text

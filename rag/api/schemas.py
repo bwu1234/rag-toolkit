@@ -143,6 +143,31 @@ class ChatResponse(BaseModel):
             "this is the subset it relied on."
         ),
     )
+    invalid_citations: list[int] = Field(
+        default_factory=list,
+        description=(
+            "`[n]` markers in the answer that name no passage in `citations`, in first-seen "
+            "order. Left in `answer` as the model wrote them; they cite nothing real."
+        ),
+    )
+    generation_failure: Literal["empty_output", "deadline", "context", "token_budget"] | None = Field(
+        default=None,
+        description=(
+            "Set when the turn produced no answer: the model returned no text (`empty_output`), "
+            "the turn deadline left no time to write one (`deadline`), the prompt can't fit "
+            "the model's context window (`context`), or the turn's token budget was spent "
+            "(`token_budget`). `answer` then explains what happened. It is not a refusal and "
+            "says nothing about whether the documents cover the question."
+        ),
+    )
+    stopped_reason: Literal["answered", "cap", "timeout", "deadline", "tokens", "context", "empty"] | None = Field(
+        default=None,
+        description=(
+            "Agentic mode: what ended the searching -- the model chose to answer, or a guard "
+            "(`cap` searches, `timeout` search budget, `deadline` turn deadline, `tokens` turn "
+            "token budget, `context` window, `empty` reply). Null in pipeline mode."
+        ),
+    )
     turn_id: str | None = Field(
         default=None,
         description="Id of this turn's log record. Pass it to `POST /feedback` to rate the answer.",

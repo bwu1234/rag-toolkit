@@ -514,6 +514,12 @@ def _cmd_chat(args: argparse.Namespace) -> None:
             print(f"  {rank}. {retry_query}")
 
     print(f"\nAnswer:\n{result.answer}")
+    if result.generation_failure is not None:
+        print(f"\n!! No answer was generated ({result.generation_failure}). The message above is "
+              "not a refusal: it says nothing about whether the documents cover the question.")
+    if result.invalid_citations:
+        print(f"\n!! The answer cites {', '.join(f'[{n}]' for n in result.invalid_citations)}, "
+              f"which name no passage it was shown ({len(result.citations)} were).")
     if result.grounded is False:
         print(
             "\n!! This answer FAILED its groundedness check -- the checker judged it "

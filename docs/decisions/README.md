@@ -96,6 +96,7 @@ Smaller decisions, and where each is argued. Links into
 | CRAG owned by `ChatService`, not `Retriever` | [CRAG](../milestone-notes.md#corrective-rag-notes-milestone-10) |
 | Grading uses the user's question, never a retry rewrite | [CRAG](../milestone-notes.md#corrective-rag-notes-milestone-10) |
 | `ToolCallingLLM` subclass, `agent.llm`, shared tool surface, passage ledger, loop guards | [Milestone 19 plan](../milestone-19-plan.md#decisions) |
+| Turn deadline as a context variable the adapters read; synthesis reserve; generation failure is not a refusal | [Execution contracts](../milestone-19-plan.md#execution-and-output-contracts) |
 
 ### Evaluation
 
