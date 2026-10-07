@@ -620,8 +620,20 @@ graph LR
     do not assume either a config-only swap or a new adapter is required.
   - **Compact local embedders next:**
     [`voyageai/voyage-4-nano`](https://huggingface.co/voyageai/voyage-4-nano)
-    and [`google/embeddinggemma-300m`](https://ai.google.dev/gemma/docs/embeddinggemma),
-    against `qwen3-embedding:0.6b`. Verify each model's query/document prompts
+    and EmbeddingGemma 2 (added 2026-10-06, its release date), against
+    `qwen3-embedding:0.6b`. EmbeddingGemma 2 is 740M parameters on Gemma 4,
+    open-weight under Apache 2.0, and embeds text, code, images, audio and
+    video into one 768-d space
+    ([MarkTechPost](https://www.marktechpost.com/2026/10/06/google-deepmind-releases-embeddinggemma-2-a-740m-open-multimodal-embedding-model-built-on-gemma-4/)).
+    Only its text path applies here, and its largest published gain is on
+    code, which none of our corpora contain. It is larger than the shipped
+    0.6b, and the Qwen 4b/8b comparison found size alone bought nothing
+    measurable ([Measured results](measured-results.md), "Embedder size"), so
+    keep [`google/embeddinggemma-300m`](https://ai.google.dev/gemma/docs/embeddinggemma)
+    in the comparison as a smaller control. That separates what the version
+    adds from what the extra size adds. Look up its Hugging Face id, context
+    length and Ollama availability when the work starts rather than recording
+    them now. Verify each model's query/document prompts
     and pooling, rebuild isolated indexes, and hold the downstream retrieval
     configuration fixed. Report indexing cost as well as query quality,
     latency and memory; assess CPU serving alongside local accelerator use.
