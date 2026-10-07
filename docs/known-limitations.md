@@ -40,6 +40,31 @@
   with identical wording can yield a passing answer, and a manual multi-hop
   audit found a false pass on period attribution. Judge calibration and
   evidence-aware scoring remain planned work.
+- **The internal agent still explores through ranked search by default.**
+  Listing, calculator and model-set filters are built but off and unmeasured.
+  Read/find are shared tools served over MCP, not yet offered to the agent.
+  Rewording searches does not establish exhaustive entity, table or period
+  coverage. Navigation with ledger, scope and read budgets is the next
+  [capability experiment](milestone-19-plan.md#tool-surface-navigation-not-only-search).
+- **Search and navigation do not share a pinned source version.** Search hits
+  and offsets come from the index; list/read/find use current cleaned files.
+  Reloading the document cache after edits can therefore make a read disagree
+  with a search hit. `index-report` diagnoses drift but does not enforce
+  consistency across calls. The [source-version contract](milestone-19-plan.md#source-version-consistency)
+  is planned for shared tools, MCP and the agent; it is separate from atomic
+  index publishing and eval provenance.
+- **The passage ledger is not a research evidence record.** It tracks text
+  shown and citation numbers, not resolved facts, missing coverage or conflicting
+  sources. Tool results accumulate in the prompt; overflow recovery drops the
+  newest step. Recorded runs do not establish window exhaustion or context
+  degradation. [Context retirement](milestone-19-plan.md#context-retirement)
+  targets expanded read budgets; [per-task evidence state](milestone-19-plan.md#per-task-evidence-state)
+  is a conditional experiment, separate from deferred cross-session memory.
+- **Live research turns cannot resume after interruption.** Eval and ingestion
+  checkpoints do not persist a live agent task. The current deadline bounds a
+  turn; it does not provide a durable job, client cancellation protocol or
+  resume semantics. The [recovery contract](milestone-19-plan.md#long-running-research-recovery)
+  applies if resumable/background research is introduced.
 - **Interactive time and token budgets are unchosen.** The agent's turn
   deadline (`agent.turn_deadline_s`, 900 s) bounds a stuck turn and cuts off
   in-flight Ollama calls. It was sized past every measured run, not for

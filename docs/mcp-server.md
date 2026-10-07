@@ -102,7 +102,8 @@ Returns a window of one document's text: `document_id` (required), `start`
 (character offset, default 0), `max_chars` (default 6000, at most 50,000) and
 `corpus`. The response has `start`, `end`, `length`, the window's `text`, the
 document's carried metadata, and `next_start` while text remains, so
-consecutive calls rebuild the document exactly.
+consecutive calls rebuild the document exactly while its cleaned text remains
+unchanged.
 
 The text is the *cleaned* text the chunker split, so a search hit's
 `char_start`/`char_end` index straight into it: start a few hundred
@@ -112,6 +113,14 @@ for the second and later pieces of a split table, the span with the table's
 header rows in front. Offsets come from the index and the text from disk, so
 they agree only while the index is in sync (`python -m rag.cli index-report`).
 An unknown `document_id` is a tool error naming close matches.
+
+There is currently no source-version argument or pinned snapshot spanning
+search/read/find calls. Checking `index-report` before a task is useful but
+cannot prevent a file changing during it. The planned
+[source-version contract](milestone-19-plan.md#source-version-consistency)
+will expose source identity and require matching text or an explicit mismatch
+when following a hit. Those fields and guarantees are not yet part of this
+MCP API. Stable document IDs alone do not prove source-version equality.
 
 ### `rag_find`
 

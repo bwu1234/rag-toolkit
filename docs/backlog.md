@@ -1,10 +1,39 @@
 # Backlog
 
-Planned work, roughly in dependency order. Shipped milestones are marked
-*(shipped)*; the first unmarked one is next. The
-existing pipeline is feature-rich on the *retrieval/generation* axis and thin
-on everything that surrounds it — measurement, operations, and input quality —
-which is what this list is.
+Milestone numbers are stable references, not the current execution order.
+Shipped milestones and partial deliveries are marked in their entries; use
+the priorities below and each item's dependencies to choose the next work.
+
+**Current assessment (2026-10-06).** The default is a bounded agentic retrieval
+loop with measured gains on EDGAR development questions, supported by hybrid
+retrieval, reranking, citation bookkeeping and execution safeguards. This is
+not yet validation of comprehensive research: semantic citation support,
+representative research and conversational holdouts, and production trust
+boundaries remain open. See [known limitations](known-limitations.md) and
+[measured results](measured-results.md#scope-of-the-evidence).
+
+**Current priorities:**
+
+1. Integrate Milestone 19's list/read/find tools with citation, scope and read
+   budgets; build Milestone 28's forced-exposure injection tier alongside it.
+   Injection evaluation gates adoption of the expanded tools.
+2. Deliver eval harness Phases 4/4a's calibrated evidence/citation scoring and
+   Milestone 27's fresh representative research holdout. Dataset preparation
+   can proceed alongside tool work; scoring precedes repair/stopping adoption.
+3. Enforce [source-version consistency](milestone-19-plan.md#source-version-consistency)
+   across search and navigation before claiming auditable research over mutable
+   corpora. The contract is part of navigation acceptance, not deferred until
+   scheduled or zero-downtime indexing.
+4. Measure stopping and context policies on the expanded workload. Test
+   [per-task evidence state](milestone-19-plan.md#per-task-evidence-state) only
+   where reviewed failures justify it; long-running recovery is conditional
+   on introducing resumable research jobs.
+5. Complete Milestone 28's authentication and operational hardening before
+   external deployment; add its permission-aware follow-on before serving
+   mixed-permission corpora. Deployment can make this work the first priority.
+
+These foundations take priority over answer caching or adding multi-agent,
+graph or trained-policy machinery without a demonstrated workload need.
 
 Every item keeps the project's existing rules: config-selected behind an
 interface, off by default until measured, hermetic tests, no second HTTP
@@ -73,25 +102,45 @@ of signal about quality.
 
 ### Milestone 13 — Query result caching
 
-Nothing is cached anywhere. Repeat and near-repeat queries re-pay embedding,
-retrieval, reranking, and generation in full — most visible in demos and evals,
-where the same questions run over and over.
+**Planned.** There is no query-answer cache. Index-time contextual outputs and
+loaded retrieval/document objects already have caches; they do not reuse an
+answer or avoid its generation calls.
 
-- Exact-match first (normalized query + a config fingerprint → answer). Simple,
-  correct, and enough for the eval/demo case.
-- Semantic cache (query embedding → nearest cached query above a threshold) as
-  a second tier, behind its own config flag. Note that this can serve a wrong
-  answer where the exact cache can't, so it needs a conservative default
-  threshold and a way to see when it hit.
-- **The cache key must include the config that produced the entry** — chunking,
-  retrieval, reranker, CRAG settings. Serving a pre-CRAG answer after enabling
-  CRAG would silently poison Milestone 11's numbers.
-- Cache the *answer*, not just reranked docs: generation is the expensive stage
-  here (one local 9b call, more with CRAG).
+- **Exact reuse first.** Key on the query and effective ordered history,
+  corpus selection and verified corpus/index build identities, caller filters,
+  effective answering/retrieval configuration, model revisions where available,
+  prompts and tool schemas. Include the agent mode, offered tools and budgets.
+  Normalize only where equivalence is established; changing a number, period,
+  negation or history must not collapse distinct requests into one entry.
+- **Scope and freshness.** Partition by trusted authorization scope and its
+  permission version when access control exists. Validate source versions and
+  permission state at lookup; edits, deletion and revocation invalidate reuse.
+  Unknown identity/version means a cache miss. Apply this to stored passages
+  and citations as well as answer text. Depend on Milestone 19's
+  [source-version contract](milestone-19-plan.md#source-version-consistency),
+  the harness's provenance identities and Milestone 28's authorization owner;
+  do not invent a second incompatible identity scheme.
+- **Cache the answer with its evidence.** Keep exact cited text, source versions,
+  citation mapping and validation state. Do not cache generation failures as
+  successful answers. Refusals need the same corpus freshness rules. Surface
+  cache hits and original generation identity; report lookup cost separately
+  from original generation cost.
+- **Semantic reuse is a separate, off-by-default experiment.** Similarity alone
+  cannot bypass any scope, history, version or configuration partition. Include
+  adversarial near-neighbors differing in company, date, units or negation and
+  measure wrong-answer reuse before choosing a threshold.
+- **Acceptance.** Verify hits for identical effective inputs and misses after
+  history, corpus, filters, model/prompt/tool or budget changes, source deletion,
+  and permission revocation. Verify citations still resolve to the stored source
+  version. Quality evals bypass answer reuse by default; cache experiments are
+  labeled separately and report hit rate, erroneous reuse and latency.
 
 ### Milestone 14 — Richer document parsing
 
-**Planned:** see [Chunking and indexing plan](chunking-indexing-plan.md), Phase 4.
+**Partly shipped:** [Chunking and indexing plan](chunking-indexing-plan.md),
+Phase 4 recovered headings and tables for the pinned EDGAR corpus as Markdown.
+General PDF/layout-aware parsing and OCR remain planned; the EDGAR-specific
+renderer does not establish those capabilities.
 
 `pypdf` gives page text and nothing else. Tables arrive as collapsed
 whitespace, headings are indistinguishable from body text, and a scanned PDF
@@ -113,30 +162,20 @@ the parser threw away.
   screenshot wouldn't. Not the default; a later adapter behind the same
   loader interface if the text-based parser proves insufficient.
 
-### Milestone 15 — Semantic chunking
+<a id="milestone-15--semantic-chunking"></a>
 
-**Planned:** see [Chunking and indexing plan](chunking-indexing-plan.md), Phase 5. It proposes a
-structure-aware chunker in place of the semantic one described below, on
-the evidence summarized there.
+### Milestone 15 — Structure-aware chunking *(shipped)*
 
-Fixed-size character windows split mid-argument; contextual chunking patches
-the symptom at index time. A `SemanticChunker` slots behind the existing
-`Chunker` interface: embed sentences, cut where adjacent-sentence similarity
-drops below a threshold.
+The original semantic-similarity splitter proposal was replaced by
+`StructuredChunker`, shipped as the default on 2026-10-01. It packs Markdown
+blocks, preserves heading paths and repeats table headers when splitting large
+tables. Plain text gets paragraph packing. See [chunking plan Phase 5](chunking-indexing-plan.md#phase-5--structure-aware-chunker-34-days--done-2026-10-01)
+and its recorded measurements; this does not imply general PDF layout recovery.
 
-- Costs embedding calls at index time, on top of contextualization if that's on.
-- Depends on Milestone 14 for the structure-aware variant (split on real
-  headings first, semantically within a section).
-- Token-aware chunking is the other long-standing option behind this interface
-  and can share the milestone.
-- Compare against `fixed` with Milestone 11's harness before changing the
-  default.
-- Parent-child retrieval is a complementary technique, not a chunking
-  strategy change: embed small child chunks for search precision but return
-  the surrounding parent chunk — plus a breadcrumb like
-  `Document > Section 4.2`, built from Milestone 14's headings — to the LLM.
-  Fits behind `Retriever` as an expansion step after ranking, not behind
-  `Chunker`.
+Remaining follow-ons have their own owners: parent-child expansion is chunking
+plan Phase 6, size/overlap measurement is Phase 7 and Milestone 25, and token-aware
+sizing is conditional on an embedder's hard token limit. Parent-child expansion
+belongs after ranking in `Retriever`; it is not another chunking strategy.
 
 ### Milestone 16 — Async ingestion
 
@@ -179,15 +218,15 @@ off local.
 - Containerize the API; a scale-to-zero container host is the natural target
   since traffic is bursty and the app holds no session state (`history` is
   caller-supplied precisely so this works).
-- Hosted `LLMClient` / `EmbeddingModel` adapters. `LLMConfig.provider` already
+- Hosted `LLMClient` / `EmbeddingModel` adapters. Gemini generation and tool
+  calling are shipped; the hosted agent comparison remains unrun.
+  `LLMConfig.provider` already
   validates `anthropic`/`openai` and raises "recognized but not implemented" —
-  this is where that gets closed. Gemini comes first: the GCP plan below
-  runs on it.
-- A local, non-Ollama `EmbeddingModel` adapter (`sentence-transformers`,
-  already a dependency via `CrossEncoderReranker`) is worth adding alongside
-  the hosted ones — same interface, no daemon required. `EmbeddingConfig`
-  already accepts `provider: sentence_transformers`, but `get_embedder` has
-  no branch for it, so selecting it raises today.
+  this is where that gets closed. The GCP plan below uses Gemini.
+- **Shipped:** local, non-Ollama embeddings via `SentenceTransformersEmbedder`
+  and the `sentence_transformers` factory branch. The BEIR BGE reference uses
+  this adapter. Its existence does not establish that the deployment plan has
+  been exercised or that every candidate model is compatible.
 - A contextualized chunk embedding adapter (`voyage-context-4`), wanted by
   [chunking plan](chunking-indexing-plan.md#phase-2--document-metadata-and-a-deterministic-chunk-header-23-days)
   Phase 2 as a comparator. It needs `embed_documents` to receive chunks
@@ -331,15 +370,18 @@ budget. Measure each addition with its evidence/token budget and
 the injection tier before adoption.
 
 **Order of this work (2026-10-06).** (1) Wire list, read and find into the
-agent: ledger citations and a read budget. This is the fix for refusal latency,
-which comes from searching for entities the corpus doesn't hold, not from
-context size. (2) Build the
+agent: ledger citations, scope and read budgets, and the
+[source-version contract](milestone-19-plan.md#source-version-consistency).
+Navigation targets refusal latency caused by searching for absent entities;
+its benefit still needs measurement. (2) Build the
 [Milestone 28 injection tier](#milestone-28--production-hardening), at its
 forced-exposure level first; it needs no index and gates (3), adoption of the
 navigation tools, which put more untrusted text in front of the model.
 (4) [Context retirement](milestone-19-plan.md#context-retirement), last: the
-measured agent never fills its window, and retirement matters only once `read`
-and wider budgets do. (1) and (2) are independent and can proceed together.
+recorded runs do not establish window exhaustion, and retirement is tested
+with `read` and wider budgets. (1), (2), and calibrated scoring/holdout
+preparation can proceed independently; scoring gates quality-based stopping
+and repair adoption. See the current priorities at the top of this backlog.
 
 **Execution and output contracts (shipped 2026-10-05).** The
 [Milestone 19 contract](milestone-19-plan.md#execution-and-output-contracts):
@@ -436,8 +478,12 @@ prompt. Corpus routing within the caller's scope waits for a second real
 corpus that EDGAR questions need. Scoring stays owned by
 [eval harness Phase 4a](eval-harness-plan.md#phase-4a--grounding-completeness-and-citation-scoring-estimate-pending)
 and trace export by [Milestone 26](#milestone-26--opentelemetry-trace-export).
-Durable evidence memory, SQL/graph tools, learned retrieval policies, a
-trained search policy and multi-agent orchestration remain deferred. These
+The [per-task evidence-state experiment](milestone-19-plan.md#per-task-evidence-state)
+is distinct from deferred cross-session memory. A
+[long-running recovery contract](milestone-19-plan.md#long-running-research-recovery)
+is required only if resumable research jobs are introduced. SQL/graph tools,
+learned retrieval policies, a trained search policy and multi-agent orchestration
+remain workload-gated. These
 follow-ups do not change defaults or delay measurement of the shipped loop.
 
 **Original design rationale (historical; current status above).**
@@ -628,8 +674,8 @@ graph LR
   rebuilds the whole index after any upsert — workable to roughly 10⁴ chunks,
   degrades beyond. SQLite FTS5 or Tantivy behind the existing `SparseIndex`
   ABC is a straight substitution; no pipeline code should need to change.
-- Query result caching is **not** repeated here — it's Milestone 13, already
-  scoped with the config-fingerprint requirement a naive cache would miss.
+- Query result caching is **not** repeated here — Milestone 13 owns history,
+  configuration, source-version and authorization-safe answer reuse.
 - Suggested build order: filter pushdown (shared interfaces) → aggregation +
   dedup (largest visible result-quality win) → ranking signals (title match
   and recency first, link graph later) → snippets → BM25F → scalable backend

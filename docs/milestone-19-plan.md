@@ -8,12 +8,17 @@ to be true before each step counts as done.
 on the same eval sets. Comparing them is the deliverable. The agent becomes
 the default only if it beats the pipeline by more than noise.
 
-**Current status (2026-10-03):** phases 0–3 shipped and phase 4 measured
+**Current status (2026-10-06):** phases 0–3 shipped and phase 4 measured
 the local rows. [ADR 0015](decisions/0015-agentic-default.md) makes
 `agentic react / 27b, think=low` the default for research use. The outside
 MuSiQue check and representative research-workload evaluation remain open.
-The pre-work and original decisions below retain their historical context;
-phase 5 specifies planned additions, not shipped behavior.
+Execution/output safeguards shipped on 2026-10-05. List, calculator and model
+filters are built but off and unmeasured; read/find are available through the
+shared tools and MCP, not yet through the internal agent. Phase 5 labels those
+deliveries separately from planned additions. Source-version consistency,
+per-task evidence state and resumable research remain unbuilt. The pre-work
+and original decisions below retain their historical context. Current ordering
+is in the [backlog](backlog.md).
 
 ## What the pre-work measured
 
@@ -614,14 +619,15 @@ before it is adopted, next to its quality row.
 
 #### Tool surface: navigation, not only search
 
-The agent has one tool, `rag_search`, which returns ranked chunks. Published
-agentic retrieval systems also *navigate*. Claude Code
-[replaced its vector index with glob, grep and read](https://officechai.com/ai/claude-researcher-explains-how-agentic-search-performed-better-than-rag-for-code-generation/).
+The default agent has one tool, `rag_search`, which returns ranked chunks;
+listing and calculator support are optional and unmeasured. Published
+agentic retrieval systems also *navigate*.
 Anthropic's [context-engineering guidance](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
 describes agents that hold lightweight identifiers and load content "just in
 time". OpenAI's [Deep Research](https://cdn.openai.com/deep-research-system-card.pdf)
-was trained to search, open, scroll and read. Phase 4 points at the same gap
-on this corpus:
+was trained to search, open, scroll and read. Phase 4's original plain-text
+`edgar` runs motivated the tools below; the figures in these three bullets are
+historical, not the current `edgar_md` baseline:
 
 - **Discovery is every row's weakest kind.** No 9b row completes a discovery
   question, and `react / 27b` completes 2.7 of 5. A discovery question asks
@@ -664,10 +670,9 @@ credited to one tool:
    warns against tools whose uses overlap.
    - *Prerequisite.* `rag_search` results gain `char_start`/`char_end`, which
      chunk metadata already holds, so the model can read around a hit.
-   - *Sections.* A `section` argument waits for the
-     [chunking plan](chunking-indexing-plan.md)'s Phase 5 to supply heading
-     paths. On `edgar_md` the Markdown headings already exist, so an outline
-     in the response can come first there.
+   - *Sections.* Phase 5 shipped heading paths in structured chunks. A
+     `section` argument and document outline remain unbuilt; they need a
+     mapping to the versioned cleaned document, not another chunker milestone.
    - *Size.* This corrects the earlier "well within the 27b's 262k context".
      EDGAR's 61 filings average about 57k characters (about 14k tokens), and
      agent calls run at `agent.num_ctx` 32768. A whole filing doesn't fit
@@ -680,8 +685,8 @@ credited to one tool:
    It reads the cleaned text, cached per selection and reloaded when files
    change. Prompted by an outside agent using the MCP server, which had no way
    to expand a hit except by searching again. Still open for the agent:
-   ledger passages keyed by offsets, `agent.max_read_chars`, scope checks
-   against the turn's filter, an `agent.tools` entry and the matrix row.
+   ledger passages keyed by document version and offsets, `agent.max_read_chars`,
+   scope checks against the turn's filter, an `agent.tools` entry and the matrix row.
 3. **`rag_find(phrase, document_id?)`.** A literal, case-insensitive phrase
    search over the selected documents' cleaned text. It returns matches with
    offsets and a short surrounding context. Search can miss an exact name or
@@ -689,12 +694,14 @@ credited to one tool:
    overlap and the reranker then reorders, so it can fall out of the top 5.
    `rag_find` does no ranking. A linear scan of EDGAR's 3.5 MB takes
    milliseconds. At BEIR or MuSiQue scale, check first whether the contentless
-   FTS5 table can answer phrase queries. Build this tool only if the read rows
-   still miss questions that name an exact term.
+   FTS5 table can answer phrase queries. Adopt it for the internal agent only
+   if paired evaluation of the read rows shows failures on exact terms that
+   find resolves at acceptable cost.
    *Built for MCP ahead of that gate, not offered to the agent (2026-10-04):*
    `RagTools.find`, whitespace-flexible and case-insensitive, with `filters`
    and `document_id` scoping. Outside agents asked for it; the gate above
-   still governs offering it to our agent. It scans `edgar_md` in about 20 ms
+   now governs adoption after paired evaluation, not wiring an opt-in candidate
+   for that evaluation. It scans `edgar_md` in about 20 ms
    once loaded; at BEIR scale the FTS5 question above still applies.
 
 **Beside navigation: `calculator(expression)`.** Not a navigation tool, so
@@ -717,9 +724,11 @@ derive a number.
 **Constraints shared by all three:**
 
 - **Citations through the ledger.** Every read window and find snippet becomes
-  a ledger passage, with an id built from the document id and offsets, so
+  a ledger passage, with an id built from the document id, version and offsets, so
   `[n]` keeps one source of truth and the turn log records what was shown.
-  Deduplicate by overlapping offsets, not only by chunk id.
+  Deduplicate identical ranges within one version; partial overlap must not
+  discard newly shown evidence or change an earlier citation's text. Listing
+  metadata remains separate and non-citable under the existing listing contract.
 - **Scope.** A `document_id` outside the turn's corpus selection or filters is
   a tool error. An id the model guesses gains it nothing.
 - **Budgets.** Reads and finds count toward `max_tool_calls`. The existing
@@ -733,17 +742,124 @@ derive a number.
 
 **Measurement.**
 
-- *Rows.* Cumulative rows on all four sets, each paired against the one
-  before: `agentic react / 27b + list`, `+ list + read` and
+- *Rows.* Cumulative rows on the current `edgar_md`, `think=low` baseline,
+  each paired against the one before: `agentic react / 27b, think=low + list`,
+  `+ list + read` and
   `+ list + read + find`. Also run `agentic react / 9b + list`: one listing
   call is the kind of single decision the 9b does make.
 - *Evidence recall.* This needs one change. A 6k-character window contains
   gold spans more easily than a 1.2k-character passage, so report recall from
   searches and recall from reads separately, with characters read per turn.
-- *Table tier.* Add the chunking plan's `table` tier when it exists, since
-  split tables are where `rag_read_document` should show.
+- *Table tier.* Include the shipped `table` tier, since split tables are
+  where `rag_read_document` should help. Add Milestone 27's reviewed research
+  questions for enumeration, trends and computation; repeated ranked searches
+  alone do not establish coverage of a set.
 - *Adoption.* The same rule as every follow-up: paired quality and cost
   evidence on the same questions.
+
+#### Source-version consistency
+
+**Planned serving contract; not implemented.** `rag_search` reads an index,
+while `rag_read_document` and `rag_find` read the current cleaned documents.
+The document cache reloads changed files, but search offsets may still refer
+to an older build. `index-report` can diagnose drift; it does not pin a turn's
+evidence. This matters for MCP today as well as the planned agent integration.
+
+- **Identity.** Reuse the corpus/build identity vocabulary from
+  [eval harness provenance](eval-harness-plan.md#provenance-and-identity).
+  Record document content and relevant metadata digests, loader/cleaner
+  identity, and the cleaned-text digest that offsets address. Keep document
+  IDs stable for existing labels; version identity is a separate field.
+- **Consistent reads.** Bind a turn's searches, listings, reads and finds to
+  compatible source versions. A hit followed by a read must use that hit's
+  version. Serve a retained immutable snapshot, or return an explicit stale
+  evidence error if it cannot be read; never silently apply old offsets to
+  new text. Standalone navigation may read current files, but must expose the
+  version that subsequent calls can require. Unknown versions cannot be
+  reported as verified. Validate the same contract through shared `RagTools`
+  and MCP, with additive schema changes documented in the MCP contract.
+- **Citations and scope.** Retain exact text shown and version/offset mappings
+  in the ledger and turn/eval artifacts, including rendering transformations
+  such as repeated table headers and truncation markers. A newer source does not retroactively
+  change an earlier citation. Re-check authorization on access where present:
+  pinning an old snapshot must not bypass a revocation. Keep authorization
+  enforcement with Milestone 28's permission-aware retrieval owner.
+- **Acceptance.** Hermetic cases change content, metadata, cleaning settings
+  and document presence between search and read, and rebuild the index during
+  a turn. Each must return the matching snapshot or an explicit mismatch;
+  unchanged sources still work. Verify overlapping windows and citations
+  reconstruct the exact shown text, and that no cross-version deduplication
+  erases evidence. Exercise both direct tools and MCP, then the agent when wired.
+
+Ownership: Milestone 19 owns the shared serving/navigation contract, the
+[chunking plan](chunking-indexing-plan.md#indexing-operations) owns production
+of source identities at ingestion, and harness Phase 1 consumes those identities
+for replay and reuse. This is a navigation acceptance requirement for mutable
+corpora, not a requirement to implement atomic index swapping first.
+
+#### Per-task evidence state
+
+**Conditional, off-by-default experiment; not implemented.** A `PassageLedger`
+records passages shown and their citation numbers. It does not track which
+required facts have been resolved, which entities/periods remain unchecked,
+or whether sources disagree. Cross-session memory is separately deferred.
+
+After navigation exposes reviewed coverage or context failures, test a bounded
+task-local record containing the question's subgoals, candidate facts and their
+support status, exact source versions/spans, company/period/units, derived-value
+inputs and calculation, contradictions, and unresolved evidence needs. Keep
+model assertions labeled as candidates until support is checked; storing a
+summary must not turn it into trusted evidence. Preserve source access so the
+agent can re-read a supporting span within the same scope and budget.
+
+The record belongs to one task, can begin in memory without a new service, and
+is distinct from the full audit trajectory and the prompt assembled for each
+call. Context retirement must not silently lose its source mappings or make
+retired text citable under the current retirement contract. Re-reading evidence
+must restore exact visible support before it is cited. Missing coverage must
+remain explicit when the task ends with a partial answer.
+
+Dependencies: source-version consistency, navigation, calibrated harness
+Phases 4/4a scoring, and Milestone 27's research workload. Compare the agent
+with and without this record under matched total budgets, including record
+updates and checks. Report answer-point/evidence coverage, unsupported facts,
+wrong-period/unit attribution, contradiction handling, citation support,
+latency and tokens. Use positive and mutation controls for source mapping and
+false facts. Adopt only after a frozen paired decision rule passes on grouped
+confirmation data; a plausible record or a successful demonstration is not
+quality evidence. This does not authorize a persistent user-memory subsystem.
+
+#### Long-running research recovery
+
+**Conditional contract, not a shipped mode.** Today's bounded `ask` call has
+no resumable task store. Eval and ingestion checkpoints do not resume a live
+research turn. Introduce this work only when the product adds resumable or
+background research jobs; keep it out of the dependency chain for bounded chat.
+
+- Persist task identity, effective config/model/prompts/tools, caller scope,
+  source versions, exact transcript and ledger, optional task evidence state,
+  completed tool results, pending operations and cumulative budget usage at
+  well-defined boundaries. Preserve citation numbering on resume.
+- Define cancellation, interruption, partial completion and failure outcomes.
+  Distinguish a disconnected client from confirmed backend cancellation. An
+  interrupted model request may have consumed tokens or quota without returning
+  usage; mark that uncertainty and reconcile or conservatively reserve it.
+  Resumption must not reset spent budgets or silently repeat unknown work.
+- Revalidate source versions and current permissions before resuming. Define
+  which read-only calls may be retried, with bounded attempts and logged new
+  results. Expired wall-clock deadlines require an explicit continuation policy;
+  continuation records additional authorization/budget rather than erasing the
+  previous task's costs. Side-effecting tools need their own idempotency and
+  approval contract before introduction.
+- **Acceptance.** Interrupt before/after each tool and model boundary, during
+  synthesis, and while persisting a checkpoint. Verify cancellation, duplicate
+  resume requests, stale sources, revoked access and exhausted budgets. Resume
+  must preserve evidence/citation identity, avoid duplicate completed work,
+  expose unresolved operations, and account for all attempts.
+
+Milestone 19 owns execution state and recovery semantics; Milestone 28 owns
+task access, persistence retention and operating procedures. Harness replay can
+reuse the artifacts, but does not substitute for a serving recovery test.
 
 #### Enhancement follow-ups
 
@@ -1072,15 +1188,19 @@ the representative workload stays with Milestone 27.
   subagent's context separate and by covering broad questions in parallel.
   Here the costliest turns total about 35k prompt tokens across all their
   calls, over a few hops.
-  Reconsider it only if the navigation tools push turns past the context
-  window.
+  Reconsider it only after measured single-agent limitations in coverage,
+  context capacity or latency on independently explorable work. Compare matched
+  total budgets and include coordination cost; a full context window is not
+  the only possible trigger and adding agents is not a prerequisite for RAG.
 
-**Deferred: durable evidence memory and learned retrieval policies.** Recent
+**Deferred: cross-session evidence memory and learned retrieval policies.** Recent
 history and per-turn deduplication already exist. Require reviewed multi-turn
 failures showing that cross-session evidence reuse would help before adding a
 memory store; define source freshness, invalidation, corpus isolation and
-provenance first. Similarly, agent-selected top-k, reranking depth or chunk size
-needs a separate budget-controlled experiment, not an expansion of the initial
+provenance first. The [per-task evidence-state experiment](#per-task-evidence-state)
+above does not imply reuse across sessions. Similarly, agent-selected top-k,
+reranking depth or chunk size needs a separate budget-controlled experiment,
+not an expansion of the initial
 tool-routing scope.
 
 Motivation: the [Hugging Face cookbook](https://huggingface.co/learn/cookbook/en/agent_rag)

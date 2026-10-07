@@ -223,6 +223,16 @@ data/eval/runs/20260928T140211Z-retrieval-edgar_eval_set-3f9c2a1b/
   corpus. Validate these identities before reuse or resume; a changed corpus
   or index build invalidates both. Record resolved model revisions where
   available rather than relying solely on mutable model names.
+- **Serving evidence identity.** Consume Milestone 19's planned
+  [source-version contract](milestone-19-plan.md#source-version-consistency):
+  each shown passage/read window/find snippet needs its document version,
+  cleaned-text identity, offsets and exact rendered text, including synthetic
+  table headers or truncation markers. Preserve the mapping to the index build
+  when a search supplied the hit. Retain mismatch errors as outcomes; never
+  rescore an old trajectory by silently reading current files. Ingestion owns
+  identity production and shared tools own enforcement; this harness records
+  and validates their artifacts. Offline provenance alone does not guarantee
+  that a live turn used mutually consistent sources.
 - **A test keeps the classification complete.** It walks every leaf of
   `RagConfig` and fails unless each one is hashed or on the denylist with a
   reason. A separate schema-coverage assertion detects added leaves and
@@ -600,6 +610,13 @@ after its gaps are known.
   calibrated evidence/answer metrics. A stopping policy must include its own
   inference overhead in serving cost and meet the plan's confirmation gate.
 - `run_answer_matrix.py` writes run folders, as in Phase 2.
+- If Milestone 19's [per-task evidence-state experiment](milestone-19-plan.md#per-task-evidence-state)
+  is built, retain each state revision, candidate/support labels and exact
+  source mappings beside the trajectory. Evaluate it under matched total
+  budgets with Phase 4a's independent scoring; the agent's own support flags
+  are not gold labels. Record updates/checks in serving cost. If resumable live
+  tasks are introduced, preserve interruption/resume events and cumulative
+  usage for analysis, while serving recovery remains Milestone 19's contract.
 - Deliver the human calibration fixture and report, plus generation and judge
   repeat support and summaries under Measurement quality requirements.
 - **Done when** evidence scores reproduce offline with the live index removed;

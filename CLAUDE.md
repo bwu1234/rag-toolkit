@@ -23,6 +23,14 @@ the MCP server is also shipped.
   extending these conclusions or using new results to claim general quality.
 - **The MCP server is not Milestone 19.** It serves our retrieval to an outside
   agent; Milestone 19 is *this* system calling search as a tool.
+- **Research maturity and priorities.** The default agent's measured gains
+  are development evidence, not validation of comprehensive research or
+  citation support. Follow the current priorities at the top of
+  [Backlog](docs/backlog.md), not milestone-number order. Shared/MCP read and
+  find tools are built but are not yet offered to the internal agent.
+  [Milestone 19](docs/milestone-19-plan.md) owns planned source-version
+  consistency, per-task evidence state and conditional long-running recovery;
+  none is shipped merely because its contract is documented.
 
 ## Architecture
 
@@ -183,7 +191,9 @@ Design rationale, history, and planning live in `docs/`, read on demand:
 - **`docs/known-limitations.md`** — known gaps and failure modes in what's
   shipped, worth checking before recommending a feature that's off by default.
 - **`docs/milestone-19-plan.md`** — phased plan for agentic retrieval, with the
-  9b-vs-27b agent probe that shaped it. Read before starting Milestone 19.
+  9b-vs-27b agent probe that shaped it, navigation/source-version contracts,
+  and planned evidence-state and recovery experiments. Read before changing
+  the agent or shared navigation tools.
 - **`docs/chunking-indexing-plan.md`** — production chunking/indexing
   methodology, the measured gaps against it, and the phased plan (covers
   Milestones 14, 15 and 25 and part of 20). Read before changing the chunker,

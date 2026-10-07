@@ -12,7 +12,7 @@ fusion) → cross-encoder rerank → cited generation at query time. Each chunk 
 indexed behind a deterministic header naming its document (e.g. "Apple Inc.
 (AAPL) 10-K, period ended 2024-09-28"), and retrieval can be restricted by
 document metadata (company, period, form, …). By default an agent calls search
-as a tool, as often as a question needs, rather than retrieving once; the
+as a tool within configured call, time and context limits; the
 single-pass pipeline remains a config switch. Each stage
 sits behind an interface (`EmbeddingModel`, `VectorStore`, `Reranker`,
 `LLMClient`, `QueryExpander`, `Chunker`) and is selected in
@@ -23,15 +23,24 @@ The same pipeline is reachable from a CLI, a FastAPI service, a Streamlit UI,
 and an MCP server. By default, every chat turn is logged with its retrieved and cited
 passages, per-stage latency, LLM token counts, and any thumbs up/down feedback.
 
+The agent has measured gains on EDGAR development questions. Comprehensive
+research quality and semantic citation support remain evaluation targets:
+the default agent searches ranked chunks, while read/find navigation is
+currently available through MCP. See the [current priorities](docs/backlog.md),
+[measured results](docs/measured-results.md) and
+[known limitations](docs/known-limitations.md) for shipped, unmeasured and
+planned capabilities. Authentication and production hardening remain planned.
+
 ## Prerequisites
 
 - Python 3.10+ (CI runs 3.14)
-- [Ollama](https://ollama.com) running at `http://localhost:11434`, with the two
-  default models pulled:
+- [Ollama](https://ollama.com) running at `http://localhost:11434`, with the
+  embedding, utility and default agent models pulled:
 
   ```bash
   ollama pull qwen3-embedding:0.6b
   ollama pull qwen3.5:9b-mlx
+  ollama pull qwen3.8:27b-mlx
   ```
 
 - Network access on first query: the reranker (`BAAI/bge-reranker-v2-m3`) is
@@ -208,12 +217,16 @@ A config file can start with `base: <path>` to inherit another and list only
 what it changes (mappings merge, lists replace), and any command takes
 `--config`. [rag/config/vanilla.yaml](rag/config/vanilla.yaml) uses this for
 a plain dense-RAG baseline (no BM25, no reranker, no chunk header, plain
-prompt) on its own index; `rag/config/gemini-*.yaml` swap only the generator.
+prompt) on its own index; `rag/config/gemini-*.yaml` select hosted generation
+and pin pipeline mode.
 
-`chat.mode` selects how an answer is produced: `pipeline` (the default:
-retrieve once, then generate) or `agentic` (the model calls `rag_search` as a
-tool under the guards in `agent:`). Agentic mode stays off until
-[Milestone 19](docs/milestone-19-plan.md)'s phase 4 measures it.
+`chat.mode` selects how an answer is produced: `agentic` is the default since
+[ADR 0015](docs/decisions/0015-agentic-default.md), using the 27b model at
+`think: low` to call `rag_search` under the guards in `agent:`. `pipeline`
+retrieves once and then generates; `vanilla.yaml` and the Gemini overlays pin
+that mode for their baselines. The default is based on measured EDGAR gains
+and a research-use latency decision; a representative research-workload
+holdout remains planned under [Milestone 27](docs/backlog.md#milestone-27--eval-coverage-and-judge-reliability).
 
 Several features ship **disabled** because they measured as no better than
 noise on the EDGAR corpus: contextual chunking, corrective RAG (CRAG), query
