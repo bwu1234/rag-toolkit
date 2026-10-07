@@ -829,6 +829,45 @@ false facts. Adopt only after a frozen paired decision rule passes on grouped
 confirmation data; a plausible record or a successful demonstration is not
 quality evidence. This does not authorize a persistent user-memory subsystem.
 
+**Conflicting-source stress test (proposed measurement for this experiment).**
+Nothing in the plan yet tests an agent against a plausible false document in
+the corpus. The nearest items are the evaluation rigor plan's
+[conflicts-and-revisions tier](evaluation-rigor-plan.md) and its
+[counterfactual row](evaluation-rigor-plan.md#context-reliance-closed-book-and-counterfactual-controls),
+which hands the *generator* altered gold evidence. Milestone 28's poisoned-chunk
+plans test injected instructions, not false facts. None of the three tests
+whether an agent that retrieves the true and the false text together
+reconciles them or stops early.
+
+The motivating result is DRNoise (arXiv 2607.17291, July 2026, one
+unreplicated preprint): seeding one plausible false document with a conflicting
+answer dropped strong ReAct agents on a BrowseComp-Plus-style harness by 66–88
+points (GPT-5.4 81.7 to 15.7; DeepSeek V4 Flash 88.7 to 1.0), and every noisy
+run retrieved the false document. Weaker models dropped only about 7 points.
+The tasks were the authors' own 100 on a constructed corpus whose gold answer
+sits in no single document, which makes the false document an easy shortcut.
+Read it as a reason to look here, not as a measured rate for this system.
+The paper's stopping-failure statistics and its prompt-mitigation numbers did
+not survive verification, so do not borrow either as a design.
+
+- *Row.* Plant one plausible false document per question, in an isolated
+  corpus copy and never in `edgar_md` itself, and run the shipped agent
+  with and without it on the same questions. Score whether the answer defers to
+  the false document, flags the conflict, refuses or is unaffected. Report
+  searches per turn alongside pass rate: an early stop is the suspected
+  mechanism, and it is a hypothesis here.
+- *Cheaper variant, and what it misses.* A generator-level row that adds a
+  second conflicting passage to the counterfactual substitution costs little
+  and reuses `ClosedBookResponder`'s setup. It cannot show stopping behavior,
+  which is where DRNoise saw the failure, so run it first only if the agent row
+  is not affordable.
+- *Cost.* Corpus construction plus two agent passes at 1–2 minutes per hard
+  question on the local 27b. The hosted reference pair spends quota; agree the
+  budget first.
+- *Decision.* Evidence state is adopted for contradiction handling only if it
+  beats the no-record agent on this row under the frozen paired rule above. A
+  plain verification instruction is the comparison to beat, since it is free.
+
 #### Long-running research recovery
 
 **Conditional contract, not a shipped mode.** Today's bounded `ask` call has
@@ -1209,6 +1248,51 @@ describe query refinement and enhanced retrieval; most of those components
 already exist here. The [FutureAGI article](https://futureagi.com/blog/agentic-rag-systems-2025/)
 (updated May 2026) motivates the routing, draft-check/repair and tracing gaps.
 These are design references, not evidence that the additions improve this repo.
+
+**Research check (2026-10-07).** A multi-source search checked the agentic RAG
+literature against this plan: 99 claims extracted, 25 put through three-vote
+adversarial verification, 20 confirmed and 5 killed in the final tally (the
+planner and MEM1 claims below were killed in an earlier pass of the same run
+and are not in that count). It confirmed little that the plan lacks and killed
+several claims that would have argued for work here.
+Coverage was uneven: nothing was confirmed on self-reflection methods,
+orchestration patterns, source-version consistency, long-running recovery or
+reasoning-aware retrieval, so absence from the list below is not evidence
+against them.
+
+- *Confirms the plan.* Retriever quality is first-order on a fixed corpus:
+  GPT-5 went from 55.9% with BM25 to 70.1% with Qwen3-Embedding-8B on
+  BrowseComp-Plus, with slightly fewer search calls
+  ([paper](https://arxiv.org/abs/2508.06600)). BM25 is a weak baseline there
+  and reranking was not tested, so this supports the retrieval investment but
+  not a specific reranking gain. BrowseComp-Plus is the reference setup for
+  reproducible agent evaluation; it is already proposed in the backlog.
+- *Adds one measurement.* The
+  [conflicting-source stress test](#per-task-evidence-state) above.
+- *Context.* Context rot and external note-taking come from Anthropic's
+  [context-engineering post](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents),
+  with free-form notes rather than structured evidence, so the link to
+  per-task evidence state is an analogy. The claim that compaction
+  (summarize and restart) is a recommended technique lost its vote 1–2, and
+  the claims that MEM1 and AutoRefine support context retirement lost 0–3. Do
+  not cite either as support for [context retirement](#context-retirement).
+- *Training and planning stay deferred.* RL recipes for search agents (masking
+  retrieved tokens, an F1 reward with action penalties against answer
+  avoidance) are documented only on 3B and 7B Qwen2.5 models over Wikipedia
+  QA, as single runs. The "24% relative improvement" claim for Search-R1 was
+  killed, as was the claim that open RL agents fail BrowseComp. DecomposeR's
+  typed-DAG plans beat linear and tree plans in one May 2026 preprint with no
+  replication. The Planner/Coordinator/Executor convergence claim lost 0–3.
+  None of this changes the deferral above.
+- *Unverified candidates from reading this plan, not from the research.* Two
+  things have no entry here, and no source above confirms them. (1) Several
+  independent searches issued in one agent step: the 27b spends 1–2 minutes on
+  hard questions, so check whether `ToolCallingLLM` and both adapters handle
+  multiple calls per step, then measure latency and quality against the
+  sequential default under the same call cap. (2) Sampling several trajectories
+  and voting: it multiplies the latency already counted as the main cost, so
+  treat it as probably wrong for this workload until a measured failure says
+  otherwise. Neither is scheduled.
 
 ## Open questions
 
