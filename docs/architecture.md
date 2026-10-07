@@ -219,7 +219,8 @@ and groundedness both need to see both sides of the retrieve/generate boundary.
    `calculator` (off by default) it can evaluate arithmetic over the figures
    it found (`rag.agent.calculator`, a safe `ast` evaluator, agent-only
    and not served over MCP); a calculation adds no passages and spends no
-   budget. Every call,
+   retrieval-call budget, but its model step still spends time and tokens.
+   Every call,
    refused or not, is recorded on `ChatAnswer.agent_calls`: query and
    filter as written, and the passages it returned.
 4. **A passage ledger numbers what the model sees**, in first-seen order and
@@ -241,6 +242,18 @@ and groundedness both need to see both sides of the retrieve/generate boundary.
 It runs on its own model (`agent.llm`, falling back to `llm`) through
 `build_agent_llm`, which refuses a provider without tool calling at build time.
 ([Milestone 19 plan](milestone-19-plan.md))
+
+**Current boundary.** The ledger preserves shown passages and citation numbers;
+it does not verify claim support or track unresolved research obligations.
+Read/find navigation exists in `RagTools` and MCP, but is not yet offered by
+`AgentService`. Navigation loads current cleaned files while search uses the
+built index, so offsets can disagree after an edit. There is no pinned task
+snapshot or resumable live-task store. The planned
+[source-version](milestone-19-plan.md#source-version-consistency),
+[per-task evidence-state](milestone-19-plan.md#per-task-evidence-state) and
+[recovery](milestone-19-plan.md#long-running-research-recovery) contracts
+describe extensions, not additional stages in the shipped path. Semantic
+evidence/citation scoring remains owned by eval harness Phase 4a.
 
 ## Entrypoints
 

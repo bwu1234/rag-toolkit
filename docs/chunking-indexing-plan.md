@@ -930,6 +930,16 @@ These run through every phase rather than being one.
   document ids: that invalidates `expected_doc_ids`.
 - **Versioned publish stays out of scope** until reindexing is scheduled, as
   Milestone 28 already states. The trigger is the first scheduled rebuild.
+- **Source-version identity is required independently of versioned publish.**
+  For Milestone 19's planned [search/navigation consistency contract](milestone-19-plan.md#source-version-consistency),
+  ingestion must produce document content/metadata and loader/cleaner identities,
+  including a digest of the cleaned text addressed by offsets. Keep existing
+  document IDs; attach versions separately and record the mapping in the build
+  inventory. Serving must use matching text or detect a mismatch, even with an
+  in-place index. Harness Phase 1 consumes these same identities. This remains
+  planned work; the existing settings manifest and chunk content hashes do not
+  enforce a cross-tool snapshot. Acceptance includes source edits, deletion,
+  cleaning changes and reindexing between a search and its follow-up read.
 
 ## Decisions and rejected alternatives
 
