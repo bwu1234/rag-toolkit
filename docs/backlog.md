@@ -360,6 +360,47 @@ then evaluate stopping signals on a grouped confirmation set with policy
 overhead included. Adaptive stopping stays off until paired quality/cost
 criteria pass; novel chunk IDs alone are not evidence of progress.
 
+**Reasoning-aware search (proposed).** The agent's search embeds only the
+query the model writes, though the model has just written, in its reasoning,
+why it is searching. [AgentIR](https://arxiv.org/abs/2603.04384) embeds the
+current step's reasoning with the query (`Reasoning: {reasoning} Query:
+{query}`). On BrowseComp-Plus, a frozen Qwen3-Embedding-4B gained 6.9pp of
+agent accuracy (48.7% to 55.5%) from that concatenation alone, and fine-tuning
+took it to 66.3%. Our embedder is the same family
+(`qwen3-embedding:0.6b`), and the text is already in hand:
+`AssistantTurn.thinking` when `think` is on, plus any `content` written
+alongside the call. The claim is unmeasured here; the frozen-model gain is the
+part that could transfer without training.
+
+- *Scope.* Dense query only, behind an `agent` setting that is off by default.
+  BM25 keeps the bare query: reasoning words would dilute the exact ticker and
+  period matches that make hybrid the EDGAR default. The reranker also stays
+  on the bare query in the first row; `bge-reranker-v2-m3` was not trained on
+  that input. Make reranking with reasoning a separate row.
+- *Text.* The current step's reasoning only, as AgentIR does, truncated to its
+  last N characters (the part nearest the call), with N fixed before the run.
+  Calls issued in one step share that step's reasoning. The Gemini adapter
+  drops thought parts, so this applies to Ollama agents until it doesn't.
+- *Boundary.* An optional argument on `rag.tools` retrieval, so the agent
+  stays behind the [package contract](decisions/0016-package-boundaries.md).
+  MCP `rag_search` is unchanged: an outside agent's reasoning isn't part of
+  the published tool contract.
+- *Risks to watch.* Reasoning carries the model's own guesses (the 27b's
+  "for reference" FY2015 leak is the precedent), which can steer the embedding
+  toward the wrong filing. `think: low` may leave little or no reasoning.
+  Record per call how many characters went in and the share of calls with
+  none. Hold `embedding.query_instruction` fixed; it is measured-off and a
+  separate factor.
+- *Measure.* Offline first, if recorded trajectories carry reasoning (raw-mode
+  records do; check whether the phase-4 records do). Replay each recorded
+  `(reasoning, query)` through both query texts and compare evidence recall
+  at stage 1 and after reranking, against the multi-hop and adaptive sets'
+  gold spans. No agent rerun is needed for that. If it helps, run
+  `agentic react / 27b, think=low` with and without the setting on all four
+  sets under `measure-change`, and report evidence recall and searches per
+  turn with pass rates. BrowseComp-Plus found that better retrieval also cut
+  search calls, so latency is a possible second win.
+
 **Long-context baseline.** Retrieval has to beat simply reading the filing.
 On `edgar_md` the median filing is about 48k characters (~12k tokens) and the
 largest 143k (~36k), so most filings fit a current model's window whole; the
@@ -900,6 +941,53 @@ the harness plan's publication.
   - *Run with* the MuSiQue outside check (Milestone 19), which tests whether
     the loop's gain transfers off EDGAR. Both, not either: MuSiQue has no
     single-hop or refusal questions, and this tier is one corpus.
+- **An outside benchmark for the agent: BrowseComp-Plus (proposed).** BEIR
+  ties our retrieval numbers to published references; nothing does that for
+  the agent. MuSiQue tests transfer, but its questions take two to four hops
+  over short passages. [BrowseComp-Plus](https://arxiv.org/abs/2508.06600)
+  (ACL 2026, MIT licence) is the deep-research benchmark built for a fixed
+  corpus: 830 questions over 100,195 curated web documents, with
+  human-verified evidence and gold documents, and separate
+  [agent and retriever leaderboards](https://tevatron-browsecomp-plus.hf.space).
+  It also isolates the variable this repo measures: GPT-5 scores 55.9% with
+  BM25 and 70.1% with Qwen3-Embedding-8B. Plan it as a follow-on in the
+  [public benchmarks plan](public-benchmarks-plan.md), shaped like MuSiQue's
+  phases A–D:
+  - *Retrieval first; it needs no judge.* Its retriever board reports
+    Recall@5/100/1000 and nDCG@10 against evidence and gold documents, so it
+    is BEIR-style and directly comparable. Pin the dataset revisions and
+    reproduce one published retriever row (BM25) before measuring ours, as
+    BEIR's phase 3 did.
+  - *Scale is the main build cost.* Documents average about 32k characters,
+    about 3.2B characters in total (EDGAR is 3.6M). At `chunk_size: 1000`
+    that is millions of chunks: past the in-memory `bm25` backend, so it
+    needs `sqlite_fts5`. Measure Chroma's memory and ANN recall at that size,
+    and expect the local embedder to take a long time over the corpus.
+    Measure the indexing rate on a sample, and record the estimate, before
+    committing to a full build. Check the benchmark's own indexing protocol
+    first; if it encodes truncated documents, follow it for comparable rows.
+    Index it only isolated, with `clean: false`, like BEIR.
+  - *Agent rows on a fixed, stratified subset.* At 1–2 minutes per question
+    and with trained deep-research agents making 20+ searches, the full 830 on
+    the local 27b would take days of GPU time. Freeze a subset (100–150
+    questions) and its size before the first run. Rows:
+    `agentic react / 27b, think=low` as shipped, then with the navigation
+    tools once they are adopted. Expect a low absolute score: the paper's
+    open-weight agents made fewer than two searches per question, and
+    Search-R1 with BM25 scored 3.86%. The value is the comparison between
+    rows and against published rows, not the headline number. Report
+    accuracy, evidence recall, searches per question and latency p50/p95.
+  - *Judge.* The paper grades with GPT-4.1; we grade with the local judge, so
+    agent accuracy is comparable between our own rows, not with the
+    leaderboard. Retrieval metrics remain comparable. Calibrate our judge on a
+    sample against the reference answers before trusting its rate. A hosted
+    judge spends quota and needs a budget agreed first.
+  - *Handling.* Questions and answers ship encrypted, with a canary string
+    asking that they never appear as plain text online. Decrypt only into a
+    gitignored directory, never commit decrypted text or quote it in docs or
+    traces, and keep decrypted questions out of any prompt sent to a hosted
+    model whose terms allow training on it (the Gemini free tier, see
+    Milestone 18).
 - **Turn log → eval candidates.** Milestone 12 called logged queries with
   feedback "the cheapest source of new eval samples", but nothing converts
   them. Add a `rag.cli turns --export-candidates` path that writes thumbs-down
