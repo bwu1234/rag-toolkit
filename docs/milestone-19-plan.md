@@ -957,6 +957,64 @@ budgets. Freeze candidate interactive budgets before the confirmation run;
 report p50/p95 latency, cut-off winning turns, completeness and refusal quality
 on Milestone 27's workload. No 60 s or 90 s default is implied by this plan.
 
+#### Context retirement
+
+**Planned; nothing here is built, and it ships with `rag_read_document`, not
+before it.** The loop only appends: each step's tool results are added to
+`run.messages` and re-sent on every later step, and the only reduction is the
+overflow fallback (`_roll_back_step`), which discards the *newest* evidence.
+
+*What the measurements say.* The prompt-token columns in
+[measured results](measured-results.md#agentic-retrieval-milestone-19-phase-4)
+are summed over every model call in a turn, so they are not a context size:
+the 27b refusal run (`results_m19/answer_edgar_md__…json`) shows 30,660 prompt
+tokens over 6.67 calls, about 4.6k per call. At today's budget the worst case
+is 8 searches × 5 passages × 1,200 characters, about 19k tokens, inside the
+32,768 window the agent requests. Refusal latency (138 s mean; `neg-entity-tesla-margin`
+took 9 calls and 215 s) comes from searching for entities the corpus doesn't
+hold, which listing and `rag_find` address, not pruning. Retirement is
+therefore a guard for the wider budgets and the read window that the
+navigation tools bring, and is justified only there.
+
+*Mechanism: removal, never summary.* This follows the contract above
+(preserve citation mappings; do not compact evidence into unverified
+summaries).
+
+- `PassageLedger.retire(numbers)` and a `_Run.retired` set. The passage text
+  inside earlier `ToolResult` messages becomes `Passage [n] (source: …):
+  removed from view; not citable.` The header stays so the model keeps the
+  source; the text does not come back.
+- Numbers never change. A retired passage stays in the ledger, so evidence
+  recall still counts that the model saw it, and is flagged `retired`. A
+  citation to it is an invalid citation (`ChatAnswer.invalid_citations`).
+  Whether retired passages count toward evidence recall is reported as its own
+  column, not folded in.
+- Retiring spends no `max_tool_calls`, as the calculator doesn't.
+
+*Two stages, shipped and measured separately* (`agent.context.prune: off |
+fallback | tool`, plus `soft_fraction`):
+
+1. **`fallback`**: past a soft fraction of the window, retire the oldest
+   passages the model has not cited. It replaces the newest-step rollback and
+   needs no model skill, so it is testable with a fake model.
+2. **`tool`**: a `prune(passages=[…])` tool, and each tool result ends with the
+   tokens remaining. This is the design of Chroma's
+   [Context-1](https://www.trychroma.com/research/context-1), whose model was
+   trained for it; the 27b was not, and may retire the wrong passages. Build it
+   only if `fallback` loses quality at the wider budget.
+
+*Measurement.* Rows: `react / 27b, think=low`, `+ fallback`, `+ tool`, the
+last two with `read` offered and `max_tool_calls` raised, since the baseline
+never reaches the window. Report multi-hop and adaptive pass counts, evidence
+recall, summed and per-call prompt tokens, latency p50/p95, and the
+**wrong-retire rate**: how often a retired passage overlaps a gold span, which
+is computable offline from stored trajectories. These sets have ±4-question
+intervals, so only large effects show. Freeze the decision rule first: adopt a
+stage only if quality holds within a predeclared bound and prompt tokens fall;
+otherwise it stays off. Rough cost: ~4 h of local compute per row (50
+questions × ~90 s × 3 repeats). It sits behind the Milestone 28 injection tier
+for expanded tools, since `read` brings more untrusted text into the window.
+
 #### Per-step retrieval utility and stopping
 
 **Planned offline experiment, then an optional serving policy.** Extend the
