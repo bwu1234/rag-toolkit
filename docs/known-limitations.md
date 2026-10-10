@@ -42,15 +42,18 @@
   evidence-aware scoring remain planned work.
 - **The internal agent still explores through ranked search by default.**
   Listing, calculator and model-set filters are built but off and unmeasured.
-  Read/find are shared tools served over MCP, not yet offered to the agent.
+  Read/find are shared tools served over MCP; read is offered to the agent
+  only as an unmeasured opt-in, and find not at all.
   Rewording searches does not establish exhaustive entity, table or period
   coverage. Navigation with ledger, scope and read budgets is the next
   [capability experiment](milestone-19-plan.md#tool-surface-navigation-not-only-search).
 - **Search and navigation do not share a pinned source version.** Search hits
   and offsets come from the index; list/read/find use current cleaned files.
   Reloading the document cache after edits can therefore make a read disagree
-  with a search hit. `index-report` diagnoses drift but does not enforce
-  consistency across calls. The [source-version contract](milestone-19-plan.md#source-version-consistency)
+  with a search hit. The agent refuses such a read as stale, and read/find
+  results carry a cleaned-text version, but nothing pins a version across
+  calls, search results carry none, and MCP clients get no check.
+  `index-report` diagnoses drift but does not enforce consistency. The [source-version contract](milestone-19-plan.md#source-version-consistency)
   is planned for shared tools, MCP and the agent; it is separate from atomic
   index publishing and eval provenance.
 - **The passage ledger is not a research evidence record.** It tracks text

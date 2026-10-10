@@ -316,6 +316,16 @@ M19_VARIANTS: list[Variant] = [
         **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
         "agent.tools": ["rag_search", "rag_list_documents"],
     }),
+    # Reading document windows, cumulative on the listing row it pairs with
+    # (milestone 19 plan, "Tool surface"): a gain is credited to reading alone.
+    # The read budget is pinned so a later default change can't move the row.
+    # Report evidence recall from search and from reads apart -- a 6k window
+    # holds a gold span more easily than a 1.2k passage.
+    Variant("agentic react / 27b, think=low + list + read", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
+        "agent.tools": ["rag_search", "rag_list_documents", "rag_read_document"],
+        "agent.max_read_chars": 18_000,
+    }),
     # The calculator (`agent.tools`); pairs with `agentic react / 27b, think=low`.
     # Only questions whose answer is a figure the filings don't print can move:
     # read it by kind, not overall.

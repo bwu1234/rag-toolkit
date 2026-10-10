@@ -249,6 +249,43 @@ def test_complete_requires_every_part_and_the_conclusion() -> None:
     assert result.missing_spans == ["B reported 5"]
 
 
+def test_evidence_found_only_in_a_read_window_is_reported_apart_from_search() -> None:
+    from rag.observability.records import AgentToolCall
+
+    read_window = Citation(chunk_id="read:d.md@v1:0-6000", document_id="d.md", text="B reported 5", score=0.0)
+    read_call = AgentToolCall(step=2, tool="rag_read_document", documents=["d.md"], start=0, end=6000, passages=[2])
+
+    class _Reader(_FakeChatService):
+        def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+            return ChatAnswer(answer="x", citations=[_citation("A reported 10"), read_window], agent_calls=[read_call])
+
+    dataset = EvalDataset.from_dicts([_sample(conclusion=None)])
+    report = run_multihop_eval(dataset, _Reader("x"), _ScriptedJudge("PASS", "PASS"))
+
+    result = report.sample_results[0]
+    assert (result.evidence_recall, result.evidence_recall_from_search) == (1.0, 0.5)
+    assert result.missing_spans_from_search == ["B reported 5"]
+    assert (report.evidence_recall_from_search, report.mean_read_chars) == (0.5, 6000.0)
+
+    answer = run_answer_eval(
+        EvalDataset.from_dicts([{**_sample(), "expected_spans": ["A reported 10", "B reported 5"]}]),
+        _Reader("x"), _ScriptedJudge("PASS"),  # type: ignore[arg-type]
+    )
+    assert answer.num_evidence_only_from_reads == 1
+    assert answer.mean_read_chars == 6000.0
+
+
+def test_a_turn_without_reads_has_no_separate_search_recall() -> None:
+    dataset = EvalDataset.from_dicts([_sample(conclusion=None)])
+
+    report = run_multihop_eval(dataset, _FakeChatService("x", [_citation("A reported 10")]), _ScriptedJudge("PASS", "PASS"))
+
+    result = report.sample_results[0]
+    assert result.missing_spans_from_search is None
+    assert report.evidence_recall_from_search == report.evidence_recall == 0.5
+    assert report.mean_read_chars == 0.0
+
+
 def test_each_part_is_judged_against_its_own_reference() -> None:
     dataset = EvalDataset.from_dicts([_sample(conclusion=None)])
     judge = _ScriptedJudge("PASS", "PASS")

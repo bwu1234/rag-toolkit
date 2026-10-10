@@ -364,9 +364,9 @@ so the agent can list, read and find text in documents, not only run ranked
 search. They target the failures phase 4 showed: discovery questions, split
 tables and the cost of refusals. Listing, calculator support and model-set
 filters are built but remain off and unmeasured. Windowed read and literal
-find are built in the shared tool surface and served over MCP (2026-10-04),
-but not yet offered to our agent: that needs ledger citations and a read
-budget. Measure each addition with its evidence/token budget and
+find are built in the shared tool surface and served over MCP (2026-10-04).
+Read is offered to our agent as an opt-in tool with ledger citations, scope
+checks and a per-turn read budget (2026-10-10); find is not yet. Measure each addition with its evidence/token budget and
 the injection tier before adoption.
 
 **Order of this work (2026-10-06).** (1) Wire list, read and find into the

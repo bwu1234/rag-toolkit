@@ -870,3 +870,239 @@ def test_the_calculator_hint_is_in_the_prompt_only_when_offered() -> None:
     assert "calculator" not in without
     # Off, the prompt is the one the measured rows ran with.
     assert "citing them inline as [n], e.g. [2] or [3][5]. Do not add facts" in without
+
+
+# --------------------------------------------------------------------------
+# Reading a document
+# --------------------------------------------------------------------------
+
+
+_WITH_READ = ("rag_search", "rag_read_document")
+_FILING = "DAL_10-Q_2026-06-30.md"
+
+
+class _ReadingTools(_FakeTools):
+    """`_FakeTools` that also reads windows of one long document, recording every read's arguments."""
+
+    def __init__(self, results: dict[str, list[ScoredChunk]] | None = None, length: int = 20_000) -> None:
+        super().__init__(results)
+        self.text = "".join(chr(ord("a") + i % 26) for i in range(length))
+        self.reads: list[dict[str, object]] = []
+
+    def read_document(  # type: ignore[override]
+        self, document_id, corpus=None, start=0, max_chars=None, *, scope=None, expect_spans=()
+    ):  # type: ignore[no-untyped-def]
+        self.reads.append({
+            "document_id": document_id, "corpus": corpus, "start": start, "max_chars": max_chars,
+            "scope": scope, "expect_spans": list(expect_spans),
+        })
+        if document_id != _FILING:
+            raise ValueError(f"No document {document_id!r} in corpus 'edgar_md'.")
+        end = min(start + max_chars, len(self.text))
+        payload = {
+            "document_id": document_id, "source": f"data/{document_id}", "doc_type": "markdown",
+            "version": "v1", "length": len(self.text), "start": start, "end": end,
+            "text": self.text[start:end],
+        }
+        if end < len(self.text):
+            payload["next_start"] = end
+        return payload
+
+
+def _read(document_id: object = _FILING, start: object = None) -> ToolCall:
+    arguments: dict[str, object] = {"document_id": document_id}
+    if start is not None:
+        arguments["start"] = start
+    return ToolCall(name="rag_read_document", arguments=arguments)
+
+
+def _located(chunk_id: str, start: int, end: int, text: str = "passage text") -> ScoredChunk:
+    chunk = _chunk(chunk_id, text, doc=_FILING)
+    chunk.metadata.update(char_start=start, char_end=end)
+    return chunk
+
+
+def test_the_read_tool_is_offered_only_when_configured_with_corpus_and_window_pinned() -> None:
+    default = _agent(ScriptedToolLLM([]), _ReadingTools())
+    with_read = _agent(ScriptedToolLLM([]), _ReadingTools(), offered_tools=_WITH_READ)
+
+    assert [t.name for t in default.tool_definitions] == ["rag_search"]
+    assert [t.name for t in with_read.tool_definitions] == ["rag_search", "rag_read_document"]
+    assert set(with_read.tool_definitions[1].parameters["properties"]) == {"document_id", "start"}
+    # Offered, the search description points at it; nothing names rag_find.
+    assert "rag_read_document" in with_read.search_tool.description
+    assert all("rag_find" not in tool.description for tool in with_read.tool_definitions)
+
+
+def test_a_read_is_a_numbered_passage_cited_under_its_version_and_offsets() -> None:
+    tools = _ReadingTools()
+    llm = ScriptedToolLLM([_step(_read(start=1000)), _answer("The table continues [1].")])
+
+    answer = _agent(llm, tools, offered_tools=_WITH_READ).ask("q")
+
+    [result] = _tool_results(llm.calls[1][0])
+    assert result.content.startswith(
+        f"Read {_FILING}, characters 1000-7000 of 20000; the next window starts at 7000.\n\n"
+        f"Passage [1] (source: {_FILING}):\n"
+    )
+    assert result.content.endswith(tools.text[1000:7000])
+    [citation] = answer.citations
+    assert citation.chunk_id == f"read:{_FILING}@v1:1000-7000"
+    assert citation.text == tools.text[1000:7000]  # whole, not capped at max_passage_chars
+    assert answer.cited_chunk_ids == [citation.chunk_id]
+    assert (answer.tool_calls, answer.retrieval_attempts) == (1, 0)
+    [call] = answer.agent_calls
+    assert (call.tool, call.status, call.documents, call.start, call.end, call.passages) == (
+        "rag_read_document", "ran", [_FILING], 1000, 7000, [1],
+    )
+
+
+def test_search_results_carry_their_location_only_when_the_model_can_read() -> None:
+    def shown(offered: tuple[str, ...]) -> str:
+        tools = _ReadingTools({"fuel": [_located("c1", 1200, 2350)]})
+        llm = ScriptedToolLLM([_step(_search("fuel")), _answer("[1]")])
+        _agent(llm, tools, offered_tools=offered).ask("q")
+        return _tool_results(llm.calls[1][0])[0].content
+
+    assert shown(_WITH_READ) == (
+        f"Passage [1] (source: {_FILING}):\nLocation: {_FILING}, char_start 1200, char_end 2350\npassage text"
+    )
+    assert "Location" not in shown(("rag_search",))
+
+
+def test_a_read_is_scoped_to_the_turn_and_checked_against_earlier_hits() -> None:
+    long_text = "x" * 3000
+    tools = _ReadingTools({"fuel": [_located("c1", 100, 3100, long_text)]})
+    llm = ScriptedToolLLM([_step(_search("fuel")), _step(_read(start="50")), _answer("[2]")])
+    turn_filter = QueryFilter(equals={"ticker": "DAL"})
+
+    _agent(llm, tools, offered_tools=_WITH_READ).ask("q", query_filter=turn_filter)
+
+    [read] = tools.reads
+    assert (read["corpus"], read["start"], read["scope"]) == (["baseline"], 50, turn_filter)
+    # The hit as retrieved, not as capped for the prompt.
+    assert read["expect_spans"] == [(100, 3100, long_text)]
+
+
+def test_a_repeated_read_spends_nothing_and_points_at_its_passage() -> None:
+    tools = _ReadingTools()
+    llm = ScriptedToolLLM([_step(_read(), _read(start=0)), _answer("[1]")])
+
+    answer = _agent(llm, tools, offered_tools=_WITH_READ).ask("q")
+
+    assert len(tools.reads) == 1
+    assert answer.tool_calls == 1
+    assert [c.status for c in answer.agent_calls] == ["ran", "refused"]
+    assert answer.agent_calls[1].note == (
+        f"Already read {_FILING} from start 0; it is passage [1] above. "
+        "Read from another start, or answer from the passages you have."
+    )
+
+
+def test_reads_shrink_to_the_reading_budget_then_are_refused() -> None:
+    tools = _ReadingTools()
+    llm = ScriptedToolLLM([_step(_read(), _read(start=6000), _read(start=9000)), _answer("[1][2]")])
+
+    answer = _agent(llm, tools, offered_tools=_WITH_READ, max_read_chars=9000).ask("q")
+
+    assert [r["max_chars"] for r in tools.reads] == [6000, 3000]
+    second, third = _tool_results(llm.calls[1][0])[1:]
+    assert "This window was cut to the 3,000 characters left of this question's reading budget" in second.content
+    assert third.content.startswith("The reading budget for this question (9,000 characters) is used up")
+    assert [c.status for c in answer.agent_calls] == ["ran", "ran", "refused"]
+    assert answer.tool_calls == 2
+
+
+def test_reads_and_searches_share_one_budget() -> None:
+    tools = _ReadingTools({"fuel": [_chunk("c")]})
+    llm = ScriptedToolLLM([_step(_search("fuel"), _read()), _answer("[1]")])
+
+    answer = _agent(llm, tools, offered_tools=_WITH_READ, max_tool_calls=1).ask("q")
+
+    assert tools.reads == []
+    assert answer.agent_calls[1].note == "Tool budget for this question is used up; this read was not run."
+    assert answer.stopped_reason == "cap"
+
+
+@pytest.mark.parametrize(
+    ("call", "note"),
+    [
+        (_read(document_id=""), "Read error: rag_read_document needs a 'document_id' string."),
+        (_read(start=-5), "Read error: 'start' must be a whole number of characters, 0 or more (got -5)."),
+        (_read(start="soon"), "Read error: 'start' must be a whole number of characters, 0 or more (got 'soon')."),
+        (_read(document_id="AAL.md"), "Read error: No document 'AAL.md' in corpus 'edgar_md'."),
+    ],
+)
+def test_a_bad_read_tells_the_model_and_spends_no_budget(call: ToolCall, note: str) -> None:
+    llm = ScriptedToolLLM([_step(call), _answer("?")])
+
+    answer = _agent(llm, _ReadingTools(), offered_tools=_WITH_READ).ask("q")
+
+    assert answer.agent_calls[0].status == "error"
+    assert answer.agent_calls[0].note == note
+    assert (answer.tool_calls, answer.citations) == (0, [])
+
+
+def test_a_read_when_not_offered_is_refused_naming_the_tools() -> None:
+    tools = _ReadingTools()
+    llm = ScriptedToolLLM([_step(_read()), _answer("?")])
+
+    answer = _agent(llm, tools).ask("q")
+
+    assert tools.reads == []
+    assert "Unknown tool 'rag_read_document'. The tools are: rag_search." in (answer.agent_calls[0].note or "")
+
+
+def test_build_chat_service_offers_reading_with_its_budget_and_prompt_hint() -> None:
+    config = RagConfig(
+        chat=ChatConfig(mode="agentic"),
+        agent=AgentConfig(
+            llm=LLMConfig(provider="ollama", model="m"), tools=["rag_search", "rag_read_document"], max_read_chars=7000,
+        ),
+    )
+
+    agent = build_chat_service(config)
+
+    assert isinstance(agent, AgentService)
+    assert [t.name for t in agent.tool_definitions] == ["rag_search", "rag_read_document"]
+    assert agent.max_read_chars == 7000
+    assert "call rag_read_document" in agent._system_prompt
+    default = build_chat_service(config.model_copy(update={"agent": AgentConfig(llm=LLMConfig(provider="ollama", model="m"))}))
+    assert isinstance(default, AgentService)
+    assert "rag_read_document" not in default._system_prompt
+
+
+def test_a_document_edited_after_indexing_is_refused_as_stale_not_read(tmp_path: Path) -> None:
+    """The real `RagTools.read_document` behind the agent: hit offsets from the index, then the file changes."""
+
+    import os
+
+    from rag.config.settings import ChunkingConfig, CorporaConfig, CorpusConfig
+    from rag.ingestion.corpora import chunk_selected_corpora
+
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    path = docs / "UAL.md"
+    path.write_text("# United\n\nUnited bought aircraft fuel at $2.50 a gallon.\n")
+    config = RagConfig(
+        corpora=CorporaConfig(active=["c"], registry={"c": CorpusConfig(documents_dir=docs)}),
+        chunking=ChunkingConfig(strategy="structured"),
+    )
+    _, _, chunks = chunk_selected_corpora(config, None)
+    hit = chunks[0]
+    tools = _FakeTools({"fuel": [ScoredChunk(
+        chunk_id=hit.id, text=hit.text, document_id=hit.document_id, source=hit.source,
+        doc_type=hit.doc_type, score=0.9, metadata=dict(hit.metadata),
+    )]})
+    tools._config = config
+    path.write_text("# United\n\nUnited sold its fuel hedges in a different quarter entirely.\n")
+    stat = path.stat()
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10**9))
+    llm = ScriptedToolLLM([_step(_search("fuel")), _step(_read("UAL.md")), _answer("[1]")])
+
+    answer = _agent(llm, tools, corpora=["c"], offered_tools=_WITH_READ).ask("q")
+
+    read = answer.agent_calls[1]
+    assert read.status == "error"
+    assert "'UAL.md' has changed since the search index was built" in (read.note or "")
+    assert [c.chunk_id for c in answer.citations] == [hit.id]

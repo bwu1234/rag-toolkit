@@ -101,9 +101,12 @@ filters use.
 Returns a window of one document's text: `document_id` (required), `start`
 (character offset, default 0), `max_chars` (default 6000, at most 50,000) and
 `corpus`. The response has `start`, `end`, `length`, the window's `text`, the
-document's carried metadata, and `next_start` while text remains, so
-consecutive calls rebuild the document exactly while its cleaned text remains
-unchanged.
+document's `source`, `doc_type` and carried metadata, a `version`, and
+`next_start` while text remains, so consecutive calls rebuild the document
+exactly while its cleaned text remains unchanged. `version` is a 16-hex-digit
+SHA-256 prefix of the cleaned text the offsets index into: two windows with
+the same `version` come from the same text, and a changed `version` between
+calls means the document changed under you.
 
 The text is the *cleaned* text the chunker split, so a search hit's
 `char_start`/`char_end` index straight into it: start a few hundred
@@ -114,13 +117,17 @@ header rows in front. Offsets come from the index and the text from disk, so
 they agree only while the index is in sync (`python -m rag.cli index-report`).
 An unknown `document_id` is a tool error naming close matches.
 
-There is currently no source-version argument or pinned snapshot spanning
-search/read/find calls. Checking `index-report` before a task is useful but
-cannot prevent a file changing during it. The planned
+`version` identifies the text, not a build: it covers neither metadata nor
+the loader/cleaner identity, search results don't carry one (the index
+stores no document version), and there is no argument to require one or a
+pinned snapshot spanning search/read/find calls. Checking `index-report`
+before a task is useful but cannot prevent a file changing during it. The
+in-process agent additionally refuses a read whose current text no longer
+matches its earlier search hits from that document; MCP clients get no such
+check. The rest of the planned
 [source-version contract](milestone-19-plan.md#source-version-consistency)
-will expose source identity and require matching text or an explicit mismatch
-when following a hit. Those fields and guarantees are not yet part of this
-MCP API. Stable document IDs alone do not prove source-version equality.
+is not yet part of this MCP API. Stable document IDs alone do not prove
+source-version equality.
 
 ### `rag_find`
 
@@ -130,7 +137,8 @@ case-insensitive and any whitespace in the phrase matches any run of
 whitespace, so a figure split across a line or table cell still matches;
 nothing else is normalized (no stemming, no synonyms), and regex characters
 are literal. Matches come in document order, then position, each with
-`document_id`, `start`/`end` (offsets for `rag_read_document`), the exact
+`document_id`, its text's `version` (as `rag_read_document` reports it),
+`start`/`end` (offsets for `rag_read_document`), the exact
 `match` and about 150 characters of `context` either side. `total_matches`
 and `documents_matched` count everything even when `max_results` cut the list.
 
