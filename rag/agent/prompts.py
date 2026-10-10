@@ -20,7 +20,7 @@ AGENT_SYSTEM_PROMPT = (
     "the whole conversation. Make every query standalone: name the specific "
     "entity, period, product or topic it is about, because the search sees "
     "only the query, not this conversation. A question about several entities "
-    "or periods needs a separate search for each.{filters}{listing} {iterate}\n\n"
+    "or periods needs a separate search for each.{filters}{listing}{reading} {iterate}\n\n"
     "Answer only from the passages, citing them inline as [n], e.g. [2] or "
     "[3][5].{calculate} Do not add facts from your own knowledge, not even as background "
     "or 'for reference'. If the passages don't answer the question, or answer "
@@ -71,12 +71,24 @@ _LISTING_HINT = (
 )
 
 
+# Only when `agent.tools` offers rag_read_document. The failure it answers:
+# the 27b needed five searches to rebuild a table the chunker had split, and
+# searching again is the only way to see past a passage's edges without it.
+_READING_HINT = (
+    " When a passage is cut off or you need what surrounds it -- the rest of a "
+    "table, the paragraphs around a figure -- call rag_read_document with its "
+    "document and a start a little before its char_start, rather than "
+    "searching again. Each window you read is a numbered passage you can cite."
+)
+
+
 def agent_system_prompt(
     strategy: str,
     corpus_descriptions: list[tuple[str, str | None]],
     *,
     model_filters: bool = False,
     list_documents: bool = False,
+    read_document: bool = False,
     calculator: bool = False,
 ) -> str:
     """The agent's system prompt for `strategy`, naming the corpora it searches.
@@ -91,9 +103,10 @@ def agent_system_prompt(
     iterate = _PLANNED_ITERATE if strategy == "planned" else _REACT_ITERATE
     filters = _FILTERS_HINT if model_filters else ""
     listing = _LISTING_HINT if list_documents else ""
+    reading = _READING_HINT if read_document else ""
     calculate = _CALCULATOR_HINT if calculator else ""
     return AGENT_SYSTEM_PROMPT.format(
-        iterate=iterate, corpus=corpus, filters=filters, listing=listing, calculate=calculate
+        iterate=iterate, corpus=corpus, filters=filters, listing=listing, reading=reading, calculate=calculate
     )
 
 

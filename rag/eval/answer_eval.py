@@ -60,7 +60,7 @@ from rag.generation.chat_service import ChatResponder
 from rag.llm.factory import get_llm_client
 from rag.llm.base import LLMClient
 from rag.logging_config import configure_logging
-from rag.observability.records import AgentToolCall
+from rag.observability.records import AgentToolCall, is_read_passage, read_chars
 
 logger = logging.getLogger(__name__)
 
@@ -238,6 +238,25 @@ class AnswerSampleResult:
     #: Set when the turn produced no answer (`ChatAnswer.generation_failure`):
     #: scored as a failure without a judge call, never as a refusal.
     generation_failure: str | None = None
+    #: Gold spans in none of the turn's *search* passages; None when the agent
+    #: read no document windows, so it equals `missing_spans`. A 6k-character
+    #: read contains a span more easily than a 1.2k passage, so recall from
+    #: reads is reported apart from recall from search.
+    missing_spans_from_search: list[str] | None = None
+
+    @property
+    def read_chars(self) -> int:
+        """Characters of document windows the agent read; 0 for a turn without reads."""
+        return read_chars(self.agent_calls)
+
+    @property
+    def evidence_only_from_reads(self) -> bool:
+        """Whether reads, not searches, brought the last gold span into the prompt."""
+        return (
+            self.missing_spans_from_search is not None
+            and bool(self.missing_spans_from_search)
+            and not self.missing_spans
+        )
 
     @property
     def evidence_retrieved(self) -> bool | None:
@@ -289,6 +308,10 @@ class AnswerEvalReport:
     evidence_retrieved: EvidenceBucket = field(default_factory=EvidenceBucket)
     #: Samples missing a gold span from the prompt: a FAIL here is retrieval.
     evidence_missed: EvidenceBucket = field(default_factory=EvidenceBucket)
+    #: Of `evidence_retrieved`, the samples whose spans were complete only with
+    #: the agent's read windows: what reading added over searching.
+    num_evidence_only_from_reads: int = 0
+    mean_read_chars: float = 0.0
 
 
 def run_answer_eval(
@@ -335,6 +358,10 @@ def run_answer_eval(
             )
             verdict = _parse_verdict(judge_out)
         passages = [(citation.document_id, citation.text) for citation in chat_answer.citations]
+        searched = [
+            (citation.document_id, citation.text) for citation in chat_answer.citations
+            if not is_read_passage(citation.chunk_id)
+        ]
 
         results.append(
             AnswerSampleResult(
@@ -356,6 +383,9 @@ def run_answer_eval(
                 completion_tokens=chat_answer.completion_tokens,
                 agent_calls=chat_answer.agent_calls,
                 generation_failure=chat_answer.generation_failure,
+                missing_spans_from_search=(
+                    sample_unmatched_spans(sample, searched) if len(searched) < len(passages) else None
+                ),
             )
         )
         if on_result is not None:
@@ -378,6 +408,8 @@ def run_answer_eval(
         mean_latency_s=sum(r.latency_s for r in results) / n if n > 0 else 0.0,
         evidence_retrieved=_bucket([r for r in results if r.evidence_retrieved is True]),
         evidence_missed=_bucket([r for r in results if r.evidence_retrieved is False]),
+        num_evidence_only_from_reads=sum(1 for r in results if r.evidence_only_from_reads),
+        mean_read_chars=sum(r.read_chars for r in results) / n if n > 0 else 0.0,
     )
 
 
@@ -407,6 +439,9 @@ def print_report(report: AnswerEvalReport, *, verbose: bool = False) -> None:
               f"  -> {found.num_failed} generation/judge failure(s)")
         print(f"    evidence missed     {missed.num_passed}/{missed.num_evaluated} passed"
               f"  -> {missed.num_failed} retrieval failure(s)")
+    if report.mean_read_chars:
+        print(f"  Reads  {report.mean_read_chars:,.0f} chars per turn; evidence complete only with "
+              f"reads in {report.num_evidence_only_from_reads} sample(s)")
     print(f"{'=' * 60}")
 
     if verbose:

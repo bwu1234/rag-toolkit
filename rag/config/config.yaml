@@ -375,6 +375,10 @@ agent:
   max_turn_tokens: null
   # Per-passage character cap in search results (matches the MCP server).
   max_passage_chars: 1200
+  # Only with rag_read_document in `tools`: characters of document windows one
+  # turn may read, all reads together. Windows are 6,000 characters (cut to
+  # what's left); three of them fit num_ctx beside eight searches' passages.
+  max_read_chars: 18000
   # Context window requested on every agent call. Ollama drops the overflow of
   # a longer prompt silently; the adapter warns at 90% of this.
   num_ctx: 32768
@@ -387,11 +391,14 @@ agent:
   # Tools offered to the model; rag_search is required. rag_list_documents lists
   # the corpus's documents and their metadata (companies, forms, periods), for
   # questions about a set ("which airlines...") that no ranked search can
-  # enumerate. Each call of either counts toward max_tool_calls. calculator
-  # evaluates arithmetic (a percentage change, a margin) over figures from the
-  # passages instead of the model doing it in its head; it isn't counted
-  # against max_tool_calls. Not yet measured: the `+ list` and `+ calc` rows of
-  # `run_answer_matrix.py --family m19`.
+  # enumerate. rag_read_document reads a window of a document around or past
+  # a hit, as a citable passage, within max_read_chars; search results then
+  # show each passage's document and offsets. Each search, listing or read
+  # counts toward max_tool_calls. calculator evaluates arithmetic (a
+  # percentage change, a margin) over figures from the passages instead of the
+  # model doing it in its head; it isn't counted against max_tool_calls. Not yet measured: the `+ list`, `+ list + read` and
+  # `+ calc` rows of `run_answer_matrix.py --family m19`; reading also awaits
+  # the Milestone 28 injection tier before it can become a default.
   tools: [rag_search]
 
 # Milestone 12 -- persist every chat turn (queries, retrieved/kept/cited chunk

@@ -27,7 +27,8 @@ the MCP server is also shipped.
   are development evidence, not validation of comprehensive research or
   citation support. Follow the current priorities at the top of
   [Backlog](docs/backlog.md), not milestone-number order. Shared/MCP read and
-  find tools are built but are not yet offered to the internal agent.
+  find tools are built; read is offered to the internal agent as an opt-in
+  `agent.tools` entry (unmeasured), find is not yet.
   [Milestone 19](docs/milestone-19-plan.md) owns planned source-version
   consistency, per-task evidence state and conditional long-running recovery;
   none is shipped merely because its contract is documented.

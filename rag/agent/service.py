@@ -10,7 +10,8 @@ turned up.
 Three pieces carry the design (`docs/milestone-19-plan.md`, decisions 5, 6, 9):
 
 - **A passage ledger** (`PassageLedger`) numbers every passage the model is
-  shown, in first-seen order across all searches, deduplicated by chunk id.
+  shown, in first-seen order across all searches and reads, deduplicated by
+  chunk id (a read window's id is its document, text version and offsets).
   It is the single source of truth for `[n] -> Citation`, the job
   `build_rag_prompt` does in the pipeline.
 - **Loop guards**, each answering a failure the prototype showed: a search
@@ -42,6 +43,7 @@ import math
 import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
@@ -86,16 +88,23 @@ from rag.generation.prompts import (
     strip_citation_markers,
 )
 from rag.generation.query_rewriter import ChatTurn
-from rag.observability.records import AgentToolCall, GenerationFailure, RetrievalAttempt, RetrievedPassage
+from rag.observability.records import (
+    READ_PASSAGE_PREFIX,
+    AgentToolCall,
+    GenerationFailure,
+    RetrievalAttempt,
+    RetrievedPassage,
+)
 from rag.observability.sink import TurnSink
 from rag.observability.usage import active_meter
-from rag.tools import RagTools, build_tool_specs
+from rag.tools import DEFAULT_READ_CHARS, RagTools, build_tool_specs
 from rag.vectorstore.base import ScoredChunk
 
 logger = logging.getLogger(__name__)
 
 SEARCH_TOOL = "rag_search"
 LIST_TOOL = "rag_list_documents"
+READ_TOOL = "rag_read_document"
 
 #: `rag_search` arguments the turn decides, not the model. `corpus` is the
 #: turn's corpus selection (an eval's `--corpus`); a model free to widen it
@@ -113,6 +122,10 @@ FILTERS_ARGUMENT = "filters"
 #: Its `filters` is always the model's -- narrowing a listing is what the tool
 #: is for, and it changes no search results.
 LIST_PINNED_ARGUMENTS = ("corpus", "limit", "offset")
+#: `rag_read_document` arguments the turn decides: the corpus, and the window
+#: size, which is `DEFAULT_READ_CHARS` or what is left of `max_read_chars` --
+#: a prompt-size guard, like search's `max_chars`.
+READ_PINNED_ARGUMENTS = ("corpus", "max_chars")
 
 #: Characters per token assumed wherever the provider hasn't counted. Low on
 #: purpose: English prose runs about 4, but the Qwen tokenizers split numbers
@@ -149,8 +162,13 @@ class PassageLedger:
 
         return list(self._chunks)
 
-    def add(self, chunks: Sequence[ScoredChunk]) -> list[tuple[int, ScoredChunk, bool]]:
-        """Number `chunks`, returning `(number, chunk as shown, is_new)` for each, in order."""
+    def add(self, chunks: Sequence[ScoredChunk], *, cap: bool = True) -> list[tuple[int, ScoredChunk, bool]]:
+        """Number `chunks`, returning `(number, chunk as shown, is_new)` for each, in order.
+
+        `cap=False` keeps the text whole: a read window is already sized by
+        the read budget, and capping it at a search passage's length would
+        cite less than the model saw.
+        """
 
         entries: list[tuple[int, ScoredChunk, bool]] = []
         for chunk in chunks:
@@ -159,7 +177,7 @@ class PassageLedger:
                 entries.append((number, self._chunks[number - 1], False))
                 continue
             shown = chunk
-            if len(chunk.text) > self._max_chars:
+            if cap and len(chunk.text) > self._max_chars:
                 shown = dataclasses.replace(chunk, text=chunk.text[: self._max_chars] + " [...]")
             self._chunks.append(shown)
             number = len(self._chunks)
@@ -198,9 +216,16 @@ class _Run:
     searched: dict[tuple[str, str], list[int]] = field(default_factory=dict)
     #: The model's filter keys of the listings already run, for refusing a repeat.
     listed: set[str] = field(default_factory=set)
+    #: (Document id, start) of each read that ran -> its passage number.
+    reads: dict[tuple[str, int], int] = field(default_factory=dict)
+    #: Characters read-window passages have shown, against `max_read_chars`.
+    read_chars: int = 0
+    #: Each document's search hits as retrieved, uncapped: `(char_start,
+    #: char_end, text)`, so a read can check the file still matches the index.
+    hit_spans: dict[str, list[tuple[int, int, str]]] = field(default_factory=dict)
     #: Every tool call the model made, in order: the trajectory `ChatAnswer` reports.
     calls: list[AgentToolCall] = field(default_factory=list)
-    #: Tool calls that ran -- searches and listings -- against `max_tool_calls`.
+    #: Tool calls that ran -- searches, listings and reads -- against `max_tool_calls`.
     calls_run: int = 0
     rounds: int = 0
     steps: int = 0
@@ -294,6 +319,48 @@ def _render_listing(payload: Mapping[str, Any], model_filter: QueryFilter | None
     return head + ":\n" + "\n".join(lines)
 
 
+def read_passage_id(document_id: str, version: str, start: int, end: int) -> str:
+    """A read window's ledger id: one document version's exact range.
+
+    Two reads of the same range of the same text are one passage; a range of
+    a changed text, or an overlapping but different range, is a new one, so
+    an earlier citation's text never changes and no newly shown text is
+    dropped as a duplicate.
+    """
+
+    return f"{READ_PASSAGE_PREFIX}{document_id}@{version}:{start}-{end}"
+
+
+def _with_location(block: str, chunk: ScoredChunk) -> str:
+    """A search passage block with its document id and offsets, for a model that can read around it.
+
+    Under the passage's first line, not in it: the label there is the
+    pipeline's too (`format_passage`), and the chunk header replaces the
+    document id in it, so without this line the model couldn't name the
+    document to `rag_read_document`.
+    """
+
+    start, end = chunk.metadata.get("char_start"), chunk.metadata.get("char_end")
+    if start is None or end is None:
+        return block
+    head, _, body = block.partition("\n")
+    return f"{head}\nLocation: {chunk.document_id}, char_start {int(start)}, char_end {int(end)}\n{body}"
+
+
+def _int_argument(value: Any) -> int | None:
+    """A whole-number tool argument, also accepted as a digit string (models send both); else None."""
+
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value.strip())
+    return None
+
+
 def _call_chars(call: ToolCall) -> int:
     return len(call.name) + len(json.dumps(call.arguments))
 
@@ -375,6 +442,7 @@ class AgentService(ChatResponder):
         synthesis_reserve_s: float = 0.0,
         max_turn_tokens: int | None = None,
         max_passage_chars: int = 1200,
+        max_read_chars: int = 18_000,
         max_history_turns: int = 6,
         model_filters: bool = False,
         offered_tools: Sequence[str] = (SEARCH_TOOL,),
@@ -400,16 +468,17 @@ class AgentService(ChatResponder):
         self.max_turn_tokens = max_turn_tokens
         self._limits: ContextLimits | None = llm.context_limits()
         self.max_passage_chars = max_passage_chars
+        self.max_read_chars = max_read_chars
         self.max_history_turns = max_history_turns
         self.model_filters = model_filters
         self._groundedness_checker = groundedness_checker
         self._clock = clock
         specs = {spec.name: spec for spec in build_tool_specs(tools)}
-        unknown = sorted(set(offered_tools) - {SEARCH_TOOL, LIST_TOOL, CALCULATOR_TOOL})
+        unknown = sorted(set(offered_tools) - {SEARCH_TOOL, LIST_TOOL, READ_TOOL, CALCULATOR_TOOL})
         if unknown or SEARCH_TOOL not in offered_tools:
             raise ValueError(
-                f"The agent offers {SEARCH_TOOL} and optionally {LIST_TOOL} and {CALCULATOR_TOOL}; "
-                f"got {list(offered_tools)}"
+                f"The agent offers {SEARCH_TOOL} and optionally {LIST_TOOL}, {READ_TOOL} and "
+                f"{CALCULATOR_TOOL}; got {list(offered_tools)}"
             )
         pinned = PINNED_ARGUMENTS if model_filters else (*PINNED_ARGUMENTS, FILTERS_ARGUMENT)
         # Descriptions keep only the notes that hold for what this agent offers:
@@ -420,10 +489,15 @@ class AgentService(ChatResponder):
             if LIST_TOOL in offered_tools
             else None
         )
+        self.read_tool = (
+            specs[READ_TOOL].definition_without(*READ_PINNED_ARGUMENTS, offered_tools=offered_tools)
+            if READ_TOOL in offered_tools
+            else None
+        )
         self.calculator_tool = CALCULATOR_DEFINITION if CALCULATOR_TOOL in offered_tools else None
         #: What the model is offered on every tool-bearing call, search first.
         self.tool_definitions = [self.search_tool] + [
-            tool for tool in (self.list_tool, self.calculator_tool) if tool is not None
+            tool for tool in (self.list_tool, self.read_tool, self.calculator_tool) if tool is not None
         ]
 
     # -- the turn -----------------------------------------------------------
@@ -715,6 +789,8 @@ class AgentService(ChatResponder):
         for call in calls:
             if call.name == LIST_TOOL and self.list_tool is not None:
                 content = self._list(run, call)
+            elif call.name == READ_TOOL and self.read_tool is not None:
+                content = self._read(run, call)
             elif call.name == CALCULATOR_TOOL and self.calculator_tool is not None:
                 content = self._calculate(run, call)
             else:
@@ -878,6 +954,108 @@ class AgentService(ChatResponder):
         )
         return _render_listing(payload, model_filter)
 
+    def _read(self, run: _Run, call: ToolCall) -> str:
+        """One `rag_read_document` call: show a window of a document as a numbered passage, or say why not.
+
+        The window is a ledger passage like a search hit, so the answer cites
+        it as `[n]`, and its id names the document's text version and the
+        offsets. Bounded three ways: it spends one of `max_tool_calls`, its
+        characters come out of `max_read_chars` (the window shrinks to what is
+        left), and the same start in the same document isn't read twice.
+        Scope is the search's: the turn's corpora and filter, so an id outside
+        them reads as unknown. A document whose text no longer matches this
+        turn's search hits is refused as stale rather than read at offsets
+        that now mean something else.
+        """
+
+        start_time = time.monotonic()
+        document_id = call.arguments.get("document_id")
+        raw_start = call.arguments.get("start", 0)
+        start = _int_argument(0 if raw_start is None else raw_start)
+        remaining = self.max_read_chars - run.read_chars
+        error: str | None = None
+        refusal: str | None = None
+        if not isinstance(document_id, str) or not document_id.strip():
+            error = f"Read error: {READ_TOOL} needs a 'document_id' string."
+        elif start is None or start < 0:
+            error = f"Read error: 'start' must be a whole number of characters, 0 or more (got {raw_start!r})."
+        elif (number := run.reads.get((document_id, start))) is not None:
+            refusal = (
+                f"Already read {document_id} from start {start}; it is passage [{number}] above. "
+                "Read from another start, or answer from the passages you have."
+            )
+        elif remaining <= 0:
+            refusal = (
+                f"The reading budget for this question ({self.max_read_chars:,} characters) is used up; "
+                "this read was not run. Search, or answer from the passages you have."
+            )
+        else:
+            refusal = self._budget_refusal(run, "read")
+
+        payload: dict[str, Any] | None = None
+        if error is None and refusal is None:
+            assert isinstance(document_id, str) and start is not None
+            try:
+                payload = self._tools.read_document(
+                    document_id,
+                    self._corpora,
+                    start=start,
+                    max_chars=min(DEFAULT_READ_CHARS, remaining),
+                    scope=run.query_filter,
+                    expect_spans=run.hit_spans.get(document_id, ()),
+                )
+            except ValueError as exc:
+                error = f"Read error: {exc}"
+        if payload is None:
+            note = error or refusal
+            assert note is not None
+            emit(run.on_event, start_time, "search_refused", note)
+            run.calls.append(
+                AgentToolCall(
+                    step=run.steps, tool=READ_TOOL, status="error" if error else "refused",
+                    documents=[document_id] if isinstance(document_id, str) else [],
+                    start=start, note=note,
+                )
+            )
+            return note
+
+        assert isinstance(document_id, str) and start is not None
+        end = payload["end"]
+        metadata = {"char_start": start, "char_end": end, "version": payload["version"]}
+        window = ScoredChunk(
+            chunk_id=read_passage_id(document_id, payload["version"], start, end),
+            text=payload["text"],
+            document_id=document_id,
+            source=Path(payload["source"]),
+            doc_type=payload["doc_type"],
+            # Not ranked: a read has no relevance score.
+            score=0.0,
+            metadata=metadata,
+        )
+        [(number, _, _)] = run.ledger.add([window], cap=False)
+        run.calls_run += 1
+        run.read_chars += end - start
+        run.reads[(document_id, start)] = number
+        run.calls.append(
+            AgentToolCall(
+                step=run.steps, tool=READ_TOOL, documents=[document_id], start=start, end=end,
+                passages=[number], new_passages=[number], chunk_ids=[window.chunk_id],
+            )
+        )
+        emit(
+            run.on_event, start_time, "read_document",
+            f"Read {document_id} characters {start:,}-{end:,} of {payload['length']:,} as [{number}]",
+        )
+        position = f"Read {document_id}, characters {start}-{end} of {payload['length']}"
+        if "next_start" in payload:
+            position += f"; the next window starts at {payload['next_start']}"
+        if end - start < DEFAULT_READ_CHARS and "next_start" in payload:
+            position += (
+                f". This window was cut to the {end - start:,} characters left of this question's "
+                "reading budget"
+            )
+        return f"{position}.\n\n{format_passage(number, window)}"
+
     def _calculate(self, run: _Run, call: ToolCall) -> str:
         """One `calculator` call: the expression's value, or what to fix.
 
@@ -962,6 +1140,11 @@ class AgentService(ChatResponder):
         run.calls_run += 1
         run.dropped_below_min_score += result.dropped_below_min_score
         entries = run.ledger.add(result.chunks)
+        for chunk in result.chunks:
+            if "char_start" in chunk.metadata and "char_end" in chunk.metadata:
+                run.hit_spans.setdefault(chunk.document_id, []).append(
+                    (int(chunk.metadata["char_start"]), int(chunk.metadata["char_end"]), chunk.text)
+                )
         numbers = [number for number, _, _ in entries]
         new = [number for number, _, is_new in entries if is_new]
         run.searched[(_normalize(query), _filter_key(model_filter))] = numbers
@@ -1008,7 +1191,8 @@ class AgentService(ChatResponder):
                 "relevance threshold. The corpus may not cover this."
             )
         return "\n\n".join(
-            format_passage(number, chunk) if is_new
+            (_with_location(format_passage(number, chunk), chunk) if self.read_tool else format_passage(number, chunk))
+            if is_new
             else f"Passage [{number}] (source: {chunk.document_id}): already shown above."
             for number, chunk, is_new in entries
         )

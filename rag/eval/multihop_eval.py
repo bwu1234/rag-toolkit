@@ -59,7 +59,7 @@ from rag.chat import build_chat_service
 from rag.generation.chat_service import ChatResponder
 from rag.llm.base import LLMClient
 from rag.logging_config import configure_logging
-from rag.observability.records import AgentToolCall
+from rag.observability.records import AgentToolCall, is_read_passage, read_chars
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +156,9 @@ class MultihopSampleResult:
     #: Set when the turn produced no answer (`ChatAnswer.generation_failure`):
     #: scored as a failure without a judge call, never as a refusal.
     generation_failure: str | None = None
+    #: Gold spans in none of the turn's *search* passages; None when the agent
+    #: read no document windows, so it equals `missing_spans`.
+    missing_spans_from_search: list[str] | None = None
 
     @property
     def completeness(self) -> float:
@@ -171,6 +174,19 @@ class MultihopSampleResult:
         if self.evidence_total == 0:
             return 1.0
         return (self.evidence_total - len(self.missing_spans)) / self.evidence_total
+
+    @property
+    def evidence_recall_from_search(self) -> float:
+        """`evidence_recall` over search passages alone, leaving out the agent's read windows."""
+        missing = self.missing_spans if self.missing_spans_from_search is None else self.missing_spans_from_search
+        if self.evidence_total == 0:
+            return 1.0
+        return (self.evidence_total - len(missing)) / self.evidence_total
+
+    @property
+    def read_chars(self) -> int:
+        """Characters of document windows the agent read; 0 for a turn without reads."""
+        return read_chars(self.agent_calls)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -206,6 +222,10 @@ class MultihopReport:
     #: complete_rate per sample kind (cross_period, cross_company, aggregation).
     complete_rate_by_kind: dict[str, float]
     sample_results: list[MultihopSampleResult]
+    #: `evidence_recall` over search passages alone: the gap to it is what the
+    #: agent's read windows added. Equal to it for a row without reads.
+    evidence_recall_from_search: float = 0.0
+    mean_read_chars: float = 0.0
 
 
 def run_multihop_eval(
@@ -247,6 +267,7 @@ def run_multihop_eval(
             )
 
         gold = [span for part in parts for span in part.spans]
+        searched = [c.text for c in answer.citations if not is_read_passage(c.chunk_id)]
         results.append(
             MultihopSampleResult(
                 sample_id=sample.id,
@@ -265,6 +286,9 @@ def run_multihop_eval(
                 grounded=answer.grounded,
                 agent_calls=answer.agent_calls,
                 generation_failure=answer.generation_failure,
+                missing_spans_from_search=(
+                    unmatched_spans(gold, searched) if len(searched) < len(answer.citations) else None
+                ),
             )
         )
         if on_result is not None:
@@ -307,6 +331,8 @@ def summarize(results: list[MultihopSampleResult]) -> MultihopReport:
             kind: avg([float(r.complete) for r in rs]) for kind, rs in sorted(by_kind.items())
         },
         sample_results=results,
+        evidence_recall_from_search=avg([r.evidence_recall_from_search for r in results]),
+        mean_read_chars=avg([float(r.read_chars) for r in results]),
     )
 
 
@@ -317,6 +343,9 @@ def print_report(report: MultihopReport, *, verbose: bool = False) -> None:
     print(f"  Complete & correct   {report.complete_rate:.3f}")
     print(f"  Mean completeness    {report.mean_completeness:.3f}")
     print(f"  Evidence recall      {report.evidence_recall:.3f}")
+    if report.mean_read_chars:
+        print(f"    from search alone  {report.evidence_recall_from_search:.3f}"
+              f"  (reads: {report.mean_read_chars:,.0f} chars per turn)")
     for kind, rate in report.complete_rate_by_kind.items():
         print(f"    complete, {kind:<16} {rate:.3f}")
     if report.num_empty:

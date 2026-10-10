@@ -578,7 +578,7 @@ class RetrievalConfig(BaseModel):
 
 ChatMode = Literal["pipeline", "agentic"]
 AgentStrategy = Literal["react", "planned"]
-AgentTool = Literal["rag_search", "rag_list_documents", "calculator"]
+AgentTool = Literal["rag_search", "rag_list_documents", "rag_read_document", "calculator"]
 _DEFAULT_AGENT_TOOLS: tuple[AgentTool, ...] = ("rag_search",)
 
 
@@ -732,6 +732,16 @@ class AgentConfig(BaseModel):
     # Matches the MCP server's `DEFAULT_MAX_CHARS` (a test holds them equal):
     # agent prompts grew ~6x over the pipeline's in the prototype.
     max_passage_chars: int = Field(default=1200, ge=1, description="Per-passage character cap in search results")
+    # Read only when `tools` offers `rag_read_document`. A window is up to
+    # `rag.tools.DEFAULT_READ_CHARS` (6,000) characters, and a whole filing
+    # (~57k on average) doesn't fit `num_ctx` beside the system prompt and the
+    # searches: 8 searches x 5 passages x 1,200 characters is already ~48k of
+    # the ~80k characters 32,768 tokens hold at 2.5 per token. Three windows'
+    # worth leaves room for the answer; past it, reads are refused and the
+    # context-overflow fallback still covers what an estimate misses.
+    max_read_chars: int = Field(
+        default=18_000, ge=1, description="Characters rag_read_document may show in one turn, all reads together"
+    )
     # Sent on every agent call. Ollama truncates a prompt longer than its
     # context window silently, and the shipped adapter otherwise sends no
     # window at all; 32768 is what the prototype ran with.
@@ -745,9 +755,11 @@ class AgentConfig(BaseModel):
     # The tools offered to the model, each one a matrix row before it is a
     # default (docs/milestone-19-plan.md, "Tool surface"). `rag_list_documents`
     # lists what the corpus contains, which no ranked search can enumerate.
-    # `calculator` evaluates arithmetic over the passages' figures. Searches and
-    # listings count toward `max_tool_calls`; calculations don't (they add no
-    # passages), but each step that makes one is still a model call.
+    # `rag_read_document` reads a window of a document's text, around a hit or
+    # onward from one, within `max_read_chars`. `calculator` evaluates
+    # arithmetic over the passages' figures. Searches, listings and reads count
+    # toward `max_tool_calls`; calculations don't (they add no passages), but
+    # each step that makes one is still a model call.
     tools: list[AgentTool] = Field(
         default_factory=lambda: list(_DEFAULT_AGENT_TOOLS), description="Tools offered to the agent's model"
     )

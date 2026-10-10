@@ -12,9 +12,10 @@ the default only if it beats the pipeline by more than noise.
 the local rows. [ADR 0015](decisions/0015-agentic-default.md) makes
 `agentic react / 27b, think=low` the default for research use. The outside
 MuSiQue check and representative research-workload evaluation remain open.
-Execution/output safeguards shipped on 2026-10-05. List, calculator and model
-filters are built but off and unmeasured; read/find are available through the
-shared tools and MCP, not yet through the internal agent. Phase 5 labels those
+Execution/output safeguards shipped on 2026-10-05. List, read, calculator and
+model filters are built but off and unmeasured; reading reached the internal
+agent on 2026-10-10 (opt-in, `+ list + read` row), while find is available
+only through the shared tools and MCP. Phase 5 labels those
 deliveries separately from planned additions. Source-version consistency,
 per-task evidence state and resumable research remain unbuilt. The pre-work
 and original decisions below retain their historical context. Current ordering
@@ -684,9 +685,21 @@ credited to one tool:
    `next_start`), and `rag_search` results now carry `char_start`/`char_end`.
    It reads the cleaned text, cached per selection and reloaded when files
    change. Prompted by an outside agent using the MCP server, which had no way
-   to expand a hit except by searching again. Still open for the agent:
-   ledger passages keyed by document version and offsets, `agent.max_read_chars`,
-   scope checks against the turn's filter, an `agent.tools` entry and the matrix row.
+   to expand a hit except by searching again.
+   *Offered to the agent, not measured (2026-10-10):* `rag_read_document` in
+   `agent.tools`, with `corpus` and `max_chars` pinned. Each window is a
+   ledger passage whose id is `read:<document>@<version>:<start>-<end>`
+   (`version` a digest of the cleaned text, now also in MCP read and find
+   results), uncapped by `max_passage_chars`. Reads spend `max_tool_calls`
+   and the per-turn `agent.max_read_chars` (default 18,000; the window shrinks
+   to what's left); the same start is refused as a repeat. The turn's filter
+   is the read's scope: an id outside it reads as unknown, with near misses
+   drawn only from inside it. With reading offered, search results show each
+   passage's document id and `char_start`/`char_end`, and the prompt says
+   when to read. The evals report evidence recall from search apart from
+   reads, and characters read per turn. Matrix row:
+   `agentic react / 27b, think=low + list + read`. Adoption waits on that row
+   and on the injection tier below.
 3. **`rag_find(phrase, document_id?)`.** A literal, case-insensitive phrase
    search over the selected documents' cleaned text. It returns matches with
    offsets and a short surrounding context. Search can miss an exact name or
@@ -759,7 +772,13 @@ derive a number.
 
 #### Source-version consistency
 
-**Planned serving contract; not implemented.** `rag_search` reads an index,
+**Planned serving contract; partly implemented (2026-10-10).** Read and find
+results carry a cleaned-text `version`, and the agent's read passages are
+keyed by it. The agent also refuses, as stale, a read of a document whose
+current text no longer matches this turn's search hits from it. That
+detects drift between the index and the files; it serves no snapshot, search
+results carry no version, and MCP clients get no check. The rest below is
+unbuilt. `rag_search` reads an index,
 while `rag_read_document` and `rag_find` read the current cleaned documents.
 The document cache reloads changed files, but search offsets may still refer
 to an older build. `index-report` can diagnose drift; it does not pin a turn's

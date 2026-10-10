@@ -245,9 +245,12 @@ It runs on its own model (`agent.llm`, falling back to `llm`) through
 
 **Current boundary.** The ledger preserves shown passages and citation numbers;
 it does not verify claim support or track unresolved research obligations.
-Read/find navigation exists in `RagTools` and MCP, but is not yet offered by
-`AgentService`. Navigation loads current cleaned files while search uses the
-built index, so offsets can disagree after an edit. There is no pinned task
+Read/find navigation exists in `RagTools` and MCP; `AgentService` offers
+read as an opt-in tool, with each window a ledger passage keyed by a
+cleaned-text version and offsets, and find not yet. Navigation loads current
+cleaned files while search uses the built index, so offsets can disagree
+after an edit; the agent refuses a read whose text no longer matches its
+search hits, but nothing pins a version across calls. There is no pinned task
 snapshot or resumable live-task store. The planned
 [source-version](milestone-19-plan.md#source-version-consistency),
 [per-task evidence-state](milestone-19-plan.md#per-task-evidence-state) and

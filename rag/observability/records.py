@@ -82,6 +82,27 @@ AgentCallStatus = Literal["ran", "refused", "error"]
 """What became of an agent's tool call: run, refused by a loop guard, or rejected as invalid."""
 
 
+#: Prefix of an agent read window's passage id, which stands where a chunk id
+#: would in citations and in `TurnRecord.shown_chunk_ids`/`cited_chunk_ids`.
+READ_PASSAGE_PREFIX = "read:"
+
+
+def is_read_passage(chunk_id: str) -> bool:
+    """Whether a shown or cited id is an agent read window rather than an indexed chunk."""
+
+    return chunk_id.startswith(READ_PASSAGE_PREFIX)
+
+
+def read_chars(calls: list[AgentToolCall]) -> int:
+    """Characters a turn's `rag_read_document` calls showed the model."""
+
+    return sum(
+        call.end - call.start for call in calls
+        if call.tool == "rag_read_document" and call.status == "ran" and call.passages
+        and call.start is not None and call.end is not None
+    )
+
+
 @dataclass(frozen=True)
 class AgentToolCall:
     """One tool call an agent's model made, as written, and what it got back.
@@ -96,8 +117,10 @@ class AgentToolCall:
     rank order -- the `[n]` the answer cites -- and `new_passages` the ones it
     showed for the first time; the rest came back as "already shown" stubs.
     For `rag_list_documents`, `documents` are the ids it listed. For
-    `calculator`, `expression` is what the model asked for and `result` the
-    value it was shown.
+    `rag_read_document`, `documents` is the one document read, `start`/`end`
+    the window shown, and `passages`/`chunk_ids` its ledger number and read
+    passage id. For `calculator`, `expression` is what the model asked for
+    and `result` the value it was shown.
     """
 
     step: int
@@ -121,6 +144,10 @@ class AgentToolCall:
     documents: list[str] = field(default_factory=list)
     expression: str | None = None
     result: str | None = None
+    start: int | None = None
+    """`rag_read_document`: the window's first character offset, as served."""
+    end: int | None = None
+    """`rag_read_document`: the offset just past the window's last character."""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AgentToolCall:
@@ -182,7 +209,10 @@ class TurnRecord:
 
     `shown_chunk_ids` and `cited_chunk_ids` together are an implicit relevance
     judgment logged on every turn: of the passages the model was shown (in
-    prompt order), the ones it chose to cite. `metadata` carries what the
+    prompt order), the ones it chose to cite. An agent's read window is shown
+    and cited too, under a `read:<document>@<version>:<start>-<end>` id rather
+    than a chunk id: anything that learns from these lists as chunk relevance
+    must skip those. `metadata` carries what the
     record can't be interpreted without -- corpus, model, config fingerprint --
     since a turn logged under a different config is a different experiment.
     """

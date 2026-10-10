@@ -21,6 +21,7 @@ from rag.tools import (
     MAX_FIND_RESULTS,
     MAX_READ_CHARS,
     RagTools,
+    StaleSourceError,
     build_tool_specs,
 )
 
@@ -124,6 +125,50 @@ def test_an_edited_corpus_is_reloaded_not_served_stale(tools: RagTools, corpus: 
     os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10**9))  # same-second writes
 
     assert "sold its hedges" in tools.read_document(path.name)["text"]
+
+
+def test_the_version_names_the_text_and_changes_with_it(tools: RagTools, corpus: Path) -> None:
+    path = corpus / "UAL_10-Q_2026-06-30.md"
+    before = tools.read_document(path.name)
+    assert before["version"] == tools.read_document(path.name, start=3)["version"]
+    assert before["version"] == tools.find("United")["matches"][0]["version"]
+    assert before["source"].endswith("UAL_10-Q_2026-06-30.md")
+
+    path.write_text(_filing("UAL", "2026-06-30", "United sold its hedges."))
+    stat = path.stat()
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10**9))
+
+    assert tools.read_document(path.name)["version"] != before["version"]
+
+
+def test_a_document_outside_the_scope_reads_as_unknown(tools: RagTools) -> None:
+    dal = QueryFilter(equals={"ticker": "DAL"})
+
+    assert tools.read_document("DAL_10-Q_2026-06-30.md", scope=dal)["ticker"] == "DAL"
+    with pytest.raises(ValueError) as outside:
+        tools.read_document("UAL_10-Q_2026-06-30.md", scope=dal)
+    with pytest.raises(ValueError) as absent:
+        tools.read_document("AAL_10-Q_2026-06-30.md", scope=dal)
+    # The same error as an id that doesn't exist, near misses drawn only from inside the scope.
+    assert str(outside.value).replace("UAL", "AAL") == str(absent.value)
+    assert "Did you mean: DAL_10-Q_2026-06-30.md?" in str(outside.value)
+
+
+def test_spans_the_text_still_holds_read_and_changed_ones_are_stale(config: RagConfig, corpus: Path) -> None:
+    tools = RagTools(config=config)
+    _, _, chunks = chunk_selected_corpora(config, None)
+    ual = [c for c in chunks if c.document_id == "UAL_10-Q_2026-06-30.md"]
+    spans = [(c.metadata["char_start"], c.metadata["char_end"], c.text) for c in ual]
+
+    assert tools.read_document("UAL_10-Q_2026-06-30.md", expect_spans=spans)["start"] == 0
+
+    path = corpus / "UAL_10-Q_2026-06-30.md"
+    path.write_text(_filing("UAL", "2026-06-30", "Delta never bought anything."))
+    stat = path.stat()
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10**9))
+
+    with pytest.raises(StaleSourceError, match="changed since the search index was built"):
+        tools.read_document("UAL_10-Q_2026-06-30.md", expect_spans=spans)
 
 
 def test_documents_are_loaded_once_per_selection(tools: RagTools, monkeypatch: pytest.MonkeyPatch) -> None:

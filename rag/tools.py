@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import dataclasses
 import difflib
+import hashlib
 import inspect
 import logging
 import re
@@ -80,6 +81,27 @@ MAX_READ_CHARS = 50_000
 DEFAULT_FIND_RESULTS = 20
 MAX_FIND_RESULTS = 100
 FIND_CONTEXT_CHARS = 150
+
+
+class StaleSourceError(ValueError):
+    """A document's text no longer matches the offsets a caller holds for it.
+
+    Raised instead of applying old offsets to new text: a search hit's
+    `char_start`/`char_end` come from the index, which can be older than the
+    file. A `ValueError`, so the transports and the agent report it as a tool
+    error.
+    """
+
+
+def document_version(document: Document) -> str:
+    """A digest of the cleaned text offsets index into: changes whenever a window could.
+
+    Covers the text only, not metadata or the loader/cleaner identity the
+    source-version contract also names (`docs/milestone-19-plan.md`), so it
+    tells two texts apart but doesn't yet pin a whole build.
+    """
+
+    return hashlib.sha256(document.text.encode()).hexdigest()[:16]
 
 
 def _refs(schema: Any) -> set[str]:
@@ -517,6 +539,9 @@ class RagTools:
         corpus: str | Sequence[str] | None = None,
         start: int = 0,
         max_chars: int | None = None,
+        *,
+        scope: QueryFilter | None = None,
+        expect_spans: Sequence[tuple[int, int, str]] = (),
     ) -> dict[str, Any]:
         """Return a window of one document's cleaned text, from `start`.
 
@@ -524,29 +549,55 @@ class RagTools:
         search hit's `char_start`/`char_end` point into it directly: read from
         a little before `char_start` to see what surrounds a passage. The
         index may be older than the files, though (`python -m rag.cli
-        index-report` says whether it is in sync); offsets from a stale index
-        land wherever they land in the current text.
+        index-report` says whether it is in sync). `version` is a digest of
+        the text read, so a caller can tell two reads of different texts apart.
 
-        Raises `ValueError` for an unknown document (with near misses named),
-        or `start`/`max_chars` out of range.
+        Two keyword arguments serve the in-process agent; MCP passes neither:
+
+        - `scope`: the turn's filter. A document outside it is reported
+          exactly as an unknown one, near misses drawn only from inside it,
+          so a guessed id neither reads nor confirms anything.
+        - `expect_spans`: `(char_start, char_end, text)` of search hits from
+          this document the caller has already shown. If the current text at
+          any of those offsets isn't that hit's text, the index and the file
+          disagree and `StaleSourceError` is raised rather than serving a
+          window whose offsets mean something else now.
+
+        Raises `ValueError` for an unknown or out-of-scope document (with near
+        misses named), or `start`/`max_chars` out of range.
         """
 
         budget = DEFAULT_READ_CHARS if max_chars is None else max_chars
         if not 1 <= budget <= MAX_READ_CHARS:
             raise ValueError(f"max_chars must be between 1 and {MAX_READ_CHARS} (got {budget})")
         selection, documents = self._documents_for(corpus)
+        if scope is not None and not scope.is_empty:
+            documents = self._in_scope(documents, scope)
         document = documents.get(document_id)
         if document is None:
             raise ValueError(_unknown_document(document_id, documents, selection))
         length = len(document.text)
         if not 0 <= start < max(length, 1):
             raise ValueError(f"start must be between 0 and {max(length - 1, 0)} for {document_id!r} (got {start})")
+        for span_start, span_end, text in expect_spans:
+            # The fixed chunker strips its spans, and the structured one puts a
+            # split table's header rows in front of later pieces: the current
+            # slice, stripped, must still sit inside the hit's text.
+            if document.text[span_start:span_end].strip() not in text:
+                raise StaleSourceError(
+                    f"{document_id!r} has changed since the search index was built: the text at a search "
+                    f"result's offsets ({span_start}-{span_end}) is no longer that result's text, so offsets "
+                    "from search don't apply to it. Rebuild the index (python -m rag.cli index)."
+                )
 
         end = min(start + budget, length)
         payload: dict[str, Any] = {
             "document_id": document_id,
             "corpora": list(selection.names),
+            "source": _relative_to_repo(document.source),
+            "doc_type": document.doc_type,
             **_document_metadata(document, self.config.chunking.carry_metadata),
+            "version": document_version(document),
             "length": length,
             "start": start,
             "end": end,
@@ -555,6 +606,16 @@ class RagTools:
         if end < length:
             payload["next_start"] = end
         return payload
+
+    def _in_scope(self, documents: dict[str, Document], scope: QueryFilter) -> dict[str, Document]:
+        """The documents `scope` matches, by the same fields search filters on."""
+
+        carried_keys = self.config.chunking.carry_metadata
+        check_filterable(scope, carried_keys)
+        return {
+            document_id: document for document_id, document in documents.items()
+            if scope.matches({DOCUMENT_ID: document_id, **carried_metadata(document, carried_keys)})
+        }
 
     def find(
         self,
@@ -606,10 +667,12 @@ class RagTools:
         documents_matched = 0
         for document in candidates:
             found = 0
+            version: str | None = None
             for match in pattern.finditer(document.text):
                 found += 1
                 if len(matches) < requested:
-                    matches.append(_find_entry(document, match.start(), match.end()))
+                    version = version or document_version(document)
+                    matches.append(_find_entry(document, version, match.start(), match.end()))
             total += found
             documents_matched += bool(found)
 
@@ -755,7 +818,7 @@ def _unknown_document(document_id: str, documents: dict[str, Document], selectio
     )
 
 
-def _find_entry(document: Document, start: int, end: int) -> dict[str, Any]:
+def _find_entry(document: Document, version: str, start: int, end: int) -> dict[str, Any]:
     """One `rag_find` match: its offsets and the text around it, on one line."""
 
     before = max(start - FIND_CONTEXT_CHARS, 0)
@@ -763,6 +826,7 @@ def _find_entry(document: Document, start: int, end: int) -> dict[str, Any]:
     context = " ".join(document.text[before:after].split())
     return {
         "document_id": document.id,
+        "version": version,
         "start": start,
         "end": end,
         "match": document.text[start:end],
@@ -940,7 +1004,7 @@ def build_tool_specs(tools: RagTools) -> list[ToolSpec]:
     def rag_read_document(
         document_id: Annotated[
             str,
-            Field(description="The document to read, as rag_search, rag_find or rag_list_documents names it."),
+            Field(description="The document to read, by the id search results, find matches and listings give it."),
         ],
         start: Annotated[
             int,
