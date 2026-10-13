@@ -23,42 +23,21 @@ between sessions goes undetected.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
-import subprocess
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
+# Re-exported: both lived here before `rag.eval.provenance` existed.
+from rag.eval.provenance import code_version, digest
 
-_REPO = Path(__file__).resolve().parents[2]
+__all__ = ["CheckpointMismatch", "SampleCheckpoint", "code_version", "digest"]
+
+logger = logging.getLogger(__name__)
 
 
 class CheckpointMismatch(RuntimeError):
     """A checkpoint exists, but was written by a different setup than this run's."""
-
-
-def digest(value: Any) -> str:
-    """Short, stable hash of any JSON-serializable value."""
-    blob = json.dumps(value, sort_keys=True, default=str).encode("utf-8")
-    return hashlib.sha256(blob).hexdigest()[:16]
-
-
-def code_version() -> str:
-    """The git commit, plus a hash of uncommitted changes to the code; "unknown" outside git."""
-    try:
-        commit = _git("rev-parse", "HEAD")
-        diff = _git("diff", "HEAD", "--", "rag", "scripts")
-    except (OSError, subprocess.CalledProcessError):
-        return "unknown"
-    return f"{commit[:12]}+{digest(diff)}" if diff else commit[:12]
-
-
-def _git(*args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=_REPO, capture_output=True, text=True, check=True
-    ).stdout.strip()
 
 
 class SampleCheckpoint:

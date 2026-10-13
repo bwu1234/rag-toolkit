@@ -17,11 +17,21 @@ from __future__ import annotations
 import re
 import statistics
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from rag.chunking.models import Chunk
+from rag.chunking.models import Chunk, content_hash
+from rag.config.settings import CorpusSelection, RagConfig
+from rag.index_manifest import (
+    INDEX_SECTIONS,
+    IndexManifest,
+    index_manifest_path,
+    read_index_build,
+    read_index_manifest,
+)
 from rag.ingestion.models import Document
+from rag.retrieval.factory import get_sparse_index, sparse_index_path
+from rag.vectorstore.factory import get_vector_store
 
 #: Percentiles reported for the chunk-size distribution.
 SIZE_PERCENTILES = (10, 50, 90, 99)
@@ -43,10 +53,55 @@ class IndexState:
     stale: int
     #: Chunks whose stored content hash differs from the corpus's text.
     changed: int
+    #: The stored build record (`rag.index_manifest.IndexBuild`), or None
+    #: when the index predates build records.
+    build: dict[str, Any] | None = None
 
     @property
     def in_sync(self) -> bool:
         return not (self.missing or self.stale or self.changed or self.manifest_differences)
+
+
+def inspect_index(config: RagConfig, selection: CorpusSelection, chunks: list[Chunk]) -> IndexState | None:
+    """Compare the built index for `selection` with `chunks`, or None if it isn't built.
+
+    Keyed on the sparse index file because it is always written alongside the vector
+    collection, and checking it first keeps this read-only: opening the
+    vector store would create an empty collection where there was none.
+    """
+
+    sparse_path = sparse_index_path(config.sparse_index, selection.index_dir, selection.slug)
+    if not sparse_path.exists():
+        return None
+    sparse = get_sparse_index(config.sparse_index, selection.index_dir, selection.slug)
+    store = get_vector_store(config.vector_store, selection.index_dir, collection_name=selection.collection_name)
+
+    corpus_ids = {chunk.id for chunk in chunks}
+    vector_ids, sparse_ids = store.ids(), sparse.ids()
+    stored = store.get_metadatas(sorted(corpus_ids & vector_ids))
+    changed = sum(
+        1 for chunk in chunks
+        if chunk.id in stored and stored[chunk.id].get("content_hash") != content_hash(chunk.text)
+    )
+
+    path = index_manifest_path(selection.index_dir, selection.slug)
+    manifest = read_index_manifest(path)
+    differences = (
+        manifest.differences(IndexManifest.from_config(config), sections=INDEX_SECTIONS)
+        if manifest is not None
+        else []
+    )
+    build = read_index_build(path)
+    return IndexState(
+        manifest=asdict(manifest) if manifest is not None else None,
+        manifest_differences=differences,
+        vector_chunks=len(vector_ids),
+        sparse_chunks=len(sparse_ids),
+        missing=len(corpus_ids - (vector_ids & sparse_ids)),
+        stale=len((vector_ids | sparse_ids) - corpus_ids),
+        changed=changed,
+        build=asdict(build) if build is not None else None,
+    )
 
 
 @dataclass
@@ -303,5 +358,12 @@ def format_report(report: IndexReport) -> str:
         lines += [f"    {line}" for line in state.manifest_differences]
     else:
         lines.append("  manifest         matches config")
+    build = state.build
+    if build is None:
+        lines.append("  build            none recorded (re-run `rag.cli index` to record one)")
+    elif build["status"] == "complete":
+        lines.append(f"  build            {build['build_id']} ({build['num_chunks']} chunks, {build['recorded_at']})")
+    else:
+        lines.append(f"  build            {build['status'].upper()} -- re-run `rag.cli index`")
     lines.append(f"  in sync          {'yes' if state.in_sync else 'NO -- re-run `rag.cli index`'}")
     return "\n".join(lines)

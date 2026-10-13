@@ -16,19 +16,17 @@ from pathlib import Path
 from rag.chunking.context_cache import ContextCache, context_cache_path
 from rag.chunking.contextualizer import ChunkContextualizer
 from rag.chunking.models import Chunk, content_hash
-from rag.config.settings import CorpusSelection, RagConfig, load_config
+from rag.config.settings import load_config
 from rag.embedding.factory import get_embedder
 from rag.chat import build_chat_service
 from rag.llm.factory import get_llm_client
 from rag.index_manifest import (
-    INDEX_SECTIONS,
-    IndexManifest,
     IndexManifestMismatch,
+    finish_index_build,
     index_manifest_path,
     prepare_for_indexing,
-    read_index_manifest,
 )
-from rag.index_report import IndexState, build_report, format_report
+from rag.index_report import build_report, format_report, inspect_index
 from rag.ingestion.cleaners import clean_text
 from rag.ingestion.corpora import chunk_selected_corpora, load_selected_corpora
 from rag.ingestion.loaders import CorpusLoadError
@@ -193,11 +191,13 @@ def _cmd_index(args: argparse.Namespace) -> None:
 
     # Before any write: refuse to extend an index built with a different
     # embedder or contextual settings, which the per-chunk text hash can't see.
+    manifest_path = index_manifest_path(selection.index_dir, selection.slug)
     prepare_for_indexing(
-        index_manifest_path(selection.index_dir, selection.slug),
-        config,
-        index_is_empty=store.count() == 0 and sparse.count() == 0,
+        manifest_path, config, index_is_empty=store.count() == 0 and sparse.count() == 0
     )
+    # Whether this run changed the index's contents, which decides whether
+    # its build record keeps the previous build's id.
+    modified = args.reset
 
     print(f"\nCorpus: {selection.describe()}")
     print(f"{len(documents)} document(s) -> {len(chunks)} chunk(s) to index")
@@ -264,6 +264,7 @@ def _cmd_index(args: argparse.Namespace) -> None:
         vectors = embedder.embed_documents([chunk.index_text for chunk in to_update])
         store.upsert(to_update, vectors)
         sparse.upsert(to_update)
+        modified = True
         done = min(start + _INDEX_BATCH_SIZE, len(chunks))
         print(f"  embedded + upserted {len(to_update)} (changed) / {done}/{len(chunks)} chunk(s)")
 
@@ -285,15 +286,20 @@ def _cmd_index(args: argparse.Namespace) -> None:
     elif stale_vectors or stale_sparse:
         store.delete(stale_vectors)
         sparse.delete(stale_sparse)
+        modified = True
         print(f"  removed {max(len(stale_vectors), len(stale_sparse))} stale chunk(s) no longer in the corpus")
 
     sparse.flush()
     if context_cache is not None:
         context_cache.close()
+    build = finish_index_build(
+        manifest_path, config, selection, documents, chunks, modified=modified, complete=not failed
+    )
     print(
         f"\nIndex now holds {store.count()} vector chunk(s) "
         f"+ {sparse.count()} sparse chunk(s) (dimensions={embedder.dimensions})"
     )
+    print(f"Build {build.build_id} ({build.status})")
     if failed:
         raise _load_failure(failed, "Everything else was indexed, but stale chunks were not removed.")
 
@@ -344,51 +350,12 @@ def _cmd_index_report(args: argparse.Namespace) -> None:
         min_chars=args.min_chars,
         max_chars=args.max_chars or config.chunking.chunk_size,
         header_template=config.chunking.header.template,
-        index=_index_state(config, selection, chunks),
+        index=inspect_index(config, selection, chunks),
     )
     if args.json:
         print(json.dumps(dataclasses.asdict(report), indent=2))
     else:
         print(format_report(report))
-
-
-def _index_state(config: RagConfig, selection: CorpusSelection, chunks: list[Chunk]) -> IndexState | None:
-    """Compare the built index for `selection` with `chunks`, or None if it isn't built.
-
-    Keyed on the sparse index file because it is always written alongside the vector
-    collection, and checking it first keeps this command read-only: opening the
-    vector store would create an empty collection where there was none.
-    """
-
-    sparse_path = sparse_index_path(config.sparse_index, selection.index_dir, selection.slug)
-    if not sparse_path.exists():
-        return None
-    sparse = get_sparse_index(config.sparse_index, selection.index_dir, selection.slug)
-    store = get_vector_store(config.vector_store, selection.index_dir, collection_name=selection.collection_name)
-
-    corpus_ids = {chunk.id for chunk in chunks}
-    vector_ids, sparse_ids = store.ids(), sparse.ids()
-    stored = store.get_metadatas(sorted(corpus_ids & vector_ids))
-    changed = sum(
-        1 for chunk in chunks
-        if chunk.id in stored and stored[chunk.id].get("content_hash") != content_hash(chunk.text)
-    )
-
-    manifest = read_index_manifest(index_manifest_path(selection.index_dir, selection.slug))
-    differences = (
-        manifest.differences(IndexManifest.from_config(config), sections=INDEX_SECTIONS)
-        if manifest is not None
-        else []
-    )
-    return IndexState(
-        manifest=dataclasses.asdict(manifest) if manifest is not None else None,
-        manifest_differences=differences,
-        vector_chunks=len(vector_ids),
-        sparse_chunks=len(sparse_ids),
-        missing=len(corpus_ids - (vector_ids & sparse_ids)),
-        stale=len((vector_ids | sparse_ids) - corpus_ids),
-        changed=changed,
-    )
 
 
 def _cmd_retrieve(args: argparse.Namespace) -> None:

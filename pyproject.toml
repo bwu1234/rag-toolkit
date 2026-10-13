@@ -95,6 +95,7 @@ source_modules = [
     "rag.ingestion", "rag.query_filter", "rag.index_manifest",
     "rag.index_report", "rag.tools", "rag.mcp", "rag.llm", "rag.generation",
     "rag.agent", "rag.chat", "rag.observability", "rag.config", "rag.events",
+    "rag.hashing",
 ]
 forbidden_modules = ["rag.api", "rag.ui", "rag.cli", "rag.eval"]
 

@@ -19,6 +19,7 @@ import pytest
 from rag.config.settings import LLMConfig, RagConfig, load_config
 from rag.eval.dataset import EvalDataset
 from rag.generation.chat_service import ChatAnswer, ChatService
+from tests.fakes import skip_index_checks
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
@@ -185,6 +186,7 @@ def _run(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, chat: _Chat, *extra: s
     monkeypatch.setattr(matrix, "build_chat_service", build_chat_service)
     monkeypatch.setattr(matrix, "build_oracle_retriever", build_oracle)
     monkeypatch.setattr(matrix, "get_llm_client", lambda config: _PassJudge())
+    skip_index_checks(monkeypatch, matrix)
     monkeypatch.setattr(sys, "argv", [
         "run_answer_matrix.py", "--family", "m19", "--sets", "refusals,multihop",
         "--multihop", str(multihop), "--refusals", str(refusals),
@@ -322,6 +324,7 @@ def test_a_spent_budget_stops_the_run_and_keeps_its_checkpoint(
     chat = _SpentChat()
     monkeypatch.setattr(matrix, "build_chat_service", lambda config, corpora=None, retriever=None: chat)
     monkeypatch.setattr(matrix, "get_llm_client", lambda config: _PassJudge())
+    skip_index_checks(monkeypatch, matrix)
     monkeypatch.setattr(sys, "argv", [
         "run_answer_matrix.py", "--family", "m19-hosted", "--sets", "multihop",
         "--variant", "pipeline / flash-lite", "--multihop", str(multihop),
