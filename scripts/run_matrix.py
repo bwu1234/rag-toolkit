@@ -26,8 +26,14 @@ the two runs disagree on, which is all a comparison can learn from.
 
 **Every result carries its config.**  A metric with no config attached is
 unreproducible, so each record stores the corpus, the eval set, the resolved
-overrides, and a fingerprint over the settings that actually affect retrieval.
-Two runs with the same fingerprint are comparable; two without are not.
+overrides, and a ``provenance`` block (:mod:`rag.eval.provenance`): the hash of
+the whole effective config, the dataset and sample-selection hashes, the index
+recipe, corpus and build identities, the code version and a timestamp. The
+dataset itself is snapshotted under ``<results-dir>/datasets/<dataset_hash>.json``.
+A variant whose index doesn't hold what its config describes is refused
+rather than measured. The older ``fingerprint``, over an allowlist of
+retrieval settings, is still written so existing rows stay comparable; it
+misses fields added since, so don't treat a match as proof of the same setup.
 
 Usage
 -----
@@ -54,6 +60,13 @@ from rag.config.settings import DEFAULT_HNSW_EF_SEARCH, RagConfig, load_config  
 from rag.eval.dataset import EvalDataset, EvalSample  # noqa: E402
 from rag.eval.metrics import wilson_interval  # noqa: E402
 from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
+from rag.eval.provenance import (  # noqa: E402
+    IndexConflict,
+    checked_index,
+    code_version,
+    provenance_record,
+    write_dataset_snapshot,
+)
 from rag.eval.retrieval_eval import run_retrieval_eval  # noqa: E402
 from rag.ingestion.corpora import chunk_selected_corpora  # noqa: E402
 from rag.ingestion.models import Document  # noqa: E402
@@ -428,7 +441,13 @@ def fingerprint(config: RagConfig) -> tuple[str, dict[str, Any]]:
 
 
 def run_variant(
-    variant: Variant, base: RagConfig, dataset: EvalDataset, corpora: list[str] | None
+    variant: Variant,
+    base: RagConfig,
+    dataset: EvalDataset,
+    corpora: list[str] | None,
+    *,
+    dataset_path: Path,
+    code: str,
 ) -> dict[str, Any]:
     config = apply_overrides(base, variant.overrides)
     digest, settings = fingerprint(config)
@@ -441,7 +460,8 @@ def run_variant(
     logger.info("[%s] %s", variant.name, variant.overrides or "(shipped defaults)")
     # Re-chunked per variant, since a variant may override chunking; it costs
     # about a second, against minutes for the retrieval itself.
-    _selection, documents, corpus_chunks = chunk_selected_corpora(config, corpora)
+    selection, documents, corpus_chunks = chunk_selected_corpora(config, corpora)
+    index = checked_index(config, selection, documents, corpus_chunks, label=variant.name)
     filters_for = derive_filters(variant.filters, documents) if variant.filters else None
     started = time.monotonic()
     retriever = build_retriever(config, corpora=corpora)
@@ -466,6 +486,10 @@ def run_variant(
         **({"filters": variant.filters} if variant.filters else {}),
         "fingerprint": digest,
         "settings": {k: str(v) for k, v in settings.items()},
+        "provenance": provenance_record(
+            config=config, dataset_path=dataset_path, dataset=dataset, selected=dataset,
+            selection="all", code=code, index=index,
+        ),
         "num_samples": summary.num_samples,
         "elapsed_s": round(elapsed, 1),
         "metrics": metrics(summary),
@@ -691,9 +715,19 @@ def main() -> int:
         )
         return ordered
 
+    snapshot = write_dataset_snapshot(args.results_dir / "datasets", dataset)
+    logger.info("Dataset snapshot: %s", snapshot)
+    code = code_version()
+
     ordered: list[dict[str, Any]] = flush() if accumulated else []
     for variant in variants:
-        accumulated[variant.name] = run_variant(variant, base, dataset, args.corpus)
+        try:
+            accumulated[variant.name] = run_variant(
+                variant, base, dataset, args.corpus, dataset_path=args.eval_set, code=code
+            )
+        except IndexConflict as exc:
+            logger.error("%s", exc)
+            return 1
         ordered = flush()
         logger.info("Checkpointed %d variant(s) to %s", len(ordered), destination)
 

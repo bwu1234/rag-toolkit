@@ -3,8 +3,30 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from types import ModuleType
+from typing import Any
 
+import pytest
+
+from rag.eval.provenance import IndexProvenance
 from rag.llm.base import AssistantTurn, Message, ToolCallingLLM, ToolDefinition
+
+
+def skip_index_checks(monkeypatch: pytest.MonkeyPatch, matrix: ModuleType) -> None:
+    """Let a matrix script run over a faked chat service with no index on disk.
+
+    The script verifies every variant's index before running; a test that
+    fakes retrieval has none, so the check reports it unverified instead.
+    """
+
+    def chunk(config: Any, corpora: Any) -> tuple[Any, list[Any], list[Any]]:
+        return config.corpus_selection(corpora), [], []
+
+    def check(config: Any, selection: Any, documents: Any, chunks: Any, *, label: str) -> IndexProvenance:
+        return IndexProvenance("index", "corpus", None, unverified="faked in a test")
+
+    monkeypatch.setattr(matrix, "chunk_selected_corpora", chunk)
+    monkeypatch.setattr(matrix, "checked_index", check)
 
 
 class ScriptedToolLLM(ToolCallingLLM):

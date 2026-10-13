@@ -133,7 +133,10 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   `chunking.header`, and the index manifest
   (`rag/index_manifest.py`) refuses the run until you do. Generated
   contexts survive `--reset` on purpose (so rebuilds don't re-pay for them);
-  `--clear-context-cache` forces regeneration.
+  `--clear-context-cache` forces regeneration. Each run records a build id
+  in the manifest (new whenever it writes or deletes anything); eval
+  provenance reads it, and the matrix scripts refuse an index that doesn't
+  match their config ([eval harness plan](docs/eval-harness-plan.md), Phase 1).
 - API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`,
   optional `history` and metadata `filters`; `/health`)
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.

@@ -19,6 +19,7 @@ from rag.eval.dataset import EvalDataset
 from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.observability.records import AgentToolCall
+from tests.fakes import skip_index_checks
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
@@ -200,6 +201,7 @@ def _run_matrix(
         dataset_path.write_text(json.dumps([s.to_dict() for s in _multihop(3)]))
     monkeypatch.setattr(run_answer_matrix, "build_chat_service", lambda config, corpora=None: chat)
     monkeypatch.setattr(run_answer_matrix, "get_llm_client", lambda config: _PassJudge())
+    skip_index_checks(monkeypatch, run_answer_matrix)
     monkeypatch.setattr(sys, "argv", [
         "run_answer_matrix.py", "--sets", "multihop", "--variant", "crag=off",
         "--multihop", str(dataset_path), "--results-dir", str(tmp_path / "results"), *extra,
@@ -256,6 +258,7 @@ def test_matrix_runs_a_tier_in_full_and_counts_each_kind(
     ]))
     monkeypatch.setattr(run_answer_matrix, "build_chat_service", lambda config, corpora=None: _CountingChat())
     monkeypatch.setattr(run_answer_matrix, "get_llm_client", lambda config: _PassJudge())
+    skip_index_checks(monkeypatch, run_answer_matrix)
     monkeypatch.setattr(sys, "argv", [
         "run_answer_matrix.py", "--sets", "underspecified", "--variant", "crag=off",
         "--underspecified", str(tier), "--limit", "1", "--results-dir", str(tmp_path / "results"),

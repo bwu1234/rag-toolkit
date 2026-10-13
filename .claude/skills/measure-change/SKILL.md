@@ -57,9 +57,21 @@ existing entries follow:
   distribution would confound "is this reranker better" with "does it happen to
   score above an arbitrary threshold".
 
-If the change touches a knob not in `FINGERPRINTED`, add it there too — a metric
-whose config isn't captured is unreproducible, and two runs are only comparable
-when their fingerprints match.
+Every row carries a `provenance` block (`rag/eval/provenance.py`): the hash of
+the whole effective config, the dataset and sample-selection hashes, the index
+recipe, corpus and build identities, the code version and a timestamp. A new
+config field is hashed by default; `tests/test_provenance.py` fails until it is
+classified, and only a field that can't change a result belongs on
+`CONFIG_HASH_DENYLIST`, with its reason. The older `fingerprint` column is an
+allowlist kept for existing rows: it misses fields added since, so a matching
+fingerprint is not proof of the same setup. Compare `config_hash` instead, and
+read the config diff when variants differ on purpose.
+
+The matrix refuses a variant whose index doesn't hold what its config
+describes (different recipe, changed corpus, missing or stale chunks), naming
+each conflict. An index built before build records existed runs with
+`verified: false`; `python -m rag.cli index` with the same config records a
+build without re-embedding anything.
 
 Answer-side changes (CRAG, prompts, groundedness) use
 `scripts/run_answer_matrix.py` instead — it costs LLM calls per sample and takes

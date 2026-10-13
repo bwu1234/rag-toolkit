@@ -151,6 +151,15 @@ from rag.eval.checkpoint import (  # noqa: E402
     digest,
 )
 from rag.eval.dataset import EvalDataset  # noqa: E402
+from rag.eval.provenance import (  # noqa: E402
+    IndexConflict,
+    IndexProvenance,
+    checked_index,
+    provenance_record,
+    write_dataset_snapshot,
+)
+from rag.index_manifest import index_hash  # noqa: E402
+from rag.ingestion.corpora import chunk_selected_corpora  # noqa: E402
 from rag.eval.metrics import wilson_interval  # noqa: E402
 from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval  # noqa: E402
 from rag.eval.musique_eval import (  # noqa: E402
@@ -979,11 +988,17 @@ def main() -> int:
         "table": args.table,
         "musique": args.musique,
     }
-    datasets = {name: EvalDataset.load(paths[name]) for name in sets}
+    full_datasets = {name: EvalDataset.load(paths[name]) for name in sets}
+    datasets = dict(full_datasets)
+    # How each set's samples were picked, for its provenance record.
+    selection_method = {name: "all" for name in sets}
     if "answerable" in datasets:
         datasets["answerable"] = subsample(datasets["answerable"], args.limit)
+        if len(datasets["answerable"]) < len(full_datasets["answerable"]):
+            selection_method["answerable"] = f"evenly spaced, --limit {args.limit}"
     if "musique" in datasets and args.musique_sample:
         datasets["musique"] = stratified_subset(datasets["musique"], args.musique_sample)
+        selection_method["musique"] = f"hop-stratified, --musique-sample {args.musique_sample}"
     selection = base.corpus_selection(args.corpus)
     logger.info(
         "Answer matrix: %d variant(s), sets %s, corpus %s, judge %s:%s",
@@ -993,6 +1008,8 @@ def main() -> int:
     )
 
     args.results_dir.mkdir(parents=True, exist_ok=True)
+    for name in sets:
+        write_dataset_snapshot(args.results_dir / "datasets", full_datasets[name])
     stem = f"answer_{selection.slug}{judge_suffix(judge_config, base.llm)}"
     destination = args.results_dir / f"{stem}.json"
     accumulated: dict[str, dict[str, Any]] = {}
@@ -1057,6 +1074,28 @@ def main() -> int:
                 return 1
             checkpoints[variant.name, name] = checkpoint
 
+    # Likewise check every variant's index up front. The oracle and closed-book
+    # rows read none. Variants sharing an index are checked once.
+    index_for: dict[str, IndexProvenance | None] = {}
+    checked: dict[tuple[str, ...], IndexProvenance] = {}
+    for variant in variants:
+        if variant.oracle or variant.closed_book:
+            index_for[variant.name] = None
+            continue
+        config = configs[variant.name]
+        variant_selection = config.corpus_selection(args.corpus)
+        key = (index_hash(config, variant_selection), str(variant_selection.index_dir),
+               variant_selection.collection_name, config.sparse_index.provider)
+        if key not in checked:
+            _, documents, chunks = chunk_selected_corpora(config, args.corpus)
+            try:
+                checked[key] = checked_index(config, variant_selection, documents, chunks,
+                                             label=variant.name)
+            except IndexConflict as exc:
+                logger.error("%s", exc)
+                return 1
+        index_for[variant.name] = checked[key]
+
     ordered: list[dict[str, Any]] = []
     for variant in variants:
         logger.info("[%s] %s", variant.name, variant.overrides)
@@ -1095,6 +1134,11 @@ def main() -> int:
                     record[name] = run_multihop(chat_service, judge, datasets[name], checkpoint)
                 else:
                     record[name] = run_one(name, chat_service, judge, datasets[name], checkpoint)
+                record[name]["provenance"] = provenance_record(
+                    config=config, dataset_path=paths[name], dataset=full_datasets[name],
+                    selected=datasets[name], selection=selection_method[name], code=code,
+                    index=index_for[variant.name], judge=judge_config,
+                )
             except DailyRequestBudgetSpent as exc:
                 # Every finished sample is in the checkpoint: the same command
                 # resumes from here once the budget resets.

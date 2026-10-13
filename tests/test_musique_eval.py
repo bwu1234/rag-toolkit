@@ -27,6 +27,7 @@ from rag.eval.musique_eval import (
 from rag.generation.chat_service import ChatAnswer, ChatService, Citation
 from rag.llm.base import LLMClient, LLMUsage
 from rag.observability.usage import metered_client
+from tests.fakes import skip_index_checks
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
@@ -126,6 +127,7 @@ def test_the_musique_family_runs_its_set_with_a_closed_book_row(
 
     monkeypatch.setattr(matrix, "build_chat_service", build_chat_service)
     monkeypatch.setattr(matrix, "get_llm_client", lambda config: _Extractor("Miquette Giraudy"))
+    skip_index_checks(monkeypatch, matrix)
     monkeypatch.setattr(sys, "argv", [
         "run_answer_matrix.py", "--family", "musique", "--musique", str(eval_set),
         "--variant", "pipeline / 9b", "--variant", "closed-book / 9b",

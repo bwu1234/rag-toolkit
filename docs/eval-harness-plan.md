@@ -551,6 +551,37 @@ after its gaps are known.
 
 ### Phase 1 — Full-config fingerprint (half a day)
 
+**Done (2026-10-13).** `rag/eval/provenance.py`, the build record in
+`rag/index_manifest.py`, and a `provenance` block on every new matrix row,
+with content-addressed dataset snapshots under `<results-dir>/datasets/`.
+Decisions taken while building it:
+
+- **Refuse on conflict, record when unverified.** A variant whose index
+  conflicts with its config (different recipe, changed corpus, missing,
+  stale or changed chunks) stops the run. An index built before build
+  records runs with `verified: false`; one `rag.cli index` run records a
+  build without re-embedding.
+- **The sparse backend is not in the recipe.** BM25 and FTS5 share the
+  vector collection and manifest, and `sparse=sqlite_fts5` is a query-time
+  variant over the same chunks. The configured sparse file is instead
+  checked against the corpus directly, which catches a stale one.
+- **A rerun that writes nothing keeps its build id**, so checking an index is
+  current doesn't relabel earlier rows. A run killed partway leaves a
+  `building` marker, which no eval verifies and whose successor gets a new id.
+- **`judge_hash` is recorded beside `config_hash`** for answer rows, since
+  the judge is chosen on the command line, not in the row config. Splitting
+  generation from judge identity for reuse is Phase 4's.
+- **The legacy-fingerprint check below can't be run as written:** no
+  committed row has the current shipped config. The `baseline` rows in
+  `data/eval/results/retrieval_edgar_md_*.json` predate the structured
+  chunker and `hnsw_ef_search: 400` becoming defaults. `fingerprint()` itself
+  is unchanged, so a row recorded at any earlier config keeps its value.
+
+Not covered: the standalone runners (`retrieval_eval`, `answer_eval`,
+`multihop_eval`, `run_beir_stack.py`) still write no provenance; Phase 2's
+run folders replace their writers. Answer-matrix checkpoints keep their own
+fingerprint so in-flight runs stay resumable.
+
 - Add `rag/eval/provenance.py` with `config_hash`, `index_hash`,
   `corpus_hash`, `dataset_hash`, and `selection_hash`; move `code_version`
   there from `checkpoint.py`. Extend index manifests to record and validate build
