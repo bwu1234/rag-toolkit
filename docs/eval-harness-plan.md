@@ -597,6 +597,51 @@ fingerprint so in-flight runs stay resumable.
 
 ### Phase 2 — Run folders for retrieval (1–1.5 days)
 
+**Done (2026-10-13).** `rag/eval/runs.py`; `retrieval_eval` and each
+`run_matrix.py` variant write a run folder under `data/eval/runs/` and the
+legacy row in the same pass, and the row names its `run` and
+`score_revision`. Checked on the shipped config, `edgar_md`, verified build
+`a0d7d6b2`:
+
+- **The score revision equals the matrix row** written beside it (one
+  function, `report_scores`, builds both). The committed `baseline` row in
+  `retrieval_edgar_md_edgar_eval_set.json` predates the structured chunker
+  default, so it doesn't match (hit 0.966 vs 0.977); the committed
+  `chunker=structured` row, the same config except `hnsw_ef_search` at
+  Chroma's default rather than today's 400, matches it **sample for sample**.
+- **Resume, measured:** a run killed after 40 of 174 samples resumed into
+  the same folder, retrieved exactly the other 134, and scored identically to
+  an uninterrupted run.
+- **Size:** `outputs.jsonl` is 1.4 MB for 174 samples × 5 chunks (238 KB
+  gzipped), close to the 1 MB estimate below. Not settled yet; the whole
+  `data/eval/runs/` is gitignored for now, and a cited run is added with
+  `git add -f`.
+
+Decisions taken while building it:
+
+- **Scores are always computed from the stored records**, even live: each
+  sample is retrieved, written, then scored from its JSON record. A resumed
+  run and an offline rescore therefore run the same code over the same input.
+- **Resume needs a verified build.** The header holds config, dataset,
+  selection, index recipe/corpus/build ids, code version, the variant and its
+  derived filters. An unverified index (no build record) always starts a new
+  run. A run another live process on this host holds is never resumed, so two
+  sessions can't interleave samples into one file.
+- **`retrieval_eval` now checks the index** like the matrix (`--no-run`
+  skips both), and gains `--limit N` (evenly spaced, `subsample` moved to
+  `rag.eval.dataset`) and `--fresh`.
+- **A completed run is not reused** by an identical rerun; it starts a new
+  run. Reuse is a Phase 5 runner decision. `--fresh` forces a new run over an
+  interrupted one.
+- **`.partial/` was never used for retrieval** (only the answer matrix
+  writes it), so there was nothing to replace there; a stopped matrix
+  variant used to lose all its samples and now resumes.
+
+Not covered: qrels (BEIR) runs keep `--save-run` and write no run folder.
+Their stage-1 ranking is 100 deep, and storing its chunk text per query
+needs the size decision first. `elapsed_s` in a resumed row counts only the
+resuming process; per-query latency is in `outputs.jsonl`.
+
 - `retrieval_eval` and `run_matrix.py` write run folders with
   `outputs.jsonl` (including per-query latency, which Milestone 24 needs and
   `retrieval_eval` doesn't record yet). They keep writing the legacy

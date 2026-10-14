@@ -67,7 +67,8 @@ from rag.eval.provenance import (  # noqa: E402
     provenance_record,
     write_dataset_snapshot,
 )
-from rag.eval.retrieval_eval import run_retrieval_eval  # noqa: E402
+from rag.eval.retrieval_eval import evaluate_into_run, report_scores  # noqa: E402
+from rag.eval.runs import RUNS_DIR, RunIncomplete, open_run  # noqa: E402
 from rag.ingestion.corpora import chunk_selected_corpora  # noqa: E402
 from rag.ingestion.models import Document  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
@@ -448,6 +449,9 @@ def run_variant(
     *,
     dataset_path: Path,
     code: str,
+    runs_dir: Path = RUNS_DIR,
+    experiment: str = "retrieval-matrix",
+    fresh: bool = False,
 ) -> dict[str, Any]:
     config = apply_overrides(base, variant.overrides)
     digest, settings = fingerprint(config)
@@ -463,21 +467,19 @@ def run_variant(
     selection, documents, corpus_chunks = chunk_selected_corpora(config, corpora)
     index = checked_index(config, selection, documents, corpus_chunks, label=variant.name)
     filters_for = derive_filters(variant.filters, documents) if variant.filters else None
+    run = open_run(
+        runs_dir, stage="retrieval", experiment=experiment, variant=variant.name, config=config,
+        selection=selection, dataset_path=dataset_path, dataset=dataset, selected=dataset,
+        selection_method="all", index=index, code=code,
+        extra={"overrides": variant.overrides, **({"filters": variant.filters} if variant.filters else {})},
+        resume=not fresh,
+    )
     started = time.monotonic()
     retriever = build_retriever(config, corpora=corpora)
-    report = run_retrieval_eval(dataset, retriever, corpus_chunks=corpus_chunks, filters_for=filters_for)
+    report, revision = evaluate_into_run(
+        run, dataset, retriever, corpus_chunks=corpus_chunks, filters_for=filters_for
+    )
     elapsed = time.monotonic() - started
-
-    summary = report.overall
-
-    def metrics(s: Any) -> dict[str, float]:
-        return {
-            "hit_rate": round(s.mean_hit_rate, 4),
-            "recall": round(s.mean_recall, 4),
-            "precision": round(s.mean_precision, 4),
-            "mrr": round(s.mrr, 4),
-            "ndcg": round(s.mean_ndcg, 4),
-        }
 
     return {
         "variant": variant.name,
@@ -490,35 +492,14 @@ def run_variant(
             config=config, dataset_path=dataset_path, dataset=dataset, selected=dataset,
             selection="all", code=code, index=index,
         ),
-        "num_samples": summary.num_samples,
+        # The run folder this row's numbers came from, and the score revision
+        # in it that they equal.
+        "run": run.run_id,
+        "score_revision": revision,
+        # Wall time of this process: a resumed run's covers only the remainder.
+        # Per-query latency is in the run's outputs.jsonl.
         "elapsed_s": round(elapsed, 1),
-        "metrics": metrics(summary),
-        # Per-kind figures (the underspecified tier's implicit / paraphrase),
-        # which the chunking plan reports separately rather than averaged.
-        "by_kind": {
-            k.label: {"num_samples": k.num_samples, "metrics": metrics(k)} for k in report.by_kind
-        },
-        "recall_by_k": {str(k): round(v, 4) for k, v in sorted(summary.recall_by_k.items())},
-        # Samples that can't score under this variant's chunking, whatever
-        # retrieval does. Two variants with different counts differ in what
-        # they *could* find, not only in what they did.
-        "unmatchable_spans": [
-            {"sample_id": u.sample_id, "span": u.span} for u in report.unmatchable_spans or []
-        ],
-        # Per-sample scores, keyed by sample id, for paired comparison. Without
-        # them a later reader can compare means but never test a difference.
-        # Keys match `metrics`, whose values are the means of these.
-        "samples": {
-            r.sample_id: {
-                "hit_rate": r.hit,
-                "recall": round(r.recall, 4),
-                "mrr": round(r.rr, 4),
-                "ndcg": round(r.ndcg, 4),
-                **({"kind": r.kind} if r.kind is not None else {}),
-                **({"routed_to": r.routed_to} if r.routed_to else {}),
-            }
-            for r in report.sample_results
-        },
+        **report_scores(report),
     }
 
 
@@ -628,6 +609,11 @@ def main() -> int:
     parser.add_argument("--corpus", action="append", default=None, metavar="NAME")
     parser.add_argument("--eval-set", type=Path, default=Path("data/eval/edgar_eval_set.json"))
     parser.add_argument("--results-dir", type=Path, default=DEFAULT_RESULTS_DIR)
+    parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR,
+                        help="Where each variant's run folder is written.")
+    parser.add_argument("--fresh", action="store_true",
+                        help="Start new run folders even where an interrupted run with the "
+                             "same identity could be resumed.")
     parser.add_argument("--only", default=None,
                         help="Comma-separated axes to run (e.g. baseline,reranker,min_score)")
     parser.add_argument("--variant", action="append", default=None, metavar="NAME",
@@ -723,9 +709,10 @@ def main() -> int:
     for variant in variants:
         try:
             accumulated[variant.name] = run_variant(
-                variant, base, dataset, args.corpus, dataset_path=args.eval_set, code=code
+                variant, base, dataset, args.corpus, dataset_path=args.eval_set, code=code,
+                runs_dir=args.runs_dir, experiment=args.label or stem, fresh=args.fresh,
             )
-        except IndexConflict as exc:
+        except (IndexConflict, RunIncomplete) as exc:
             logger.error("%s", exc)
             return 1
         ordered = flush()

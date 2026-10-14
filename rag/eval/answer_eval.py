@@ -52,7 +52,7 @@ from typing import Any, get_args
 from pathlib import Path
 
 from rag.config.settings import LLMConfig, LLMProvider, RagConfig, load_config
-from rag.eval.dataset import EvalDataset, EvalSample
+from rag.eval.dataset import EvalDataset, EvalSample, subsample
 from rag.eval.relevance import sample_unmatched_spans
 from rag.eval.oracle import add_oracle_argument, build_oracle_retriever
 from rag.chat import build_chat_service
@@ -480,21 +480,6 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Print per-sample results in addition to aggregate metrics")
     return parser
-
-
-def subsample(dataset: EvalDataset, limit: int) -> EvalDataset:
-    """Take `limit` samples spread evenly across the set.
-
-    A prefix would be biased: the generated eval set is sorted by document id, so
-    the first N samples are all the alphabetically-first companies. Striding
-    keeps coverage across entities and periods, and is deterministic so two
-    configurations are compared on identical questions.
-    """
-    if limit <= 0 or limit >= len(dataset):
-        return dataset
-    step = len(dataset) / limit
-    picked = [dataset.samples[int(i * step)] for i in range(limit)]
-    return EvalDataset(samples=picked, source_path=dataset.source_path)
 
 
 def main(argv: list[str] | None = None) -> int:

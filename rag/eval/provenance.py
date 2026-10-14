@@ -173,7 +173,8 @@ def judge_hash(judge: LLMConfig) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _sample_dicts(dataset: EvalDataset) -> list[dict[str, Any]]:
+def sample_dicts(dataset: EvalDataset) -> list[dict[str, Any]]:
+    """Every sample in its canonical `EvalSample.to_dict` form; refuses duplicate ids."""
     samples = [sample.to_dict() for sample in dataset]
     counts = Counter(sample["id"] for sample in samples)
     if duplicates := sorted(sample_id for sample_id, n in counts.items() if n > 1):
@@ -187,7 +188,7 @@ def dataset_hash(dataset: EvalDataset) -> str:
     Hashes the canonical form `EvalSample.to_dict` writes, extra fields
     included, so a reformatted but unchanged file keeps its hash.
     """
-    return stable_hash(_sample_dicts(dataset))
+    return stable_hash(sample_dicts(dataset))
 
 
 def selection_hash(sample_ids: list[str]) -> str:
@@ -201,7 +202,7 @@ def write_dataset_snapshot(directory: Path, dataset: EvalDataset) -> Path:
     Named by content, so every row recorded against the same labels shares one
     file, and a label fix produces a new one instead of rewriting history.
     """
-    samples = _sample_dicts(dataset)
+    samples = sample_dicts(dataset)
     path = directory / f"{stable_hash(samples)}.json"
     if not path.exists():
         directory.mkdir(parents=True, exist_ok=True)
