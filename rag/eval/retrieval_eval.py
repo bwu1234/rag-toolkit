@@ -403,10 +403,12 @@ def evaluate_into_run(
     *,
     corpus_chunks: list[Chunk] | None = None,
     filters_for: Callable[[EvalSample], QueryFilter | None] | None = None,
+    started: float | None = None,
 ) -> tuple[EvalReport, str]:
     """Run (or finish) ``run``'s retrieval, mark it complete, and write its initial score revision.
 
-    Returns the report and the score revision's id.
+    Returns the report and the score revision's id. ``started`` is a
+    `time.monotonic` reading to record the run's wall time from.
 
     Raises:
         RunIncomplete: the outputs don't cover exactly ``selected``.
@@ -415,7 +417,7 @@ def evaluate_into_run(
         selected, retriever, corpus_chunks=corpus_chunks, filters_for=filters_for,
         outputs=run.load_outputs(), on_output=run.append_output,
     )
-    run.complete()
+    run.complete(elapsed_s=time.monotonic() - started if started is not None else None)
     index = run.manifest.get("index") or {}
     revision = run.write_scores(
         scorer=SCORER,

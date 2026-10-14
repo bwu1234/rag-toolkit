@@ -26,6 +26,7 @@ purpose. See docs/eval-harness-plan.md, "Provenance and identity".
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import logging
@@ -153,7 +154,12 @@ def _drop(tree: Any, parts: list[str]) -> None:
 
 def hashed_config(config: RagConfig) -> dict[str, Any]:
     """``config`` as JSON, minus `CONFIG_HASH_DENYLIST`: exactly what `config_hash` covers."""
-    dump = config.model_dump(mode="json")
+    return without_denylisted(config.model_dump(mode="json"))
+
+
+def without_denylisted(dump: dict[str, Any]) -> dict[str, Any]:
+    """A copy of a dumped config (as a run manifest stores it) minus `CONFIG_HASH_DENYLIST`."""
+    dump = copy.deepcopy(dump)
     for path in CONFIG_HASH_DENYLIST:
         _drop(dump, path.split("."))
     return dump
@@ -252,17 +258,18 @@ class IndexProvenance:
         }
 
 
-def _flatten(tree: Any, prefix: str = "") -> dict[str, Any]:
+def flatten(tree: Any, prefix: str = "") -> dict[str, Any]:
+    """A nested mapping as ``{"dotted.path": leaf}``."""
     if not isinstance(tree, dict):
         return {prefix.rstrip("."): tree}
     flat: dict[str, Any] = {}
     for key, value in tree.items():
-        flat.update(_flatten(value, f"{prefix}{key}."))
+        flat.update(flatten(value, f"{prefix}{key}."))
     return flat
 
 
 def _recipe_differences(stored: dict[str, Any], current: dict[str, Any]) -> list[str]:
-    old, new = _flatten(stored), _flatten(current)
+    old, new = flatten(stored), flatten(current)
     return [f"{key}: {old.get(key)!r} -> {new.get(key)!r}"
             for key in sorted(old.keys() | new.keys()) if old.get(key) != new.get(key)]
 
