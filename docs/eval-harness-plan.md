@@ -713,6 +713,30 @@ revisions yet: no new row has been recorded since.
 
 ### Phase 4 — Answer side: generate and judge as separate steps (1.5 days)
 
+**In progress (2026-10-14): storage, judging and repeat summaries built and
+unit-tested with fake models; not yet run on real models.**
+`answer_eval`, `multihop_eval` and `run_answer_matrix.py` (all sets but
+MuSiQue) write answer runs: `outputs.jsonl` holds each answer, the passages
+it was shown with their text, and the turn's record with every LLM call
+verbatim (`TurnRecord.llm_exchanges`, captured at the metering wrapper:
+rendered system prompts and messages, tools, tool results, condensing,
+retries and agent steps). `rag/eval/judge.py` judges a complete run as an
+attempt under `judgments/<judge_hash>/`, where `judge_hash` covers the judge
+config, rubric prompts, verdict parser and reference-label hash; attempts
+keep each call's rendered inputs and full reply, resume after a stop, and are
+never overwritten. `rag.eval.score` scores answer runs from stored passages
+plus a pinned attempt (refusing one made against other references), and
+`report.check_pair` refuses pairs judged under different protocols. The
+matrix row equals the score revision it names; generation for a whole set
+finishes before judging, and a rerun judges a run whose judging stopped
+rather than regenerating it. Repeats record their group and number, and the
+spread table adds SD and per-repeat paired deltas. Still open: the human
+calibration fixture, guide and report; a real-model end-to-end check; the
+three-repeat variance runs; MuSiQue's extraction step as a judged attempt;
+`rag.eval.report` over answer runs; Ollama model digests in judge provenance;
+and the Milestone 19 per-step and evidence-state items, which wait on those
+features.
+
 - Answer and multi-hop runs write answers to `outputs.jsonl` and verdicts to
   `judgments/<judge_hash>/<attempt_id>.jsonl`. Persist prompt passages and
   multi-hop search evidence so evidence scoring works without a live index.

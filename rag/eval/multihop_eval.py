@@ -51,13 +51,25 @@ from pathlib import Path
 from typing import Any
 
 from rag.config.settings import load_config
-from rag.eval.answer_eval import _parse_verdict, add_judge_arguments, build_judge, subsample
+from rag.eval.answer_eval import (
+    add_judge_arguments,
+    generate_output,
+    groundedness_counts,
+    judge_call,
+    not_judged,
+    resolve_judge_config,
+    subsample,
+    trajectory,
+)
 from rag.eval.dataset import EvalDataset, EvalSample, ExpectedSpan
 from rag.eval.oracle import add_oracle_argument, build_oracle_retriever
+from rag.eval.provenance import IndexConflict
 from rag.eval.relevance import unmatched_spans
+from rag.eval.runs import RUNS_DIR, RunIncomplete
 from rag.chat import build_chat_service
 from rag.generation.chat_service import ChatResponder
 from rag.llm.base import LLMClient
+from rag.llm.factory import get_llm_client
 from rag.logging_config import configure_logging
 from rag.observability.records import AgentToolCall, is_read_passage, read_chars
 
@@ -228,6 +240,52 @@ class MultihopReport:
     mean_read_chars: float = 0.0
 
 
+def judge_multihop(sample: EvalSample, output: dict[str, Any], judge: LLMClient) -> dict[str, Any]:
+    """Judge each part of one stored answer, conclusion included: the judgment record for it."""
+    note = not_judged(output)
+    verdicts = []
+    for part in parts_of(sample):
+        if note is not None:
+            verdicts.append({"label": part.label, "passed": False, "judge_output": note})
+            continue
+        prompt = _part_judge_prompt(sample.query, part.label, part.answer, output["answer"])
+        verdicts.append(judge_call(judge, _PART_JUDGE_SYSTEM_PROMPT, prompt, part.label))
+    return {"sample_id": sample.id, "verdicts": verdicts}
+
+
+def multihop_result(sample: EvalSample, output: dict[str, Any], judgment: dict[str, Any]) -> MultihopSampleResult:
+    """One sample's result from its stored output and judgment, evidence scored against ``sample``'s labels.
+
+    Evidence is the union of every passage the turn retrieved -- the stored
+    ``passages`` -- as `run_multihop_eval` has always measured it.
+    """
+    gold = [span for part in parts_of(sample) for span in part.spans]
+    texts = [p["text"] for p in output["passages"]]
+    searched = [p["text"] for p in output["passages"] if not is_read_passage(p["chunk_id"])]
+    return MultihopSampleResult(
+        sample_id=sample.id,
+        query=output["query"],
+        kind=str(sample.extra.get("kind", "unknown")),
+        actual_answer=output["answer"],
+        part_results=[
+            PartResult(label=v["label"], passed=v["passed"], judge_output=v["judge_output"])
+            for v in judgment["verdicts"]
+        ],
+        evidence_total=len(gold),
+        missing_spans=unmatched_spans(gold, texts),
+        latency_s=output["latency_s"],
+        retrieval_rounds=output["retrieval_rounds"],
+        llm_calls=output["llm_calls"],
+        llm_ms=output["llm_ms"],
+        prompt_tokens=output["prompt_tokens"],
+        completion_tokens=output["completion_tokens"],
+        grounded=output["grounded"],
+        agent_calls=[AgentToolCall.from_dict(c) for c in output["agent_calls"]],
+        generation_failure=output["generation_failure"],
+        missing_spans_from_search=unmatched_spans(gold, searched) if len(searched) < len(texts) else None,
+    )
+
+
 def run_multihop_eval(
     dataset: EvalDataset,
     chat_service: ChatResponder,
@@ -246,51 +304,9 @@ def run_multihop_eval(
         if completed and sample.id in completed:
             results.append(completed[sample.id])
             continue
-        parts = parts_of(sample)
-
-        started = time.monotonic()
-        answer = chat_service.ask(sample.query)
-        latency = time.monotonic() - started
-
-        part_results = []
-        for part in parts:
-            if answer.generation_failure is not None:
-                note = f"[not judged: generation failed ({answer.generation_failure})]"
-                part_results.append(PartResult(label=part.label, passed=False, judge_output=note))
-                continue
-            out = judge.generate(
-                _part_judge_prompt(sample.query, part.label, part.answer, answer.answer),
-                system=_PART_JUDGE_SYSTEM_PROMPT,
-            )
-            part_results.append(
-                PartResult(label=part.label, passed=_parse_verdict(out), judge_output=out.strip())
-            )
-
-        gold = [span for part in parts for span in part.spans]
-        searched = [c.text for c in answer.citations if not is_read_passage(c.chunk_id)]
-        results.append(
-            MultihopSampleResult(
-                sample_id=sample.id,
-                query=sample.query,
-                kind=str(sample.extra.get("kind", "unknown")),
-                actual_answer=answer.answer,
-                part_results=part_results,
-                evidence_total=len(gold),
-                missing_spans=unmatched_spans(gold, [c.text for c in answer.citations]),
-                latency_s=latency,
-                retrieval_rounds=answer.retrieval_attempts,
-                llm_calls=answer.llm_calls,
-                llm_ms=answer.llm_ms,
-                prompt_tokens=answer.prompt_tokens,
-                completion_tokens=answer.completion_tokens,
-                grounded=answer.grounded,
-                agent_calls=answer.agent_calls,
-                generation_failure=answer.generation_failure,
-                missing_spans_from_search=(
-                    unmatched_spans(gold, searched) if len(searched) < len(answer.citations) else None
-                ),
-            )
-        )
+        parts_of(sample)  # a sample without parts fails before it is asked
+        output = generate_output(sample, chat_service)
+        results.append(multihop_result(sample, output, judge_multihop(sample, output, judge)))
         if on_result is not None:
             on_result(results[-1])
 
@@ -334,6 +350,54 @@ def summarize(results: list[MultihopSampleResult]) -> MultihopReport:
         evidence_recall_from_search=avg([r.evidence_recall_from_search for r in results]),
         mean_read_chars=avg([float(r.read_chars) for r in results]),
     )
+
+
+def multihop_scores(report: MultihopReport) -> dict[str, Any]:
+    """A report as the answer matrix's row records it, and a multi-hop run's score revision holds it."""
+    return {
+        "num_evaluated": report.num_samples,
+        "complete_rate": round(report.complete_rate, 4),
+        "mean_completeness": round(report.mean_completeness, 4),
+        "evidence_recall": round(report.evidence_recall, 4),
+        "complete_rate_by_kind": {k: round(v, 4) for k, v in report.complete_rate_by_kind.items()},
+        "num_empty": report.num_empty,
+        "num_unparseable": report.num_unparseable,
+        "mean_latency_s": round(report.mean_latency_s, 1),
+        "mean_retrieval_rounds": round(report.mean_retrieval_rounds, 2),
+        # The answering turn's cost; the judge's calls are not in it.
+        "mean_llm_calls": round(report.mean_llm_calls, 2),
+        "mean_llm_s": round(report.mean_llm_s, 1),
+        "mean_prompt_tokens": _round_or_none(report.mean_prompt_tokens),
+        "mean_completion_tokens": _round_or_none(report.mean_completion_tokens),
+        "num_with_tokens": report.num_with_tokens,
+        "groundedness": groundedness_counts([(r.grounded, r.complete) for r in report.sample_results]),
+        # Per-sample detail, so a hand check of the judge needs no rerun.
+        "samples": [
+            {
+                "id": r.sample_id,
+                "complete": r.complete,
+                "parts": {p.label: p.passed for p in r.part_results},
+                # The judge's full reply per part, reason included: what a hand
+                # check of a verdict needs, and what `parts` reduces to a bool.
+                "judge_outputs": {p.label: p.judge_output for p in r.part_results},
+                "evidence_recall": round(r.evidence_recall, 3),
+                "missing_spans": r.missing_spans,
+                "llm_calls": r.llm_calls,
+                "llm_ms": round(r.llm_ms),
+                "prompt_tokens": r.prompt_tokens,
+                "completion_tokens": r.completion_tokens,
+                "grounded": r.grounded,
+                "latency_s": round(r.latency_s, 1),
+                "answer": r.actual_answer,
+                **trajectory(r.agent_calls),
+            }
+            for r in report.sample_results
+        ],
+    }
+
+
+def _round_or_none(value: float | None) -> float | None:
+    return None if value is None else round(value, 1)
 
 
 def print_report(report: MultihopReport, *, verbose: bool = False) -> None:
@@ -403,6 +467,13 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="Evaluate an evenly-spaced subset of N samples.")
     add_judge_arguments(parser)
     add_oracle_argument(parser)
+    parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR, metavar="DIR",
+                        help="Where the run folder is written (default: data/eval/runs).")
+    parser.add_argument("--no-run", action="store_true",
+                        help="Don't write a run folder: generate and judge together and print the report "
+                             "only (and don't check the index).")
+    parser.add_argument("--fresh", action="store_true",
+                        help="Start a new run and judgment attempt even if an interrupted one matches.")
     parser.add_argument("--verbose", "-v", action="store_true")
     return parser
 
@@ -415,10 +486,15 @@ def main(argv: list[str] | None = None) -> int:
     if not eval_path.exists():
         logger.error("Eval set not found: %s (build it with scripts/build_multihop_set.py)", eval_path)
         return 1
-    dataset = subsample(EvalDataset.load(eval_path), args.limit)
+    full = EvalDataset.load(eval_path)
+    dataset = subsample(full, args.limit)
+    for sample in dataset:
+        parts_of(sample)  # a sample without parts fails before anything is generated
 
     config = load_config(args.config)
-    judge = build_judge(config, args.judge_model, args.judge_provider)
+    judge_config = resolve_judge_config(config, args.judge_model, args.judge_provider)
+    logger.info("Judge: %s:%s", judge_config.provider, judge_config.model)
+    judge = get_llm_client(judge_config)
     retriever = None
     if args.oracle:
         retriever, unfound = build_oracle_retriever(config, dataset, args.corpus)
@@ -428,8 +504,30 @@ def main(argv: list[str] | None = None) -> int:
     chat_service = build_chat_service(config, corpora=args.corpus, retriever=retriever)
 
     logger.info("Running multi-hop eval on %d sample(s)", len(dataset))
-    report = run_multihop_eval(dataset, chat_service, judge)
-    print_report(report, verbose=args.verbose)
+    report: MultihopReport
+    if args.no_run:
+        report = run_multihop_eval(dataset, chat_service, judge)
+        print_report(report, verbose=args.verbose)
+    else:
+        from rag.eval.judge import evaluate_answers_into_run, open_answer_run
+        from rag.eval.score import stored_report
+
+        try:
+            run = open_answer_run(
+                "multihop", config, args.corpus, runs_dir=args.runs_dir, dataset_path=eval_path, dataset=full,
+                selected=dataset, oracle=args.oracle, fresh=args.fresh,
+                variant=Path(args.config).stem if args.config else "config",
+            )
+            attempt, revision = evaluate_answers_into_run(run, dataset, chat_service, judge, judge_config,
+                                                          fresh=args.fresh, started=time.monotonic())
+        except (IndexConflict, RunIncomplete) as exc:
+            logger.error("%s", exc)
+            return 1
+        stored = stored_report(run, dataset, attempt)
+        assert isinstance(stored, MultihopReport)
+        report = stored
+        print_report(report, verbose=args.verbose)
+        print(f"Run: {run.path}  (judgment {attempt.ref}, score revision {revision})")
     return 0
 
 

@@ -61,23 +61,29 @@ LABELS = "datasets"
 RUNNING = "running"
 COMPLETE = "complete"
 
+#: What `Run.write_scores` adds around the scores themselves.
+REVISION_FIELDS = frozenset({
+    "score_revision", "run_id", "outputs_digest", "dataset_hash", "selection_hash", "scorer", "settings",
+    "scored_at",
+})
+
 
 class RunIncomplete(RuntimeError):
     """A run's outputs don't cover exactly its selected samples, once each."""
 
 
-def _now() -> datetime:
+def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _write_json(path: Path, value: Any) -> None:
+def write_json(path: Path, value: Any) -> None:
     """Write via a temp file and rename, so a crash never leaves half a manifest."""
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     tmp.replace(path)
 
 
-def _alive_here(manifest: dict[str, Any]) -> bool:
+def held_elsewhere(manifest: dict[str, Any]) -> bool:
     """Whether another process on this host that opened ``manifest``'s run is still running.
 
     Two processes appending to one ``outputs.jsonl`` would interleave their
@@ -149,11 +155,11 @@ class Run:
             problems.append(f"outputs for unselected samples {', '.join(extra)}")
         if problems:
             raise RunIncomplete(f"{self.path.name}: " + "; ".join(problems))
-        self.manifest.update(status=COMPLETE, finished_at=_now().isoformat(timespec="seconds"))
+        self.manifest.update(status=COMPLETE, finished_at=utc_now().isoformat(timespec="seconds"))
         if elapsed_s is not None:
             self.manifest["elapsed_s"] = round(elapsed_s, 1)
         self.manifest.pop("pid", None)
-        _write_json(self.path / MANIFEST, self.manifest)
+        write_json(self.path / MANIFEST, self.manifest)
 
     def outputs_digest(self) -> str:
         return stable_hash(self.outputs_path.read_text(encoding="utf-8"))
@@ -190,11 +196,11 @@ class Run:
         path = self.path / SCORES / f"{revision}.json"
         if not path.exists():
             path.parent.mkdir(exist_ok=True)
-            _write_json(path, {
+            write_json(path, {
                 "score_revision": revision,
                 "run_id": self.run_id,
                 **source,
-                "scored_at": _now().isoformat(timespec="seconds"),
+                "scored_at": utc_now().isoformat(timespec="seconds"),
                 **scores,
             })
         return revision
@@ -230,7 +236,7 @@ class Run:
             path = self.path / LABELS / f"{digest}.json"
             if not path.exists():
                 path.parent.mkdir(exist_ok=True)
-                _write_json(path, sample_dicts(dataset))
+                write_json(path, sample_dicts(dataset))
         return digest
 
 
@@ -274,22 +280,27 @@ def run_identity(
     }
 
 
-def _resumable(runs_dir: Path, identity: dict[str, Any]) -> Run | None:
-    """The newest unfinished run with exactly ``identity`` that nothing is still writing to."""
-    if not runs_dir.exists():
-        return None
-    for manifest_path in sorted(runs_dir.glob(f"*/{MANIFEST}"), reverse=True):
+def runs_with(runs_dir: Path, identity: dict[str, Any], status: str) -> list[Run]:
+    """Runs with exactly ``identity`` and ``status``, newest first."""
+    found = []
+    for manifest_path in sorted(runs_dir.glob(f"*/{MANIFEST}"), reverse=True) if runs_dir.exists() else []:
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
-        if manifest.get("status") != RUNNING or manifest.get("identity") != identity:
-            continue
-        if _alive_here(manifest):
+        if manifest.get("status") == status and manifest.get("identity") == identity:
+            found.append(Run(manifest_path.parent, manifest))
+    return found
+
+
+def _resumable(runs_dir: Path, identity: dict[str, Any]) -> Run | None:
+    """The newest unfinished run with exactly ``identity`` that nothing is still writing to."""
+    for run in runs_with(runs_dir, identity, RUNNING):
+        if held_elsewhere(run.manifest):
             logger.warning("%s matches but is still being written (pid %s); not resuming it",
-                           manifest_path.parent.name, manifest["pid"])
+                           run.path.name, run.manifest["pid"])
             continue
-        return Run(manifest_path.parent, manifest)
+        return run
     return None
 
 
@@ -330,13 +341,13 @@ def open_run(
         done = len(run.load_outputs())
         logger.info("[%s] resuming %s (%d/%d samples done)", variant, run.path.name, done, len(selected))
         run.manifest.update(pid=os.getpid(), host=socket.gethostname())
-        run.manifest.setdefault("resumed_at", []).append(_now().isoformat(timespec="seconds"))
-        _write_json(run.path / MANIFEST, run.manifest)
+        run.manifest.setdefault("resumed_at", []).append(utc_now().isoformat(timespec="seconds"))
+        write_json(run.path / MANIFEST, run.manifest)
         return run
     if resume and not can_resume:
         logger.info("[%s] index build unverified, so this run can't resume an earlier one", variant)
 
-    started = _now()
+    started = utc_now()
     name = f"{started:%Y%m%dT%H%M%SZ}-{stage}-{dataset_path.stem}-{identity['config_hash'][:8]}"
     path = runs_dir / name
     suffix = 1
@@ -376,7 +387,7 @@ def open_run(
         "started_at": started.isoformat(timespec="seconds"),
         "finished_at": None,
     }
-    _write_json(path / DATASET, sample_dicts(dataset))
-    _write_json(path / MANIFEST, manifest)
+    write_json(path / DATASET, sample_dicts(dataset))
+    write_json(path / MANIFEST, manifest)
     logger.info("[%s] new run %s", variant, path)
     return Run(path, manifest)

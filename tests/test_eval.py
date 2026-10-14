@@ -9,6 +9,8 @@ Covers:
 
 from __future__ import annotations
 
+from typing import Any
+
 from pathlib import Path
 
 import pytest
@@ -79,7 +81,7 @@ class _FakeChatService(ChatService):
         self._citations = citations or []
         self.seen_queries: list[str] = []
 
-    def ask(self, query: str) -> ChatAnswer:
+    def ask(self, query: str, **_: Any) -> ChatAnswer:
         self.seen_queries.append(query)
         return ChatAnswer(answer=self._answer, citations=self._citations)
 

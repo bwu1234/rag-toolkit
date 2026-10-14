@@ -48,7 +48,15 @@ record them), use the `measure-change` skill; this one is the command reference.
   overrides, plus `--judge-provider` when the judge runs on a different
   provider than the one it inherits. Multi-hop: `python -m rag.eval.multihop_eval --corpus edgar_md`.
   Both take `--oracle` (gold chunks instead of retrieval, a diagnostic
-  ceiling). The Milestone 19 phase 4 matrix is `scripts/run_answer_matrix.py
+  ceiling), and both write an answer run folder (answers, shown passages and
+  every model call verbatim; `--no-run` to skip, `--fresh` to not resume),
+  judged as a separate attempt under `judgments/`. Re-judge a finished run
+  without regenerating: `python -m rag.eval.judge <run> --judge-model M
+  [--eval-set PATH]` (a new attempt each time; another judge or changed
+  reference answers get their own protocol directory). Rescoring an answer
+  run needs no index or judge: `python -m rag.eval.score <run> [--eval-set
+  PATH] [--judgment <attempt>]`; a changed reference refuses the old
+  judgment. The Milestone 19 phase 4 matrix is `scripts/run_answer_matrix.py
   --family m19` (`--repeat N` for run-to-run noise, `--sets ...,adaptive` for
   the bridge/discovery set); `--family m19-hosted` is
   the Gemini Flash-Lite reference pair, on the free tier and bounded by
