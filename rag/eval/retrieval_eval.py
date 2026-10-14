@@ -40,6 +40,15 @@ penalized rather than silently scoring lower.
 All metrics are computed over whatever ``retrieval.rerank_top_k`` results the
 Retriever returns (i.e. after any configured reranking pass).
 
+Every run is recorded as a run folder under ``data/eval/runs/``
+(:mod:`rag.eval.runs`): the manifest, a dataset snapshot, each sample's ranked
+chunks with their text and per-stage latency in ``outputs.jsonl``, and the
+scores as a revision derived from those outputs. The index is checked against
+the config first, and a run is refused if they conflict. An interrupted run
+resumes from its outputs when rerun with the same identity on the same
+verified index build. ``--limit N`` evaluates N evenly spaced samples;
+``--no-run`` skips the folder and the index check.
+
 Qrels sets (``matching_mode: "qrels"``, converted from public benchmarks by
 ``scripts/beir_to_eval_set.py``) take a separate path, :func:`run_qrels_eval`:
 distinct-document nDCG@10 and R@100 scored the ``trec_eval`` way
@@ -61,10 +70,11 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from rag.chunking.models import Chunk
 from rag.config.settings import RagConfig, load_config
-from rag.eval.dataset import MODE_DOCUMENT, MODE_QRELS, EvalDataset, EvalSample
+from rag.eval.dataset import MODE_DOCUMENT, MODE_QRELS, EvalDataset, EvalSample, subsample
 from rag.eval.metrics import (
     hit_rate,
     mean,
@@ -74,14 +84,17 @@ from rag.eval.metrics import (
     reciprocal_rank,
     wilson_interval,
 )
+from rag.eval.provenance import IndexConflict, checked_index, code_version
 from rag.eval.qrels import METRICS, DocRanking, QrelsScores, document_ranking, score_rankings, write_run
 from rag.eval.relevance import UnmatchableSpan, find_unmatchable_spans, judge_ranking
+from rag.eval.runs import RUNS_DIR, Run, RunIncomplete, open_run
 from rag.events import PipelineEvent
 from rag.ingestion.corpora import chunk_selected_corpora
 from rag.logging_config import configure_logging
 from rag.query_filter import QueryFilter
 from rag.retrieval.builder import build_retriever
 from rag.retrieval.retriever import Retriever
+from rag.vectorstore.base import ScoredChunk
 
 logger = logging.getLogger(__name__)
 
@@ -173,12 +186,110 @@ def _summarize(label: str, results: list[SampleResult]) -> MetricSummary:
     )
 
 
+def retrieve_sample(
+    retriever: Retriever, sample: EvalSample, query_filter: QueryFilter | None = None
+) -> dict[str, Any]:
+    """Retrieve one sample and return what a run folder's ``outputs.jsonl`` records for it.
+
+    The ranked chunks are kept with their text, which is what scoring reads,
+    so a run can be rescored after a label fix without retrieving again.
+    Latency is per retrieval stage plus ``total``, the whole call.
+    """
+    latency: dict[str, float] = {}
+
+    def record(event: PipelineEvent) -> None:
+        latency[event.stage] = latency.get(event.stage, 0.0) + (event.elapsed_ms or 0.0)
+
+    start = time.perf_counter()
+    retrieved = retriever.retrieve(sample.query, query_filter=query_filter, on_event=record)
+    latency["total"] = (time.perf_counter() - start) * 1000
+    return {
+        "sample_id": sample.id,
+        "query": sample.query,
+        "filter": query_filter.model_dump(exclude_defaults=True) if query_filter is not None else None,
+        "routed_to": retrieved.routed_to,
+        "search_queries": retrieved.search_queries,
+        "candidate_count": retrieved.candidate_count,
+        "dropped_below_min_score": retrieved.dropped_below_min_score,
+        "latency_ms": {stage: round(ms, 3) for stage, ms in latency.items()},
+        "results": [
+            {
+                "rank": rank,
+                "chunk_id": c.chunk_id,
+                "document_id": c.document_id,
+                "score": c.score,
+                "text": c.text,
+                "header": c.header,
+                "context": c.context,
+                "doc_type": c.doc_type,
+                "metadata": c.metadata,
+            }
+            for rank, c in enumerate(retrieved.chunks, start=1)
+        ],
+    }
+
+
+def ranking_from_output(output: dict[str, Any]) -> list[ScoredChunk]:
+    """The ranked chunks of one ``outputs.jsonl`` record, as retrieval returned them.
+
+    ``source`` isn't stored -- it's an absolute path on the machine that ran
+    the eval, and nothing that scores reads it.
+    """
+    return [
+        ScoredChunk(
+            chunk_id=r["chunk_id"],
+            text=r["text"],
+            document_id=r["document_id"],
+            source=Path(),
+            doc_type=r.get("doc_type", ""),
+            score=r["score"],
+            metadata=r.get("metadata") or {},
+            context=r.get("context"),
+            header=r.get("header"),
+        )
+        for r in output["results"]
+    ]
+
+
+def score_sample(sample: EvalSample, output: dict[str, Any]) -> SampleResult:
+    """Score one sample's recorded retrieval against its labels."""
+    chunks = ranking_from_output(output)
+    judgment = judge_ranking(sample, chunks)
+
+    # Recall at each cutoff is computed by re-judging a prefix of the
+    # ranking rather than by slicing gains: one expected item can be matched
+    # by several chunks, so coverage is not recoverable from the gain list.
+    recall_by_k = {
+        k: recall_at_k(*_coverage(sample, chunks[:k]))
+        for k in RECALL_K_VALUES
+        if k <= len(chunks)
+    }
+    return SampleResult(
+        sample_id=sample.id,
+        query=sample.query,
+        mode=judgment.mode,
+        expected_doc_ids=sample.expected_doc_ids,
+        retrieved_doc_ids=[c.document_id for c in chunks],
+        hit=hit_rate(judgment.gains),
+        recall=recall_at_k(judgment.covered, judgment.total_expected),
+        precision=precision_at_k(judgment.gains),
+        rr=reciprocal_rank(judgment.gains),
+        ndcg=ndcg_at_k(judgment.ndcg_gains, judgment.ideal_gains),
+        recall_by_k=recall_by_k,
+        unmatched_spans=judgment.unmatched_spans,
+        kind=sample.extra.get("kind"),
+        routed_to=output.get("routed_to", []),
+    )
+
+
 def run_retrieval_eval(
     dataset: EvalDataset,
-    retriever: Retriever,
+    retriever: Retriever | None,
     *,
     corpus_chunks: list[Chunk] | None = None,
     filters_for: Callable[[EvalSample], QueryFilter | None] | None = None,
+    outputs: dict[str, dict[str, Any]] | None = None,
+    on_output: Callable[[dict[str, Any]], None] | None = None,
 ) -> EvalReport:
     """Run retrieval for every sample and return an :class:`EvalReport`.
 
@@ -188,42 +299,26 @@ def run_retrieval_eval(
     Pass ``filters_for`` to retrieve each sample with a metadata filter, e.g.
     one derived from its labels to measure what a caller who names the
     company or period would get (see ``scripts/run_matrix.py``).
+
+    ``outputs`` holds samples already retrieved (a resumed run folder's
+    records, by sample id); only the rest are retrieved, and each new record
+    is passed to ``on_output`` before the next sample starts. Every sample is
+    scored from its record either way, so a resumed run scores exactly as an
+    uninterrupted one. ``retriever`` may be None when ``outputs`` covers the set.
     """
     results: list[SampleResult] = []
+    outputs = outputs or {}
 
     for sample in dataset:
-        query_filter = filters_for(sample) if filters_for is not None else None
-        retrieved = retriever.retrieve(sample.query, query_filter=query_filter)
-        chunks = retrieved.chunks
-        judgment = judge_ranking(sample, chunks)
-
-        # Recall at each cutoff is computed by re-judging a prefix of the
-        # ranking rather than by slicing gains: one expected item can be matched
-        # by several chunks, so coverage is not recoverable from the gain list.
-        recall_by_k = {
-            k: recall_at_k(*_coverage(sample, chunks[:k]))
-            for k in RECALL_K_VALUES
-            if k <= len(chunks)
-        }
-
-        results.append(
-            SampleResult(
-                sample_id=sample.id,
-                query=sample.query,
-                mode=judgment.mode,
-                expected_doc_ids=sample.expected_doc_ids,
-                retrieved_doc_ids=[c.document_id for c in chunks],
-                hit=hit_rate(judgment.gains),
-                recall=recall_at_k(judgment.covered, judgment.total_expected),
-                precision=precision_at_k(judgment.gains),
-                rr=reciprocal_rank(judgment.gains),
-                ndcg=ndcg_at_k(judgment.ndcg_gains, judgment.ideal_gains),
-                recall_by_k=recall_by_k,
-                unmatched_spans=judgment.unmatched_spans,
-                kind=sample.extra.get("kind"),
-                routed_to=retrieved.routed_to,
-            )
-        )
+        output = outputs.get(sample.id)
+        if output is None:
+            if retriever is None:
+                raise ValueError(f"No recorded output for {sample.id!r} and no retriever to produce one")
+            query_filter = filters_for(sample) if filters_for is not None else None
+            output = retrieve_sample(retriever, sample, query_filter)
+            if on_output is not None:
+                on_output(output)
+        results.append(score_sample(sample, output))
 
     modes = sorted({r.mode for r in results})
     by_mode = (
@@ -245,6 +340,97 @@ def run_retrieval_eval(
             find_unmatchable_spans(dataset, corpus_chunks) if corpus_chunks is not None else None
         ),
     )
+
+
+#: Names the scoring code behind `report_scores`. Bump it when a metric's
+#: definition or rounding changes, so a rescored run gets a new score revision.
+SCORER = "retrieval/1"
+
+
+def summary_metrics(summary: MetricSummary) -> dict[str, float]:
+    return {
+        "hit_rate": round(summary.mean_hit_rate, 4),
+        "recall": round(summary.mean_recall, 4),
+        "precision": round(summary.mean_precision, 4),
+        "mrr": round(summary.mrr, 4),
+        "ndcg": round(summary.mean_ndcg, 4),
+    }
+
+
+def report_scores(report: EvalReport) -> dict[str, Any]:
+    """A report's numbers as a matrix row and a run's score revision both store them.
+
+    One function for both, so a run folder's initial score revision and the
+    legacy ``results/*.json`` row written in the same pass agree exactly.
+    """
+    summary = report.overall
+    return {
+        "num_samples": summary.num_samples,
+        "metrics": summary_metrics(summary),
+        # Per-kind figures (the underspecified tier's implicit / paraphrase),
+        # which the chunking plan reports separately rather than averaged.
+        "by_kind": {
+            k.label: {"num_samples": k.num_samples, "metrics": summary_metrics(k)} for k in report.by_kind
+        },
+        "recall_by_k": {str(k): round(v, 4) for k, v in sorted(summary.recall_by_k.items())},
+        # Samples that can't score under this variant's chunking, whatever
+        # retrieval does. Two variants with different counts differ in what
+        # they *could* find, not only in what they did.
+        "unmatchable_spans": [
+            {"sample_id": u.sample_id, "span": u.span} for u in report.unmatchable_spans or []
+        ],
+        # Per-sample scores, keyed by sample id, for paired comparison. Without
+        # them a later reader can compare means but never test a difference.
+        # Keys match `metrics`, whose values are the means of these.
+        "samples": {
+            r.sample_id: {
+                "hit_rate": r.hit,
+                "recall": round(r.recall, 4),
+                "mrr": round(r.rr, 4),
+                "ndcg": round(r.ndcg, 4),
+                **({"kind": r.kind} if r.kind is not None else {}),
+                **({"routed_to": r.routed_to} if r.routed_to else {}),
+            }
+            for r in report.sample_results
+        },
+    }
+
+
+def evaluate_into_run(
+    run: Run,
+    selected: EvalDataset,
+    retriever: Retriever,
+    *,
+    corpus_chunks: list[Chunk] | None = None,
+    filters_for: Callable[[EvalSample], QueryFilter | None] | None = None,
+) -> tuple[EvalReport, str]:
+    """Run (or finish) ``run``'s retrieval, mark it complete, and write its initial score revision.
+
+    Returns the report and the score revision's id.
+
+    Raises:
+        RunIncomplete: the outputs don't cover exactly ``selected``.
+    """
+    report = run_retrieval_eval(
+        selected, retriever, corpus_chunks=corpus_chunks, filters_for=filters_for,
+        outputs=run.load_outputs(), on_output=run.append_output,
+    )
+    run.complete()
+    index = run.manifest.get("index") or {}
+    revision = run.write_scores(
+        scorer=SCORER,
+        settings={
+            "recall_k_values": list(RECALL_K_VALUES),
+            # Unmatchable spans read the corpus as well as the labels: the
+            # chunks counted here are the ones this build's corpus produced.
+            "unmatchable_spans": (
+                {"corpus_hash": index.get("corpus_hash"), "index_build_id": index.get("index_build_id")}
+                if corpus_chunks is not None else None
+            ),
+        },
+        scores=report_scores(report),
+    )
+    return report, revision
 
 
 #: The stages a qrels run saves, and the metric each is read for.
@@ -520,6 +706,23 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Qrels sets: do not drop documents whose id equals the query id (the reference drops them).",
     )
     parser.add_argument(
+        "--limit", type=int, default=0, metavar="N",
+        help="Evaluate N samples spread evenly across the set (0 = all). Recorded in the run, "
+             "which then can't stand in for a full-set run.",
+    )
+    parser.add_argument(
+        "--runs-dir", type=Path, default=RUNS_DIR, metavar="DIR",
+        help=f"Where the run folder is written (default: {RUNS_DIR}).",
+    )
+    parser.add_argument(
+        "--no-run", action="store_true",
+        help="Don't write a run folder; print the report only (and don't check the index).",
+    )
+    parser.add_argument(
+        "--fresh", action="store_true",
+        help="Start a new run folder even if an interrupted one with the same identity exists.",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Print per-sample results in addition to aggregate metrics",
@@ -581,9 +784,32 @@ def main(argv: list[str] | None = None) -> int:
     # Chunked here rather than read back from the index so the count reflects
     # the configured chunker even when the index is stale; `rag.cli
     # index-report` says whether the two agree.
-    _selection, _documents, corpus_chunks = chunk_selected_corpora(config, args.corpus)
+    selection, documents, corpus_chunks = chunk_selected_corpora(config, args.corpus)
+    selected = subsample(dataset, args.limit)
+    run: Run | None = None
+    if not args.no_run:
+        try:
+            index = checked_index(config, selection, documents, corpus_chunks, label="retrieval_eval")
+        except IndexConflict as exc:
+            logger.error("%s", exc)
+            return 1
+        run = open_run(
+            args.runs_dir,
+            stage="retrieval",
+            experiment="retrieval_eval",
+            variant=Path(args.config).stem if args.config else "config",
+            config=config,
+            selection=selection,
+            dataset_path=eval_path,
+            dataset=dataset,
+            selected=selected,
+            selection_method=f"evenly spaced, --limit {args.limit}" if len(selected) < len(dataset) else "all",
+            index=index,
+            code=code_version(),
+            resume=not args.fresh,
+        )
 
-    span_samples = sum(1 for s in dataset if s.matching_mode != MODE_DOCUMENT)
+    span_samples = sum(1 for s in selected if s.matching_mode != MODE_DOCUMENT)
     logger.info(
         "Building retriever (embedding=%s, vector_store=%s, reranker=%s)",
         config.embedding.model,
@@ -594,12 +820,21 @@ def main(argv: list[str] | None = None) -> int:
 
     logger.info(
         "Running retrieval eval on %d sample(s) (%d span-matched, %d document-matched)",
-        len(dataset),
+        len(selected),
         span_samples,
-        len(dataset) - span_samples,
+        len(selected) - span_samples,
     )
-    report = run_retrieval_eval(dataset, retriever, corpus_chunks=corpus_chunks)
-    print_report(report, verbose=args.verbose)
+    if run is None:
+        report = run_retrieval_eval(selected, retriever, corpus_chunks=corpus_chunks)
+        print_report(report, verbose=args.verbose)
+    else:
+        try:
+            report, revision = evaluate_into_run(run, selected, retriever, corpus_chunks=corpus_chunks)
+        except RunIncomplete as exc:
+            logger.error("%s", exc)
+            return 1
+        print_report(report, verbose=args.verbose)
+        print(f"Run: {run.path}  (score revision {revision})")
 
     # Exit 1 if every single query was a miss (likely an empty index)
     if report.mean_hit_rate == 0.0 and report.num_samples > 0:

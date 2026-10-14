@@ -27,6 +27,12 @@ record them), use the `measure-change` skill; this one is the command reference.
   Ollama upgrade means the port needs updating.
 - Retrieval eval: `python -m rag.eval.retrieval_eval` (`-v` for per-sample;
   `--eval-set data/eval/edgar_eval_set.json --corpus edgar_md` for EDGAR).
+  It and `scripts/run_matrix.py` record each run (one per matrix variant) as
+  a folder under `data/eval/runs/` (manifest, dataset snapshot, ranked chunks
+  and latency in `outputs.jsonl`, `scores/<revision>.json`); the matrix row
+  names its `run` and `score_revision`. Rerunning the same command resumes an
+  interrupted run on the same verified index build; `--fresh` starts over,
+  `--limit N` evaluates N evenly spaced samples, `--no-run` writes nothing.
   A BEIR qrels set (`scripts/beir_to_eval_set.py`) is scored `trec_eval`-style
   instead: `--config rag/config/beir.yaml --corpus beir-scifact --eval-set
   data/eval/beir_scifact_test.json`, with `--save-run DIR` to keep the

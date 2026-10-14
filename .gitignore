@@ -42,6 +42,10 @@ draft/
 pytest-cache-files-gvcbngex/
 # Per-sample eval checkpoints (rag/eval/checkpoint.py); deleted once a set finishes.
 data/eval/results/.partial/
+# Eval run folders (rag/eval/runs.py). Ignored by default: `git add -f` the
+# manifest, dataset.json and scores/ of a run cited in docs/measured-results.md
+# or used as a baseline; outputs.jsonl only when its chunk text must travel too.
+data/eval/runs/
 
 # BEIR queries and qrels (scripts/fetch_beir.py) sit outside documents/ so they
 # never reach an index; fetched like the passages, never committed.

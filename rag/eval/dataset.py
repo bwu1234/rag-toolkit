@@ -322,3 +322,18 @@ class EvalDataset:
     def from_dicts(cls, items: list[dict]) -> "EvalDataset":
         """Convenience constructor for tests — build from plain dicts."""
         return cls(samples=[EvalSample.from_dict(d) for d in items])
+
+
+def subsample(dataset: EvalDataset, limit: int) -> EvalDataset:
+    """Take `limit` samples spread evenly across the set.
+
+    A prefix would be biased: the generated eval set is sorted by document id, so
+    the first N samples are all the alphabetically-first companies. Striding
+    keeps coverage across entities and periods, and is deterministic so two
+    configurations are compared on identical questions.
+    """
+    if limit <= 0 or limit >= len(dataset):
+        return dataset
+    step = len(dataset) / limit
+    picked = [dataset.samples[int(i * step)] for i in range(limit)]
+    return EvalDataset(samples=picked, source_path=dataset.source_path)
