@@ -58,8 +58,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rag.config.settings import DEFAULT_HNSW_EF_SEARCH, RagConfig, load_config  # noqa: E402
 from rag.eval.dataset import EvalDataset, EvalSample  # noqa: E402
-from rag.eval.metrics import wilson_interval  # noqa: E402
-from rag.eval.paired import compare_by_id, format_difference  # noqa: E402
+from rag.eval.report import paired_delta, render_table  # noqa: E402,F401  (paired_delta: tests use it)
 from rag.eval.provenance import (  # noqa: E402
     IndexConflict,
     checked_index,
@@ -471,15 +470,15 @@ def run_variant(
         runs_dir, stage="retrieval", experiment=experiment, variant=variant.name, config=config,
         selection=selection, dataset_path=dataset_path, dataset=dataset, selected=dataset,
         selection_method="all", index=index, code=code,
-        extra={"overrides": variant.overrides, **({"filters": variant.filters} if variant.filters else {})},
+        extra={"axis": variant.axis, "overrides": variant.overrides,
+               **({"filters": variant.filters} if variant.filters else {})},
         resume=not fresh,
     )
     started = time.monotonic()
     retriever = build_retriever(config, corpora=corpora)
     report, revision = evaluate_into_run(
-        run, dataset, retriever, corpus_chunks=corpus_chunks, filters_for=filters_for
+        run, dataset, retriever, corpus_chunks=corpus_chunks, filters_for=filters_for, started=started
     )
-    elapsed = time.monotonic() - started
 
     return {
         "variant": variant.name,
@@ -498,108 +497,8 @@ def run_variant(
         "score_revision": revision,
         # Wall time of this process: a resumed run's covers only the remainder.
         # Per-query latency is in the run's outputs.jsonl.
-        "elapsed_s": round(elapsed, 1),
+        "elapsed_s": run.manifest["elapsed_s"],
         **report_scores(report),
-    }
-
-
-def paired_delta(
-    result: dict[str, Any], baseline: dict[str, Any], metric: str, *, binary: bool = False
-) -> str:
-    """Table cell for `metric`, candidate minus baseline, paired by sample id.
-
-    Rows recorded before per-sample scores were stored get the bare difference
-    of means, marked so it is not read as tested.
-    """
-    delta = result["metrics"][metric] - baseline["metrics"][metric]
-    if "samples" not in result or "samples" not in baseline:
-        return f"{delta:+.3f} (no CI)"
-    try:
-        diff = compare_by_id(
-            {sid: s[metric] for sid, s in baseline["samples"].items()},
-            {sid: s[metric] for sid, s in result["samples"].items()},
-        )
-    except ValueError:
-        return f"{delta:+.3f} (unpaired)"
-    return format_difference(diff, binary=binary)
-
-
-def hit_interval(result: dict[str, Any], kind: str | None = None) -> str:
-    """95% Wilson interval on a row's hit rate (or one kind's), from its per-sample scores."""
-    samples = [
-        s for s in result.get("samples", {}).values() if kind is None or s.get("kind") == kind
-    ]
-    if not samples:
-        return "—"
-    low, high = wilson_interval(sum(1 for s in samples if s["hit_rate"]), len(samples))
-    return f"[{low:.3f}, {high:.3f}]"
-
-
-def render_table(results: list[dict[str, Any]]) -> str:
-    """Markdown table, grouped by axis, with paired deltas against the baseline."""
-    baseline = next((r for r in results if r["variant"] == "baseline"), None)
-    lines = [
-        "| variant | hit | hit 95% CI | recall | prec | MRR | NDCG | Δ hit [95% CI] | Δ NDCG [95% CI] "
-        "| unmatch. | s |",
-        "|---|---|---|---|---|---|---|---|---|---|---|",
-    ]
-    last_axis = None
-    for result in results:
-        if last_axis is not None and result["axis"] != last_axis:
-            lines.append("| | | | | | | | | | | |")
-        last_axis = result["axis"]
-        m = result["metrics"]
-        if baseline and result["variant"] != "baseline":
-            hit_str = paired_delta(result, baseline, "hit_rate", binary=True)
-            ndcg_str = paired_delta(result, baseline, "ndcg")
-        else:
-            hit_str = ndcg_str = "—"
-        unmatchable = result.get("unmatchable_spans")
-        unmatchable_str = "—" if unmatchable is None else str(len(unmatchable))
-        lines.append(
-            f"| `{result['variant']}` | {m['hit_rate']:.3f} | {hit_interval(result)} | {m['recall']:.3f} | "
-            f"{m['precision']:.3f} | {m['mrr']:.3f} | {m['ndcg']:.3f} | {hit_str} | "
-            f"{ndcg_str} | {unmatchable_str} | {result['elapsed_s']:.0f} |"
-        )
-    with_kinds = [r for r in results if r.get("by_kind")]
-    if with_kinds:
-        lines += [
-            "",
-            "By kind, each reported on its own (the rows above mix them):",
-            "",
-            "| variant | kind | n | hit | hit 95% CI | NDCG | Δ hit [95% CI] |",
-            "|---|---|---|---|---|---|---|",
-        ]
-        for result in with_kinds:
-            for kind, k in result["by_kind"].items():
-                delta = "—"
-                if baseline and result["variant"] != "baseline" and kind in baseline.get("by_kind", {}):
-                    delta = paired_delta(
-                        _only_kind(result, kind), _only_kind(baseline, kind), "hit_rate", binary=True
-                    )
-                lines.append(
-                    f"| `{result['variant']}` | {kind} | {k['num_samples']} | "
-                    f"{k['metrics']['hit_rate']:.3f} | {hit_interval(result, kind)} | "
-                    f"{k['metrics']['ndcg']:.3f} | {delta} |"
-                )
-    lines += [
-        "",
-        "`hit 95% CI` is a Wilson interval on that rate alone, the noise floor of one "
-        "run on this many questions. Δ is variant minus `baseline`, paired by sample. `*` marks a 95% interval "
-        "that excludes zero; `W/L` counts the questions the variant gained / lost and "
-        "`p` is McNemar's exact test on them -- trust it over the CI when W+L is small. "
-        "`(no CI)` rows predate per-sample scores and need a re-run to be tested. "
-        "`unmatch.` counts expected spans no chunk contains under that variant's "
-        "chunking (`—` predates the count).",
-    ]
-    return "\n".join(lines)
-
-
-def _only_kind(result: dict[str, Any], kind: str) -> dict[str, Any]:
-    """A row narrowed to one kind's samples and metrics, for a per-kind paired delta."""
-    return {
-        "metrics": result["by_kind"][kind]["metrics"],
-        "samples": {sid: s for sid, s in result["samples"].items() if s.get("kind") == kind},
     }
 
 

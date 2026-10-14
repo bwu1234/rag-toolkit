@@ -33,6 +33,12 @@ record them), use the `measure-change` skill; this one is the command reference.
   names its `run` and `score_revision`. Rerunning the same command resumes an
   interrupted run on the same verified index build; `--fresh` starts over,
   `--limit N` evaluates N evenly spaced samples, `--no-run` writes nothing.
+  Rescore a finished run offline after a label fix with `python -m
+  rag.eval.score <run> --eval-set PATH` (a new score revision; refused if a
+  query changed). Rebuild the matrix table from pinned runs with `python -m
+  rag.eval.report --baseline <run>:<rev> --runs <run>:<rev> ... [--out F.md]`;
+  it refuses runs on different samples, labels or scorer, and lists config
+  differences the variant didn't declare (`--declare PATH|code|index|corpus`).
   A BEIR qrels set (`scripts/beir_to_eval_set.py`) is scored `trec_eval`-style
   instead: `--config rag/config/beir.yaml --corpus beir-scifact --eval-set
   data/eval/beir_scifact_test.json`, with `--save-run DIR` to keep the

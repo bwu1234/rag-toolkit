@@ -8,6 +8,7 @@ folder holds what the run *saw*, and is only ever added to::
       dataset.json       # the whole eval set as loaded, extra fields included
       outputs.jsonl      # identity header, then one line per sample
       scores/<revision>.json
+      datasets/<hash>.json  # later label snapshots a revision scored against
 
 The folder name is for people; the manifest is what code selects runs by.
 ``outputs.jsonl`` doubles as the checkpoint: a stopped run is resumed by
@@ -55,6 +56,7 @@ MANIFEST = "manifest.json"
 DATASET = "dataset.json"
 OUTPUTS = "outputs.jsonl"
 SCORES = "scores"
+LABELS = "datasets"
 
 RUNNING = "running"
 COMPLETE = "complete"
@@ -126,8 +128,11 @@ class Run:
         lines = self.outputs_path.read_text(encoding="utf-8").splitlines()
         return [json.loads(line) for line in lines[1:] if line]
 
-    def complete(self) -> None:
+    def complete(self, *, elapsed_s: float | None = None) -> None:
         """Mark the run complete once its outputs cover exactly its selected samples.
+
+        ``elapsed_s`` is the caller's wall time for the run, kept for reports.
+        A resumed run's covers only the process that finished it.
 
         Raises:
             RunIncomplete: naming duplicate, missing or unexpected sample ids.
@@ -145,25 +150,38 @@ class Run:
         if problems:
             raise RunIncomplete(f"{self.path.name}: " + "; ".join(problems))
         self.manifest.update(status=COMPLETE, finished_at=_now().isoformat(timespec="seconds"))
+        if elapsed_s is not None:
+            self.manifest["elapsed_s"] = round(elapsed_s, 1)
         self.manifest.pop("pid", None)
         _write_json(self.path / MANIFEST, self.manifest)
 
     def outputs_digest(self) -> str:
         return stable_hash(self.outputs_path.read_text(encoding="utf-8"))
 
-    def write_scores(self, *, scorer: str, settings: dict[str, Any], scores: dict[str, Any]) -> str:
+    def write_scores(
+        self,
+        *,
+        scorer: str,
+        settings: dict[str, Any],
+        scores: dict[str, Any],
+        dataset_hash: str | None = None,
+    ) -> str:
         """Save a score revision derived from this run's outputs; return its id.
 
         The id hashes what the scores depend on -- the outputs, the labels,
         the scorer and its settings -- so scoring the same run the same way
         again names the same revision, and a label fix or new scorer adds one
         beside it rather than overwriting it.
+
+        ``dataset_hash`` names the labels scored against when they aren't the
+        run's own (`rag.eval.score` with ``--eval-set``); their snapshot is
+        saved with `save_labels`.
         """
         if self.manifest["status"] != COMPLETE:
             raise RunIncomplete(f"{self.path.name} is not complete; partial outputs can't be scored")
         source = {
             "outputs_digest": self.outputs_digest(),
-            "dataset_hash": self.manifest["dataset"]["dataset_hash"],
+            "dataset_hash": dataset_hash or self.manifest["dataset"]["dataset_hash"],
             "selection_hash": self.manifest["dataset"]["selection_hash"],
             "scorer": scorer,
             "settings": settings,
@@ -180,6 +198,50 @@ class Run:
                 **scores,
             })
         return revision
+
+
+    def score_revisions(self) -> list[str]:
+        """Ids of this run's score revisions, oldest first."""
+        revisions = [(json.loads(p.read_text(encoding="utf-8"))["scored_at"], p.stem)
+                     for p in (self.path / SCORES).glob("*.json")]
+        return [rev for _, rev in sorted(revisions)]
+
+    def read_scores(self, revision: str) -> dict[str, Any]:
+        path = self.path / SCORES / f"{revision}.json"
+        if not path.exists():
+            raise FileNotFoundError(
+                f"{self.run_id} has no score revision {revision!r}; it has: "
+                + (", ".join(self.score_revisions()) or "none")
+            )
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def labels(self, dataset_hash: str | None = None) -> EvalDataset:
+        """The eval set the run was made with, or a later label snapshot saved beside it."""
+        if dataset_hash is None or dataset_hash == self.manifest["dataset"]["dataset_hash"]:
+            path = self.path / DATASET
+        else:
+            path = self.path / LABELS / f"{dataset_hash}.json"
+        return EvalDataset.load(path)
+
+    def save_labels(self, dataset: EvalDataset) -> str:
+        """Snapshot labels a later revision scores against, unless they're the run's own; return their hash."""
+        digest = dataset_hash(dataset)
+        if digest != self.manifest["dataset"]["dataset_hash"]:
+            path = self.path / LABELS / f"{digest}.json"
+            if not path.exists():
+                path.parent.mkdir(exist_ok=True)
+                _write_json(path, sample_dicts(dataset))
+        return digest
+
+
+def load_run(ref: str | Path, runs_dir: Path = RUNS_DIR) -> Run:
+    """A run by folder path or by run id (its folder name under ``runs_dir``)."""
+    path = Path(ref)
+    if not (path / MANIFEST).exists():
+        path = runs_dir / str(ref)
+    if not (path / MANIFEST).exists():
+        raise FileNotFoundError(f"No run {ref!r} (looked for {path / MANIFEST})")
+    return Run(path, json.loads((path / MANIFEST).read_text(encoding="utf-8")))
 
 
 def run_identity(

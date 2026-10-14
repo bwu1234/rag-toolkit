@@ -211,4 +211,4 @@ def test_the_matrix_row_equals_its_runs_score_revision(tmp_path: Path, monkeypat
         assert row[key] == scores[key], key
     manifest = json.loads((tmp_path / row["run"] / "manifest.json").read_text())
     assert manifest["config_hash"] == row["provenance"]["config_hash"]
-    assert manifest["extra"] == {"overrides": {}}
+    assert manifest["extra"] == {"axis": "baseline", "overrides": {}}

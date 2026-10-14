@@ -656,6 +656,49 @@ resuming process; per-query latency is in `outputs.jsonl`.
 
 ### Phase 3 — Offline scoring and reports (1 day)
 
+**Done (2026-10-14)** for retrieval runs. `rag/eval/score.py`, `rag/eval/report.py`
+(`render_table` and the paired cells moved there from `run_matrix.py`).
+Checked on `edgar_md`, `edgar_eval_set`, with a four-variant matrix
+(`baseline`, `mode=dense`, `reranker=none`, `filters=company`):
+
+- **The report over those four runs is byte-identical** to the matrix's
+  `.md`, followed by the pinned `run:revision` list.
+- **One edited span label** (`AAPL_10-K_2024-09-28.md::chunk12`) rescored
+  the baseline run: exactly that sample's scores changed (hit 0.977 → 0.971),
+  the original revision file was byte-for-byte unchanged, and the labels
+  were snapshotted in the run's `datasets/`. Pairing it with the unrescored
+  `mode=dense` run was refused; once both were rescored onto the fixed
+  labels they paired.
+
+Decisions taken while building it:
+
+- **Eligibility is separate from the config hash.** Refused: different
+  stage, selected samples, scoring labels, scorer or scoring settings, or
+  corpus snapshot (unless `--declare corpus`). Flagged as possible
+  confounders under the table: config paths the variant didn't declare (a
+  matrix variant declares its overrides; `--declare PATH` or a glob adds
+  more), a different code version (`--declare code`), and the same index
+  recipe rebuilt (`--declare index`). Denylisted config fields never count.
+- **A reference is pinned or it is refused.** `<run>:<revision>` always
+  resolves to the same immutable file. A bare `<run>` is accepted only while
+  the run has one revision, so a later rescoring makes it an error instead
+  of silently changing the report.
+- **Rescoring unchanged labels names the existing revision**, since the id
+  hashes outputs, labels, scorer and settings.
+- **Inputs vs labels:** for retrieval only `query` is an input. A run that
+  filtered by labels (the matrix's derived filters) also treats
+  `expected_doc_ids` as an input. A changed input or a missing selected
+  sample is refused and needs a fresh run.
+- **Unmatchable spans on changed labels are unavailable** (`—`), never the
+  old count carried over. Recomputing them needs the build's chunk inventory,
+  which run folders don't store yet.
+- Run manifests now record the matrix `axis` and `elapsed_s`, which the
+  table needs. Phase 2 runs without them fall back to the variant name and 0 s.
+
+Not covered: experiment YAML files as report input (Phase 5); answer and
+multi-hop scoring (Phase 4). `measured-results.md` doesn't cite run
+revisions yet: no new row has been recorded since.
+
 - `rag.eval.score` and `rag.eval.report`, reusing `relevance.py`,
   `metrics.py`, `paired.py` and `render_table`.
 - Add immutable score revisions, explicit baseline/candidate revision pins,
