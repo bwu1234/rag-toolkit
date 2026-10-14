@@ -187,6 +187,9 @@ Design rationale, history, and planning live in `docs/`, read on demand:
   repeats, confirmation sets and the optional local MLflow tracking pilot.
   Read before changing eval
   storage, scoring or orchestration; its proposed commands are not yet shipped.
+- **`docs/judge-calibration-guide.md`** — how to label stored answers to
+  calibrate the answer judge: the rubric per item kind, worked examples,
+  double review and adjudication, and the `rag.eval.calibrate` workflow.
 - **`docs/evaluation-rigor-plan.md`** — what the current benchmarks support,
   their coverage and grading limits, and the plan for held-out questions,
   evidence-aware grading, judge calibration, and broader corpora.

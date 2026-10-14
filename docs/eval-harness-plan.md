@@ -730,8 +730,14 @@ plus a pinned attempt (refusing one made against other references), and
 matrix row equals the score revision it names; generation for a whole set
 finishes before judging, and a rerun judges a run whose judging stopped
 rather than regenerating it. Repeats record their group and number, and the
-spread table adds SD and per-repeat paired deltas. Still open: the human
-calibration fixture, guide and report; a real-model end-to-end check; the
+spread table adds SD and per-repeat paired deltas. Calibration tooling:
+`rag/eval/calibrate.py` drafts blind candidates across categories and judge
+outcomes from judged runs, and reports a judge's false-pass and false-fail
+rates with Wilson intervals by category and tag, plus consistency across
+attempts, against predeclared bounds; it refuses unreviewed or unadjudicated
+items. The procedure is [the calibration guide](judge-calibration-guide.md).
+Still open: the labeled fixture and its review records (human work), the
+first calibration report; a real-model end-to-end check; the
 three-repeat variance runs; MuSiQue's extraction step as a judged attempt;
 `rag.eval.report` over answer runs; Ollama model digests in judge provenance;
 and the Milestone 19 per-step and evidence-state items, which wait on those
