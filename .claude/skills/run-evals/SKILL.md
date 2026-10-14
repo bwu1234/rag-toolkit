@@ -56,7 +56,10 @@ record them), use the `measure-change` skill; this one is the command reference.
   reference answers get their own protocol directory). Rescoring an answer
   run needs no index or judge: `python -m rag.eval.score <run> [--eval-set
   PATH] [--judgment <attempt>]`; a changed reference refuses the old
-  judgment. The Milestone 19 phase 4 matrix is `scripts/run_answer_matrix.py
+  judgment. Judge calibration against reviewed human labels: `python -m
+  rag.eval.calibrate draft --runs RUN ...`, then (after labeling per
+  docs/judge-calibration-guide.md) `python -m rag.eval.calibrate run
+  --judge-model M --attempts 3`. The Milestone 19 phase 4 matrix is `scripts/run_answer_matrix.py
   --family m19` (`--repeat N` for run-to-run noise, `--sets ...,adaptive` for
   the bridge/discovery set); `--family m19-hosted` is
   the Gemini Flash-Lite reference pair, on the free tier and bounded by

@@ -248,9 +248,13 @@ def judge_multihop(sample: EvalSample, output: dict[str, Any], judge: LLMClient)
         if note is not None:
             verdicts.append({"label": part.label, "passed": False, "judge_output": note})
             continue
-        prompt = _part_judge_prompt(sample.query, part.label, part.answer, output["answer"])
-        verdicts.append(judge_call(judge, _PART_JUDGE_SYSTEM_PROMPT, prompt, part.label))
+        verdicts.append(judge_part(judge, sample.query, part.label, part.answer, output["answer"]))
     return {"sample_id": sample.id, "verdicts": verdicts}
+
+
+def judge_part(judge: LLMClient, query: str, label: str, expected: str, answer: str) -> dict[str, Any]:
+    """Judge one part of an answer: the verdict as a judgment records it."""
+    return judge_call(judge, _PART_JUDGE_SYSTEM_PROMPT, _part_judge_prompt(query, label, expected, answer), label)
 
 
 def multihop_result(sample: EvalSample, output: dict[str, Any], judgment: dict[str, Any]) -> MultihopSampleResult:
