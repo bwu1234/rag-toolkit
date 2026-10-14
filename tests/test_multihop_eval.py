@@ -8,6 +8,8 @@ pipeline-vs-agent comparison if it were wrong.
 
 from __future__ import annotations
 
+from typing import Any
+
 import json
 import logging
 import sys
@@ -18,7 +20,7 @@ import pytest
 from rag.config.settings import GEMINI_BASE_URL, EvalConfig, LLMConfig, RagConfig
 from rag.eval.answer_eval import resolve_judge_config, run_answer_eval
 from rag.eval.dataset import EvalDataset, ExpectedSpan
-from rag.eval.multihop_eval import CONCLUSION_LABEL, format_tokens, parts_of, run_multihop_eval
+from rag.eval.multihop_eval import CONCLUSION_LABEL, format_tokens, multihop_scores, parts_of, run_multihop_eval
 from rag.eval.relevance import unmatched_spans
 from rag.generation.chat_service import ChatAnswer, ChatService, Citation
 
@@ -26,7 +28,6 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
 
 from build_multihop_set import OUTPUT, SOURCE, build  # noqa: E402
-import run_answer_matrix  # noqa: E402
 
 
 class _FakeChatService(ChatService):
@@ -34,7 +35,7 @@ class _FakeChatService(ChatService):
         self._answer = answer
         self._citations = citations or []
 
-    def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+    def ask(self, query: str, **_: Any) -> ChatAnswer:  # type: ignore[override]
         return ChatAnswer(answer=self._answer, citations=self._citations)
 
 
@@ -44,7 +45,7 @@ class _UsageChatService(ChatService):
     def __init__(self, *usages: tuple[int, float, int | None, int | None]) -> None:
         self._usages = list(usages)
 
-    def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+    def ask(self, query: str, **_: Any) -> ChatAnswer:  # type: ignore[override]
         calls, ms, prompt, completion = self._usages.pop(0)
         return ChatAnswer(answer="x", citations=[], llm_calls=calls, llm_ms=ms,
                           prompt_tokens=prompt, completion_tokens=completion)
@@ -256,7 +257,7 @@ def test_evidence_found_only_in_a_read_window_is_reported_apart_from_search() ->
     read_call = AgentToolCall(step=2, tool="rag_read_document", documents=["d.md"], start=0, end=6000, passages=[2])
 
     class _Reader(_FakeChatService):
-        def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+        def ask(self, query: str, **_: Any) -> ChatAnswer:  # type: ignore[override]
             return ChatAnswer(answer="x", citations=[_citation("A reported 10"), read_window], agent_calls=[read_call])
 
     dataset = EvalDataset.from_dicts([_sample(conclusion=None)])
@@ -368,12 +369,12 @@ def test_judge_calls_are_not_counted_as_the_turns_cost() -> None:
     assert report.sample_results[0].llm_calls == 1
 
 
-def test_matrix_saves_each_parts_judge_reply_and_the_missing_evidence() -> None:
+def test_the_saved_row_keeps_each_parts_judge_reply_and_the_missing_evidence() -> None:
     dataset = EvalDataset.from_dicts([_sample(conclusion=None)])
     chat = _FakeChatService("A is 10.", [_citation("A reported 10")])
 
-    saved = run_answer_matrix.run_multihop(
-        chat, _ScriptedJudge("PASS matches", "FAIL says not found"), dataset
+    saved = multihop_scores(
+        run_multihop_eval(dataset, chat, _ScriptedJudge("PASS matches", "FAIL says not found"))
     )["samples"][0]
 
     assert saved["parts"] == {"A": True, "B": False}

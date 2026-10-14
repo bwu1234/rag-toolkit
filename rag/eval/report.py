@@ -42,8 +42,10 @@ from rag.logging_config import configure_logging
 logger = logging.getLogger(__name__)
 
 #: Score settings that may differ between paired revisions: where the
-#: unmatchable-span count was read from is the run's own corpus, not a metric definition.
-_PER_RUN_SETTINGS = {"unmatchable_spans"}
+#: unmatchable-span count was read from is the run's own corpus, and an answer
+#: run's judgment attempt is its own draw under the shared judge protocol
+#: (`judge_hash`, which must match) -- neither is a metric definition.
+_PER_RUN_SETTINGS = {"unmatchable_spans", "judgment"}
 
 
 class Ineligible(ValueError):
@@ -240,7 +242,13 @@ def check_pair(baseline: Pinned, candidate: Pinned, declared: list[str]) -> list
         )
     if baseline.scores["scorer"] != candidate.scores["scorer"]:
         problems.append(f"different scorers ({baseline.scores['scorer']} vs {candidate.scores['scorer']})")
-    settings = [{k: v for k, v in p.scores["settings"].items() if k not in _PER_RUN_SETTINGS}
+    b_judge, c_judge = (p.scores["settings"].get("judge_hash") for p in (baseline, candidate))
+    if b_judge != c_judge:
+        problems.append(
+            f"judged under different protocols ({b_judge} vs {c_judge}): another judge, rubric or "
+            "reference answers; judge both the same way with `python -m rag.eval.judge`"
+        )
+    settings = [{k: v for k, v in p.scores["settings"].items() if k not in _PER_RUN_SETTINGS | {"judge_hash"}}
                 for p in (baseline, candidate)]
     if settings[0] != settings[1]:
         problems.append(f"different scoring settings ({settings[0]} vs {settings[1]})")
@@ -281,6 +289,11 @@ def build_report(baseline: Pinned, candidates: list[Pinned], *, declared: list[s
         Ineligible: some candidate can't be paired with the baseline.
     """
     declared = declared or []
+    if baseline.run.manifest["stage"] != "retrieval":
+        raise NotImplementedError(
+            "Reports over answer runs are not built yet; run_answer_matrix.py's table pins each "
+            "row's run, judgment and score revision"
+        )
     confounders = {c.ref: check_pair(baseline, c, declared) for c in candidates}
     variants = [p.run.manifest["variant"] for p in (baseline, *candidates)]
     if len(set(variants)) != len(variants):
@@ -328,7 +341,7 @@ def main(argv: list[str] | None = None) -> int:
         baseline = resolve(args.baseline, args.runs_dir)
         candidates = [resolve(ref, args.runs_dir) for ref in args.runs]
         report = build_report(baseline, candidates, declared=args.declare)
-    except (FileNotFoundError, ValueError) as exc:
+    except (FileNotFoundError, ValueError, NotImplementedError) as exc:
         logger.error("%s", exc)
         return 1
     print(report, end="")

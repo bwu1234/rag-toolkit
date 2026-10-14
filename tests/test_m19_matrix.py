@@ -17,6 +17,7 @@ from typing import Any
 import pytest
 
 from rag.config.settings import LLMConfig, RagConfig, load_config
+from rag.eval.answer_eval import groundedness_counts
 from rag.eval.dataset import EvalDataset
 from rag.generation.chat_service import ChatAnswer, ChatService
 from tests.fakes import skip_index_checks
@@ -121,10 +122,15 @@ def test_repeats_get_their_own_names_and_share_a_base_name() -> None:
 
 
 def test_groundedness_counts_line_up_verdicts_with_the_judge() -> None:
-    counts = matrix.groundedness_counts([(False, False), (False, True), (True, False), (True, True), (None, False)])
+    counts = groundedness_counts([(False, False), (False, True), (True, False), (True, True), (None, False)])
     assert counts == {"checked": 4, "unchecked": 1, "ungrounded": 2,
                       "ungrounded_and_failed": 1, "grounded_and_failed": 1}
-    assert matrix.groundedness_counts([(None, True)]) is None
+    assert groundedness_counts([(None, True)]) is None
+
+
+def test_repeats_keep_the_closed_book_flag() -> None:
+    closed = next(v for v in matrix.MUSIQUE_VARIANTS if v.closed_book)
+    assert all(v.closed_book for v in matrix.repeated([closed], 2))
 
 
 def test_the_spread_table_counts_each_run() -> None:
@@ -132,8 +138,20 @@ def test_the_spread_table_counts_each_run() -> None:
         return {"variant": name, "multihop": {"complete_rate": complete, "num_evaluated": 35}}
 
     table = matrix.render_repeats([run("pipeline / 9b #1", 15 / 35), run("pipeline / 9b #2", 13 / 35)])
-    assert "| `pipeline / 9b` | multihop complete | 15/35, 13/35 | 14.0 | 2 |" in table
+    assert "| `pipeline / 9b` | multihop complete | 15/35, 13/35 | 14.0 | 1.4 | 2 | — |" in table
     assert matrix.render_repeats([run("pipeline / 9b", 0.5)]) == ""
+
+
+def test_repeat_deltas_pair_repeat_k_with_the_references_repeat_k() -> None:
+    def run(name: str, complete: int) -> dict[str, Any]:
+        return {"variant": name, "multihop": {"complete_rate": complete / 35, "num_evaluated": 35}}
+
+    table = matrix.render_repeats([
+        run("pipeline / 9b #1", 15), run("pipeline / 9b #2", 13), run("pipeline / 9b #3", 14),
+        run("agentic react / 27b #1", 20), run("agentic react / 27b #2", 12), run("agentic react / 27b #3", 18),
+    ])
+    assert "Δ vs `pipeline / 9b` per repeat" in table
+    assert "| 20/35, 12/35, 18/35 | 16.7 | 4.2 | 8 | +5, -1, +4 (mean +2.7, 2 of 3 above) |" in table
 
 
 # ---------------------------------------------------------------------------
@@ -145,7 +163,7 @@ class _Chat(ChatService):
     def __init__(self) -> None:
         self.asked: list[str] = []
 
-    def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+    def ask(self, query: str, **_: Any) -> ChatAnswer:  # type: ignore[override]
         self.asked.append(query)
         return ChatAnswer(answer=f"answer to {query}", citations=[], llm_calls=1, grounded=False)
 
@@ -190,7 +208,7 @@ def _run(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, chat: _Chat, *extra: s
     monkeypatch.setattr(sys, "argv", [
         "run_answer_matrix.py", "--family", "m19", "--sets", "refusals,multihop",
         "--multihop", str(multihop), "--refusals", str(refusals),
-        "--results-dir", str(tmp_path / "results"), *extra,
+        "--results-dir", str(tmp_path / "results"), "--runs-dir", str(tmp_path / "runs"), *extra,
     ])
     assert matrix.main() == 0
     [results_file] = (tmp_path / "results").glob("*.json")
@@ -308,7 +326,7 @@ class _SpentChat(ChatService):
     def __init__(self) -> None:
         self.asked: list[str] = []
 
-    def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+    def ask(self, query: str, **_: Any) -> ChatAnswer:  # type: ignore[override]
         from rag.llm.daily_budget import DailyRequestBudgetSpent
 
         if self.asked:
@@ -317,7 +335,7 @@ class _SpentChat(ChatService):
         return ChatAnswer(answer="a", citations=[], llm_calls=1)
 
 
-def test_a_spent_budget_stops_the_run_and_keeps_its_checkpoint(
+def test_a_spent_budget_stops_the_run_and_keeps_its_outputs(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     multihop, _ = _write_sets(tmp_path)
@@ -328,10 +346,11 @@ def test_a_spent_budget_stops_the_run_and_keeps_its_checkpoint(
     monkeypatch.setattr(sys, "argv", [
         "run_answer_matrix.py", "--family", "m19-hosted", "--sets", "multihop",
         "--variant", "pipeline / flash-lite", "--multihop", str(multihop),
-        "--results-dir", str(tmp_path / "results"),
+        "--results-dir", str(tmp_path / "results"), "--runs-dir", str(tmp_path / "runs"),
     ])
 
     assert matrix.main() == 2
-    [partial] = (tmp_path / "results" / ".partial").glob("*.jsonl")
-    assert len(partial.read_text().splitlines()) == 2  # the header and the one finished sample
+    [run] = (tmp_path / "runs").iterdir()
+    assert json.loads((run / "manifest.json").read_text())["status"] == "running"
+    assert len((run / "outputs.jsonl").read_text().splitlines()) == 2  # the header and the one finished sample
     assert not list((tmp_path / "results").glob("*.json"))

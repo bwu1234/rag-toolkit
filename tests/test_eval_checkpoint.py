@@ -7,13 +7,15 @@ from two different setups into one number.
 
 from __future__ import annotations
 
+from typing import Any
+
 import json
 import sys
 from pathlib import Path
 
 import pytest
 
-from rag.eval.answer_eval import run_answer_eval
+from rag.eval.answer_eval import run_answer_eval, trajectory
 from rag.eval.checkpoint import CheckpointMismatch, SampleCheckpoint
 from rag.eval.dataset import EvalDataset
 from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval
@@ -36,7 +38,7 @@ class _CountingChat(ChatService):
         self.asked: list[str] = []
         self._fail_on = fail_on
 
-    def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+    def ask(self, query: str, **_: Any) -> ChatAnswer:  # type: ignore[override]
         if query == self._fail_on:
             raise RuntimeError("Ollama went away")
         self.asked.append(query)
@@ -136,7 +138,7 @@ def test_an_agent_trace_survives_the_checkpoint_and_lands_in_the_matrix_record()
     ]
 
     class _Agent(_CountingChat):
-        def ask(self, query: str) -> ChatAnswer:  # type: ignore[override]
+        def ask(self, query: str, **_: Any) -> ChatAnswer:  # type: ignore[override]
             return ChatAnswer(answer="a", agent_calls=searches)
 
     multihop = run_multihop_eval(_multihop(1), _Agent(), _PassJudge()).sample_results[0]
@@ -147,9 +149,9 @@ def test_an_agent_trace_survives_the_checkpoint_and_lands_in_the_matrix_record()
     for result in (multihop, answer):
         restored = type(result).from_dict(json.loads(json.dumps(result.to_dict())))
         assert restored == result and restored.agent_calls == searches
-    record = run_answer_matrix._calls(multihop.agent_calls)
+    record = trajectory(multihop.agent_calls)
     assert record["calls"][0]["query"] == "fuel" and record["calls"][1]["status"] == "refused"
-    assert run_answer_matrix._calls([]) == {}
+    assert trajectory([]) == {}
 
 
 def test_multihop_reuses_completed_samples_without_asking_or_judging_them() -> None:
@@ -201,48 +203,59 @@ def _run_matrix(
         dataset_path.write_text(json.dumps([s.to_dict() for s in _multihop(3)]))
     monkeypatch.setattr(run_answer_matrix, "build_chat_service", lambda config, corpora=None: chat)
     monkeypatch.setattr(run_answer_matrix, "get_llm_client", lambda config: _PassJudge())
-    skip_index_checks(monkeypatch, run_answer_matrix)
+    skip_index_checks(monkeypatch, run_answer_matrix, verified=True)
     monkeypatch.setattr(sys, "argv", [
         "run_answer_matrix.py", "--sets", "multihop", "--variant", "crag=off",
-        "--multihop", str(dataset_path), "--results-dir", str(tmp_path / "results"), *extra,
+        "--multihop", str(dataset_path), "--results-dir", str(tmp_path / "results"),
+        "--runs-dir", str(tmp_path / "runs"), *extra,
     ])
     return run_answer_matrix.main()
 
 
-def test_matrix_resumes_a_crashed_set_and_cleans_up_after_it(
+def _manifests(tmp_path: Path) -> list[dict[str, Any]]:
+    return [json.loads(p.read_text()) for p in sorted((tmp_path / "runs").glob("*/manifest.json"))]
+
+
+def test_matrix_resumes_a_crashed_set_from_its_run_folder(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     with pytest.raises(RuntimeError, match="went away"):
         _run_matrix(monkeypatch, tmp_path, _CountingChat(fail_on="q2"))
 
-    partial = list((tmp_path / "results" / ".partial").glob("*.jsonl"))
-    assert len(partial) == 1
+    [crashed] = _manifests(tmp_path)
+    assert crashed["status"] == "running"
     assert not list((tmp_path / "results").glob("*.json"))  # no half set in the results file
 
     chat = _CountingChat()
     assert _run_matrix(monkeypatch, tmp_path, chat) == 0
 
     assert chat.asked == ["q2"]
+    [finished] = _manifests(tmp_path)
+    assert finished["run_id"] == crashed["run_id"] and finished["status"] == "complete"
     [results_file] = (tmp_path / "results").glob("*.json")
     saved = json.loads(results_file.read_text())["results"][0]["multihop"]
     assert (saved["num_evaluated"], saved["resumed_samples"], saved["complete_rate"]) == (3, 2, 1.0)
-    assert not partial[0].exists()
+    assert saved["run"] == crashed["run_id"]
 
 
-def test_matrix_refuses_a_stale_checkpoint_until_told_fresh(
+def test_matrix_never_resumes_a_run_from_another_setup(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     with pytest.raises(RuntimeError):
         _run_matrix(monkeypatch, tmp_path, _CountingChat(fail_on="q1"))
-    [path] = (tmp_path / "results" / ".partial").glob("*.jsonl")
-    lines = path.read_text().splitlines()
-    lines[0] = json.dumps({"fingerprint": {**json.loads(lines[0])["fingerprint"], "code": "older"}})
-    path.write_text("\n".join(lines) + "\n")
+    monkeypatch.setattr(run_answer_matrix, "code_version", lambda: "older")
 
     chat = _CountingChat()
-    assert _run_matrix(monkeypatch, tmp_path, chat) == 1
-    assert chat.asked == []  # refused before asking anything
+    assert _run_matrix(monkeypatch, tmp_path, chat) == 0
+    assert chat.asked == ["q0", "q1", "q2"]  # a new run; the other setup's is left as it was
+    assert sorted(m["status"] for m in _manifests(tmp_path)) == ["complete", "running"]
 
+
+def test_fresh_starts_a_new_run_instead_of_resuming(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    with pytest.raises(RuntimeError):
+        _run_matrix(monkeypatch, tmp_path, _CountingChat(fail_on="q1"))
+
+    chat = _CountingChat()
     assert _run_matrix(monkeypatch, tmp_path, chat, "--fresh") == 0
     assert chat.asked == ["q0", "q1", "q2"]
 

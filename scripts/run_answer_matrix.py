@@ -30,13 +30,22 @@ Cost
 on a path that otherwise costs one generation plus one judge call. Enabling it
 roughly quadruples the per-sample cost. Use `--limit` on the answerable set.
 
-Stopping and resuming
----------------------
-Each finished sample is saved to `<results-dir>/.partial/` as it completes, so
-rerunning the same command after a crash or Ctrl-C picks up where it stopped.
-A checkpoint written by a different config, judge, dataset or code is refused
-rather than mixed in; `--fresh` discards it. The results file itself is only
-written when a set finishes.
+Run folders, judging and resuming
+---------------------------------
+Each variant and set writes a run folder under `--runs-dir` (eval harness
+plan, Phase 4): every answer is generated and saved to `outputs.jsonl` --
+with the passages it was shown and every model call verbatim -- before any is
+judged, then judged as an attempt under `judgments/` (`rag.eval.judge`), then
+scored as a revision the row equals and names (`run`, `judgment`,
+`score_revision`). Generating a whole set before judging also means a local
+generator and judge each load once per set instead of swapping per sample.
+
+Rerunning the same command after a crash or Ctrl-C resumes the run with the
+same identity -- config, dataset, selected samples, index build, code -- and
+never one from another setup, which is left as it was. A run that finished
+generating but not judging is judged, not regenerated. `--fresh` starts new
+runs and attempts. MuSiQue still checkpoints under `<results-dir>/.partial/`.
+The results file itself is only written when a set finishes.
 
 The judge
 ---------
@@ -128,7 +137,7 @@ import logging
 import re
 import sys
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, get_args
 
@@ -138,11 +147,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rag.config.settings import LLMConfig, RagConfig, load_config  # noqa: E402
 from rag.eval.answer_eval import (  # noqa: E402
-    AnswerSampleResult,
     add_judge_arguments,
     resolve_judge_config,
-    run_answer_eval,
     subsample,
+    trajectory,
 )
 from rag.eval.checkpoint import (  # noqa: E402
     CheckpointMismatch,
@@ -160,8 +168,19 @@ from rag.eval.provenance import (  # noqa: E402
 )
 from rag.index_manifest import index_hash  # noqa: E402
 from rag.ingestion.corpora import chunk_selected_corpora  # noqa: E402
-from rag.eval.metrics import wilson_interval  # noqa: E402
-from rag.eval.multihop_eval import MultihopSampleResult, run_multihop_eval  # noqa: E402
+from rag.eval.judge import evaluate_answers_into_run, judged, protocol_hash  # noqa: E402
+from rag.eval.multihop_eval import parts_of  # noqa: E402
+from rag.eval.runs import (  # noqa: E402
+    COMPLETE,
+    REVISION_FIELDS,
+    RUNS_DIR,
+    Run,
+    RunIncomplete,
+    open_run,
+    run_identity,
+    runs_with,
+)
+from rag.eval.score import InputChanged  # noqa: E402
 from rag.eval.musique_eval import (  # noqa: E402
     ClosedBookResponder,
     MusiqueSampleResult,
@@ -176,7 +195,6 @@ from rag.generation.chat_service import ChatResponder  # noqa: E402
 from rag.llm.factory import get_llm_client  # noqa: E402
 from rag.llm.base import LLMClient  # noqa: E402
 from rag.logging_config import configure_logging  # noqa: E402
-from rag.observability.records import AgentToolCall  # noqa: E402
 from rag.observability.usage import metered_client  # noqa: E402
 
 logger = logging.getLogger(__name__)
@@ -451,7 +469,9 @@ def repeated(variants: list[Variant], times: int) -> list[Variant]:
     """Each variant `times` times, as `name #1` ... `name #N`; unchanged when `times` is 1."""
     if times <= 1:
         return variants
-    return [Variant(f"{v.name} #{k}", v.overrides, v.oracle) for v in variants for k in range(1, times + 1)]
+    # `replace` keeps every flag: rebuilding from name, overrides and oracle
+    # dropped `closed_book`, turning a repeated closed-book row into a retrieval row.
+    return [replace(v, name=f"{v.name} #{k}") for v in variants for k in range(1, times + 1)]
 
 
 def base_name(name: str) -> str:
@@ -489,98 +509,84 @@ def checkpoint_fingerprint(
     return fingerprint
 
 
-def groundedness_counts(verdicts: list[tuple[bool | None, bool]]) -> dict[str, int] | None:
-    """How CRAG's verdicts line up with the judge's, from (grounded, passed) pairs.
-
-    None when nothing was checked, so rows without the checker show no counts
-    rather than zeros. `unchecked` also holds inconclusive checks.
-    """
-    checked = [(g, ok) for g, ok in verdicts if g is not None]
-    if not checked:
-        return None
-    return {
-        "checked": len(checked),
-        "unchecked": len(verdicts) - len(checked),
-        "ungrounded": sum(1 for g, _ in checked if g is False),
-        "ungrounded_and_failed": sum(1 for g, ok in checked if g is False and not ok),
-        "grounded_and_failed": sum(1 for g, ok in checked if g is True and not ok),
-    }
-
-
-def _mean_known(values: list[int | None]) -> float | None:
-    known = [v for v in values if v is not None]
-    return round(sum(known) / len(known), 1) if known else None
-
-
-def run_one(
-    label: str,
+def run_judged_set(
+    name: str,
+    variant: Variant,
+    config: RagConfig,
     chat_service: ChatResponder,
     judge: LLMClient,
-    dataset: EvalDataset,
-    checkpoint: SampleCheckpoint | None = None,
+    judge_config: LLMConfig,
+    *,
+    full: EvalDataset,
+    selected: EvalDataset,
+    dataset_path: Path,
+    selection_method: str,
+    index: IndexProvenance | None,
+    code: str,
+    corpora: list[str] | None,
+    runs_dir: Path,
+    experiment: str,
+    fresh: bool,
 ) -> dict[str, Any]:
-    completed = {
-        sid: AnswerSampleResult.from_dict(r) for sid, r in (checkpoint.load() if checkpoint else {}).items()
-    }
-    if completed:
-        logger.info("  %s: resuming, %d sample(s) from the checkpoint", label, len(completed))
+    """Generate one set into a run folder, judge it as an attempt, and return the row: its score revision.
+
+    Every answer is generated before any is judged, so the generator and the
+    judge each load once per set rather than taking turns per sample. A run
+    whose generation finished but whose judging under this judge didn't is
+    judged, not regenerated, when the same command runs again.
+    """
+    stage = "multihop" if name in MULTIHOP_SETS else "answer"
+    if stage == "answer":
+        # Samples without a reference can't be judged (`run_answer_eval` skips them too).
+        selected = EvalDataset(samples=[s for s in selected if s.expected_answer], source_path=selected.source_path)
+    else:
+        for sample in selected:
+            parts_of(sample)  # a sample without parts fails before anything is generated
+    repeat = re.fullmatch(r"(.*) #(\d+)", variant.name)
+    opened: dict[str, Any] = dict(
+        stage=stage, variant=variant.name, config=config, dataset=full, selected=selected, index=index,
+        code=code, extra={
+            "set": name,
+            "overrides": variant.overrides,
+            "retrieval": "oracle" if variant.oracle else "none" if variant.closed_book else "configured",
+            **({"repeat": {"group": repeat[1], "number": int(repeat[2])}} if repeat else {}),
+        },
+    )
+    unjudged = [] if fresh else [
+        r for r in runs_with(runs_dir, run_identity(**opened), COMPLETE)
+        if not judged(r, protocol_hash(judge_config, stage, selected))
+    ]
+    run: Run
+    if unjudged:
+        run = unjudged[0]
+        logger.info("  %s: %s finished generating; judging its answers", name, run.run_id)
+    else:
+        run = open_run(runs_dir, experiment=experiment, selection=config.corpus_selection(corpora),
+                       dataset_path=dataset_path, selection_method=selection_method, resume=not fresh, **opened)
     started = time.monotonic()
-    report = run_answer_eval(
-        dataset, chat_service, judge, completed=completed,
-        on_result=(lambda r: checkpoint.append(r.to_dict())) if checkpoint else None,
+    resumed = len(run.read_outputs())
+    attempt, revision = evaluate_answers_into_run(
+        run, selected, chat_service, judge, judge_config, fresh=fresh, started=started
     )
     elapsed = time.monotonic() - started
-    logger.info(
-        "  %s: %d/%d passed (%.3f) in %.0fs",
-        label, report.num_passed, report.num_evaluated, report.pass_rate, elapsed,
-    )
-    kind_of = {s.id: s.extra["kind"] for s in dataset if "kind" in s.extra}
-    by_kind: dict[str, dict[str, int]] = {}
-    for r in report.sample_results:
-        if r.sample_id in kind_of:
-            counts = by_kind.setdefault(kind_of[r.sample_id], {"num_evaluated": 0, "num_passed": 0})
-            counts["num_evaluated"] += 1
-            counts["num_passed"] += r.passed is True
+    scores = run.read_scores(revision)
+    row = {k: v for k, v in scores.items() if k not in REVISION_FIELDS}
+    if stage == "answer":
+        logger.info("  %s: %d/%d passed (%.3f) in %.0fs",
+                    name, row["num_passed"], row["num_evaluated"], row["pass_rate"], elapsed)
+    else:
+        logger.info("  %s: %.3f complete, %.3f completeness, %.3f evidence recall in %.0fs",
+                    name, row["complete_rate"], row["mean_completeness"], row["evidence_recall"], elapsed)
     return {
-        "num_evaluated": report.num_evaluated,
-        "num_passed": report.num_passed,
-        "num_failed": report.num_failed,
-        "num_unparseable": report.num_unparseable,
-        "num_empty": report.num_empty,
-        "pass_rate": round(report.pass_rate, 4),
-        "pass_ci": [round(x, 4) for x in wilson_interval(report.num_passed, report.num_evaluated)],
-        "by_kind": {
-            kind: {**c, "pass_ci": [round(x, 4) for x in wilson_interval(c["num_passed"], c["num_evaluated"])]}
-            for kind, c in sorted(by_kind.items())
-        },
-        "mean_latency_s": round(report.mean_latency_s, 1),
-        # The answering turn's cost, as for multi-hop; the judge's calls are not in it.
-        "mean_llm_calls": round(sum(r.llm_calls for r in report.sample_results)
-                                / max(len(report.sample_results), 1), 2),
-        "mean_prompt_tokens": _mean_known([r.prompt_tokens for r in report.sample_results]),
-        "mean_completion_tokens": _mean_known([r.completion_tokens for r in report.sample_results]),
-        "groundedness": groundedness_counts(
-            [(r.grounded, r.passed is True) for r in report.sample_results]
-        ),
-        # elapsed_s covers this session only; resumed samples ran in an earlier one.
+        **row,
+        # This session's generation and judging; resumed samples ran in an earlier one.
         "elapsed_s": round(elapsed, 1),
-        "resumed_samples": len(completed),
-        "failed_ids": [r.sample_id for r in report.sample_results if r.passed is not True],
-        # Failures split by stage. Samples without gold spans (refusals, the
-        # doc-matched baseline set) cannot be attributed and are counted apart.
-        "failed_retrieval": report.evidence_missed.num_failed,
-        "failed_generation": report.evidence_retrieved.num_failed,
-        "failed_unattributed": (
-            report.num_evaluated - report.num_passed
-            - report.evidence_missed.num_failed - report.evidence_retrieved.num_failed
-        ),
-        # Per-sample detail, for paired comparison across variants.
-        "samples": [
-            {"id": r.sample_id, "passed": r.passed, "evidence_retrieved": r.evidence_retrieved,
-             "grounded": r.grounded, "llm_calls": r.llm_calls, "latency_s": round(r.latency_s, 1),
-             "answer": r.actual_answer, **_calls(r.agent_calls)}
-            for r in report.sample_results
-        ],
+        "resumed_samples": resumed,
+        # The run folder this row's numbers came from, the judgment attempt
+        # behind its verdicts, and the score revision it equals.
+        "run": run.run_id,
+        "judgment": attempt.ref,
+        "score_revision": revision,
     }
 
 
@@ -648,85 +654,11 @@ def run_musique(
                 "llm_calls": r.llm_calls, "llm_ms": round(r.llm_ms),
                 "prompt_tokens": r.prompt_tokens, "completion_tokens": r.completion_tokens,
                 "latency_s": round(r.latency_s, 1), "answer": r.actual_answer,
-                **_calls(r.agent_calls),
+                **trajectory(r.agent_calls),
             }
             for r in report.sample_results
         ],
     }
-
-
-def run_multihop(
-    chat_service: ChatResponder,
-    judge: LLMClient,
-    dataset: EvalDataset,
-    checkpoint: SampleCheckpoint | None = None,
-) -> dict[str, Any]:
-    completed = {
-        sid: MultihopSampleResult.from_dict(r) for sid, r in (checkpoint.load() if checkpoint else {}).items()
-    }
-    if completed:
-        logger.info("  multihop: resuming, %d sample(s) from the checkpoint", len(completed))
-    started = time.monotonic()
-    report = run_multihop_eval(
-        dataset, chat_service, judge, completed=completed,
-        on_result=(lambda r: checkpoint.append(r.to_dict())) if checkpoint else None,
-    )
-    elapsed = time.monotonic() - started
-    logger.info(
-        "  multihop: %.3f complete, %.3f completeness, %.3f evidence recall in %.0fs",
-        report.complete_rate, report.mean_completeness, report.evidence_recall, elapsed,
-    )
-    return {
-        "num_evaluated": report.num_samples,
-        "complete_rate": round(report.complete_rate, 4),
-        "mean_completeness": round(report.mean_completeness, 4),
-        "evidence_recall": round(report.evidence_recall, 4),
-        "complete_rate_by_kind": {k: round(v, 4) for k, v in report.complete_rate_by_kind.items()},
-        "num_empty": report.num_empty,
-        "num_unparseable": report.num_unparseable,
-        "mean_latency_s": round(report.mean_latency_s, 1),
-        "mean_retrieval_rounds": round(report.mean_retrieval_rounds, 2),
-        # The answering turn's cost; the judge's calls are not in it.
-        "mean_llm_calls": round(report.mean_llm_calls, 2),
-        "mean_llm_s": round(report.mean_llm_s, 1),
-        "mean_prompt_tokens": _round_or_none(report.mean_prompt_tokens),
-        "mean_completion_tokens": _round_or_none(report.mean_completion_tokens),
-        "num_with_tokens": report.num_with_tokens,
-        "groundedness": groundedness_counts([(r.grounded, r.complete) for r in report.sample_results]),
-        "elapsed_s": round(elapsed, 1),
-        "resumed_samples": len(completed),
-        # Per-sample detail, so a hand check of the judge needs no rerun.
-        "samples": [
-            {
-                "id": r.sample_id,
-                "complete": r.complete,
-                "parts": {p.label: p.passed for p in r.part_results},
-                # The judge's full reply per part, reason included: what a hand
-                # check of a verdict needs, and what `parts` reduces to a bool.
-                "judge_outputs": {p.label: p.judge_output for p in r.part_results},
-                "evidence_recall": round(r.evidence_recall, 3),
-                "missing_spans": r.missing_spans,
-                "llm_calls": r.llm_calls,
-                "llm_ms": round(r.llm_ms),
-                "prompt_tokens": r.prompt_tokens,
-                "completion_tokens": r.completion_tokens,
-                "grounded": r.grounded,
-                "latency_s": round(r.latency_s, 1),
-                "answer": r.actual_answer,
-                **_calls(r.agent_calls),
-            }
-            for r in report.sample_results
-        ],
-    }
-
-
-def _calls(calls: list[AgentToolCall]) -> dict[str, Any]:
-    """An agentic sample's trajectory, for reading a run without re-running it.
-
-    Every tool call, its arguments as the model wrote them, and what each
-    returned. Absent on pipeline samples.
-    """
-    return {"calls": [asdict(c) for c in calls]} if calls else {}
 
 
 def _round_or_none(value: float | None) -> float | None:
@@ -880,38 +812,66 @@ def render_table(results: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+def _headline(run: dict[str, Any], set_name: str) -> tuple[int, int]:
+    """One run's headline count on a set -- passes, complete answers or exact matches -- and its n."""
+    m = run[set_name]
+    if "num_passed" in m:
+        return m["num_passed"], m["num_evaluated"]
+    rate = m["em"] if set_name == "musique" else m["complete_rate"]
+    return round(rate * m["num_evaluated"]), m["num_evaluated"]
+
+
+def _sd(values: list[int]) -> float:
+    """Sample standard deviation (n - 1)."""
+    mean = sum(values) / len(values)
+    return (sum((v - mean) ** 2 for v in values) / (len(values) - 1)) ** 0.5
+
+
 def render_repeats(results: list[dict[str, Any]]) -> str:
-    """Per variant run more than once: each run's headline count, then their mean and range."""
-    groups: dict[str, list[dict[str, Any]]] = {}
+    """Per variant run more than once: each run's headline count, their mean, SD and range, and paired deltas.
+
+    The pairing is predeclared: repeat k of a variant pairs with repeat k of
+    the reference -- the first variant in the table that was repeated -- and
+    each delta is one pair's difference in count on the same questions. A
+    repeat is another draw on the same questions, not more questions: these
+    numbers sit apart from the single-run paired CIs and never add to their n.
+    """
+    groups: dict[str, dict[int, dict[str, Any]]] = {}
     for r in results:
-        if base_name(r["variant"]) != r["variant"]:
-            groups.setdefault(base_name(r["variant"]), []).append(r)
+        if (repeat := re.fullmatch(r"(.*) #(\d+)", r["variant"])) is not None:
+            groups.setdefault(repeat[1], {})[int(repeat[2])] = r
+    if not groups:
+        return ""
+    reference = next(iter(groups))
     rows = []
     for name, runs in groups.items():
         for set_name in SETS:
-            counts = [
-                (run[set_name]["num_passed"] if "num_passed" in run[set_name]
-                 else round(run[set_name]["em"] * run[set_name]["num_evaluated"]) if set_name == "musique"
-                 else round(run[set_name]["complete_rate"] * run[set_name]["num_evaluated"]),
-                 run[set_name]["num_evaluated"])
-                for run in runs if run.get(set_name)
-            ]
+            counts = {k: _headline(run, set_name) for k, run in sorted(runs.items()) if run.get(set_name)}
             if len(counts) < 2:
                 continue
-            passed = [p for p, _ in counts]
+            passed = list(p for p, _ in counts.values())
+            deltas = "—"
+            if name != reference:
+                ref = {k: _headline(run, set_name) for k, run in groups[reference].items() if run.get(set_name)}
+                paired = [counts[k][0] - ref[k][0] for k in counts if k in ref and ref[k][1] == counts[k][1]]
+                if paired:
+                    deltas = (", ".join(f"{d:+d}" for d in paired)
+                              + f" (mean {sum(paired) / len(paired):+.1f}, {sum(d > 0 for d in paired)} of "
+                              f"{len(paired)} above)")
             label = "EM" if set_name == "musique" else "complete" if set_name in MULTIHOP_SETS else "pass"
             rows.append(
-                f"| `{name}` | {set_name} {label} | {', '.join(f'{p}/{n}' for p, n in counts)} "
-                f"| {sum(passed) / len(passed):.1f} | {max(passed) - min(passed)} |"
+                f"| `{name}` | {set_name} {label} | {', '.join(f'{p}/{n}' for p, n in counts.values())} "
+                f"| {sum(passed) / len(passed):.1f} | {_sd(passed):.1f} | {max(passed) - min(passed)} | {deltas} |"
             )
     if not rows:
         return ""
     return "\n".join([
         "Spread across repeats (counts per run; a difference between variants smaller than "
-        "the range is within run-to-run noise):",
+        f"the range is within run-to-run noise). Δ pairs repeat k with `{reference}`'s repeat k, "
+        "on the same questions; repeats are not extra questions, so this is not a CI:",
         "",
-        "| variant | set | per run | mean | range |",
-        "|---|---|---|---|---|",
+        f"| variant | set | per run | mean | SD | range | Δ vs `{reference}` per repeat |",
+        "|---|---|---|---|---|---|---|",
         *rows,
     ])
 
@@ -944,7 +904,10 @@ def main() -> int:
     parser.add_argument("--repeat", type=int, default=1, metavar="N",
                         help="Run each variant N times, as separate rows, to measure run-to-run noise.")
     parser.add_argument("--fresh", action="store_true",
-                        help="Discard saved per-sample checkpoints instead of resuming from them.")
+                        help="Start new runs and judgment attempts instead of resuming unfinished ones "
+                             "(and discard MuSiQue's checkpoints).")
+    parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR,
+                        help="Where each variant and set's run folder is written (default: data/eval/runs).")
     parser.add_argument("--variant", action="append", default=None, metavar="NAME")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
@@ -1041,10 +1004,11 @@ def main() -> int:
         )
         return ordered
 
-    # Each finished sample is appended to a checkpoint under .partial/, so a
-    # stopped run resumes where it left off. Every checkpoint is checked
-    # against its set's fingerprint before anything runs: a mismatch found
-    # after an hour of earlier variants would waste that hour.
+    # Answer and multi-hop sets write run folders: outputs.jsonl is their
+    # checkpoint, resumed only by a run of the same identity. MuSiQue still
+    # checkpoints under .partial/, each checked against its fingerprint before
+    # anything runs: a mismatch found after an hour of earlier variants would
+    # waste that hour.
     code = code_version()
     configs = {v.name: row_config(base, v.overrides) for v in variants}
     # The oracle needs gold spans, so it skips any set without them (refusals).
@@ -1058,6 +1022,8 @@ def main() -> int:
     checkpoints: dict[tuple[str, str], SampleCheckpoint] = {}
     for variant in variants:
         for name in sets_for[variant.name]:
+            if name != "musique":
+                continue
             variant_slug = re.sub(r"[^A-Za-z0-9.]+", "-", variant.name).strip("-")
             checkpoint = SampleCheckpoint(
                 args.results_dir / ".partial" / f"{stem}__{variant_slug}__{name}.jsonl",
@@ -1126,14 +1092,16 @@ def main() -> int:
             "code": code,
         }
         for name in sets_for[variant.name]:
-            checkpoint = checkpoints[variant.name, name]
             try:
                 if name == "musique":
-                    record[name] = run_musique(chat_service, judge, datasets[name], checkpoint)
-                elif name in MULTIHOP_SETS:
-                    record[name] = run_multihop(chat_service, judge, datasets[name], checkpoint)
+                    record[name] = run_musique(chat_service, judge, datasets[name], checkpoints[variant.name, name])
                 else:
-                    record[name] = run_one(name, chat_service, judge, datasets[name], checkpoint)
+                    record[name] = run_judged_set(
+                        name, variant, config, chat_service, judge, judge_config,
+                        full=full_datasets[name], selected=datasets[name], dataset_path=paths[name],
+                        selection_method=selection_method[name], index=index_for[variant.name], code=code,
+                        corpora=args.corpus, runs_dir=args.runs_dir, experiment=stem, fresh=args.fresh,
+                    )
                 record[name]["provenance"] = provenance_record(
                     config=config, dataset_path=paths[name], dataset=full_datasets[name],
                     selected=datasets[name], selection=selection_method[name], code=code,
@@ -1145,12 +1113,16 @@ def main() -> int:
                 logger.error("[%s] %s: stopped. %s Rerun the same command after it resets.",
                              variant.name, name, exc)
                 return 2
+            except (RunIncomplete, InputChanged) as exc:
+                logger.error("[%s] %s: %s", variant.name, name, exc)
+                return 1
             accumulated[variant.name] = record
             # Write the finished set, then drop its checkpoint: the results file
             # only ever holds whole sets, and a crash between the two just
             # resumes into an immediate re-summary.
             ordered = flush()
-            checkpoint.discard()
+            if name == "musique":
+                checkpoints[variant.name, name].discard()
 
     print(f"\n{render_table(ordered)}\n")
     print(f"Wrote {destination}")
