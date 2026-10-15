@@ -427,25 +427,35 @@ class StructuredChunker(Chunker):
             # Pieces would end before they start, and overlap would walk back
             # one character at a time (or, without overlap, never finish).
             raise ValueError(f"no room for text: room {room}, reserve {reserve}, chunk_size {self.chunk_size}")
-        boundaries =[m.end() for m in _SENTENCE_END.finditer(text, start, stop)]
+        boundaries = [m.end() for m in _SENTENCE_END.finditer(text, start, stop)]
         boundaries.append(stop)
         budget = room - reserve
         first = True
         previous_end = start  # each piece must end past the last, or overlap could stall it
         while start < stop:
+            # A piece must end past its own start too: skipping whitespace can
+            # put `start` beyond `previous_end`, and a word snap back to that
+            # gap would make an empty piece.
+            floor = max(start, previous_end)
             fitting = [
                 b
                 for b in boundaries
-                if _rstrip(text, start, b) > previous_end and self.length(text[start:b].rstrip()) <= budget
+                if _rstrip(text, start, b) > floor and self.length(text[start:b].rstrip()) <= budget
             ]
             if fitting:
                 end = _rstrip(text, start, fitting[-1]) if fitting[-1] < stop else stop
             else:  # no sentence end fits: fall back to words
-                end = min(stop, start + budget)
+                limit = self._fit(text, start, stop, budget)
+                end = limit
                 if end < stop:
                     end = _rstrip(text, start, FixedSizeChunker._snap_backward_to_boundary(text, end))
-                if end <= previous_end:  # no break anywhere in the window: cut mid-word
-                    end = min(stop, start + budget)
+                if end <= floor:  # no break anywhere in the window: cut mid-word
+                    end = limit
+                if end <= floor:  # the overlap alone fills the budget: drop it
+                    start = previous_end
+                    while start < stop and text[start].isspace():
+                        start += 1
+                    continue
             yield _Unit("paragraph", start, end, path, starts_chunk=not first)
             if end >= stop:
                 return
@@ -456,6 +466,27 @@ class StructuredChunker(Chunker):
             while next_start < stop and text[next_start].isspace():
                 next_start += 1
             start = next_start if next_start > start else end
+
+    def _fit(self, text: str, start: int, stop: int, budget: int) -> int:
+        """The furthest end in `(start, stop]` whose span measures at most `budget` by `length`.
+
+        Measured, not counted in characters: a token counter or a byte length
+        can give one character more than one unit. A first character over
+        the budget on its own still ends a piece, so splitting always advances.
+        The raw span is measured, trailing space included, so with the default
+        character length this is exactly `start + budget`.
+        """
+
+        lo, hi = start + 1, stop
+        if self.length(text[start:hi]) <= budget:
+            return hi
+        while lo < hi:  # the largest end that fits, assuming length grows with the span
+            mid = (lo + hi + 1) // 2
+            if self.length(text[start:mid]) <= budget:
+                lo = mid
+            else:
+                hi = mid - 1
+        return lo
 
     def _overlap_start(self, text: str, floor: int, end: int, overlap: int | None = None) -> int:
         """Where a span sharing `overlap` (default `chunk_overlap`) characters with `[.., end)` starts.
