@@ -713,8 +713,10 @@ revisions yet: no new row has been recorded since.
 
 ### Phase 4 — Answer side: generate and judge as separate steps (1.5 days)
 
-**In progress (2026-10-14): storage, judging and repeat summaries built and
-unit-tested with fake models; not yet run on real models.**
+**In progress (2026-10-15): storage, judging and repeat summaries built,
+unit-tested with fake models, and run end to end on real models; the
+default agent's three-repeat spread is
+[recorded](measured-results.md#repeat-spread-of-the-default-agent-eval-harness-phase-4).**
 `answer_eval`, `multihop_eval` and `run_answer_matrix.py` (all sets but
 MuSiQue) write answer runs: `outputs.jsonl` holds each answer, the passages
 it was shown with their text, and the turn's record with every LLM call
@@ -737,8 +739,8 @@ rates with Wilson intervals by category and tag, plus consistency across
 attempts, against predeclared bounds; it refuses unreviewed or unadjudicated
 items. The procedure is [the calibration guide](judge-calibration-guide.md).
 Still open: the labeled fixture and its review records (human work), the
-first calibration report; a real-model end-to-end check; the
-three-repeat variance runs; MuSiQue's extraction step as a judged attempt;
+first calibration report; three repeats of each variant in the next
+paired comparison (only the shipped default has them); MuSiQue's extraction step as a judged attempt;
 `rag.eval.report` over answer runs; Ollama model digests in judge provenance;
 and the Milestone 19 per-step and evidence-state items, which wait on those
 features.
