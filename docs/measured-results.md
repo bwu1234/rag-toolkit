@@ -1975,6 +1975,63 @@ hard questions still rules it out as the default. `chat.mode` stays
 `pipeline`, and agentic remains the opt-in mode for hard questions, with the
 27b at `think: low`.
 
+### Repeat spread of the default agent (eval harness Phase 4)
+
+**Setup.** The shipped default, `agentic react / 27b, think=low`, run three
+times (`--repeat 3`) under the harness's answer-run storage, as the
+[harness plan's](eval-harness-plan.md#measurement-quality-requirements)
+initial variance check. The rest of the setup matches the
+[`edgar_md` re-run](#agentic-retrieval-on-edgar_md-milestone-19-re-run-after-chunking-plan-phase-5):
+`edgar_md`, isolated, the same four sets (answerable /40 at `--limit 40`,
+refusals /15, multi-hop /35, adaptive /15), judge `gemma4:31b-mlx`. Each
+repeat is a fresh generation judged once, so the spread is generator
+variability plus whatever noise the judge adds. Judge noise alone (re-judging
+fixed answers) is calibration's job and isn't separated here.
+
+- *Provenance.* Run 2026-10-14 23:22 to 10-15 04:39 at `eedc787`, from a
+  pinned worktree, index build `a0d7d6b2…` (verified in every run's
+  manifest). Driver: `scripts/run_answer_matrix.py --family m19 --corpus
+  edgar_md --variant "agentic react / 27b, think=low" --sets
+  answerable,refusals,multihop,adaptive --repeat 3 --judge-model
+  gemma4:31b-mlx`. The chunker fix that landed after `eedc787` (`a71236b`)
+  leaves `edgar_md`'s index in sync, so it doesn't change these chunks.
+- *Raw records.* `data/eval/results_m19/phase4_repeats_eedc787/`; the twelve
+  answer runs (`data/eval/runs/*-46725480`) hold every answer, passage, model
+  call and judge reply.
+
+| set | per run | mean | SD | range | questions that flip | fail all 3 |
+|---|---|---|---|---|---|---|
+| answerable /40 | 38, 37, 37 | 37.3 | 0.6 | 1 | 1 | 2 |
+| refusals /15 | 14, 15, 15 | 14.7 | 0.6 | 1 | 1 | 0 |
+| multi-hop /35 (complete) | 32, 32, 34 | 32.7 | 1.2 | 2 | 2 | 1 |
+| adaptive /15 (complete) | 13, 12, 14 | 13.0 | 1.0 | 2 | 2 | 1 |
+
+Cost per answering turn, mean over the three runs, the judge's calls
+excluded: LLM calls 2.1 / 4.9 / 2.2 / 3.4 and 34 / 86 / 50 / 75 s per turn
+(answerable / refusals / multi-hop / adaptive). Evidence recall 0.99 on
+multi-hop, 0.92 on adaptive.
+
+- **Run-to-run noise is about one to two questions per set.** 99 of the 105
+  questions got the same verdict in all three runs. The six that flip are
+  `LUV_10-K_2025-12-31.md::chunk81`, `neg-unanswerable-comparison`,
+  `mh-agg-tariffs`, `mh-agg-airline-margin`, `ad-pharma-ocf` and
+  `ad-tariff-refunds`. A single-run difference between two variants that
+  is no larger than a set's range here can't be told apart from noise.
+  Three runs are an initial variance check, not a power estimate.
+- **It reproduces the recorded row.** The `edgar_md` re-run's two `think=low`
+  runs (39, 38 / 15, 14 / 32, 33 / 13, 13) fall within or next to these
+  ranges. That is a consistency check, not a paired comparison: those ran
+  at `446d9c9`, before the empty-answer guard. No answer here was empty.
+- **Four failures happen every time:** `JNJ_10-K_2024-12-29.md::chunk45`,
+  `WMT_10-K_2025-01-31.md::chunk37`, `mh-cvx-fields` and `ad-wellness-ocf`.
+  They are systematic, not noise, and are the cases to trace first. The
+  older rows' results file keeps no per-question verdicts, so whether they
+  failed there too isn't checked.
+- **Not shown here.** No variant is compared, so there are no paired repeat
+  deltas. Those need three repeats of each variant compared. The judge is
+  uncalibrated, so these are pass rates as the judge counts them, not
+  verified accuracy.
+
 ### Not yet measured
 
 - `retrieval.top_k` above 20 with the new reranker: `bge-v2-m3` gains from a
