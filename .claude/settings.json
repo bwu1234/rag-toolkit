@@ -15,16 +15,7 @@
       "Bash(python -m rag.eval.retrieval_eval *)",
       "Bash(python -m rag.eval.answer_eval *)",
       "Bash(python scripts/run_matrix.py --list*)",
-      "Bash(python scripts/run_answer_matrix.py --list*)",
-
-      "Bash(git status*)",
-      "Bash(git diff*)",
-      "Bash(git log*)",
-      "Bash(git show*)",
-      "Bash(git branch)",
-      "Bash(git branch --list*)",
-      "Bash(git ls-files*)",
-      "Bash(git stash list*)"
+      "Bash(python scripts/run_answer_matrix.py --list*)"
     ]
   },
   "hooks": {
