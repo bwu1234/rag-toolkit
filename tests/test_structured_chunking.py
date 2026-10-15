@@ -262,6 +262,31 @@ def test_length_function_is_injectable() -> None:
     assert len(chunks) == 5
 
 
+def _utf8(s: str) -> int:
+    return len(s.encode())  # two units per "é": more than one per character
+
+
+@pytest.mark.parametrize("overlap", [0, 20])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "é" * 500,  # a paragraph with no sentence end or word break
+        "| " + " | ".join("é" * 30 for _ in range(12)) + " |\n|" + "---|" * 12 + "\n| a | b |",  # wide header
+        "| A | B |\n|---|---|\n| " + "é" * 400 + " | x |",  # a row too long for a chunk
+    ],
+    ids=["paragraph", "wide-header", "long-row"],
+)
+def test_word_fallback_cuts_by_the_injected_length(text: str, overlap: int) -> None:
+    # The word fallback cut at `budget` characters, not `budget` units of
+    # `length`, so a metric heavier than one unit per character overflowed it.
+    document = _doc(text)
+    chunks = _chunker(chunk_size=100, chunk_overlap=overlap, length=_utf8).chunk([document])
+
+    assert chunks
+    assert all(_utf8(c.text) <= 100 for c in chunks), max(_utf8(c.text) for c in chunks)
+    _assert_lossless(document, chunks)
+
+
 def test_header_is_document_level_and_empty_documents_yield_nothing() -> None:
     chunker = _chunker(chunk_size=100, header_template="{company} {form}")
     chunks = chunker.chunk([_doc("## A\n\n" + "x " * 80, company="Apple", form="10-K"), _doc("  \n", "e.md")])
