@@ -14,7 +14,8 @@ structure Phase 4's renderer recovered instead:
 2. **Units.** A block that fits in `chunk_size` is one unit. An oversized
    table is split by rows, and every piece after the first repeats the header
    rows (through the `|---|` line), so no piece is a headerless run of
-   figures. An oversized paragraph is split at sentence ends, then at words,
+   figures. A header over half `chunk_size` is the exception: repeating it
+   would crowd out the rows, so it isn't. An oversized paragraph is split at sentence ends, then at words,
    with `chunk_overlap` between the pieces.
 3. **Packing.** Units are packed greedily up to `chunk_size`. A heading at or
    above `split_level` always starts a new chunk, unless what came before is
@@ -348,6 +349,9 @@ class StructuredChunker(Chunker):
         """An oversized table split by rows; pieces after the first repeat the header rows."""
 
         header = text[block.start : block.header_end]
+        if self.length(header) + 1 > self.chunk_size // 2:
+            yield from self._wide_table_pieces(text, block, path, room)
+            return
         piece_start = block.start  # the first piece holds the header in place
         prefix: str | None = None
         last_end: int | None = None
@@ -383,6 +387,33 @@ class StructuredChunker(Chunker):
         elif not block.rows:  # header rows only; nothing to split on
             yield _Unit("table", block.start, block.end, path)
 
+    def _wide_table_pieces(self, text: str, block: Block, path: tuple[str, ...], room: int) -> Iterable[_Unit]:
+        """An oversized table whose header rows fill over half a chunk, split by rows without repeating them.
+
+        Repeated, such a header would leave each piece little room for rows,
+        and none once it reaches `chunk_size`. So it stays in place in the
+        first piece only, and a line too long for a chunk alone (the header
+        itself, for a table with dozens of columns) is split by words.
+        """
+
+        piece_start = block.start
+        last_end: int | None = None
+        budget = room
+        for line_start, line_end in [(block.start, block.header_end), *block.rows]:
+            if last_end is not None and self.length(text[piece_start:line_end]) > budget:
+                yield _Unit("table", piece_start, last_end, path)
+                last_end, budget = None, self.chunk_size
+            if last_end is None and self.length(text[line_start:line_end]) > budget:
+                for piece in self._prose_pieces(text, line_start, line_end, path, budget):
+                    yield _Unit("table", piece.start, piece.end, path, starts_chunk=piece.starts_chunk)
+                budget = self.chunk_size
+                continue
+            if last_end is None:
+                piece_start = line_start
+            last_end = line_end
+        if last_end is not None:
+            yield _Unit("table", piece_start, last_end, path)
+
     def _prose_pieces(
         self, text: str, start: int, stop: int, path: tuple[str, ...], room: int, *, reserve: int = 0
     ) -> Iterable[_Unit]:
@@ -392,7 +423,11 @@ class StructuredChunker(Chunker):
         `reserve` (room kept for a prefix the caller adds).
         """
 
-        boundaries = [m.end() for m in _SENTENCE_END.finditer(text, start, stop)]
+        if min(room, self.chunk_size) - reserve < 1:
+            # Pieces would end before they start, and overlap would walk back
+            # one character at a time (or, without overlap, never finish).
+            raise ValueError(f"no room for text: room {room}, reserve {reserve}, chunk_size {self.chunk_size}")
+        boundaries =[m.end() for m in _SENTENCE_END.finditer(text, start, stop)]
         boundaries.append(stop)
         budget = room - reserve
         first = True

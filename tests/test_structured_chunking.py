@@ -162,6 +162,43 @@ def test_an_oversized_row_is_split_by_words_under_the_header() -> None:
     _assert_lossless(document, chunks)
 
 
+def _wide_table(columns: int, rows: int) -> str:
+    lines = ["| " + " | ".join(f"column_name_{c}" for c in range(columns)) + " |"]
+    lines.append("|" + "---|" * columns)
+    lines += ["| " + " | ".join(f"{r}.{c}" for c in range(columns)) + " |" for r in range(rows)]
+    return "\n".join(lines)
+
+
+@pytest.mark.parametrize("overlap", [0, 150])
+def test_a_header_wider_than_a_chunk_is_split_once_not_repeated(overlap: int) -> None:
+    # A 57-column table's header alone outgrew chunk_size: each row's pieces
+    # had a negative budget, so the splitter emitted ~900 copies of the header
+    # per table with overlap, and never finished without it.
+    document = _doc("Intro line.\n\n" + _wide_table(57, 3) + "\n\nAfter.")
+    chunks = _chunker(chunk_size=1000, chunk_overlap=overlap).chunk([document])
+
+    assert len(chunks) < 10
+    for chunk in chunks:
+        assert chunk.metadata["char_start"] < chunk.metadata["char_end"]
+        assert len(chunk.text) <= 1000
+    assert len({c.text for c in chunks}) == len(chunks)
+    _assert_lossless(document, chunks)
+
+
+def test_a_header_over_half_a_chunk_is_not_repeated_but_rows_stay_whole() -> None:
+    table = _wide_table(12, 40)  # a ~190-char header against a 300-char chunk
+    document = _doc(table)
+    chunks = _chunker(chunk_size=300).chunk([document])
+
+    header = table.split("\n")[0]
+    assert len(chunks) > 2
+    assert sum(c.text.count(header) for c in chunks) == 1
+    for chunk in chunks:
+        assert len(chunk.text) <= 300
+        assert all(line.startswith("|") and line.endswith("|") for line in chunk.text.split("\n"))
+    _assert_lossless(document, chunks)
+
+
 def test_an_oversized_paragraph_splits_at_sentences_with_overlap() -> None:
     paragraph = " ".join(f"Sentence number {i} says something." for i in range(20))
     document = _doc(paragraph)

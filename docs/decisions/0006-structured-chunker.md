@@ -18,7 +18,11 @@ headers the model never saw.
 `StructuredChunker` packs Markdown blocks (headings, pipe tables, paragraphs,
 list lines) recognized by three regular expressions, keeping every block's
 character offsets. Trailing headings and short stubs move forward with the
-unit they introduce. Split tables repeat their header rows. Prose overlap
+unit they introduce. Split tables repeat their header rows, unless the header
+fills over half a chunk: then it stays in place in the first piece only, since
+repeating it would crowd out the rows (2026-10-15, after a 57-column table's
+header outgrew `chunk_size` and each such table split into about 900 copies
+of it). Prose overlap
 only fills spare room under the size cap. EDGAR evals moved to `edgar_md`, a
 Markdown rendering of the same filings with the same document ids.
 
