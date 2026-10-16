@@ -6,10 +6,10 @@ description: Measure whether a retrieval or generation change actually helps bef
 # Measuring a change
 
 The governing rule in this repo: **a feature stays off until it beats noise on a
-real corpus.** Contextual chunking, CRAG, query expansion and `min_score` all
-shipped functionally correct and all measured as no better than noise — they are
-off by default because of numbers, not doubt. Read `docs/measured-results.md`
-before proposing any of them again.
+real corpus.** The features `CLAUDE.md` lists as measured-off shipped
+functionally correct and are off because, on the evaluated EDGAR tasks, they
+didn't show a benefit that cleared noise — a scoped result, not proof they can't
+help elsewhere. Read `docs/measured-results.md` before proposing any of them again.
 
 ## Before running anything
 
@@ -107,8 +107,8 @@ reached the prompt) and generation (it did; the answer still failed).
 - **Separate the two failure modes.** A variant with `rerank_top_k == top_k`
   reranks nothing, so its recall is the stage-1 ceiling. The gap to a filtering
   variant is the cost of reranking; the gap to 1.0 is what retrieval never found.
-  Those need different fixes and the current answer is that reranking is the
-  bottleneck (stage 1 finds the right chunk 97.7% of the time).
+  Those need different fixes; check `docs/measured-results.md` for which one the
+  current baseline is limited by before choosing.
 
 ## Recording the result
 

@@ -63,7 +63,7 @@ it closes most of the multi-hop gap, at 1–2 minutes per hard question; the 9b
 agent gains nothing, so never leave `agent.llm` null under agentic.
 `chat.mode: pipeline` (8–10 s) stays for baselines: `vanilla.yaml` and the
 Flash-Lite configs pin it. `answer_eval`/`multihop_eval` follow the config,
-so with `config.yaml` they now measure the agent; `run_answer_matrix.py` rows
+so with `config.yaml` they measure the agent; `run_answer_matrix.py` rows
 pin their mode from `ROW_BASELINE`, so recorded rows stay reproducible.
 
 A config file may start with `base: <path>` (relative to itself) to inherit
