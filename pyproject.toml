@@ -32,6 +32,12 @@ dev = [
 mcp = [
     "mcp>=2.0",
 ]
+# Optional: the MLflow export and UI over run folders (`rag.eval.tracking`,
+# eval harness Phase 4b pilot). The runner, scorer and reports never import
+# it. The floor is the version the pilot was checked against.
+tracking = [
+    "mlflow>=3.17,<4",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

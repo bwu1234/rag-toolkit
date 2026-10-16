@@ -46,6 +46,9 @@ data/eval/results/.partial/
 # manifest, dataset.json and scores/ of a run cited in docs/measured-results.md
 # or used as a baseline; outputs.jsonl only when its chunk text must travel too.
 data/eval/runs/
+# The MLflow tracking store (rag/eval/tracking.py): derived from the run
+# folders above and rebuilt with `python -m rag.eval.tracking export --all`.
+data/eval/mlflow/
 
 # BEIR queries and qrels (scripts/fetch_beir.py) sit outside documents/ so they
 # never reach an index; fetched like the passages, never committed.

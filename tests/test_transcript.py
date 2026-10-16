@@ -8,6 +8,7 @@ one changes nothing about the turn log.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -15,9 +16,11 @@ import pytest
 
 from rag.agent.service import AgentService
 from rag.generation.chat_service import ChatService
+from rag.llm import ollama_raw
 from rag.llm.base import AssistantTurn, ChatMessage, LLMUsage, Message, ToolCall, ToolDefinition
 from rag.observability.records import LLMExchange, TurnRecord
-from rag.observability.transcript import _fence, render_turn_markdown, write_trace
+from rag.llm.ollama_llm import _to_wire, _tool_to_wire
+from rag.observability.transcript import _fence, render_turn_markdown, with_rendered_prompts, write_trace
 from rag.observability.usage import MeteredLLMClient, metered, metered_client
 from tests.fakes import ScriptedToolLLM
 from tests.test_agent import _FakeTools, _chunk
@@ -112,6 +115,10 @@ def test_on_record_works_without_a_turn_sink_and_on_a_failed_turn() -> None:
 
 
 def _agent_record() -> TurnRecord:
+    return _agent_turn()[0]
+
+
+def _agent_turn() -> tuple[TurnRecord, ScriptedToolLLM]:
     llm = ScriptedToolLLM([
         AssistantTurn(content="", tool_calls=(ToolCall(name="rag_search", arguments={"query": "fuel"}),)),
         AssistantTurn(content="Delta, up 67% [1]."),
@@ -120,7 +127,7 @@ def _agent_record() -> TurnRecord:
     agent = AgentService(metered_client(llm), tools, system_prompt="AGENT SYSTEM PROMPT", corpora=["baseline"])
     records: list[TurnRecord] = []
     agent.ask("Which airline?", on_record=records.append)
-    return records[0]
+    return records[0], llm
 
 
 def test_an_agent_turn_renders_end_to_end() -> None:
@@ -231,3 +238,21 @@ def test_with_raw_agent_llm_turns_on_raw_for_the_agents_model_only() -> None:
     assert not config.llm.raw
     with pytest.raises(SystemExit, match="pipeline"):
         trace_question.with_raw_agent_llm(RagConfig(chat=ChatConfig(mode="pipeline")))
+
+
+def test_a_stored_turn_reads_back_and_its_prompts_reconstruct_as_raw_mode_would_send_them() -> None:
+    record, llm = _agent_turn()
+    stored = TurnRecord.from_dict(json.loads(json.dumps(record.to_dict())))  # as an eval run's outputs keep it
+    assert stored == record
+
+    rendered = with_rendered_prompts(stored, "low")
+    assert rendered.llm_exchanges is not None
+    # What `OllamaLLMClient(raw=True)` renders for the same calls, from the live messages.
+    assert [e.raw_prompt for e in rendered.llm_exchanges] == [
+        ollama_raw.render([_to_wire(m) for m in messages], [_tool_to_wire(t) for t in tools], "low")
+        for messages, tools in llm.calls
+    ]
+    markdown = render_turn_markdown(rendered)
+    assert "#### Rendered prompt, reconstructed from the messages (" in markdown
+    assert "#### Rendered prompt, reconstructed from the messages: the previous prompt, then " in markdown
+    assert "Raw output" not in markdown  # only raw mode keeps the unparsed output

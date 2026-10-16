@@ -17,6 +17,11 @@ follows the previous prompt and output, which is what the model's prompt cache
 can reuse. Where the next prompt doesn't start with them (the server
 re-rendered the previous reply differently from how the model wrote it), the
 trace says where and shows both sides.
+
+A turn recorded without raw mode -- an eval run's stored turns -- can have
+its rendered prompts reconstructed (`with_rendered_prompts`): the recorded
+messages through the same renderer raw mode uses. The trace marks them
+reconstructed and shows no raw output, which only raw mode keeps.
 """
 
 from __future__ import annotations
@@ -24,9 +29,11 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from rag.llm import ollama_raw
 from rag.observability.records import LLMExchange, TurnRecord
 
 _BACKTICK_RUN = re.compile(r"`+")
@@ -201,6 +208,51 @@ def _shown(record: TurnRecord) -> str:
     return "\n".join(lines)
 
 
+def with_rendered_prompts(record: TurnRecord, think: ollama_raw.Think) -> TurnRecord:
+    """`record` with each chat call's rendered prompt reconstructed from its recorded messages.
+
+    The messages and tools go through `ollama_raw.render`, the port of Ollama's
+    qwen3.8 renderer that raw mode sends verbatim, with the agent's configured
+    `think`. The result is what the model read only when its Modelfile names
+    that renderer and the server renders as the port does; the caller decides
+    the model fits. A call that already has a prompt keeps it, and one the
+    renderer refuses gets none.
+    """
+
+    if not record.llm_exchanges:
+        return record
+    exchanges = []
+    for exchange in record.llm_exchanges:
+        if exchange.kind == "chat" and exchange.raw_prompt is None:
+            tools = [{"type": "function", "function": tool} for tool in exchange.tools]
+            try:
+                exchange = replace(exchange, raw_prompt=ollama_raw.render(_wire(exchange.messages), tools, think))
+            except ValueError:
+                pass
+        exchanges.append(exchange)
+    return replace(record, llm_exchanges=exchanges)
+
+
+def _wire(messages: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Recorded messages (`usage.message_dict`) back in the `/api/chat` shape the renderer reads."""
+
+    wire: list[dict[str, Any]] = []
+    for message in messages:
+        if message["role"] == "tool":
+            wire.append({"role": "tool", "tool_name": message.get("name"), "content": message["content"]})
+        elif message["role"] == "assistant":
+            turn: dict[str, Any] = {"role": "assistant", "content": message.get("content") or ""}
+            if message.get("thinking"):
+                turn["thinking"] = message["thinking"]
+            if message.get("tool_calls"):
+                turn["tool_calls"] = [{"function": {"name": c["name"], "arguments": c["arguments"]}}
+                                      for c in message["tool_calls"]]
+            wire.append(turn)
+        else:
+            wire.append({"role": message["role"], "content": message["content"]})
+    return wire
+
+
 def _exchanges(exchanges: Sequence[LLMExchange] | None) -> str:
     if exchanges is None:
         return "_No transcript: the turn was not run with one._"
@@ -228,7 +280,8 @@ def _exchanges(exchanges: Sequence[LLMExchange] | None) -> str:
             else:
                 body.append(_details("Messages sent (structured)", "\n\n".join(messages), fence=False))
                 body += _raw_prompt(exchange, previous_raw)
-                body += _raw_output(exchange)
+                if exchange.raw_output is not None:  # None: reconstructed, so nothing unparsed was kept
+                    body += _raw_output(exchange)
                 previous_raw = exchange
             previous_chat, previous_tools = exchange, exchange.tools
         body += _reply(exchange)
@@ -238,7 +291,7 @@ def _exchanges(exchanges: Sequence[LLMExchange] | None) -> str:
 
 def _token_check(exchange: LLMExchange) -> str:
     if exchange.chat_prompt_tokens is None or exchange.prompt_tokens is None:
-        return f"{exchange.prompt_tokens or '?'} tokens"
+        return "? tokens" if exchange.prompt_tokens is None else f"{exchange.prompt_tokens:,} tokens"
     if exchange.chat_prompt_tokens == exchange.prompt_tokens:
         return f"{exchange.prompt_tokens:,} tokens, as /api/chat counts it"
     return (
@@ -260,19 +313,21 @@ def _raw_prompt(exchange: LLMExchange, previous: LLMExchange | None) -> list[str
     """The rendered prompt: whole the first time, then only what follows the previous prompt and output."""
 
     prompt = exchange.raw_prompt or ""
+    reconstructed = exchange.raw_output is None
+    label = "Rendered prompt, reconstructed from the messages" if reconstructed else "Rendered prompt"
     if previous is None or previous.raw_prompt is None:
-        return [f"#### Rendered prompt ({_token_check(exchange)})", _fence(prompt)]
+        return [f"#### {label} ({_token_check(exchange)})", _fence(prompt)]
     before = previous.raw_prompt + (previous.raw_output or "")
     same = _common_prefix(before, prompt)
     if same == len(before):
+        extends = "the previous prompt" if reconstructed else "the previous prompt and output"
         return [
-            f"#### Rendered prompt: the previous prompt and output, then {len(prompt) - same:,} new chars "
-            f"({_token_check(exchange)})",
+            f"#### {label}: {extends}, then {len(prompt) - same:,} new chars ({_token_check(exchange)})",
             _fence(prompt[same:]),
         ]
     where = "the previous prompt" if same < len(previous.raw_prompt) else "the previous output"
     return [
-        f"#### Rendered prompt: differs from the previous prompt and output at char {same:,}, inside "
+        f"#### {label}: differs from the previous prompt and output at char {same:,}, inside "
         f"{where} ({_token_check(exchange)})",
         "The server re-rendered the conversation, so this prompt doesn't extend the last one there "
         "(and the prompt cache can't reuse anything after that point). The previous prompt and output, "

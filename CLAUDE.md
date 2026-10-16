@@ -139,6 +139,12 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   match their config ([eval harness plan](docs/eval-harness-plan.md), Phase 1).
 - API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`,
   optional `history` and metadata `filters`; `/health`)
+- Eval tracking (optional, `pip install -e ".[tracking]"`; Phase 4b pilot,
+  decision pending): `python -m rag.eval.tracking export --all` copies run
+  folders into a local MLflow store (`data/eval/mlflow/`, derived and
+  rebuildable), `... serve` opens its UI on 127.0.0.1:5050 with telemetry off,
+  and `... compare --baseline RUN:REV --candidate RUN:REV` exports the
+  harness's paired comparison, refusing what `rag.eval.report` refuses.
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.
   The `mcp` extra is required only for the streamable HTTP transport; stdio
   uses the fallback implementation without it. The MCP server serves exactly
