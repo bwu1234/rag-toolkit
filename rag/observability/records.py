@@ -266,6 +266,21 @@ class TurnRecord:
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> TurnRecord:
+        """The inverse of `to_dict`, e.g. for a turn an eval run stored in its outputs."""
+        exchanges = data.get("llm_exchanges")
+        return cls(**{
+            **data,
+            "attempts": [
+                RetrievalAttempt(**{**a, "retrieved": [RetrievedPassage(**p) for p in a.get("retrieved", [])]})
+                for a in data.get("attempts", [])
+            ],
+            "events": [StageEvent(**e) for e in data.get("events", [])],
+            "agent_calls": [AgentToolCall.from_dict(c) for c in data.get("agent_calls", [])],
+            "llm_exchanges": None if exchanges is None else [LLMExchange(**x) for x in exchanges],
+        })
+
 
 @dataclass(frozen=True)
 class FeedbackRecord:

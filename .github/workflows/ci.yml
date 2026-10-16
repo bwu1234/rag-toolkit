@@ -26,9 +26,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
 
-      - name: Install project (dev extras)
+      - name: Install project (dev and tracking extras)
         run: |
-          pip install -e .[dev]
+          # tracking: so tests/test_eval_tracking.py runs here rather than skipping.
+          pip install -e .[dev,tracking]
           # Pin ruff: an unpinned install picks up whatever rules ruff
           # defaults to on release day, which has broken CI before with no
           # code changes on our side. Bump deliberately, not implicitly.

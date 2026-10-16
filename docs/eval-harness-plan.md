@@ -834,6 +834,84 @@ features.
   views when available; absent dimensions remain unavailable. Reconsider Weave
   using the same pilot contract if team review becomes the deciding requirement.
 
+#### Pilot results (2026-10-15, MLflow 3.17.1)
+
+Built: `rag/eval/compare.py` (pairing, flip classification, config diff;
+eligibility stays `report.check_pair`) and the optional export adapter
+`rag/eval/tracking.py` (`export`, `compare`, `serve`; the `tracking` extra).
+Each score revision becomes one MLflow run in a `<stage>/<eval set>`
+experiment, tagged with our run id, score revision, dataset/selection hashes,
+judge attempt, config hash, index build and code version, and logging the
+flattened config as params. Each sample becomes one trace: the query, ranked
+chunks or answer, the agent's tool calls, label expectations, and every score
+as feedback with the judge's reply as its rationale. Retrieval stage spans
+(embed, vector search, rerank) carry their recorded timings. An answering
+turn's trace has each LLM call as a chat span at its recorded time, with the
+messages verbatim (system prompt, tool results) in OpenAI chat format, which
+MLflow renders as a conversation; reasoning and token counts are attributes.
+Tool calls sit between the LLM calls on the recorded event timeline, with
+their search stages inside. Each run also holds every sample's turn as
+Markdown (`transcripts/<sample>.md`, the `scripts/trace_question.py`
+layout), which MLflow's artifact view renders. Comparisons go to `comparisons/<stage>/<eval set>` with our paired
+metrics, the markdown report, a flips table and a link to MLflow's
+side-by-side view of the two runs.
+
+Run on all 19 score revisions in `data/eval/runs/` (7 retrieval, 6 answer,
+6 multi-hop), from a scratch tracking store:
+
+| Check | Result |
+|---|---|
+| Identities preserved; re-export doesn't duplicate | Pass. Re-export returned the same 19 MLflow run ids. A run interrupted mid-export (status `exporting`) is deleted and redone, not duplicated (tested) |
+| Inspect losses and side-by-side answers/evidence | Pass. MLflow's *Evaluation runs* compare view pairs two runs' traces by request: chunks with `doc_uri` side by side, answers with their `rag_search` calls, and judge verdicts with rationale. Losses are listed by the comparison run (note and `flips.json`), not sorted in MLflow's own view |
+| Same paired count and W/L as the CLI report | Pass, on a substituted pair. `baseline` vs `header=on` on `edgar_period_set` isn't in the run store (it would need a `--reset` index rebuild), so this used `baseline` vs `mode=dense` on `edgar_eval_set`. Both give `-0.023 [-0.050, +0.004] 1W/5L p=0.22`, n = 174 (also a unit test) |
+| Our CIs, deltas and McNemar shown with pinned inputs; mismatches refused | Pass. The comparison run logs `*.diff`, `*.ci_low`/`*.ci_high`, `*.wins`/`*.losses`, `*.mcnemar_p` and both refs. A pair on different labels exits 1 with `check_pair`'s reason and exports nothing |
+| Rescore into a new revision, export, original comparison unchanged | Pass. Both retrieval runs' existing rescores (labels `14ff…` vs the original `91ee…`) export as separate MLflow runs, and the Dataset column shows each revision's label hash. Re-running the original pinned comparison gives identical numbers and the same comparison run |
+| Works with tracking unavailable; view rebuilt from artifacts | Pass. Nothing outside its tests imports `rag.eval.tracking`, and those tests skip without MLflow. The suite was not run without the extra installed. `export --all --replace` rebuilt the whole store from the run folders in 55 s |
+| UI inspected with Ollama stopped | **Not done.** Ollama was serving other sessions. The tracking path has no Ollama client, and the UI server reads only SQLite |
+
+Costs: the `tracking` extra installs 29 packages and upgrades none,
+including Flask, SQLAlchemy, alembic, gunicorn, matplotlib, docker and
+databricks-sdk. The store took 40 MB for 24 MB of run folders, because traces
+hold full chunk text and replaced runs are soft-deleted until `mlflow gc`.
+MLflow sends usage telemetry by default. The adapter and `serve` turn it off
+(`MLFLOW_DISABLE_TELEMETRY=true`), which also disables the UI's telemetry. The
+UI's Assistant panel runs the local `claude` CLI only when someone asks it a
+question, and it reads trace contents when it does.
+
+Remaining gaps:
+
+- Expected spans aren't highlighted inside chunks, and the first relevant rank
+  isn't shown. The expectations appear as columns beside the chunks. This is
+  the specialized view the plan anticipated.
+- MLflow's compare view doesn't sort or filter by our outcome (loss first).
+  The comparison run lists the flipped sample ids, and each trace carries a
+  searchable `rag.sample_id` tag (checked through the API, not the UI's search
+  box).
+- `--replace` on a revision orphans comparisons that linked to the old MLflow
+  run; re-export those comparisons too.
+- MLflow matches traces across runs by request text. No EDGAR set repeats a
+  query, but a set that does would mis-pair.
+- Rendered prompts (chat template applied, special tokens as text) are
+  reconstructed, not recorded: eval runs don't use raw mode, so the export
+  runs each call's recorded messages through `ollama_raw.render`, the
+  renderer raw mode sends, and labels the result reconstructed. Checked
+  against a raw-mode trace (`ad-airline-fuel`): the first call's prompt was
+  byte-identical. It is only done for a qwen3.8 agent, assumes the server
+  still renders as the port does (raw mode's token check is what would catch
+  drift), and the model's unparsed output isn't reconstructed. MLflow's chat
+  view drops OpenAI-format reasoning, so reasoning shows under the span's
+  attributes and in the transcript.
+- Results from before the run store (2026-10-13) aren't in run folders, so
+  they can't be exported.
+- The UI was checked with headless screenshots of each view, not by clicking
+  through filters or the assessment panel.
+
+**Decision: pending.** The checks pass apart from the Ollama-stopped
+inspection. The recommendation is to adopt MLflow for browsing and
+side-by-side inspection, with comparisons computed and refused by the harness.
+Build the span-highlighting view only when retrieval failure analysis needs
+it, and don't build the Streamlit fallback.
+
 ### Phase 4c — Conversational dataset and runner (estimate pending)
 
 - Deliver the versioned conversation schema, reviewed/frozen scenarios and
