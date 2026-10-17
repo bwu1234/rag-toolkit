@@ -82,6 +82,7 @@ from rag.llm.base import (
 )
 from rag.agent.prompts import AGENT_SYNTHESIS_INSTRUCTION
 from rag.generation.prompts import (
+    delimit_passage,
     format_passage,
     invalid_citations,
     parse_cited_passages,
@@ -446,6 +447,7 @@ class AgentService(ChatResponder):
         max_history_turns: int = 6,
         model_filters: bool = False,
         offered_tools: Sequence[str] = (SEARCH_TOOL,),
+        passage_delimiters: bool = False,
         groundedness_checker: GroundednessChecker | None = None,
         turn_sink: TurnSink | None = None,
         turn_metadata: Mapping[str, str] | None = None,
@@ -471,6 +473,7 @@ class AgentService(ChatResponder):
         self.max_read_chars = max_read_chars
         self.max_history_turns = max_history_turns
         self.model_filters = model_filters
+        self.passage_delimiters = passage_delimiters
         self._groundedness_checker = groundedness_checker
         self._clock = clock
         specs = {spec.name: spec for spec in build_tool_specs(tools)}
@@ -1054,7 +1057,7 @@ class AgentService(ChatResponder):
                 f". This window was cut to the {end - start:,} characters left of this question's "
                 "reading budget"
             )
-        return f"{position}.\n\n{format_passage(number, window)}"
+        return f"{position}.\n\n{format_passage(number, window, delimit=self.passage_delimiters)}"
 
     def _calculate(self, run: _Run, call: ToolCall) -> str:
         """One `calculator` call: the expression's value, or what to fix.
@@ -1191,11 +1194,23 @@ class AgentService(ChatResponder):
                 "relevance threshold. The corpus may not cover this."
             )
         return "\n\n".join(
-            (_with_location(format_passage(number, chunk), chunk) if self.read_tool else format_passage(number, chunk))
+            self._passage_block(number, chunk)
             if is_new
             else f"Passage [{number}] (source: {chunk.document_id}): already shown above."
             for number, chunk, is_new in entries
         )
+
+    def _passage_block(self, number: int, chunk: ScoredChunk) -> str:
+        """A new search passage as the model reads it: located when it can be read around, tagged when delimited.
+
+        The location line goes inside the tags with the rest of the block:
+        it's rendered from the chunk's metadata, which is retrieved data too.
+        """
+
+        block = format_passage(number, chunk)
+        if self.read_tool:
+            block = _with_location(block, chunk)
+        return delimit_passage(block) if self.passage_delimiters else block
 
     # -- ending the turn ----------------------------------------------------
 

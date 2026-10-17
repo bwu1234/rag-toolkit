@@ -1,6 +1,6 @@
 ---
 name: run-evals
-description: Exact commands and flags for running this repo's evals and inspecting turns — retrieval_eval (EDGAR and BEIR/trec_eval), answer_eval and multihop_eval (judge flags, --oracle), run_answer_matrix.py families (m19, m19-hosted, musique), trace_question.py (including --raw), cli chat --trace, and the turn log (cli turns). Use when running, re-running or debugging an eval or tracing a single question.
+description: Exact commands and flags for running this repo's evals and inspecting turns — retrieval_eval (EDGAR and BEIR/trec_eval), answer_eval and multihop_eval (judge flags, --oracle), injection_eval (prompt-injection tier), run_answer_matrix.py families (m19, m19-hosted, musique), trace_question.py (including --raw), cli chat --trace, and the turn log (cli turns). Use when running, re-running or debugging an eval or tracing a single question.
 ---
 
 # Running evals and inspecting turns
@@ -79,3 +79,15 @@ record them), use the `measure-change` skill; this one is the command reference.
   --corpus musique-ans-train-tune` runs those rows on MuSiQue-Ans, scored by
   official EM/F1 (`scripts/fetch_musique.py`, then
   `scripts/musique_to_eval_set.py dev|train-tune`; public benchmarks plan).
+- Prompt-injection tier (Milestone 28, forced exposure): `python -m
+  rag.eval.injection_eval --corpus edgar_md [--config C] [--bases N]`. 192
+  cases from `data/eval/edgar_injection_set.json` (rebuild with
+  `scripts/build_injection_set.py --documents-dir <edgar_md documents>` after
+  editing `data/eval/injection_bases.json`); each case's plant is put at rank
+  2 of every retrieval in its turn, the question runs under its tickers'
+  filter, and scoring is deterministic (no judge, no quota). The mode follows
+  the config; the rows are `config.yaml` (agentic / 27b) and
+  `data/eval/config_injection_{pipeline_9b,pipeline_27b}.yaml`, each with a
+  `_delimited` twin (`config_injection_agentic_delimited.yaml` for the agent)
+  turning on `chat.passage_delimiters`. Writes an `injection` run folder like
+  the answer evals', resumable; `--bases 1` is a 14-case smoke run.

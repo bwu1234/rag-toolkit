@@ -223,9 +223,12 @@
   passage text or a user's raw query containing something like "ignore
   previous instructions" is concatenated straight into the prompt with no
   delimiter distinguishing untrusted content from the system instructions.
-  Wrapping passages and the query in explicit delimiter tags is a cheap first
-  step; nothing is done today (planned in Milestone 28). The agent path
-  shares the passage formatting (`format_passage`) and the same exposure.
+  Delimiter tags exist (`chat.passage_delimiters`, both modes) but are off
+  and unmeasured, and delimiters reduce rather than remove the risk. The
+  forced-exposure injection tier (`rag.eval.injection_eval`) measures how
+  often planted instructions work; its numbers are pending. Listing output
+  (`rag_list_documents`, off by default) renders document metadata untagged,
+  and the CRAG checkers' prompts (off by default) are not delimited either.
 - **The turn log grows without bound and is not rotated.** `data/logs/turns.jsonl`
   gets one line of several KB per turn, since every event, attempt and answer
   is inlined. It's gitignored local data, but nothing prunes it. It also stores

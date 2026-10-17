@@ -24,10 +24,10 @@ from rag.generation.crag import DocumentGrader, GroundednessChecker, RetryQueryR
 from rag.llm.base import LLMClient
 from rag.config.settings import PromptStyle
 from rag.generation.prompts import (
-    REGROUND_SYSTEM_PROMPT,
     build_prompt,
     invalid_citations,
     parse_cited_passages,
+    reground_system_prompt,
     system_prompt_for,
 )
 from rag.generation.query_rewriter import ChatTurn, QueryCondenser
@@ -477,6 +477,7 @@ class ChatService(ChatResponder):
         turn_sink: TurnSink | None = None,
         turn_metadata: Mapping[str, str] | None = None,
         prompt_style: PromptStyle = "grounded",
+        passage_delimiters: bool = False,
     ) -> None:
         self._retriever = retriever
         self._llm_client = llm_client
@@ -488,6 +489,7 @@ class ChatService(ChatResponder):
         self.max_regenerations = max_regenerations
         super().__init__(turn_sink=turn_sink, turn_metadata=turn_metadata)
         self.prompt_style: PromptStyle = prompt_style
+        self.passage_delimiters = passage_delimiters
 
     def _answer(
         self,
@@ -556,7 +558,7 @@ class ChatService(ChatResponder):
         # rewrite is a search device, like a HyDE passage: it exists to find
         # passages, and answering the reworded version would quietly change the
         # question the user actually asked.
-        prompt = build_prompt(self.prompt_style, search_query, chunks)
+        prompt = build_prompt(self.prompt_style, search_query, chunks, delimit=self.passage_delimiters)
         emit(on_event, start, "prompt", f"Built prompt from {len(chunks)} passage(s)")
 
         answer, grounded = self._generate_grounded(search_query, chunks, prompt, on_event, trace)
@@ -710,7 +712,9 @@ class ChatService(ChatResponder):
         """
 
         start = time.monotonic()
-        answer = self._llm_client.generate(prompt, system=system_prompt_for(self.prompt_style))
+        answer = self._llm_client.generate(
+            prompt, system=system_prompt_for(self.prompt_style, delimit=self.passage_delimiters)
+        )
         emit(on_event, start, "generate", "Generated answer")
 
         if self._groundedness_checker is None:
@@ -726,7 +730,9 @@ class ChatService(ChatResponder):
                 break
 
             start = time.monotonic()
-            answer = self._llm_client.generate(prompt, system=REGROUND_SYSTEM_PROMPT)
+            answer = self._llm_client.generate(
+                prompt, system=reground_system_prompt(delimit=self.passage_delimiters)
+            )
             emit(on_event, start, "regenerate", f"Regenerated answer (attempt {attempt})")
 
             start = time.monotonic()

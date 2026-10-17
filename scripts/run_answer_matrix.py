@@ -339,6 +339,17 @@ M19_VARIANTS: list[Variant] = [
     # The same listing tool for the recommended opt-in agent; pairs with
     # `agentic react / 27b, think=low`. The plan names `react / 27b + list`;
     # think=low has since become the recommended 27b setup on `edgar_md`.
+    # Milestone 28's passage delimiters, each paired with the row above it in
+    # name: the clean-answer cost the injection tier's numbers are weighed
+    # against (`chat.passage_delimiters`, both modes).
+    Variant("pipeline / 9b + delimiters", {**_PIPELINE, "chat.passage_delimiters": True}),
+    Variant("pipeline / 27b + delimiters", {
+        "chat.mode": "pipeline", "crag.enabled": False, "llm": _AGENT_27B, "chat.passage_delimiters": True,
+    }),
+    Variant("agentic react / 27b, think=low + delimiters", {
+        **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
+        "chat.passage_delimiters": True,
+    }),
     Variant("agentic react / 27b, think=low + list", {
         **_AGENTIC, "agent.strategy": "react", "agent.llm": {**_AGENT_27B, "think": "low"},
         "agent.tools": ["rag_search", "rag_list_documents"],

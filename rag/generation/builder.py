@@ -20,7 +20,7 @@ from rag.observability.factory import config_fingerprint
 from rag.observability.sink import TurnSink
 from rag.observability.usage import metered_client
 from rag.retrieval.builder import build_retriever
-from rag.retrieval.retriever import PassageRetriever
+from rag.retrieval.retriever import PassageRetriever, RetrieverWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ def build_pipeline_service(
     *,
     turn_sink: TurnSink | None = None,
     retriever: PassageRetriever | None = None,
+    wrap_retriever: RetrieverWrapper | None = None,
 ) -> ChatService:
     """Construct the retrieve-then-generate `ChatService`, all components per `config`.
 
@@ -47,7 +48,9 @@ def build_pipeline_service(
 
     `retriever`, if given, replaces the configured one, and with it expansion,
     routing and web search; everything after retrieval is built as usual. Only
-    the eval oracle passes one (`rag.eval.oracle`).
+    the eval oracle passes one (`rag.eval.oracle`). `wrap_retriever`, if
+    given, wraps whichever retriever that leaves; only the injection eval
+    passes one (`rag.eval.injection`).
     """
 
     # Wrapped once, before it's shared, so every component's calls -- not just
@@ -58,6 +61,8 @@ def build_pipeline_service(
     # rather than opening a parallel one.
     if retriever is None:
         retriever = build_retriever(config, llm_client, corpora)
+    if wrap_retriever is not None:
+        retriever = wrap_retriever(retriever)
 
     # The condenser shares the chat client rather than getting its own: same
     # provider, same model, one connection. Building it is free (no I/O), and
@@ -89,6 +94,7 @@ def build_pipeline_service(
         max_regenerations=crag.max_regenerations if crag.enabled else 0,
         turn_sink=turn_sink,
         prompt_style=config.chat.prompt,
+        passage_delimiters=config.chat.passage_delimiters,
         turn_metadata={
             "corpus": config.corpus_selection(corpora).slug,
             "llm": f"{config.llm.provider}:{config.llm.model}",

@@ -1,0 +1,5 @@
+# The `pipeline / 27b` injection row with chat.passage_delimiters on.
+base: config_injection_pipeline_27b.yaml
+
+chat:
+  passage_delimiters: true

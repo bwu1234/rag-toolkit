@@ -307,6 +307,11 @@ chat:
   #               instruction; a baseline for measuring what grounding buys
   #               (used by vanilla.yaml)
   prompt: grounded
+  # Wrap each passage (pipeline prompt and agent tool results) in <passage>
+  # tags and tell the model tagged text is data, not instructions. A
+  # prompt-injection mitigation, off until measured: `rag.eval.injection_eval`
+  # measures attack success and the answer evals the clean-answer cost.
+  passage_delimiters: false
 
 # Corrective RAG -- let the pipeline reject its own intermediate results.
 # `retrieval.min_score` filters on a similarity score; these filter on

@@ -15,7 +15,7 @@ from rag.config.settings import RagConfig
 from rag.generation.builder import build_pipeline_service
 from rag.generation.chat_service import ChatResponder
 from rag.observability.sink import TurnSink
-from rag.retrieval.retriever import PassageRetriever
+from rag.retrieval.retriever import PassageRetriever, RetrieverWrapper
 
 
 def build_chat_service(
@@ -24,6 +24,7 @@ def build_chat_service(
     *,
     turn_sink: TurnSink | None = None,
     retriever: PassageRetriever | None = None,
+    wrap_retriever: RetrieverWrapper | None = None,
 ) -> ChatResponder:
     """Construct the chat responder `config.chat.mode` selects, all components per `config`.
 
@@ -42,10 +43,16 @@ def build_chat_service(
     routing and web search; everything after retrieval is built as usual. Only
     the eval oracle passes one (`rag.eval.oracle`). The agent searches through
     its own tools, so this raises under `chat.mode: agentic`.
+
+    `wrap_retriever`, if given, wraps the retriever in either mode -- the
+    pipeline's one retrieval, or every search the agent's tools run -- and
+    keeps it underneath. Only the injection eval passes one.
     """
 
     if config.chat.mode == "agentic":
         if retriever is not None:
             raise ValueError("A replacement retriever applies to chat.mode: pipeline only")
-        return build_agent_service(config, corpora, turn_sink=turn_sink)
-    return build_pipeline_service(config, corpora, turn_sink=turn_sink, retriever=retriever)
+        return build_agent_service(config, corpora, turn_sink=turn_sink, wrap_retriever=wrap_retriever)
+    return build_pipeline_service(
+        config, corpora, turn_sink=turn_sink, retriever=retriever, wrap_retriever=wrap_retriever
+    )

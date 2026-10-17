@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import logging
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
@@ -73,6 +73,16 @@ class PassageRetriever(Protocol):
         query_filter: QueryFilter | None = None,
         on_event: EventSink | None = None,
     ) -> RetrievalResult: ...
+
+
+RetrieverWrapper = Callable[[PassageRetriever], PassageRetriever]
+"""Wraps the configured retriever, keeping it underneath: what both modes accept for an eval to observe or alter retrieval.
+
+Where a replacement retriever (the oracle) discards retrieval, a wrapper
+keeps it. The injection eval's forced exposure (`rag.eval.injection`) wraps
+it to place a planted passage among the real results, in the pipeline and in
+every agent search alike.
+"""
 
 
 @dataclass(frozen=True)
