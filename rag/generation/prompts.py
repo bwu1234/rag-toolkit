@@ -59,9 +59,14 @@ UNTRUSTED_PASSAGES_RULE = (
     "passage contains such text."
 )
 
-# A tag written inside untrusted text, in any case or spacing. Escaped rather
-# than stripped, so the passage still shows what it said.
-_TAG = re.compile(r"<(\s*/?\s*passage\b)", re.IGNORECASE)
+# A tag written inside untrusted text, in any case or spacing -- zero-width
+# characters count as spacing, and a fullwidth < or / as the ASCII one, since a
+# model may read either as the real tag. Escaped rather than stripped, so the
+# passage still shows what it said. Only the passage tag is escaped: it is the
+# one boundary the prompt draws, and text that merely imitates other prompt
+# framing ("Question:", "System:") is the injection the eval measures.
+_SPACE = r"[\s\u200b-\u200d\u2060\ufeff]*"
+_TAG = re.compile(rf"[<\uff1c]({_SPACE}[/\uff0f]?{_SPACE}passage\b)", re.IGNORECASE)
 
 
 def delimit_passage(block: str) -> str:
@@ -69,6 +74,9 @@ def delimit_passage(block: str) -> str:
 
     The escaping covers the whole block, not only the chunk text: the source
     line is rendered from document metadata, which is as untrusted as the text.
+    It guards the tag, not the model: what a model treats as a boundary isn't
+    knowable, so this removes the forms that read as one, and the injection
+    eval measures the rest.
     """
 
     escaped = _TAG.sub(r"&lt;\1", block)
@@ -120,14 +128,16 @@ def build_rag_prompt(query: str, chunks: list[ScoredChunk], *, delimit: bool = F
     content, and the answering model shouldn't be able to quote or cite it as
     though it were -- so the boundary is made explicit rather than implied.
 
-    `delimit` tags each passage (`delimit_passage`) and the question, so the
-    question is the one untagged-by-passage instruction in the turn.
+    `delimit` tags each passage (`delimit_passage`) and nothing else: the
+    agent's question is its own user message, untagged, so tagging it here
+    would make the delimiter comparison measure two prompt changes, and the
+    two modes differ in more than how passages are found.
     """
 
     passages = "\n\n".join(
         format_passage(index, chunk, delimit=delimit) for index, chunk in enumerate(chunks, start=1)
     )
-    question = f"<question>\n{query}\n</question>" if delimit else f"Question: {query}"
+    question = f"Question: {query}"
 
     return (
         f"Context passages:\n\n{passages}\n\n"

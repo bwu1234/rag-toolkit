@@ -39,6 +39,7 @@ import logging
 from dataclasses import dataclass
 
 from rag.deadline import DeadlineExceeded
+from rag.generation.prompts import UNTRUSTED_PASSAGES_RULE, delimit_passage
 from rag.llm.base import LLMClient
 from rag.vectorstore.base import ScoredChunk
 
@@ -91,12 +92,22 @@ def _first_word(reply: str) -> str:
     return stripped.split()[0].strip(".,:!*").upper() if stripped else ""
 
 
-def format_passages(chunks: list[ScoredChunk]) -> str:
-    """Render passages for a checker prompt, numbered as `build_rag_prompt` does."""
+def format_passages(chunks: list[ScoredChunk], *, delimit: bool = False) -> str:
+    """Render passages for a checker prompt, numbered as `build_rag_prompt` does; `delimit` tags each."""
 
-    return "\n\n".join(
-        f"Passage [{index}]:\n{chunk.index_text}" for index, chunk in enumerate(chunks, start=1)
-    )
+    blocks = (f"Passage [{index}]:\n{chunk.index_text}" for index, chunk in enumerate(chunks, start=1))
+    return "\n\n".join(delimit_passage(block) if delimit else block for block in blocks)
+
+
+def _system(prompt: str, delimit: bool) -> str:
+    """A checker's system prompt, with the passage-tag rule under `chat.passage_delimiters`.
+
+    The checkers read the same retrieved text the answering model does, and a
+    plant that can't steer the answer could still steer them -- keep itself
+    as relevant, or fail a sound answer into regeneration.
+    """
+
+    return f"{prompt} {UNTRUSTED_PASSAGES_RULE}" if delimit else prompt
 
 
 @dataclass(frozen=True)
@@ -125,8 +136,9 @@ class DocumentGrader:
     `crag.grade_documents` is off by default.
     """
 
-    def __init__(self, llm_client: LLMClient) -> None:
+    def __init__(self, llm_client: LLMClient, *, delimit: bool = False) -> None:
         self._llm_client = llm_client
+        self._delimit = delimit
 
     def grade(self, query: str, chunks: list[ScoredChunk]) -> GradedChunks:
         """Return the passages worth answering from, plus how many were rejected."""
@@ -148,11 +160,11 @@ class DocumentGrader:
     def _is_relevant(self, query: str, chunk: ScoredChunk) -> bool:
         prompt = (
             f"Question: {query}\n\n"
-            f"Passage:\n{chunk.index_text}\n\n"
+            f"Passage:\n{delimit_passage(chunk.index_text) if self._delimit else chunk.index_text}\n\n"
             "Does this passage help answer the question? Reply YES or NO:"
         )
         try:
-            reply = self._llm_client.generate(prompt, system=GRADE_SYSTEM_PROMPT)
+            reply = self._llm_client.generate(prompt, system=_system(GRADE_SYSTEM_PROMPT, self._delimit))
         except Exception:  # noqa: BLE001 -- fail open; see module docstring
             logger.exception("Grading failed for chunk %r; keeping it", chunk.chunk_id)
             return True
@@ -221,8 +233,9 @@ class GroundednessChecker:
     collapsing it into a boolean.
     """
 
-    def __init__(self, llm_client: LLMClient) -> None:
+    def __init__(self, llm_client: LLMClient, *, delimit: bool = False) -> None:
         self._llm_client = llm_client
+        self._delimit = delimit
 
     def check(self, query: str, chunks: list[ScoredChunk], answer: str) -> bool | None:
         """Return True if grounded, False if not, None if the check was inconclusive."""
@@ -231,13 +244,13 @@ class GroundednessChecker:
             return None
 
         prompt = (
-            f"Passages:\n\n{format_passages(chunks)}\n\n"
+            f"Passages:\n\n{format_passages(chunks, delimit=self._delimit)}\n\n"
             f"Question: {query}\n\n"
             f"Answer:\n{answer}\n\n"
             "Is the answer supported by the passages? Reply GROUNDED or UNGROUNDED:"
         )
         try:
-            reply = self._llm_client.generate(prompt, system=GROUNDEDNESS_SYSTEM_PROMPT)
+            reply = self._llm_client.generate(prompt, system=_system(GROUNDEDNESS_SYSTEM_PROMPT, self._delimit))
         except DeadlineExceeded as exc:
             # The agent's turn deadline cut the check off: inconclusive, like
             # any failed check, but expected -- no traceback.

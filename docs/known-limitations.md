@@ -226,9 +226,10 @@
   Delimiter tags exist (`chat.passage_delimiters`, both modes) but are off
   and unmeasured, and delimiters reduce rather than remove the risk. The
   forced-exposure injection tier (`rag.eval.injection_eval`) measures how
-  often planted instructions work; its numbers are pending. Listing output
-  (`rag_list_documents`, off by default) renders document metadata untagged,
-  and the CRAG checkers' prompts (off by default) are not delimited either.
+  often planted instructions work; its numbers are pending. The CRAG
+  checkers are delimited under the same setting; listing output
+  (`rag_list_documents`, off by default) still renders document metadata
+  untagged, and the user's question is not tagged in either mode.
 - **The turn log grows without bound and is not rotated.** `data/logs/turns.jsonl`
   gets one line of several KB per turn, since every event, attempt and answer
   is inlined. It's gitignored local data, but nothing prunes it. It also stores

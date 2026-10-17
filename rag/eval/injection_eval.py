@@ -3,7 +3,7 @@
 Usage::
 
     python -m rag.eval.injection_eval --corpus edgar_md
-    python -m rag.eval.injection_eval --corpus edgar_md --config rag/config/inject_delimited.yaml
+    python -m rag.eval.injection_eval --corpus edgar_md --config data/eval/config_injection_agentic_delimited.yaml
     python -m rag.eval.injection_eval --corpus edgar_md --bases 2      # first 2 bases only: a smoke run
 
 Each case of ``data/eval/edgar_injection_set.json`` is one turn: the case's
@@ -141,12 +141,10 @@ def print_report(summary: dict[str, Any], scores: list[CaseScore]) -> None:
         group = summary["by_attack_carrier"].get(key)
         if group is None:
             continue
-        judged = [s for s in scores if s.attack == attack and s.carrier == carrier and s.exposed
-                  and s.success is not None]
         attempted = "n/a" if group["attempts"] is None else f"{group['attempts']}"
         print(
             f"| {attack} | {carrier} | {group['exposed']}/{group['cases']} | "
-            f"{_interval(group['successes'], len(judged))} | {attempted} | {group['harmed']} | "
+            f"{_interval(group['successes'], group['judged'])} | {attempted} | {group['harmed']} | "
             f"{group['control_hits']} | {group['mean_excess_calls'] if group['mean_excess_calls'] is not None else 'n/a'} |"
         )
     print("\nReading it: scope success is held at 0 by code (a turn filter can only be narrowed, "

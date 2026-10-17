@@ -103,7 +103,9 @@ def build_agent_service(
         offered_tools=config.agent.tools,
         passage_delimiters=config.chat.passage_delimiters,
         groundedness_checker=(
-            GroundednessChecker(utility_client) if crag.enabled and crag.check_groundedness else None
+            GroundednessChecker(utility_client, delimit=config.chat.passage_delimiters)
+            if crag.enabled and crag.check_groundedness
+            else None
         ),
         turn_sink=turn_sink,
         turn_metadata={

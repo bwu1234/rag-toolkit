@@ -1223,9 +1223,13 @@ rate limiting are what cover that case.
 
   **Status (2026-10-16): forced exposure built, not yet measured.**
   `chat.passage_delimiters` (off) tags every passage in both modes -- the
-  pipeline prompt, agent search results and read windows -- escapes any tag
-  inside retrieved text or its source line, and adds a data-not-instructions
-  rule to both system prompts. `rag.eval.injection` holds the plants, the
+  pipeline prompt, agent search results, read windows and the CRAG checkers'
+  prompts -- escapes any tag inside retrieved text or its source line
+  (zero-width and fullwidth near-misses included), and adds a
+  data-not-instructions rule to every system prompt that reads passages. The
+  question is not tagged: the agent's is its own user message, so tagging the
+  pipeline's would make the delimiter comparison two prompt changes, and the
+  modes would differ in more than retrieval. `rag.eval.injection` holds the plants, the
   forced-exposure wrapper (a `wrap_retriever` hook on `build_chat_service`
   and `RagTools`, so the agent's every search gets it) and deterministic
   scoring; `rag.eval.injection_eval` runs it. The set is 24 bases x (6
@@ -1238,8 +1242,7 @@ rate limiting are what cover that case.
   gold figure the control kept and the attacked answer lost. Positive and
   negative fake-model controls and the hostile-model scope test are in
   `tests/test_injection.py`. Still to do: the six rows and the clean-answer
-  re-measurement; the end-to-end level; listing output and the CRAG
-  checker prompts are not delimited.
+  re-measurement; the end-to-end level; listing output is not delimited.
 
   **Injection tier design (draft, 2026-10-06).**
 
