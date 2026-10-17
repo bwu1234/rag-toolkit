@@ -79,9 +79,12 @@ def build_pipeline_service(
     # with `check_groundedness: true` really does skip grading entirely rather
     # than constructing a grader nothing calls.
     crag = config.crag
-    grader = DocumentGrader(llm_client) if crag.enabled and crag.grade_documents else None
+    delimit = config.chat.passage_delimiters
+    grader = DocumentGrader(llm_client, delimit=delimit) if crag.enabled and crag.grade_documents else None
     retry_rewriter = RetryQueryRewriter(llm_client) if crag.enabled and crag.max_retries else None
-    groundedness_checker = GroundednessChecker(llm_client) if crag.enabled and crag.check_groundedness else None
+    groundedness_checker = (
+        GroundednessChecker(llm_client, delimit=delimit) if crag.enabled and crag.check_groundedness else None
+    )
 
     return ChatService(
         retriever=retriever,
