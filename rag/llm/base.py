@@ -26,6 +26,19 @@ class LLMUsage:
     completion_tokens: int | None = None
 
 
+@dataclass(frozen=True)
+class Completion:
+    """What one `generate` call returned, with what an observer of it needs.
+
+    `thinking` is the model's reasoning when the provider returns any: Ollama's
+    `thinking` field, or Gemini's thought summaries (never its raw thoughts).
+    """
+
+    text: str
+    usage: LLMUsage | None = None
+    thinking: str | None = None
+
+
 class LLMClient(ABC):
     """Interface for generating a text response from a prompt.
 
@@ -48,17 +61,17 @@ class LLMClient(ABC):
         """
         raise NotImplementedError
 
-    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
-        """`generate`, plus the token counts the call cost if the provider reports them.
+    def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
+        """`generate`, plus the token counts and reasoning the call produced, if the provider reports them.
 
-        A concrete default (usage `None`) rather than a second abstract method,
-        so an adapter -- or a test fake -- that has no usage to report needs no
-        extra code. Adapters whose provider does report counts override this
+        A concrete default (text only) rather than a second abstract method,
+        so an adapter -- or a test fake -- that has nothing more to report needs
+        no extra code. Adapters whose provider does report more override this
         and implement `generate` on top of it. Only `MeteredLLMClient` calls
         it; pipeline components keep calling plain `generate`.
         """
 
-        return self.generate(prompt, system=system), None
+        return Completion(self.generate(prompt, system=system))
 
 
 # ---------------------------------------------------------------------------
@@ -130,15 +143,15 @@ class AssistantTurn:
 
     It is also the assistant message the caller appends to the conversation
     before the next call, so a model's tool calls and reasoning go back to it
-    exactly as it produced them. `usage` travels with the turn rather than as a
-    second return value, as `generate_with_usage` has to, because every
-    tool-calling adapter can report something here.
+    exactly as it produced them. `usage` travels with the turn, as it does on
+    `generate_completion`'s `Completion`.
     """
 
     content: str
     tool_calls: tuple[ToolCall, ...] = ()
     # The reasoning trace, when the provider returns one (Ollama with `think`
-    # on). Sent back with the turn so the model sees its own earlier reasoning.
+    # on; Gemini's thought summaries). Whether it goes back to the model with
+    # the turn is the client's `ToolCallingLLM.replays_thinking`.
     thinking: str | None = None
     usage: LLMUsage | None = None
     # Why the provider stopped generating, as it names it (Ollama's
@@ -197,6 +210,11 @@ class ToolCallingLLM(LLMClient):
     a `ToolCallingLLM`, so selecting a provider without tool support fails when
     the agent is built, not mid-conversation.
     """
+
+    #: Whether `chat` sends an earlier turn's `thinking` back to the model.
+    #: A record of what a call sent keeps that thinking only when this is true,
+    #: so a trace never shows the model reasoning it was not given.
+    replays_thinking: bool = False
 
     @abstractmethod
     def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:

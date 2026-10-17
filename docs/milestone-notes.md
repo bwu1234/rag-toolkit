@@ -632,7 +632,8 @@ Code: `rag/observability/` (records, sink, metering), wired through
   changed. It records into a meter held in a `ContextVar` rather than on
   itself because the API runs sync routes in a thread pool against one shared
   `ChatService`; a counter on the instance would mix concurrent turns.
-- **Tokens need a provider that reports them.** `LLMClient.generate_with_usage`
+- **Tokens need a provider that reports them.** `LLMClient.generate_completion`
+  (originally `generate_with_usage`; it now also carries the model's thinking)
   is a concrete method whose default reports `None`, so existing adapters and
   test fakes needed no change. Ollama returns `prompt_eval_count` /
   `eval_count` on every non-streaming `/api/chat` response. A missing count

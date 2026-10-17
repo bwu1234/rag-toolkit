@@ -34,6 +34,7 @@ from typing import Any, overload
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
+    Completion,
     ContextLimits,
     LLMClient,
     LLMUsage,
@@ -116,13 +117,13 @@ class MeteredLLMClient(LLMClient):
         self.inner = inner
 
     def generate(self, prompt: str, *, system: str | None = None) -> str:
-        return self.generate_with_usage(prompt, system=system)[0]
+        return self.generate_completion(prompt, system=system).text
 
-    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+    def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
         start = time.monotonic()
         meter = _ACTIVE_METER.get()
         try:
-            text, usage = self.inner.generate_with_usage(prompt, system=system)
+            completion = self.inner.generate_completion(prompt, system=system)
         except Exception as exc:
             if meter is not None and meter.exchanges is not None:
                 meter.exchanges.append(LLMExchange(
@@ -132,15 +133,16 @@ class MeteredLLMClient(LLMClient):
             raise
         if meter is not None:
             elapsed = _ms_since(start)
+            usage = completion.usage
             meter.record(usage, elapsed)
             if meter.exchanges is not None:
                 meter.exchanges.append(LLMExchange(
                     kind="generate", started_ms=meter.since_start_ms(start), elapsed_ms=elapsed,
-                    system=system, prompt=prompt, response=text,
+                    system=system, prompt=prompt, response=completion.text, thinking=completion.thinking,
                     prompt_tokens=usage.prompt_tokens if usage else None,
                     completion_tokens=usage.completion_tokens if usage else None,
                 ))
-        return text, usage
+        return completion
 
 
 class MeteredToolCallingLLM(MeteredLLMClient, ToolCallingLLM):
@@ -157,6 +159,7 @@ class MeteredToolCallingLLM(MeteredLLMClient, ToolCallingLLM):
 
     def __init__(self, inner: ToolCallingLLM) -> None:
         super().__init__(inner)
+        self.replays_thinking = inner.replays_thinking
 
     def context_limits(self) -> ContextLimits | None:
         return self.inner.context_limits()
@@ -167,7 +170,7 @@ class MeteredToolCallingLLM(MeteredLLMClient, ToolCallingLLM):
         capture = meter is not None and meter.exchanges is not None
         # Serialized before the call: the caller appends to and (on a context
         # overflow) rewrites its message list afterwards.
-        sent = [message_dict(message) for message in messages] if capture else []
+        sent = [message_dict(message, thinking=self.replays_thinking) for message in messages] if capture else []
         offered = [tool_dict(tool) for tool in tools] if capture else []
         try:
             turn = self.inner.chat(messages, tools)
@@ -200,14 +203,18 @@ def _ms_since(start: float) -> float:
     return (time.monotonic() - start) * 1000
 
 
-def message_dict(message: Message) -> dict[str, Any]:
-    """A conversation message as plain data, for an `LLMExchange`."""
+def message_dict(message: Message, *, thinking: bool = True) -> dict[str, Any]:
+    """A conversation message as plain data, for an `LLMExchange`.
+
+    `thinking=False` leaves an assistant turn's reasoning out, for a record of
+    what was sent to a client that doesn't send it (`replays_thinking`).
+    """
 
     if isinstance(message, ChatMessage):
         return {"role": message.role, "content": message.content}
     if isinstance(message, AssistantTurn):
         data: dict[str, Any] = {"role": "assistant", "content": message.content}
-        if message.thinking:
+        if thinking and message.thinking:
             data["thinking"] = message.thinking
         if message.tool_calls:
             data["tool_calls"] = [{"name": call.name, "arguments": call.arguments} for call in message.tool_calls]

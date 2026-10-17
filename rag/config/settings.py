@@ -205,7 +205,8 @@ class LLMConfig(BaseModel):
     # switched off there, and its tokens come out of `max_tokens`, so a deep
     # level on a long RAG prompt can leave no budget for the answer. None sends
     # no thinkingConfig, which non-thinking models (hosted Gemma) require: the
-    # API rejects the field for them.
+    # API rejects the field for them. A set level also asks for thought
+    # summaries, which traces show as the call's thinking (rag.llm.gemini_llm).
     thinking_level: Literal["minimal", "low", "medium", "high"] | None = None
     # Ollama only: render the prompt client-side and call /api/generate with
     # `raw: true`, so each tool-calling turn carries the exact prompt text and
