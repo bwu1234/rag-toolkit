@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Literal
+from typing import ClassVar, Literal
 
 from rag.retrieval.reranker import Reranker, normalize_rerank_score, rescored
 from rag.vectorstore.base import ScoredChunk
@@ -56,6 +56,8 @@ class CrossEncoderReranker(Reranker):
     pipeline, or in tests that monkeypatch `_model` -- never requires
     downloading or holding several hundred MB of model weights in memory.
     """
+
+    score_scale: ClassVar[str] = "sigmoid of the cross-encoder logit (per-query logits folded by reranker.aggregate)"
 
     def __init__(
         self,

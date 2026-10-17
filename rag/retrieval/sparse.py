@@ -13,7 +13,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from rank_bm25 import BM25Okapi
 
@@ -96,6 +96,9 @@ class SparseIndex(ABC):
     ``rag.retrieval.builder`` (or a future factory) based on config.
     """
 
+    #: What `ScoredChunk.score` means from this index, for traces; override per backend.
+    score_scale: ClassVar[str] = "keyword relevance, higher is better"
+
     @abstractmethod
     def upsert(self, chunks: list[Chunk]) -> None:
         """Insert or overwrite chunks keyed by ``chunk.id``."""
@@ -174,6 +177,8 @@ class BM25Index(SparseIndex):
     / rebuilds on the next ``query`` or explicit ``flush``, so batched
     indexing does not pay O(n) per batch.
     """
+
+    score_scale: ClassVar[str] = "BM25, min-max normalized within this list: top hit 1, last 0"
 
     def __init__(self, persist_path: Path) -> None:
         self._persist_path = persist_path

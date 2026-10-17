@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import replace
+from typing import ClassVar
 
 from rag.vectorstore.base import ScoredChunk
 
@@ -23,6 +24,9 @@ class Reranker(ABC):
     register it in `rag.retrieval.factory.get_reranker` based on
     `RerankerConfig.provider`. Pipeline code only depends on this interface.
     """
+
+    #: What `ScoredChunk.score` means after this reranker, for traces; override per strategy.
+    score_scale: ClassVar[str] = "this reranker's relevance, 0 to 1"
 
     @abstractmethod
     def rerank(self, queries: list[str], candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
@@ -53,6 +57,8 @@ class NoOpReranker(Reranker):
     makes "pure vector retrieval" actually pure -- no extra model, no extra
     latency, nothing to download.
     """
+
+    score_scale: ClassVar[str] = "unchanged from the candidate list (no reranker)"
 
     def rerank(self, queries: list[str], candidates: list[ScoredChunk], top_k: int) -> list[ScoredChunk]:
         return candidates[:top_k]

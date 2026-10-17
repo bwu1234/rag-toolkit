@@ -11,10 +11,36 @@ threading or serialization concerns.
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from typing import Protocol
 
 Stage = str
+
+
+class _Scored(Protocol):
+    @property
+    def chunk_id(self) -> str: ...
+    @property
+    def document_id(self) -> str: ...
+    @property
+    def score(self) -> float: ...
+
+
+@dataclass(frozen=True)
+class Hit:
+    """One chunk in a stage's output ranking. Ids and score only -- no text, so
+    a turn that keeps every stage's ranking stays small."""
+
+    chunk_id: str
+    document_id: str
+    score: float
+
+
+def hits_of(chunks: Iterable[_Scored]) -> tuple[Hit, ...]:
+    """A stage's ranked output as `Hit`s, best first."""
+
+    return tuple(Hit(c.chunk_id, c.document_id, c.score) for c in chunks)
 
 
 @dataclass(frozen=True)
@@ -24,12 +50,24 @@ class PipelineEvent:
     stage: Stage
     message: str
     elapsed_ms: float | None = None
+    hits: tuple[Hit, ...] | None = None
+    """The stage's ranked output, for stages that rank chunks. Each stage scores
+    on its own scale, so compare positions across stages, never scores."""
+    score_scale: str | None = None
+    """What `hits` scores mean, as the component that produced them describes it."""
 
 
 EventSink = Callable[[PipelineEvent], None]
 
 
-def emit(on_event: EventSink | None, start: float, stage: Stage, message: str) -> None:
+def emit(
+    on_event: EventSink | None,
+    start: float,
+    stage: Stage,
+    message: str,
+    hits: Iterable[_Scored] | None = None,
+    score_scale: str | None = None,
+) -> None:
     """Report a stage that started at `start` (a `time.monotonic()` reading).
 
     Shared by `Retriever` and `ChatService` so both time and report stages the
@@ -40,4 +78,7 @@ def emit(on_event: EventSink | None, start: float, stage: Stage, message: str) -
     if on_event is None:
         return
     elapsed_ms = (time.monotonic() - start) * 1000
-    on_event(PipelineEvent(stage=stage, message=message, elapsed_ms=elapsed_ms))
+    on_event(PipelineEvent(
+        stage=stage, message=message, elapsed_ms=elapsed_ms,
+        hits=None if hits is None else hits_of(hits), score_scale=score_scale,
+    ))

@@ -18,6 +18,10 @@ from rag.vectorstore.base import ScoredChunk
 DEFAULT_RRF_K = 60
 
 
+#: What a fused `score` means, for traces (see `reciprocal_rank_fusion`).
+SCORE_SCALE = "RRF over ranks only, divided by its maximum: first in every list = 1"
+
+
 def reciprocal_rank_fusion(
     ranked_lists: list[list[ScoredChunk]],
     *,

@@ -19,6 +19,7 @@ from rag.retrieval.document_router import RoutingDecision
 from rag.retrieval.expansion import ExpandedQuery
 from rag.retrieval.reranker import NoOpReranker, Reranker
 from rag.retrieval.retriever import Retriever
+from rag.retrieval.rrf import SCORE_SCALE as RRF_SCORE_SCALE
 from rag.retrieval.sparse import IndexedDocument, SparseIndex
 from rag.vectorstore.base import ScoredChunk, VectorStore
 
@@ -131,6 +132,8 @@ class _FakeWebSearch:
     def __init__(self, candidates: list[ScoredChunk]) -> None:
         self.candidates = candidates
         self.queries: list[str] = []
+
+    score_scale = "fake web score"
 
     def search(self, query: str) -> list[ScoredChunk]:
         self.queries.append(query)
@@ -247,6 +250,44 @@ def test_retrieve_reports_fusion_event_in_hybrid_mode() -> None:
         "fusion",
         "rerank",
     ]
+
+
+def test_each_ranking_stage_reports_its_ranked_output() -> None:
+    retriever, *_ = _retriever(
+        mode="hybrid",
+        candidates=[_scored("a", 0.9), _scored("b", 0.8)],
+        sparse_candidates=[_scored("b", 1.0), _scored("c", 0.0)],
+        rerank_top_k=5,
+    )
+
+    events = []
+    retriever.retrieve("query", on_event=events.append)
+
+    ranked = {e.stage: [(h.chunk_id, h.score) for h in e.hits] for e in events if e.hits is not None}
+    assert ranked.keys() == {"vector_search", "sparse_search", "fusion", "rerank"}
+    assert ranked["vector_search"] == [("a", 0.9), ("b", 0.8)]
+    assert ranked["sparse_search"] == [("b", 1.0), ("c", 0.0)]
+    # b is in both lists, so RRF puts it first; _FakeReranker then reverses.
+    assert [chunk_id for chunk_id, _ in ranked["fusion"]] == ["b", "a", "c"]
+    assert [chunk_id for chunk_id, _ in ranked["rerank"]] == ["c", "a", "b"]
+    # Each stage's scale comes from the component that scored it, not a table.
+    scales = {e.stage: e.score_scale for e in events if e.hits is not None}
+    assert scales == {
+        "vector_search": VectorStore.score_scale,
+        "sparse_search": SparseIndex.score_scale,
+        "fusion": RRF_SCORE_SCALE,
+        "rerank": Reranker.score_scale,
+    }
+
+
+def test_rerank_scale_says_so_when_no_reranker_rescored() -> None:
+    retriever, *_ = _retriever(reranker=NoOpReranker())
+
+    events = []
+    retriever.retrieve("query", on_event=events.append)
+
+    [rerank_event] = [e for e in events if e.stage == "rerank"]
+    assert rerank_event.score_scale == NoOpReranker.score_scale != Reranker.score_scale
 
 
 def test_retrieve_on_blank_query_returns_empty_without_calling_anything() -> None:
@@ -471,6 +512,20 @@ def test_min_score_applies_to_reranker_scores_not_vector_scores() -> None:
     )
 
     assert retriever.retrieve("query").chunks == []
+
+
+@pytest.mark.parametrize(
+    ("rerank_top_k", "message"),
+    [(2, "Reranked 3 candidate(s) down to 2 result(s)"), (5, "Reranked 3 candidate(s)")],
+)
+def test_rerank_event_names_a_cut_only_when_there_is_one(rerank_top_k: int, message: str) -> None:
+    retriever, *_ = _retriever(rerank_top_k=rerank_top_k)
+
+    events = []
+    retriever.retrieve("query", on_event=events.append)
+
+    [rerank_event] = [e for e in events if e.stage == "rerank"]
+    assert rerank_event.message == message
 
 
 def test_rerank_event_reports_how_many_were_dropped() -> None:

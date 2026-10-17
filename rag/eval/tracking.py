@@ -87,10 +87,12 @@ _BATCH = 100  # MLflow's MAX_PARAMS_TAGS_PER_BATCH
 #: Characters MLflow refuses in metric and param names (e.g. the parentheses in "(no kind)").
 _UNSAFE_NAME = re.compile(r"[^\w\-. :/]")
 _LATENCY_SPANS = {"embed": "EMBEDDING", "vector_search": "RETRIEVER", "rerank": "RERANKER"}
-#: Turn events that are an LLM call (its exchange has the timing), and the
-#: retrieval stages a search tool's own event covers.
+#: Turn events that are an LLM call (its exchange has the timing).
 _LLM_EVENTS = {"agent_step", "agent_answer"}
-_SEARCH_STAGES = {**_LATENCY_SPANS, "sparse_search": "RETRIEVER", "fusion": "UNKNOWN"}
+#: Every stage `Retriever` or `RagTools.retrieve` can emit: one missing here is
+#: read as a tool's own event and closes the search span early.
+_SEARCH_STAGES = {**_LATENCY_SPANS, "sparse_search": "RETRIEVER", "web_search": "RETRIEVER", "fusion": "UNKNOWN",
+                  "route": "UNKNOWN", "expand": "UNKNOWN", "select": "UNKNOWN"}
 
 
 def _mlflow() -> ModuleType:
@@ -520,8 +522,17 @@ def _tool_span(
                                         start_time_ns=start)
     t = start
     for stage in stages:
+        stage_attributes = {"event": stage.message}
+        if stage.hits is not None:
+            stage_attributes["score"] = stage.score_scale or "not recorded"
         child = mlflow.start_span_no_context(stage.stage, _SEARCH_STAGES[stage.stage], parent_span=span,
-                                             attributes={"event": stage.message}, start_time_ns=t)
+                                             attributes=stage_attributes, start_time_ns=t)
+        if stage.hits is not None:
+            child.set_outputs(_documents([
+                {"chunk_id": h.chunk_id, "document_id": h.document_id, "score": h.score, "rank": rank,
+                 "text": passages.get(h.chunk_id, {}).get("text", "")}
+                for rank, h in enumerate(stage.hits, 1)
+            ]))
         t += _ms(stage.elapsed_ms)
         child.end(end_time_ns=t)
     end = start + _ms(event.elapsed_ms) if event is not None else start

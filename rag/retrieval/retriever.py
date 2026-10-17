@@ -48,6 +48,7 @@ from rag.retrieval.document_router import DocumentRouter
 from rag.retrieval.expansion import ExpandedQuery, NoOpQueryExpander, QueryExpander
 from rag.retrieval.reranker import Reranker
 from rag.retrieval.rrf import DEFAULT_RRF_K, reciprocal_rank_fusion
+from rag.retrieval.rrf import SCORE_SCALE as RRF_SCORE_SCALE
 from rag.retrieval.sparse import SparseIndex
 from rag.retrieval.websearch import SearxNGWebSearch
 from rag.vectorstore.base import ScoredChunk, VectorStore
@@ -257,8 +258,14 @@ class Retriever:
             on_event,
             start,
             "rerank",
-            f"Reranked {len(candidates)} candidate(s) down to {len(results)} result(s)"
+            f"Reranked {len(candidates)} candidate(s)"
+            # Only claim a cut that happened: `RagTools` widens `rerank_top_k`
+            # to its MAX_RESULTS, so there it cuts only a wider stage 1.
+            + (f" down to {len(results)} result(s)" if len(results) < len(candidates) else "")
             + (f" ({dropped} dropped below min_score={self.min_score})" if dropped else ""),
+            # The whole reranked list: chunks the floor dropped keep their scores.
+            reranked,
+            self._reranker.score_scale,
         )
         logger.info("Reranked down to %d result(s) (%d below min_score)", len(results), dropped)
         return RetrievalResult(
@@ -327,6 +334,8 @@ class Retriever:
             start,
             "fusion",
             f"Fused {len(populated)} ranked list(s) into {len(fused)} candidate(s) via RRF",
+            fused,
+            RRF_SCORE_SCALE,
         )
         return fused
 
@@ -339,7 +348,10 @@ class Retriever:
 
         start = time.monotonic()
         results = self._vector_store.query(query_vector, top_k=self.top_k, query_filter=query_filter)
-        emit(on_event, start, "vector_search", f"Vector search returned {len(results)} candidate(s)")
+        emit(
+            on_event, start, "vector_search", f"Vector search returned {len(results)} candidate(s)",
+            results, self._vector_store.score_scale,
+        )
         return results
 
     def _sparse_search(
@@ -348,12 +360,18 @@ class Retriever:
         assert self._sparse_index is not None
         start = time.monotonic()
         results = self._sparse_index.query(query, top_k=self.top_k, query_filter=query_filter)
-        emit(on_event, start, "sparse_search", f"BM25 search returned {len(results)} candidate(s)")
+        emit(
+            on_event, start, "sparse_search", f"BM25 search returned {len(results)} candidate(s)",
+            results, self._sparse_index.score_scale,
+        )
         return results
 
     def _web_search_query(self, query: str, on_event: EventSink | None) -> list[ScoredChunk]:
         assert self._web_search is not None
         start = time.monotonic()
         results = self._web_search.search(query)
-        emit(on_event, start, "web_search", f"Web search returned {len(results)} candidate(s)")
+        emit(
+            on_event, start, "web_search", f"Web search returned {len(results)} candidate(s)",
+            results, self._web_search.score_scale,
+        )
         return results

@@ -421,7 +421,10 @@ class ChatResponder(ABC):
             llm_ms=meter.llm_ms,
             prompt_tokens=meter.prompt_tokens,
             completion_tokens=meter.completion_tokens,
-            events=[StageEvent(e.stage, e.message, e.elapsed_ms) for e in trace.events],
+            events=[
+                StageEvent(e.stage, e.message, e.elapsed_ms, None if e.hits is None else list(e.hits), e.score_scale)
+                for e in trace.events
+            ],
             error=error,
             metadata=self._turn_metadata,
             tool_calls=answer.tool_calls if answer is not None else 0,
