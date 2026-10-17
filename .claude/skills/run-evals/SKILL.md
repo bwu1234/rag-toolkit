@@ -39,18 +39,24 @@ record them), use the `measure-change` skill; this one is the command reference.
   rag.eval.report --baseline <run>:<rev> --runs <run>:<rev> ... [--out F.md]`;
   it refuses runs on different samples, labels or scorer, and lists config
   differences the variant didn't declare (`--declare PATH|code|index|corpus`).
-  To browse runs side by side, export them to the optional MLflow store
-  (`pip install -e ".[tracking]"`): `python -m rag.eval.tracking export --all`
-  (re-export is a no-op; `--replace` rebuilds), then `python -m
-  rag.eval.tracking serve [--port 5050]`. `python -m rag.eval.tracking
-  compare --baseline <run>:<rev> --candidate <run>:<rev> [--declare PATH]`
-  prints and exports the paired comparison with a link to MLflow's
-  side-by-side view. After `--replace` on a revision, re-export its
-  comparisons with `--replace` too. A run's detail is under Evaluation runs
-  -> the run -> Traces (each LLM call verbatim) and Artifacts ->
-  `transcripts/` (each sample as Markdown); revisions exported before the
-  transcripts existed (`rag.exporter` below `rag.eval.tracking/2`) need
-  `export --replace` to get them.
+  To browse runs side by side, install the optional extra
+  (`pip install -e ".[tracking]"`), then export the canonical run folders in
+  `data/eval/runs/` with `python -m rag.eval.tracking export --all`
+  (re-export is a no-op; `--replace` rebuilds). Start the UI in another
+  terminal with `python -m rag.eval.tracking serve [--port 5050]`, then open
+  `http://127.0.0.1:5050`. In MLflow, select **Evaluation runs**, open the
+  `<stage>/<eval set>` experiment, then open a run. Its **Traces** tab has one
+  trace per sample (including each LLM call); **Artifacts → transcripts/** has
+  each sample as Markdown. Each score revision is a separate run. To compare
+  two pinned revisions, run `python -m rag.eval.tracking compare --baseline
+  <run>:<rev> --candidate <run>:<rev> [--declare PATH]`; it prints and exports
+  the paired comparison with a link to MLflow's side-by-side view. Open the
+  comparison run and follow that link. After `--replace` on a revision,
+  re-export its comparisons with `--replace` too. The MLflow store at
+  `data/eval/mlflow/` is derived and can be rebuilt from `data/eval/runs/`.
+  Stop the UI with Ctrl-C. Revisions exported before the transcripts existed
+  (`rag.exporter` below `rag.eval.tracking/2`) need `export --replace` to add
+  them.
   A BEIR qrels set (`scripts/beir_to_eval_set.py`) is scored `trec_eval`-style
   instead: `--config rag/config/beir.yaml --corpus beir-scifact --eval-set
   data/eval/beir_scifact_test.json`, with `--save-run DIR` to keep the

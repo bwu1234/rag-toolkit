@@ -140,11 +140,19 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
 - API: `uvicorn rag.api.main:app --reload` (`POST /chat` with `{"query": "..."}`,
   optional `history` and metadata `filters`; `/health`)
 - Eval tracking (optional, `pip install -e ".[tracking]"`; Phase 4b pilot,
-  decision pending): `python -m rag.eval.tracking export --all` copies run
-  folders into a local MLflow store (`data/eval/mlflow/`, derived and
-  rebuildable), `... serve` opens its UI on 127.0.0.1:5050 with telemetry off,
-  and `... compare --baseline RUN:REV --candidate RUN:REV` exports the
-  harness's paired comparison, refusing what `rag.eval.report` refuses.
+  decision pending): eval run folders under `data/eval/runs/` are canonical;
+  MLflow is a derived, rebuildable browser at `data/eval/mlflow/`. Export the
+  completed runs with `python -m rag.eval.tracking export --all`, then start
+  the UI in a second terminal with
+  `python -m rag.eval.tracking serve` (telemetry off). Open
+  `http://127.0.0.1:5050`, select **Evaluation runs**, then open an experiment
+  named `<stage>/<eval set>` and a run to inspect its **Traces** or
+  **Artifacts → transcripts/**. Each score revision is a run; each sample is
+  a trace. To see a paired comparison, run
+  `python -m rag.eval.tracking compare --baseline RUN:REV --candidate RUN:REV`
+  and follow the link in the exported comparison run's description. Stop the
+  UI with Ctrl-C. Rebuild the MLflow store at any time by exporting again from
+  `data/eval/runs/`.
 - OpenTelemetry (`pip install -e ".[otel]"`; Milestone 26, drafted):
   `observability.turn_log.otel` also exports live turns over OTLP, and
   `python -m rag.eval.otel_export RUN[:REV] ... | --all [--endpoint URL]`

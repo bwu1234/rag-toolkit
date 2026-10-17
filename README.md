@@ -247,6 +247,9 @@ python -m rag.eval.answer_eval                        # LLM-as-judge answer qual
 python -m rag.eval.multihop_eval --corpus edgar_md       # questions that need several documents
 ```
 
+To browse saved runs and inspect individual samples in MLflow, see the
+[evaluation runs guide](docs/eval-runs.md).
+
 EDGAR's question sets in `data/eval/` are reported separately rather than
 averaged: `edgar_eval_set.json` (174 generated questions that name their
 company and period), `edgar_period_set.json` (the same text appears in another
