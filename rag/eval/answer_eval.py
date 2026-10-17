@@ -727,4 +727,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Under `python -m` this file runs as `__main__`, and `rag.eval.score`
+    # imports it again as `rag.eval.answer_eval`: two `AnswerEvalReport`
+    # classes, so `main`'s isinstance check on a stored report fails. Run the
+    # imported module's `main` so there is only one.
+    from rag.eval.answer_eval import main as package_main
+
+    sys.exit(package_main())
