@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Holdout Draft Review</title>
+<style>
+:root {
+  --bg: #fafaf9; --panel: #ffffff; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4;
+  --accent: #2563eb; --accent-ink: #ffffff; --hit: #fef08a; --hit-ink: #1c1917;
+  --warn: #b45309; --warn-bg: #fef3c7; --bad: #b91c1c; --bad-bg: #fee2e2;
+  --ok: #15803d; --ok-bg: #dcfce7; --chip: #f5f5f4;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c0a09; --panel: #1c1917; --ink: #e7e5e4; --muted: #a8a29e; --line: #292524;
+    --accent: #60a5fa; --accent-ink: #0c0a09; --hit: #854d0e; --hit-ink: #fefce8;
+    --warn: #fbbf24; --warn-bg: #422006; --bad: #fca5a5; --bad-bg: #450a0a;
+    --ok: #86efac; --ok-bg: #052e16; --chip: #292524;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+button, input, select, textarea { font: inherit; color: var(--ink); }
+.app { display: grid; grid-template-columns: 290px minmax(0, 1fr); height: 100vh; }
+aside { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; background: var(--panel); }
+.filters { padding: 12px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.filters input, .filters select { width: 100%; padding: 6px 8px; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--bg); font-size: 13px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.count { font-size: 12px; color: var(--muted); }
+.tally { display: flex; gap: 10px; font-size: 12px; }
+.tally b { font-weight: 600; }
+ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+li { padding: 8px 12px 8px 26px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 13px; position: relative; }
+li::before { content: ""; position: absolute; left: 10px; top: 14px; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); }
+li.v-accept::before { background: var(--ok); border-color: var(--ok); }
+li.v-reject::before { background: var(--bad); border-color: var(--bad); }
+li.notes::before { border-style: dashed; }
+li:hover { background: var(--chip); }
+li.on { background: var(--chip); box-shadow: inset 3px 0 0 var(--accent); }
+li .id { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+li .q { color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+main { overflow-y: auto; min-height: 0; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; padding: 20px 28px 64px; max-width: 1400px; margin: 0 auto; align-items: start; }
+.nav { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+.btn { padding: 5px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: default; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.chip { background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: 12px; }
+.chip.b-refuse { background: var(--bad-bg); color: var(--bad); }
+.chip.b-clarify, .chip.b-partial { background: var(--warn-bg); color: var(--warn); }
+h1 { font-size: 21px; line-height: 1.35; margin: 4px 0 0; font-weight: 600; }
+.mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; color: var(--muted); }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin-top: 14px; }
+section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+section h2 + * { margin-top: 0; }
+section * + h2 { margin-top: 14px; }
+.answer { font-size: 16px; }
+.na { color: var(--bad); font-weight: 600; font-size: 12px; }
+.span-q { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: var(--chip); padding: 8px 10px; border-radius: 6px; white-space: pre-wrap; word-break: break-word; }
+.loc { margin-top: 12px; }
+.loc .where { font-size: 13px; margin-bottom: 6px; }
+.loc .where b { font-family: ui-monospace, Menlo, monospace; font-weight: 500; }
+.ctx { border-left: 3px solid var(--line); padding-left: 12px; font-size: 14px; }
+.ctx p { margin: 6px 0; color: var(--muted); }
+.ctx p:has(mark) { color: var(--ink); }
+.ctx p.hit { background: var(--hit); color: var(--hit-ink); padding: 2px 4px; border-radius: 4px; }
+mark { background: var(--hit); color: var(--hit-ink); padding: 0 2px; border-radius: 3px; }
+.gap { color: var(--muted); font-size: 12px; }
+.tbl { overflow-x: auto; margin: 6px 0; }
+table { border-collapse: collapse; font-size: 13px; }
+td { border: 1px solid var(--line); padding: 3px 8px; white-space: nowrap; color: var(--muted); }
+td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+tr.hit td { background: var(--hit); color: var(--hit-ink); font-weight: 600; }
+tr:first-child td { font-weight: 600; color: var(--ink); }
+tr.gaprow td { text-align: center; border-left: 0; border-right: 0; padding: 0; }
+.flag { font-size: 13px; padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+.flag.leak { background: var(--bad-bg); color: var(--bad); }
+.flag.also { background: var(--warn-bg); color: var(--warn); }
+.alts { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.part { padding: 6px 0; border-bottom: 1px dashed var(--line); }
+.part:last-child { border: 0; }
+/* review panel */
+.panel { position: sticky; top: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; }
+.panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0; font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.seg button { border: 0; background: var(--panel); padding: 5px 12px; cursor: pointer; font-size: 13px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--chip); font-weight: 600; }
+.seg button.on.pass, .seg button.on.accept { background: var(--ok-bg); color: var(--ok); }
+.seg button.on.fail, .seg button.on.reject { background: var(--bad-bg); color: var(--bad); }
+.dim { display: grid; gap: 6px; }
+.dim .head { display: flex; justify-content: space-between; align-items: center; }
+.dim .name { font-weight: 600; font-size: 14px; }
+.dim .hint { font-size: 12px; color: var(--muted); }
+textarea, .panel input { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); font-size: 13px; resize: vertical; }
+textarea { min-height: 52px; }
+.actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.status { font-size: 13px; min-height: 1.2em; }
+.status.err { color: var(--bad); }
+.status.ok { color: var(--ok); }
+.status.dirty { color: var(--warn); }
+.status ul { margin: 4px 0 0; padding-left: 18px; overflow: visible; }
+.status li { border: 0; padding: 0; cursor: default; font-size: 13px; }
+.status li::before { display: none; }
+.keys { font-size: 12px; color: var(--muted); }
+kbd { font-family: ui-monospace, Menlo, monospace; font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.banner { padding: 40px; color: var(--muted); }
+@media (max-width: 1100px) { .cols { grid-template-columns: minmax(0, 1fr); } .panel { position: static; } }
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); height: auto; }
+  aside { max-height: 40vh; border-right: 0; border-bottom: 1px solid var(--line); }
+  .cols { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="filters">
+      <input id="reviewer" placeholder="Your name (recorded as reviewer)" autocomplete="name">
+      <input id="search" placeholder="Search id, question, answer…">
+      <div class="row3">
+        <select id="f-verdict"></select>
+        <select id="f-family"></select>
+        <select id="f-split"></select>
+      </div>
+      <div class="tally" id="tally"></div>
+      <div class="count" id="count"></div>
+    </div>
+    <ul id="list"></ul>
+  </aside>
+  <main id="main"><div class="banner" id="banner">Loading drafts…</div></main>
+</div>
+<script>
+const DIMS = {
+  answerability: "The evidence entails the answer; entity, period, unit and version are right. For refuse: truly absent, not derivable.",
+  usefulness: "An analyst could plausibly ask this.",
+  clarity: "The meaning is recoverable. For ambiguity: the ambiguity is real and the criteria accept clarifying or answering every reading.",
+};
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+let DATA = [], SOURCE = "", shown = [], cur = -1, form = null, saving = false;
+
+// ---- form state -------------------------------------------------------------
+function blank(v) { return v == null ? "" : v; }
+function formFrom(review) {
+  const f = { verdict: review.verdict, edits: blank(review.edits) };
+  Object.keys(DIMS).forEach(d => { f[d] = { decision: (review[d] || {}).decision || null, reason: blank((review[d] || {}).reason) }; });
+  return f;
+}
+function sameAsBase() {
+  const b = formFrom(shown[cur].review);
+  return JSON.stringify(b) === JSON.stringify(form);
+}
+function reviewFromForm() {
+  const r = { verdict: form.verdict, reviewer: $("reviewer").value, edits: form.edits };
+  Object.keys(DIMS).forEach(d => { r[d] = { decision: form[d].decision, reason: form[d].reason }; });
+  return r;
+}
+
+// ---- list -------------------------------------------------------------------
+function fillSelect(id, label, values) {
+  const s = $(id), keep = load("holdout-review-" + id);
+  s.replaceChildren(new Option(label, ""));  // the unfiltered choice; narrow column, so no "all"
+  [...new Set(values)].sort().forEach(v => s.append(new Option(v, v)));
+  if (keep && [...s.options].some(o => o.value === keep)) s.value = keep;
+}
+function hasNotes(r) { return Object.keys(DIMS).some(d => (r[d] || {}).decision || (r[d] || {}).reason) || r.edits; }
+function itemClass(d) { return `v-${d.review.verdict}${d.review.verdict === "pending" && hasNotes(d.review) ? " notes" : ""}`; }
+
+function tally() {
+  const c = { pending: 0, accept: 0, reject: 0 };
+  DATA.forEach(d => { c[d.review.verdict] = (c[d.review.verdict] || 0) + 1; });
+  $("tally").replaceChildren(...Object.entries(c).map(([k, n]) => { const s = el("span"); s.append(el("b", "", n), document.createTextNode(" " + k)); return s; }));
+}
+
+function applyFilters(keepId) {
+  const q = $("search").value.toLowerCase(), v = $("f-verdict").value, f = $("f-family").value, s = $("f-split").value;
+  ["f-verdict", "f-family", "f-split"].forEach(id => store("holdout-review-" + id, $(id).value));
+  shown = DATA.filter(d => (!v || d.review.verdict === v) && (!f || d.family === f) && (!s || d.split === s)
+    && (!q || (d.id + " " + d.query + " " + d.answer).toLowerCase().includes(q)));
+  $("count").textContent = `${shown.length} of ${DATA.length} shown`;
+  const list = $("list"); list.replaceChildren();
+  shown.forEach((d, i) => {
+    const li = el("li", itemClass(d)); li.dataset.i = i;
+    li.append(el("div", "id", d.id), el("div", "q", d.query));
+    li.onclick = () => go(i);
+    list.append(li);
+  });
+  const at = shown.findIndex(d => d.id === (keepId || load("holdout-review-current")));
+  cur = -1; select(at >= 0 ? at : 0);
+}
+
+function refreshItem() {
+  const li = document.querySelector(`li[data-i="${cur}"]`);
+  if (li) li.className = itemClass(shown[cur]) + " on";
+  tally();
+}
+
+// ---- navigation -------------------------------------------------------------
+function go(i) {
+  if (i === cur || i < 0 || i >= shown.length) return;
+  if (form && !sameAsBase() && !confirm("This draft has unsaved review changes. Leave without saving?")) return;
+  select(i);
+}
+function select(i) {
+  if (!shown.length) { $("main").replaceChildren(el("div", "banner", "No drafts match the filters.")); cur = -1; form = null; return; }
+  cur = Math.max(0, Math.min(shown.length - 1, i));
+  document.querySelectorAll("#list li").forEach(li => li.classList.toggle("on", +li.dataset.i === cur));
+  const on = document.querySelector("#list li.on"); if (on) on.scrollIntoView({ block: "nearest" });
+  store("holdout-review-current", shown[cur].id);
+  form = formFrom(shown[cur].review);
+  render(shown[cur]);
+  $("main").scrollTop = 0;
+}
+
+// ---- draft ------------------------------------------------------------------
+function block(b) {
+  if (b.kind === "gap") return el("div", "gap", "…");
+  if (b.kind === "table") {
+    const wrap = el("div", "tbl"), t = el("table");
+    const width = Math.max(...b.rows.map(r => r.cells.length));
+    b.rows.forEach(r => {
+      const tr = el("tr", r.hit ? "hit" : r.gap ? "gaprow" : "");
+      r.cells.forEach(c => { const td = el("td", "", c); if (r.gap) td.colSpan = width; tr.append(td); });
+      t.append(tr);
+    });
+    wrap.append(t); return wrap;
+  }
+  const p = el("p", b.hit ? "hit" : "");
+  p.append(document.createTextNode(b.parts[0]));
+  if (b.parts[1]) p.append(el("mark", "", b.parts[1]));
+  p.append(document.createTextNode(b.parts[2]));
+  return p;
+}
+
+function draftView(d) {
+  const col = el("div");
+  const nav = el("div", "nav");
+  const prev = el("button", "btn", "← prev"), next = el("button", "btn", "next →");
+  prev.onclick = () => go(cur - 1); next.onclick = () => go(cur + 1);
+  prev.disabled = cur === 0; next.disabled = cur === shown.length - 1;
+  nav.append(prev, el("span", "", `${cur + 1} / ${shown.length}`), next);
+  col.append(nav, el("div", "mono", d.id), el("h1", "", d.query));
+
+  const chips = el("div", "chips");
+  [[d.behavior, "b-" + d.behavior], [d.family], [d.split], [d.transfer], ["group " + d.group], ...d.tags.map(t => ["#" + t])]
+    .forEach(([t, c]) => chips.append(el("span", "chip " + (c || ""), t)));
+  col.append(chips);
+
+  const ans = el("section"); ans.append(el("h2", "", "Expected answer"), el("div", "answer", d.answer));
+  if (d.conclusion) ans.append(el("h2", "", "Conclusion"), el("div", "", d.conclusion));
+  if (d.calc) ans.append(el("h2", "", "Calc"), el("div", "span-q", JSON.stringify(d.calc, null, 2)));
+  if (d.note) ans.append(el("h2", "", "Note"), el("div", "", d.note));
+  col.append(ans);
+
+  if (d.parts.length) {
+    const s = el("section"); s.append(el("h2", "", "Parts"));
+    d.parts.forEach(p => {
+      const row = el("div", "part"); row.append(el("b", "", p.label + ": "), document.createTextNode(p.answer));
+      if (p.available === false) row.append(document.createTextNode(" "), el("span", "na", "NOT IN CORPUS"));
+      s.append(row);
+    });
+    col.append(s);
+  }
+  if (d.absent.length) {
+    const s = el("section"); s.append(el("h2", "", "Must be absent (checked in the company's own filings)"));
+    d.absent.forEach(a => s.append(el("div", "span-q", a)));
+    col.append(s);
+  }
+  d.spans.forEach((sp, k) => {
+    const s = el("section"); s.append(el("h2", "", "Evidence" + (d.spans.length > 1 ? ` ${k + 1} of ${d.spans.length}` : "")));
+    s.append(el("div", "span-q", sp.primary));
+    if (sp.alts.length) s.append(el("div", "alts", "Also accepted: " + sp.alts.map(a => `“${a}”`).join("  ·  ")));
+    if (!sp.locations.length) s.append(el("div", "flag leak", "Not found verbatim in any expected filing: " + d.docs.join(", ")));
+    sp.locations.forEach(loc => {
+      const box = el("div", "loc"), where = el("div", "where");
+      where.append(el("b", "", loc.doc), document.createTextNode(loc.section ? "  §  " + loc.section : ""));
+      const ctx = el("div", "ctx"); loc.blocks.forEach(b => ctx.append(block(b)));
+      box.append(where, ctx); s.append(box);
+    });
+    if (sp.also.length) s.append(el("div", "flag also", "Same text also in: " + sp.also.join(", ") + " — add as an alternative if it states the same fact for the same period."));
+    sp.leaks.forEach(l => s.append(el("div", "flag leak", "Leak? " + l)));
+    col.append(s);
+  });
+  return col;
+}
+
+// ---- review panel -----------------------------------------------------------
+function seg(options, value, onPick) {
+  const g = el("div", "seg");
+  options.forEach(o => {
+    const b = el("button", o + (o === value ? " on" : ""), o);
+    b.type = "button";
+    b.onclick = () => { onPick(o === value && o !== "pending" && options.length === 2 ? null : o); };
+    g.append(b);
+  });
+  return g;
+}
+
+function status(kind, text, items) {
+  const s = $("status"); if (!s) return;
+  s.className = "status " + (kind || "");
+  s.replaceChildren(document.createTextNode(text || ""));
+  if (items && items.length) { const ul = el("ul"); items.forEach(i => ul.append(el("li", "", i))); s.append(ul); }
+}
+function markDirty() { if (sameAsBase()) status("", ""); else status("dirty", "Unsaved changes"); }
+
+function panel(d) {
+  const p = el("div", "panel");
+  const vh = el("div", "dim"), vhead = el("div", "head");
+  vhead.append(el("h2", "", "Verdict"));
+  vh.append(vhead, seg(["pending", "accept", "reject"], form.verdict, v => { form.verdict = v || "pending"; rerenderPanel(); markDirty(); }));
+  p.append(vh);
+
+  Object.entries(DIMS).forEach(([dim, hint]) => {
+    const box = el("div", "dim"), head = el("div", "head");
+    head.append(el("span", "name", dim), seg(["pass", "fail"], form[dim].decision, v => { form[dim].decision = v; rerenderPanel(); markDirty(); }));
+    const ta = el("textarea"); ta.placeholder = "Reason"; ta.value = form[dim].reason;
+    ta.oninput = () => { form[dim].reason = ta.value; markDirty(); };
+    box.append(head, el("div", "hint", hint), ta);
+    p.append(box);
+  });
+
+  const eb = el("div", "dim"); eb.append(el("span", "name", "edits"));
+  const et = el("textarea"); et.placeholder = "What you changed in the file, if anything"; et.value = form.edits;
+  et.oninput = () => { form.edits = et.value; markDirty(); };
+  eb.append(et); p.append(eb);
+
+  const actions = el("div", "actions");
+  const save = el("button", "btn", "Save"), saveNext = el("button", "btn primary", "Save & next");
+  save.onclick = () => submit(false); saveNext.onclick = () => submit(true);
+  actions.append(save, saveNext);
+  p.append(actions, el("div", "status"));
+  p.lastChild.id = "status";
+  const r = d.review;
+  p.append(el("div", "keys", `On file: ${r.verdict}${r.reviewer ? " by " + r.reviewer : ""}`));
+  const keys = el("div", "keys");
+  keys.append(el("kbd", "", "j"), " / ", el("kbd", "", "k"), " move  ·  ", el("kbd", "", "⌘/Ctrl ↵"), " save & next");
+  p.append(keys);
+  return p;
+}
+
+function rerenderPanel() {
+  const old = document.querySelector(".panel"), st = $("status");
+  const keep = st ? [st.className, [...st.childNodes]] : null;
+  const fresh = panel(shown[cur]); old.replaceWith(fresh);
+  if (keep) { $("status").className = keep[0]; $("status").replaceChildren(...keep[1]); }
+}
+
+function render(d) {
+  const cols = el("div", "cols");
+  cols.append(draftView(d), panel(d));
+  $("main").replaceChildren(cols);
+}
+
+async function submit(advance) {
+  if (saving || cur < 0) return;
+  const d = shown[cur];
+  if ($("reviewer").value.trim()) store("holdout-review-reviewer", $("reviewer").value.trim());
+  saving = true; status("", "Saving…");
+  try {
+    const res = await fetch("/api/review", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: d.id, base: d.review, review: reviewFromForm() }),
+    });
+    const body = await res.json();
+    if (res.ok) {
+      d.review = body.review; form = formFrom(d.review); refreshItem();
+      if (advance && cur < shown.length - 1) { select(cur + 1); status("ok", `Saved ${d.id}`); }
+      else { rerenderPanel(); status("ok", "Saved"); }
+    } else if (res.status === 409) {
+      d.review = body.review; refreshItem();
+      status("err", `The file changed on disk (it now says: ${body.review.verdict}). Your edits are still in the form — save again to overwrite, or reload the page to discard them.`);
+    } else if (res.status === 422) {
+      status("err", "Not saved:", body.error.split("; "));
+    } else {
+      status("err", `Not saved: ${body.error || res.status}`);
+    }
+  } catch (e) {
+    status("err", "Not saved: the review server is not reachable. Is it still running?");
+  } finally { saving = false; }
+}
+
+// ---- wiring -----------------------------------------------------------------
+$("reviewer").value = load("holdout-review-reviewer") || "";
+$("reviewer").addEventListener("change", () => store("holdout-review-reviewer", $("reviewer").value.trim()));
+["search", "f-verdict", "f-family", "f-split"].forEach(id => $(id).addEventListener("input", () => {
+  if (form && cur >= 0 && !sameAsBase() && !confirm("This draft has unsaved review changes. Leave without saving?")) return;
+  form = null; applyFilters(cur >= 0 ? shown[cur].id : null);
+}));
+document.addEventListener("keydown", e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); submit(true); return; }
+  if (e.key === "Escape" && document.activeElement) { document.activeElement.blur(); return; }
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); go(cur + 1); }
+  if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); go(cur - 1); }
+});
+window.addEventListener("beforeunload", e => { if (form && cur >= 0 && !sameAsBase()) { e.preventDefault(); e.returnValue = ""; } });
+
+fetch("/api/drafts").then(r => r.json()).then(body => {
+  DATA = body.drafts; SOURCE = body.source;
+  document.title = `Holdout Draft Review · ${DATA.length}`;
+  fillSelect("f-verdict", "verdict", DATA.map(d => d.review.verdict).concat(["pending", "accept", "reject"]));
+  fillSelect("f-family", "family", DATA.map(d => d.family));
+  fillSelect("f-split", "split", DATA.map(d => d.split));
+  tally(); applyFilters();
+}).catch(() => { $("banner").textContent = "Could not load drafts from the review server."; });
+</script>
+</body>
+</html>
