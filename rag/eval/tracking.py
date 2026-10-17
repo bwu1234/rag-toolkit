@@ -7,7 +7,10 @@
 MLflow is a searchable *presentation* of the run folders, never their source:
 everything here reads `data/eval/runs/` and writes only to a local tracking
 store (SQLite plus a file artifact store under ``data/eval/mlflow/``), which
-can be deleted and rebuilt from the run folders at any time. The runner,
+can be deleted and rebuilt from the run folders at any time. The one other
+read: a search stage's hits the answer never saw are stored by id only, so
+their text comes from the run's index while it is still the same build; after
+a rebuild those hits say why they have no text. The runner,
 scorer and reports never import this module, so they work without MLflow
 installed (``pip install -e ".[tracking]"``).
 
@@ -53,14 +56,17 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+from rag.config.settings import RagConfig
 from rag.events import RETRIEVAL_STAGES
 from rag.eval.compare import PAIRED_METRICS, Comparison, compare, flip_rows, render_comparison, samples_by_id
 from rag.eval.provenance import flatten, without_denylisted
 from rag.eval.report import Ineligible, Pinned, resolve
 from rag.eval.runs import COMPLETE, RUNS_DIR, load_run
+from rag.index_manifest import index_manifest_path, read_index_build
 from rag.logging_config import configure_logging
 from rag.observability.records import AgentToolCall, LLMExchange, StageEvent, TurnRecord
 from rag.observability.transcript import render_turn_markdown, with_rendered_prompts
+from rag.vectorstore.factory import get_vector_store
 
 logger = logging.getLogger(__name__)
 
@@ -348,6 +354,7 @@ def _log_traces(mlflow: ModuleType, pinned: Pinned) -> None:
     )
     clock = _ns(pinned.run.manifest["started_at"])
     models = _models(pinned.run.manifest["config"])
+    stage_text = _stage_text(pinned.run.manifest, outputs)
     for sid, score in samples_by_id(pinned.scores).items():
         out, label = outputs[sid], labels.get(sid, {})
         tags = {k: str(v) for k, v in {"rag.sample_id": sid, "rag.kind": label.get("kind") or score.get("kind"),
@@ -361,7 +368,7 @@ def _log_traces(mlflow: ModuleType, pinned: Pinned) -> None:
             if record is not None:
                 tags["rag.transcript"] = f"transcripts/{_UNSAFE_NAME.sub('_', sid)}.md"
                 mlflow.log_text(_transcript(pinned, sid, record, label), tags["rag.transcript"])
-            trace_id, took = _answer_trace(mlflow, out, record, models, tags, clock)
+            trace_id, took = _answer_trace(mlflow, out, record, models, stage_text, tags, clock)
             feedback = _answer_feedback(stage, score, replies.get(sid, []), scorer, judge)
         clock += took
         for name in ("expected_answer", "expected_doc_ids", "expected_spans"):
@@ -369,6 +376,50 @@ def _log_traces(mlflow: ModuleType, pinned: Pinned) -> None:
                 mlflow.log_expectation(trace_id=trace_id, name=name, value=label[name])
         for name, value, rationale, source in feedback:
             mlflow.log_feedback(trace_id=trace_id, name=name, value=value, rationale=rationale, source=source)
+
+
+@dataclass(frozen=True)
+class _StageText:
+    """Text for a stage's ranked hits, which the turn record keeps only by id.
+
+    A hit the answer saw has its passage; one cut before that is read from the
+    index the run searched, but only while that index is still the same build --
+    after a rebuild the id may name different text. Otherwise `missing` says why
+    there is none, so a blank never reads as an empty chunk.
+    """
+
+    index: dict[str, str]
+    missing: str
+
+    def of(self, chunk_id: str, passages: dict[str, dict[str, Any]]) -> str:
+        if chunk_id in passages:
+            return str(passages[chunk_id].get("text", ""))
+        return self.index.get(chunk_id, self.missing)
+
+
+def _stage_text(manifest: dict[str, Any], outputs: dict[str, dict[str, Any]]) -> _StageText:
+    """Read every cut hit's text from the run's index in one pass, if that index is unchanged."""
+    # Per sample: a chunk one answer saw can be cut from another's.
+    cut = sorted(set().union(*(
+        {hit["chunk_id"] for event in (out.get("turn") or {}).get("events") or [] for hit in event.get("hits") or []}
+        - {p["chunk_id"] for p in out.get("passages") or []}
+        for out in outputs.values()
+    )))
+    if not cut:
+        return _StageText({}, "")
+    run_build = (manifest.get("index") or {}).get("index_build_id")
+    slug = (manifest.get("corpus") or {}).get("slug")
+    if not run_build or not slug:
+        return _StageText({}, "(text not recorded: cut before the answer, and the run names no index build)")
+    config = RagConfig.model_validate(manifest["config"])
+    selection = config.corpus_selection(slug.split("+"))
+    # Checked before opening the store, which would create a missing collection.
+    build = read_index_build(index_manifest_path(selection.index_dir, selection.slug))
+    if build is None or build.build_id != run_build:
+        return _StageText({}, f"(text not recorded: cut before the answer, and index build {run_build[:8]} "
+                              "has since been rebuilt)")
+    store = get_vector_store(config.vector_store, selection.index_dir, collection_name=selection.collection_name)
+    return _StageText(store.get_texts(cut), "(text not recorded: cut before the answer, and not in the index)")
 
 
 def _documents(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -441,7 +492,7 @@ def _ms(value: float | None) -> int:
 
 
 def _answer_trace(
-    mlflow: ModuleType, out: dict[str, Any], record: TurnRecord | None, models: _Models,
+    mlflow: ModuleType, out: dict[str, Any], record: TurnRecord | None, models: _Models, stage_text: _StageText,
     tags: dict[str, str], start: int,
 ) -> tuple[str, int]:
     calls = out.get("agent_calls") or []
@@ -454,12 +505,12 @@ def _answer_trace(
                                         attributes=attributes, tags=tags, start_time_ns=start)
     passages = {p["chunk_id"]: p for p in out.get("passages") or []}
     if record is not None and record.llm_exchanges is not None:
-        took = max(took, _turn_spans(mlflow, root, record, passages, models, start) - start)
+        took = max(took, _turn_spans(mlflow, root, record, passages, stage_text, models, start) - start)
     else:
         # Only the sample's total latency is recorded, so tool spans are
         # zero-length markers in call order rather than an invented timeline.
         for call in calls:
-            _tool_span(mlflow, root, AgentToolCall.from_dict(call), None, [], passages, start)
+            _tool_span(mlflow, root, AgentToolCall.from_dict(call), None, [], passages, stage_text, start)
     if passages:
         span = mlflow.start_span_no_context("passages shown", "RETRIEVER", parent_span=root,
                                             start_time_ns=start + took)
@@ -471,8 +522,8 @@ def _answer_trace(
 
 
 def _turn_spans(
-    mlflow: ModuleType, root: Any, record: TurnRecord, passages: dict[str, dict[str, Any]], models: _Models,
-    start: int,
+    mlflow: ModuleType, root: Any, record: TurnRecord, passages: dict[str, dict[str, Any]], stage_text: _StageText,
+    models: _Models, start: int,
 ) -> int:
     """Each LLM call at its recorded time, and each tool call after the call that asked for it; returns the end."""
     exchanges = record.llm_exchanges or []
@@ -496,17 +547,17 @@ def _turn_spans(
             stages.append(event)
         else:
             asked = calls[step].pop(0) if calls[step] else None
-            cursor = _tool_span(mlflow, root, asked, event, stages, passages, cursor)
+            cursor = _tool_span(mlflow, root, asked, event, stages, passages, stage_text, cursor)
             stages = []
         end = max(end, cursor)
     for leftover in (c for step_calls in calls.values() for c in step_calls):  # no event recorded for it
-        _tool_span(mlflow, root, leftover, None, [], passages, start)
+        _tool_span(mlflow, root, leftover, None, [], passages, stage_text, start)
     return max(end, start + _ms(record.total_ms))
 
 
 def _tool_span(
     mlflow: ModuleType, root: Any, call: AgentToolCall | None, event: StageEvent | None, stages: list[StageEvent],
-    passages: dict[str, dict[str, Any]], start: int,
+    passages: dict[str, dict[str, Any]], stage_text: _StageText, start: int,
 ) -> int:
     """One tool call with its search stages laid out in order inside it; returns its end."""
     name = call.tool if call is not None else event.stage if event is not None else "tool"
@@ -531,7 +582,7 @@ def _tool_span(
         if stage.hits is not None:
             child.set_outputs(_documents([
                 {"chunk_id": h.chunk_id, "document_id": h.document_id, "score": h.score, "rank": rank,
-                 "text": passages.get(h.chunk_id, {}).get("text", "")}
+                 "text": stage_text.of(h.chunk_id, passages)}
                 for rank, h in enumerate(stage.hits, 1)
             ]))
         t += _ms(stage.elapsed_ms)

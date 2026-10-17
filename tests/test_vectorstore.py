@@ -154,6 +154,18 @@ def test_get_metadatas_batches_ids_past_the_sql_variable_limit(
     assert sorted(stored) == [f"c{i}" for i in range(5)]
 
 
+def test_get_texts_returns_stored_text_for_present_ids_in_batches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = _store(tmp_path)
+    store.upsert([_chunk(f"c{i}", text=f"text {i}") for i in range(5)], [[1.0, float(i)] for i in range(5)])
+    monkeypatch.setattr("rag.vectorstore.chroma_store.GET_BATCH_SIZE", 2)
+
+    texts = store.get_texts([f"c{i}" for i in range(5)] + ["missing"])
+
+    assert texts == {f"c{i}": f"text {i}" for i in range(5)}
+
+
 def test_get_vector_store_factory_selects_chroma(tmp_path: Path) -> None:
     store = get_vector_store(
         VectorStoreConfig(provider="chroma", collection_name="c-collection"),

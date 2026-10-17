@@ -97,6 +97,15 @@ class VectorStore(ABC):
         # By default, assume no metadata exists for any id.
         return {}
 
+    def get_texts(self, ids: list[str]) -> dict[str, str]:
+        """Return a mapping of chunk_id -> stored chunk text for `ids`.
+
+        Missing ids are absent from the mapping. Lets a trace show the text of
+        a chunk a stage ranked but the answer never saw, which the turn record
+        keeps only by id. Default: empty, for backends that can't look text up.
+        """
+        return {}
+
     @abstractmethod
     def query(
         self, embedding: list[float], top_k: int, query_filter: QueryFilter | None = None
