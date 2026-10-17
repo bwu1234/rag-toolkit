@@ -1169,6 +1169,17 @@ the harness plan's publication.
   prunes lists. Pad to k instead. The `baseline` corpus's `eval_set.json` is
   document-matched only and hasn't been measured since the reranker change:
   add spans or retire it as a control.
+- **MLflow export: recognize tool events directly.** `rag/eval/tracking.py`
+  groups an agent turn's events by elimination: any stage that isn't an LLM
+  call or listed in `_SEARCH_STAGES` is taken to be a tool's own event, closes
+  the open search span and takes the next queued `AgentToolCall`. A new
+  retrieval stage missing from that list therefore shifts every later tool
+  span in the trace, or crashes the export. `route`, `expand` and `web_search`
+  did exactly this until they were added by hand. Instead, identify a tool's
+  event by name (each tool's own stage, such as `search`, `read_document` or
+  `calculate`, plus `search_refused`) and treat every other stage inside a tool
+  call as one of its search stages, with a span type looked up only for
+  display. Test with a stage the exporter has never seen.
 
 ### Milestone 28 — Production hardening
 
