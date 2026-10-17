@@ -28,6 +28,7 @@ from rag.eval.judge import judge_run  # noqa: E402
 from rag.eval.report import resolve  # noqa: E402
 from rag.eval.runs import Run, open_run  # noqa: E402
 from rag.eval.score import rescore  # noqa: E402
+from rag.events import PipelineEvent, hits_of  # noqa: E402
 from rag.llm.base import AssistantTurn, ToolCall  # noqa: E402
 from rag.observability.usage import metered_client  # noqa: E402
 from tests.fakes import ScriptedToolLLM  # noqa: E402
@@ -121,6 +122,17 @@ def test_a_refused_pair_exports_nothing(tmp_path: Path) -> None:
     assert code == 1 and not (tmp_path / "mlflow").exists()
 
 
+class _StagedTools(_FakeTools):
+    """Reports the search stages a real `RagTools.retrieve` does, so their spans can be checked."""
+
+    def retrieve(self, query: str, *args: Any, on_event: Any = None, **kwargs: Any) -> Any:  # type: ignore[override]
+        for stage in ("route", "expand", "web_search", "rerank", "select"):
+            hits = hits_of(self.results.get(query, [])) if stage in ("rerank", "select") else None
+            scale = None if hits is None else f"{stage} scale"
+            on_event(PipelineEvent(stage=stage, message=stage, elapsed_ms=1.0, hits=hits, score_scale=scale))
+        return super().retrieve(query, *args, on_event=on_event, **kwargs)
+
+
 def _agent_run(tmp_path: Path) -> Run:
     """A judged answer run of one agent turn: a search, then the answer; the agent on a qwen3.8 model."""
     config = RagConfig()
@@ -136,7 +148,7 @@ def _agent_run(tmp_path: Path) -> Run:
         AssistantTurn(content="", tool_calls=(ToolCall(name="rag_search", arguments={"query": "fuel"}),)),
         AssistantTurn(content="Delta, up 67% [1]."),
     ])
-    tools = _FakeTools({"fuel": [_chunk("c1", text="Aircraft fuel | 4,109 | 2,458", doc="DAL.md")]})
+    tools = _StagedTools({"fuel": [_chunk("c1", text="Aircraft fuel | 4,109 | 2,458", doc="DAL.md")]})
     agent = AgentService(metered_client(llm), tools, system_prompt="AGENT SYSTEM PROMPT", corpora=["baseline"])
     generate_into_run(run, dataset, agent)  # type: ignore[arg-type]
     judge_run(run, _Judge(), JUDGE)  # type: ignore[arg-type]
@@ -160,6 +172,15 @@ def test_an_agent_turn_exports_each_llm_call_and_its_transcript(tmp_path: Path, 
     assert first.attributes["rendered_prompt (reconstructed)"].startswith("```text\n<|im_start|>system\n")
     # At their recorded times: the search after the call that asked for it, before the next.
     assert first.end_time_ns <= search.start_time_ns <= second.start_time_ns
+    # Its retrieval stages sit inside it, not as tool calls of their own.
+    assert all(spans[s].parent_id == search.span_id for s in ("route", "expand", "web_search", "rerank", "select"))
+    # A ranking stage lists what it ranked, labelled, with the text where the model was shown it.
+    [hit] = spans["rerank"].outputs
+    assert hit["id"] == "c1" and hit["metadata"]["doc_uri"] == "DAL.md"
+    assert hit["metadata"]["rank"] == 1 and hit["metadata"]["score"] == 0.9
+    assert "Aircraft fuel" in hit["page_content"]
+    assert spans["rerank"].attributes["score"] == "rerank scale"  # as the component described it
+    assert spans["route"].outputs is None and "score" not in spans["route"].attributes
 
     path = store.client.download_artifacts(exported.run_id, trace.info.tags["rag.transcript"], str(tmp_path))
     transcript = Path(path).read_text(encoding="utf-8")

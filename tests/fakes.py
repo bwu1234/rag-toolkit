@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from pathlib import Path
 from types import ModuleType
 from typing import Any
 
@@ -10,6 +11,15 @@ import pytest
 
 from rag.eval.provenance import IndexProvenance
 from rag.llm.base import AssistantTurn, Message, ToolCallingLLM, ToolDefinition
+from rag.vectorstore.base import ScoredChunk
+
+
+def scored_chunk(chunk_id: str, score: float = 0.9, doc: str = "doc.md") -> ScoredChunk:
+    """A minimal retrieved chunk, for tests that only follow ids and scores."""
+    return ScoredChunk(
+        chunk_id=chunk_id, text=f"text of {chunk_id}", document_id=doc, source=Path(f"data/{doc}"),
+        doc_type="markdown", score=score,
+    )
 
 
 def skip_index_checks(monkeypatch: pytest.MonkeyPatch, matrix: ModuleType, *, verified: bool = False) -> None:

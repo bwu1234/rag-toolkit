@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 from rag.api.main import app
 from rag.api.routes.chat import get_chat_service, get_turn_sink
 from rag.config.settings import AgentConfig, ChatConfig, EmbeddingConfig, LLMConfig, RagConfig, TurnLogConfig
-from rag.events import EventSink, PipelineEvent
+from rag.events import EventSink, PipelineEvent, hits_of
 from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
 from rag.agent.builder import build_agent_llm
@@ -61,7 +61,7 @@ class _Retriever:
         result = self.results[min(self.calls, len(self.results) - 1)]
         self.calls += 1
         if on_event is not None:
-            on_event(PipelineEvent(stage="rerank", message="reranked", elapsed_ms=10.0))
+            on_event(PipelineEvent(stage="rerank", message="reranked", elapsed_ms=10.0, hits=hits_of(result.chunks)))
         return result
 
 
@@ -293,9 +293,21 @@ def test_turn_record_captures_attempts_shown_cited_and_events() -> None:
     assert [p.chunk_id for p in record.attempts[0].retrieved] == ["a", "b"]
     assert record.attempts[0].kept is None  # no grader ran
     assert [e.stage for e in record.events] == ["rerank", "prompt", "generate"]
+    rerank, prompt, _ = record.events
+    assert [(h.chunk_id, h.document_id) for h in rerank.hits or []] == [("a", "a-doc"), ("b", "b-doc")]
+    assert prompt.hits is None  # only ranking stages carry hits
     assert record.llm_calls == 1 and record.prompt_tokens == 100
     assert record.metadata == {"corpus": "baseline"}
-    json.dumps(record.to_dict())  # must be JSON-serializable as-is
+    stored = json.loads(json.dumps(record.to_dict()))  # must be JSON-serializable as-is
+    assert TurnRecord.from_dict(stored).events == record.events
+
+
+def test_a_turn_logged_before_events_carried_hits_still_loads() -> None:
+    record = TurnRecord.from_dict({
+        "turn_id": "t1", "timestamp": "now", "query": "q", "outcome": "answered",
+        "events": [{"stage": "rerank", "message": "reranked", "elapsed_ms": 1.0}],
+    })
+    assert record.events[0].hits is None
 
 
 def test_turn_record_keeps_the_query_filter_and_omits_it_when_there_is_none() -> None:

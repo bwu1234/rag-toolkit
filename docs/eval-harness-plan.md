@@ -905,6 +905,9 @@ Remaining gaps:
   they can't be exported.
 - The UI was checked with headless screenshots of each view, not by clicking
   through filters or the assessment panel.
+- Tool spans are grouped by elimination, so an unlisted retrieval stage
+  breaks them; tracked under
+  [Milestone 27](backlog.md#milestone-27--eval-coverage-and-judge-reliability).
 
 **Decision: pending.** The checks pass apart from the Ollama-stopped
 inspection. The recommendation is to adopt MLflow for browsing and

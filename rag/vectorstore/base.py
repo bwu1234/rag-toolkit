@@ -13,7 +13,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from rag.chunking.models import Chunk, join_index_text
 from rag.query_filter import QueryFilter
@@ -65,6 +65,9 @@ class VectorStore(ABC):
     register it in `rag.vectorstore.factory.get_vector_store` based on
     `VectorStoreConfig.provider`.
     """
+
+    #: What `ScoredChunk.score` means from this store, for traces; override per backend.
+    score_scale: ClassVar[str] = "similarity, higher is closer"
 
     @abstractmethod
     def upsert(self, chunks: list[Chunk], embeddings: list[list[float]]) -> None:

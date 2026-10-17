@@ -39,6 +39,10 @@ already in the tree:
   the vector store's similarity. Use `normalize_rerank_score()` from
   `rag/retrieval/reranker.py` for unbounded logits, and `rescored()` to replace a
   score (`ScoredChunk` is frozen).
+- Vector stores, sparse indexes and rerankers set a `score_scale` class
+  attribute saying what their `.score` means (e.g. "1 - cosine distance").
+  Traces label each stage's ranked hits with it, and the base class's generic
+  default would describe your scores vaguely, or wrongly.
 - Never mutate `chunk.text`. Citations quote the source verbatim; contextual
   chunking prepends context at index time precisely so the stored text stays clean.
 

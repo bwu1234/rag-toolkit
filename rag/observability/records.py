@@ -17,6 +17,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Literal
 
+from rag.events import Hit
+
 TurnOutcome = Literal[
     "answered", "blank_query", "empty_index", "below_min_score", "graded_out", "generation_failed", "error"
 ]
@@ -201,6 +203,9 @@ class StageEvent:
     stage: str
     message: str
     elapsed_ms: float | None = None
+    hits: list[Hit] | None = None
+    """The stage's ranked output (see `PipelineEvent.hits`); None for stages that don't rank."""
+    score_scale: str | None = None
 
 
 @dataclass(frozen=True)
@@ -276,7 +281,10 @@ class TurnRecord:
                 RetrievalAttempt(**{**a, "retrieved": [RetrievedPassage(**p) for p in a.get("retrieved", [])]})
                 for a in data.get("attempts", [])
             ],
-            "events": [StageEvent(**e) for e in data.get("events", [])],
+            "events": [
+                StageEvent(**{**e, "hits": None if e.get("hits") is None else [Hit(**h) for h in e["hits"]]})
+                for e in data.get("events", [])
+            ],
             "agent_calls": [AgentToolCall.from_dict(c) for c in data.get("agent_calls", [])],
             "llm_exchanges": None if exchanges is None else [LLMExchange(**x) for x in exchanges],
         })

@@ -12,11 +12,13 @@ import pytest
 
 import rag.mcp.tools as mcp_tools
 from rag.config.settings import RagConfig
+from rag.events import PipelineEvent
 from rag.llm.gemini_llm import _declaration
 from rag.llm.ollama_llm import _tool_to_wire
 from rag.mcp.fallback import FallbackServer
 from rag.retrieval.retriever import RetrievalResult
-from rag.tools import RagTools, ToolSpec, build_tool_specs
+from rag.tools import MAX_RESULTS, SELECT_SCORE_SCALE, RagTools, ToolSpec, build_tool_specs
+from tests.fakes import scored_chunk
 
 
 @pytest.fixture()
@@ -122,6 +124,34 @@ def test_rag_tools_uses_a_given_config_without_reading_disk(monkeypatch: pytest.
 
     assert tools.config is config
     assert seen == [config]
+
+
+def test_retrieve_reports_the_cut_after_the_rerank(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The retriever reranks `MAX_RESULTS` deep, so its own event can't show the
+    cut to `top_k`; that must show up as a stage of its own, after the rerank."""
+
+    class _Retriever:
+        rerank_top_k = 5
+
+        def retrieve(self, query: str, *, query_filter: object = None, on_event: Any = None) -> RetrievalResult:
+            on_event(PipelineEvent(stage="rerank", message="reranked", elapsed_ms=1.0))
+            chunks = [scored_chunk(f"c{i}") for i in range(self.rerank_top_k)]
+            return RetrievalResult(chunks=chunks, candidate_count=len(chunks))
+
+    monkeypatch.setattr("rag.tools.build_retriever", lambda cfg, llm_client=None, corpora=None: _Retriever())
+    events: list[PipelineEvent] = []
+
+    _, result = RagTools(config=RagConfig()).retrieve("anything", top_k=3, on_event=events.append)
+
+    assert [e.stage for e in events] == ["rerank", "select"]
+    assert events[-1].message == f"Kept top 3 of {MAX_RESULTS} reranked result(s)"
+    assert [c.chunk_id for c in result.chunks] == ["c0", "c1", "c2"]
+    assert [h.chunk_id for h in events[-1].hits or []] == ["c0", "c1", "c2"]
+    assert events[-1].score_scale == SELECT_SCORE_SCALE
+
+    events.clear()
+    RagTools(config=RagConfig()).retrieve("anything", top_k=MAX_RESULTS, on_event=events.append)
+    assert [e.stage for e in events] == ["rerank"]  # nothing cut, so no select stage
 
 
 def test_rag_tools_refuses_both_a_path_and_a_config() -> None:

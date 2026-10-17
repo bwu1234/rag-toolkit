@@ -31,7 +31,7 @@ import sqlite3
 import threading
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from rag.chunking.models import Chunk, join_index_text
 from rag.query_filter import DOCUMENT_ID, QueryFilter
@@ -82,6 +82,8 @@ class SqliteFts5Index(SparseIndex):
     window `SparseIndex.has_chunk` describes: a run killed mid-way leaves this
     index holding exactly the batches the vector store holds.
     """
+
+    score_scale: ClassVar[str] = "FTS5 bm25(), min-max normalized within this list: top hit 1, last 0"
 
     def __init__(self, path: Path) -> None:
         check_sqlite_version()

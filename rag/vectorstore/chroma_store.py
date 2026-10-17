@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import chromadb
 
@@ -48,6 +48,8 @@ class ChromaVectorStore(VectorStore):
     flattening `Chunk` provenance + metadata into that shape on the way in,
     and reconstructing typed `ScoredChunk`s on the way out.
     """
+
+    score_scale: ClassVar[str] = "1 - cosine distance: cosine similarity, -1 to 1"
 
     def __init__(
         self, persist_dir: Path, collection_name: str, *, hnsw_ef_search: int = _CHROMA_DEFAULT_EF_SEARCH

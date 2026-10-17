@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import ClassVar
 
 import httpx
 
@@ -34,6 +35,8 @@ class SearxNGWebSearch:
     strictly more expensive per search than dense retrieval and should stay
     opt-in (`retrieval.web_search.enabled`).
     """
+
+    score_scale: ClassVar[str] = "cosine similarity of query and result-snippet embeddings"
 
     def __init__(self, embedder: EmbeddingModel, config: WebSearchConfig) -> None:
         self._embedder = embedder

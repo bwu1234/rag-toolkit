@@ -30,6 +30,7 @@ import inspect
 import logging
 import re
 import threading
+import time
 from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -41,7 +42,7 @@ from pydantic import Field, create_model
 from rag.chunking.chunkers import carried_metadata
 from rag.ingestion.models import Document
 from rag.config.settings import REPO_ROOT, CorpusSelection, RagConfig, load_config
-from rag.events import EventSink
+from rag.events import EventSink, emit
 from rag.query_filter import DOCUMENT_ID, QueryFilter, check_filterable
 from rag.llm.base import LLMClient, ToolDefinition
 from rag.retrieval.builder import build_retriever
@@ -56,6 +57,10 @@ logger = logging.getLogger(__name__)
 #: state, and taking the best 5 of a 20-deep rerank is identical to a 5-deep
 #: one because the reranker returns them sorted.
 MAX_RESULTS = 20
+
+#: The `select` stage keeps whatever scores the retriever returned: the
+#: reranker's, unless a wrapper (e.g. an injection eval's plant) inserted one.
+SELECT_SCORE_SCALE = "as returned to the caller: the rerank scores, unless a wrapper inserted a passage"
 
 #: Per-chunk character budget. Chunks run ~1000 chars and a default search
 #: returns five of them; handing an agent the full text of all of them at once
@@ -382,7 +387,16 @@ class RagTools:
         names = [corpus] if isinstance(corpus, str) else corpus
         selection, retriever = self._retriever_for(names)
         outcome = retriever.retrieve(query, query_filter=query_filter, on_event=on_event)
-        return selection, dataclasses.replace(outcome, chunks=outcome.chunks[:requested])
+        start = time.monotonic()
+        kept = outcome.chunks[:requested]
+        if len(kept) < len(outcome.chunks):
+            # The retriever reranks `MAX_RESULTS` deep (see `_retriever_for`),
+            # so its rerank event can't show this cut.
+            emit(
+                on_event, start, "select", f"Kept top {len(kept)} of {len(outcome.chunks)} reranked result(s)",
+                kept, SELECT_SCORE_SCALE,
+            )
+        return selection, dataclasses.replace(outcome, chunks=kept)
 
     def search(
         self,
