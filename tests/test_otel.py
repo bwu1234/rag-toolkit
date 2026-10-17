@@ -23,7 +23,7 @@ from rag.agent.service import AgentService
 from rag.config.settings import CorpusSelection, OtelExportConfig, RagConfig, TurnLogConfig
 from rag.events import EventSink, emit
 from rag.generation.chat_service import ChatService
-from rag.llm.base import AssistantTurn, LLMClient, LLMUsage, Message, ToolCall, ToolDefinition
+from rag.llm.base import AssistantTurn, Completion, LLMClient, LLMUsage, Message, ToolCall, ToolDefinition
 from rag.observability.factory import get_turn_sink
 from rag.observability.otel import OtelTurnSink
 from rag.observability.records import AgentToolCall, FeedbackRecord, StageEvent, TurnRecord
@@ -73,11 +73,11 @@ class _SlowLLM(LLMClient):
         self.reply = reply
 
     def generate(self, prompt: str, *, system: str | None = None) -> str:
-        return self.generate_with_usage(prompt, system=system)[0]
+        return self.generate_completion(prompt, system=system).text
 
-    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+    def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
         time.sleep(_PAUSE_S)
-        return self.reply, LLMUsage(100, 20)
+        return Completion(self.reply, LLMUsage(100, 20))
 
 
 class _Retriever:

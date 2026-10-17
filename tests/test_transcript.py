@@ -17,7 +17,7 @@ import pytest
 from rag.agent.service import AgentService
 from rag.generation.chat_service import ChatService
 from rag.llm import ollama_raw
-from rag.llm.base import AssistantTurn, ChatMessage, LLMUsage, Message, ToolCall, ToolDefinition
+from rag.llm.base import AssistantTurn, ChatMessage, Completion, LLMUsage, Message, ToolCall, ToolDefinition
 from rag.observability.records import LLMExchange, TurnRecord
 from rag.llm.ollama_llm import _to_wire, _tool_to_wire
 from rag.observability.transcript import _fence, render_turn_markdown, with_rendered_prompts, write_trace
@@ -99,7 +99,7 @@ def test_on_record_gets_the_transcript_and_the_turn_log_does_not() -> None:
 
 def test_on_record_works_without_a_turn_sink_and_on_a_failed_turn() -> None:
     class _Down(_UsageLLM):
-        def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+        def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
             raise TimeoutError("model down")
 
     service = ChatService(retriever=_Retriever(_result("a")), llm_client=MeteredLLMClient(_Down()))

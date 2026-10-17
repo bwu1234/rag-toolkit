@@ -120,10 +120,11 @@ def test_generate_joins_text_parts_and_skips_thoughts() -> None:
     assert client.generate("q") == "PASS - matches"
 
 
-def test_generate_with_usage_reports_token_counts() -> None:
+def test_generate_completion_reports_token_counts() -> None:
     client, _ = _client(lambda request: _ok(total_tokens=50))
 
-    text, usage = client.generate_with_usage("q")
+    completion = client.generate_completion("q")
+    text, usage = completion.text, completion.usage
 
     assert text == "PASS"
     assert usage is not None
@@ -145,7 +146,7 @@ def test_generate_raises_on_blocked_prompt() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_thinking_level_is_sent_as_the_upper_case_enum() -> None:
+def test_thinking_level_is_sent_as_the_upper_case_enum_with_summaries_asked_for() -> None:
     bodies: list[dict] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -155,7 +156,33 @@ def test_thinking_level_is_sent_as_the_upper_case_enum() -> None:
     client, _ = _client(handler, thinking_level="minimal")
     client.generate("q")
 
-    assert bodies[0]["generationConfig"]["thinkingConfig"] == {"thinkingLevel": "MINIMAL"}
+    assert bodies[0]["generationConfig"]["thinkingConfig"] == {"thinkingLevel": "MINIMAL", "includeThoughts": True}
+
+
+def _with_thoughts() -> httpx.Response:
+    """A thinking model's reply: two thought-summary parts, then the answer."""
+    return httpx.Response(200, json={"candidates": [{"content": {"role": "model", "parts": [
+        {"text": "Look up the lease note. ", "thought": True},
+        {"text": "Compare the two years.", "thought": True},
+        {"text": "PASS"},
+    ]}}]})
+
+
+def test_thought_summaries_come_back_as_thinking_never_as_the_answer() -> None:
+    client, _ = _client(lambda request: _with_thoughts(), thinking_level="low")
+
+    completion = client.generate_completion("q")
+    turn = client.chat([ChatMessage(role="user", content="q")])
+
+    assert (completion.text, completion.thinking) == ("PASS", "Look up the lease note. Compare the two years.")
+    assert (turn.content, turn.thinking) == ("PASS", "Look up the lease note. Compare the two years.")
+    assert client.generate("q") == "PASS"
+
+
+def test_a_reply_without_thoughts_has_no_thinking() -> None:
+    client, _ = _client(lambda request: _ok())
+
+    assert client.generate_completion("q").thinking is None
 
 
 def test_no_thinking_config_is_sent_unless_asked() -> None:
@@ -182,7 +209,7 @@ def test_thought_tokens_count_as_completion_tokens() -> None:
 
     client, _ = _client(handler)
 
-    _, usage = client.generate_with_usage("q")
+    usage = client.generate_completion("q").usage
 
     assert usage is not None
     assert (usage.prompt_tokens, usage.completion_tokens) == (100, 45)
@@ -197,7 +224,7 @@ def test_missing_output_counts_stay_unknown_rather_than_zero() -> None:
 
     client, _ = _client(handler)
 
-    _, usage = client.generate_with_usage("q")
+    usage = client.generate_completion("q").usage
 
     assert usage is not None
     assert usage.completion_tokens is None

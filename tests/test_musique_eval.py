@@ -25,7 +25,7 @@ from rag.eval.musique_eval import (
     summarize,
 )
 from rag.generation.chat_service import ChatAnswer, ChatService, Citation
-from rag.llm.base import LLMClient, LLMUsage
+from rag.llm.base import Completion, LLMClient, LLMUsage
 from rag.observability.usage import metered_client
 from tests.fakes import skip_index_checks
 
@@ -87,10 +87,10 @@ def test_a_stratified_sample_keeps_hop_shares_and_is_the_same_every_time() -> No
 
 class _Metered(LLMClient):
     def generate(self, prompt: str, *, system: str | None = None) -> str:
-        return self.generate_with_usage(prompt, system=system)[0]
+        return self.generate_completion(prompt, system=system).text
 
-    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
-        return f"answer to {prompt}", LLMUsage(prompt_tokens=7, completion_tokens=3)
+    def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
+        return Completion(f"answer to {prompt}", LLMUsage(prompt_tokens=7, completion_tokens=3))
 
 
 def test_the_closed_book_responder_answers_without_retrieval_and_is_metered() -> None:

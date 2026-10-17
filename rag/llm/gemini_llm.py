@@ -25,6 +25,13 @@ tokens are drawn from `maxOutputTokens` and reported apart from the answer's
 (`thoughtsTokenCount`), so this adapter sends `thinking_level` when set, counts
 thoughts as completion tokens (as Ollama's `eval_count` already does for qwen),
 and raises when thinking spent the whole budget instead of returning "".
+With a level set it also asks for thought summaries (`includeThoughts`) and
+returns them as `thinking`, so a trace shows them -- Google's summary, never the
+raw thoughts, and none when the model didn't think (common at `minimal`). Not
+a config setting: it would re-key every config and judge hash, and summaries
+don't change the call. Checked 2026-10-17 on Flash-Lite 3.5 at `low`, six calls
+of one prompt: thought tokens 622 without vs 650 with, the same answer, and
+whether the model thought at all varied call to call either way.
 
 It is also a `ToolCallingLLM`, for the Milestone 19 agent. Gemini's function
 calling has two rules a port of the Ollama adapter would break. A Gemini 3
@@ -55,6 +62,7 @@ from rag.llm.daily_budget import DailyRequestCounter
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
+    Completion,
     ContextLimits,
     LLMUsage,
     Message,
@@ -131,20 +139,21 @@ class GeminiLLMClient(ToolCallingLLM):
         self._sleep: Callable[[float], None] = time.sleep
 
     def generate(self, prompt: str, *, system: str | None = None) -> str:
-        return self.generate_with_usage(prompt, system=system)[0]
+        return self.generate_completion(prompt, system=system).text
 
-    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+    def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
         estimate = int(len(prompt + (system or "")) / _CHARS_PER_TOKEN) + 1
         payload, usage = self._generate([{"role": "user", "parts": [{"text": prompt}]}], system, [], estimate)
-        return _response_parts(payload, max_tokens=self.max_tokens)[0], usage
+        text, _, thinking = _response_parts(payload, max_tokens=self.max_tokens)
+        return Completion(text, usage, thinking)
 
     def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:
         system, contents = _to_contents(messages)
         declarations = [_declaration(t) for t in tools]
         estimate = int(len(json.dumps(contents) + (system or "") + json.dumps(declarations)) / _CHARS_PER_TOKEN) + 1
         payload, usage = self._generate(contents, system, declarations, estimate)
-        text, calls = _response_parts(payload, max_tokens=self.max_tokens)
-        return AssistantTurn(content=text, tool_calls=calls, usage=usage)
+        text, calls, thinking = _response_parts(payload, max_tokens=self.max_tokens)
+        return AssistantTurn(content=text, tool_calls=calls, thinking=thinking, usage=usage)
 
     def context_limits(self) -> ContextLimits | None:
         # The window isn't configured for hosted models (Flash-Lite's is about
@@ -164,8 +173,12 @@ class GeminiLLMClient(ToolCallingLLM):
             "maxOutputTokens": self.max_tokens,
         }
         if self.thinking_level is not None:
-            # The REST enum is upper case (MINIMAL, LOW, MEDIUM, HIGH).
-            generation_config["thinkingConfig"] = {"thinkingLevel": self.thinking_level.upper()}
+            # The REST enum is upper case (MINIMAL, LOW, MEDIUM, HIGH). Thought
+            # summaries are asked for so a trace can show them; they are written
+            # after the thinking, so the answer and the level are unchanged.
+            generation_config["thinkingConfig"] = {
+                "thinkingLevel": self.thinking_level.upper(), "includeThoughts": True,
+            }
         body: dict[str, object] = {"contents": contents, "generationConfig": generation_config}
         if system is not None:
             body["systemInstruction"] = {"parts": [{"text": system}]}
@@ -348,8 +361,10 @@ def _declaration(tool: ToolDefinition) -> dict[str, Any]:
     return {"name": tool.name, "description": tool.description, "parametersJsonSchema": tool.parameters}
 
 
-def _response_parts(payload: dict[str, object], *, max_tokens: int) -> tuple[str, tuple[ToolCall, ...]]:
-    """The answer text and function calls of the first candidate, skipping thought-summary parts.
+def _response_parts(
+    payload: dict[str, object], *, max_tokens: int
+) -> tuple[str, tuple[ToolCall, ...], str | None]:
+    """The answer text, function calls and thought summary (None if none) of the first candidate.
 
     Raises when the token cap left neither an answer nor a call -- with a
     thinking model, usually because thoughts used it up -- since "" would read
@@ -365,9 +380,9 @@ def _response_parts(payload: dict[str, object], *, max_tokens: int) -> tuple[str
     parts = content.get("parts") if isinstance(content, dict) else None
     reason = candidate.get("finishReason") if isinstance(candidate, dict) else None
     valid_parts = [p for p in (parts if isinstance(parts, list) else []) if isinstance(p, dict)]
-    text = "".join(
-        part["text"] for part in valid_parts if isinstance(part.get("text"), str) and not part.get("thought")
-    )
+    texts = [part for part in valid_parts if isinstance(part.get("text"), str)]
+    text = "".join(part["text"] for part in texts if not part.get("thought"))
+    thinking = "".join(part["text"] for part in texts if part.get("thought")) or None
     calls = tuple(_parse_call(part) for part in valid_parts if "functionCall" in part)
     if reason in ("MALFORMED_FUNCTION_CALL", "UNEXPECTED_TOOL_CALL"):
         raise RuntimeError(f"Gemini rejected the model's own function call (finishReason={reason}): {candidate!r}")
@@ -381,7 +396,7 @@ def _response_parts(payload: dict[str, object], *, max_tokens: int) -> tuple[str
         logger.warning("Gemini answer truncated at max_tokens=%d", max_tokens)
     elif not isinstance(parts, list):
         raise RuntimeError(f"Gemini candidate has no content (finishReason={reason!r}): {candidate!r}")
-    return text, calls
+    return text, calls, thinking
 
 
 def _parse_call(part: dict[str, Any]) -> ToolCall:

@@ -34,6 +34,7 @@ from typing import Any, overload
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
+    Completion,
     ContextLimits,
     LLMClient,
     LLMUsage,
@@ -116,13 +117,13 @@ class MeteredLLMClient(LLMClient):
         self.inner = inner
 
     def generate(self, prompt: str, *, system: str | None = None) -> str:
-        return self.generate_with_usage(prompt, system=system)[0]
+        return self.generate_completion(prompt, system=system).text
 
-    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+    def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
         start = time.monotonic()
         meter = _ACTIVE_METER.get()
         try:
-            text, usage = self.inner.generate_with_usage(prompt, system=system)
+            completion = self.inner.generate_completion(prompt, system=system)
         except Exception as exc:
             if meter is not None and meter.exchanges is not None:
                 meter.exchanges.append(LLMExchange(
@@ -132,15 +133,16 @@ class MeteredLLMClient(LLMClient):
             raise
         if meter is not None:
             elapsed = _ms_since(start)
+            usage = completion.usage
             meter.record(usage, elapsed)
             if meter.exchanges is not None:
                 meter.exchanges.append(LLMExchange(
                     kind="generate", started_ms=meter.since_start_ms(start), elapsed_ms=elapsed,
-                    system=system, prompt=prompt, response=text,
+                    system=system, prompt=prompt, response=completion.text, thinking=completion.thinking,
                     prompt_tokens=usage.prompt_tokens if usage else None,
                     completion_tokens=usage.completion_tokens if usage else None,
                 ))
-        return text, usage
+        return completion
 
 
 class MeteredToolCallingLLM(MeteredLLMClient, ToolCallingLLM):

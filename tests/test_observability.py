@@ -22,7 +22,7 @@ from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
 from rag.agent.builder import build_agent_llm
 from rag.llm.gemini_llm import GeminiLLMClient
-from rag.llm.base import AssistantTurn, ChatMessage, LLMClient, LLMUsage, ToolCallingLLM
+from rag.llm.base import AssistantTurn, ChatMessage, Completion, LLMClient, LLMUsage, ToolCallingLLM
 from rag.llm.ollama_llm import OllamaLLMClient
 from rag.generation.prompts import parse_cited_passages
 from rag.observability.factory import config_fingerprint, get_turn_sink as build_turn_sink
@@ -74,12 +74,12 @@ class _UsageLLM(LLMClient):
         self.calls = 0
 
     def generate(self, prompt: str, *, system: str | None = None) -> str:
-        return self.generate_with_usage(prompt, system=system)[0]
+        return self.generate_completion(prompt, system=system).text
 
-    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+    def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
         reply = self.replies[min(self.calls, len(self.replies) - 1)]
         self.calls += 1
-        return reply, self.usage
+        return Completion(reply, self.usage)
 
 
 class _RecordingSink(TurnSink):
@@ -151,12 +151,12 @@ def test_tokens_stay_unknown_when_the_provider_reports_none() -> None:
     assert meter.prompt_tokens is None and meter.completion_tokens is None
 
 
-def test_default_generate_with_usage_reports_no_usage() -> None:
+def test_default_generate_completion_reports_text_only() -> None:
     class _Plain(LLMClient):
         def generate(self, prompt: str, *, system: str | None = None) -> str:
             return "hi"
 
-    assert _Plain().generate_with_usage("q") == ("hi", None)
+    assert _Plain().generate_completion("q") == Completion("hi")
 
 
 def test_metered_tool_client_records_chat_usage_into_the_active_meter() -> None:
@@ -238,7 +238,21 @@ def test_ollama_client_reports_prompt_and_eval_counts() -> None:
 
     client = OllamaLLMClient(model="m", base_url="http://fake:11434")
     client._client = httpx.Client(base_url=client.base_url, transport=httpx.MockTransport(handler))
-    assert client.generate_with_usage("q") == ("hi", LLMUsage(prompt_tokens=26, completion_tokens=282))
+    assert client.generate_completion("q") == Completion("hi", LLMUsage(prompt_tokens=26, completion_tokens=282))
+
+
+def test_ollama_generate_returns_its_thinking_and_the_meter_records_it() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"message": {"role": "assistant", "content": "hi", "thinking": "Read it."}})
+
+    client = OllamaLLMClient(model="m", base_url="http://fake:11434")
+    client._client = httpx.Client(base_url=client.base_url, transport=httpx.MockTransport(handler))
+    with metered(capture=True) as meter:
+        text = MeteredLLMClient(client).generate("q")
+
+    assert text == "hi"
+    assert meter.exchanges is not None
+    assert [(x.kind, x.response, x.thinking) for x in meter.exchanges] == [("generate", "hi", "Read it.")]
 
 
 def test_ollama_client_treats_missing_counts_as_unknown() -> None:
@@ -247,7 +261,7 @@ def test_ollama_client_treats_missing_counts_as_unknown() -> None:
 
     client = OllamaLLMClient(model="m", base_url="http://fake:11434")
     client._client = httpx.Client(base_url=client.base_url, transport=httpx.MockTransport(handler))
-    assert client.generate_with_usage("q")[1] == LLMUsage(None, None)
+    assert client.generate_completion("q").usage == LLMUsage(None, None)
 
 
 # ---------------------------------------------------------------------------

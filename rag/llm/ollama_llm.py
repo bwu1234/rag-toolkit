@@ -30,6 +30,7 @@ from rag.llm import ollama_raw
 from rag.llm.base import (
     AssistantTurn,
     ChatMessage,
+    Completion,
     ContextLimits,
     ContextOverflowError,
     LLMUsage,
@@ -112,9 +113,9 @@ class OllamaLLMClient(ToolCallingLLM):
         self._timeout = timeout
 
     def generate(self, prompt: str, *, system: str | None = None) -> str:
-        return self.generate_with_usage(prompt, system=system)[0]
+        return self.generate_completion(prompt, system=system).text
 
-    def generate_with_usage(self, prompt: str, *, system: str | None = None) -> tuple[str, LLMUsage | None]:
+    def generate_completion(self, prompt: str, *, system: str | None = None) -> Completion:
         messages: list[dict[str, Any]] = []
         if system is not None:
             messages.append({"role": "system", "content": system})
@@ -122,7 +123,10 @@ class OllamaLLMClient(ToolCallingLLM):
 
         payload = self._post_chat(messages)
         message = payload["message"]
-        return message["content"], self._usage(payload)
+        thinking = message.get("thinking")
+        return Completion(
+            message["content"], self._usage(payload), thinking if isinstance(thinking, str) and thinking else None
+        )
 
     def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:
         if self.raw:
