@@ -661,7 +661,18 @@ def _llm_span(mlflow: ModuleType, parent: Any, exchange: LLMExchange, number: in
                                    "tool_calls": exchange.tool_calls}, ids)[0]
         span.set_outputs({"object": "chat.completion", "model": model, "choices": [
             {"index": 0, "message": reply, "finish_reason": exchange.stop_reason}]})
-    span.end(end_time_ns=begin + _ms(exchange.elapsed_ms))
+    end = begin + _ms(exchange.elapsed_ms)
+    if exchange.thinking:
+        # Its own span, because MLflow's chat view drops reasoning content: the
+        # reply above carries it too, but nothing there shows it.
+        thinking = mlflow.start_span_no_context(
+            "thinking", "UNKNOWN", parent_span=span, start_time_ns=begin,
+            attributes={"note": "The model's reasoning as its provider returned it (Gemini: a summary of it). "
+                                "Not part of the response."},
+        )
+        thinking.set_outputs(exchange.thinking)
+        thinking.end(end_time_ns=end)
+    span.end(end_time_ns=end)
     return span
 
 
