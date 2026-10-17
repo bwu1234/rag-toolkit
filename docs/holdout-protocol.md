@@ -160,6 +160,17 @@ Known gaps in the drafts:
 `audit` reports two spans that the structured chunker splits across chunks.
 They are kept, as the protocol requires.
 
+## Where the questions live
+
+The repository is public, and a question that has been published is no
+longer held out. The draft (`data/eval/drafts/fresh_v1_draft.json`) and the
+frozen question files (`data/eval/holdout/fresh_v1_*_*.json`) are therefore
+gitignored and live only on the reviewer's machine. The committed freeze
+record pins each of them by sha256, so a later run can show it used exactly
+the frozen files. Keep a private backup of them (outside this repository's
+remotes): losing the draft loses the review, and losing the frozen files
+loses the set.
+
 ## How to review
 
 ```
@@ -219,7 +230,8 @@ a stratified 20%: every family, both splits, accepts and rejects.
 2. `finalize` refuses while any verdict or rubric decision is missing. It
    then writes `data/eval/holdout/fresh_v1_{dev,holdout}_{retrieval,answer,multipart}.json`
    and `fresh_v1_freeze.json`. The freeze file records the corpus snapshot,
-   file hashes, split, counts and reviewers. Commit them before any run.
+   file hashes, split, counts and reviewers. Commit the freeze file before
+   any run; the question files stay out of git (see below).
 3. **Predeclare, then run once.** Before the first holdout run, append to
    `holdout_uses` in the freeze file:
    - the frozen candidate and baseline configs;

@@ -40,6 +40,12 @@ data/logs/
 .env
 draft/
 pytest-cache-files-gvcbngex/
+# Fresh holdout questions (docs/holdout-protocol.md): never committed, the repo is
+# public. The draft and the frozen question files stay on the reviewer's machine;
+# only the freeze record, which pins them by sha256, is committed.
+data/eval/drafts/fresh_v1_draft.json
+data/eval/holdout/fresh_v1_*.json
+!data/eval/holdout/fresh_v1_freeze.json
 # Per-sample eval checkpoints (rag/eval/checkpoint.py); deleted once a set finishes.
 data/eval/results/.partial/
 # Eval run folders (rag/eval/runs.py). Ignored by default: `git add -f` the
