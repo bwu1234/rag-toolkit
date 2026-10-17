@@ -53,6 +53,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+from rag.events import RETRIEVAL_STAGES
 from rag.eval.compare import PAIRED_METRICS, Comparison, compare, flip_rows, render_comparison, samples_by_id
 from rag.eval.provenance import flatten, without_denylisted
 from rag.eval.report import Ineligible, Pinned, resolve
@@ -89,10 +90,10 @@ _UNSAFE_NAME = re.compile(r"[^\w\-. :/]")
 _LATENCY_SPANS = {"embed": "EMBEDDING", "vector_search": "RETRIEVER", "rerank": "RERANKER"}
 #: Turn events that are an LLM call (its exchange has the timing).
 _LLM_EVENTS = {"agent_step", "agent_answer"}
-#: Every stage `Retriever` or `RagTools.retrieve` can emit: one missing here is
-#: read as a tool's own event and closes the search span early.
-_SEARCH_STAGES = {**_LATENCY_SPANS, "sparse_search": "RETRIEVER", "web_search": "RETRIEVER", "fusion": "UNKNOWN",
-                  "route": "UNKNOWN", "expand": "UNKNOWN", "select": "UNKNOWN"}
+_SEARCH_STAGES = {
+    stage: {**_LATENCY_SPANS, "sparse_search": "RETRIEVER", "web_search": "RETRIEVER"}.get(stage, "UNKNOWN")
+    for stage in RETRIEVAL_STAGES
+}
 
 
 def _mlflow() -> ModuleType:
@@ -320,7 +321,7 @@ def _judgment_path(pinned: Pinned, suffix: str) -> Path | None:
     return path if path.exists() else None
 
 
-def _judge_replies(pinned: Pinned) -> dict[str, list[dict[str, Any]]]:
+def judge_replies(pinned: Pinned) -> dict[str, list[dict[str, Any]]]:
     """Sample id -> the judgment attempt's verdicts, for answer revisions that name one."""
     path = _judgment_path(pinned, ".jsonl")
     if path is None:
@@ -339,7 +340,7 @@ def _log_traces(mlflow: ModuleType, pinned: Pinned) -> None:
     stage = pinned.run.manifest["stage"]
     outputs = {r["sample_id"]: r for r in pinned.run.read_outputs()}
     labels = {s.id: s.to_dict() for s in pinned.run.labels(pinned.scores["dataset_hash"])}
-    replies = _judge_replies(pinned)
+    replies = judge_replies(pinned)
     scorer = AssessmentSource(source_type=AssessmentSourceType.CODE, source_id=pinned.scores["scorer"])
     judge = AssessmentSource(
         source_type=AssessmentSourceType.LLM_JUDGE,

@@ -77,7 +77,8 @@ passage shown. It now parses the `[n]` markers (`parse_cited_passages`) and
 reports `cited_chunk_ids` separately. What shipped and why:
 [milestone notes](milestone-notes.md#observability-notes-milestone-12).
 Not done here: stage-1 (pre-rerank) candidate ids aren't recorded, since
-`Retriever` doesn't return them, and no OpenTelemetry adapter exists yet.
+`Retriever` doesn't return them. The OpenTelemetry adapter came later
+(Milestone 26).
 
 Today a turn's reasoning is visible only live, via `PipelineEvent` in the UI
 trace; nothing is persisted, and no turn reports what it cost or how long it
@@ -864,6 +865,23 @@ on EDGAR.
   reversal in `docs/measured-results.md` is the precedent.
 
 ### Milestone 26 — OpenTelemetry trace export
+
+**Drafted; checked against a local Arize Phoenix (20.23).** `observability.turn_log.otel`
+adds `OtelTurnSink` (`rag/observability/otel.py`) beside the JSONL log: each
+turn one trace, trace id = turn id, stages and model calls at their recorded
+times, GenAI-convention attributes, text only with `capture_content`.
+`python -m rag.eval.otel_export` sends stored eval runs the same way under
+their own service name, since the runners never write the turn log; stored
+turns predate stage end times, so their timeline is rebuilt from the model
+calls'. In Phoenix: all 17 local runs land (12,896 spans, 1,533 traces, no
+orphaned parents); it maps the `gen_ai.*` attributes to its own token counts,
+span kinds and conversation view (messages must use the conventions' parts
+shape, and output messages need `finish_reason`); it keeps the first write of
+a span id, so eval trace keys include the exporter version, resource and
+content setting. GenAI has no rerank operation, so spans also carry
+OpenInference's `openinference.span.kind` (an attribute, not a dependency),
+which Phoenix reads: every span gets a kind, rerank as RERANKER. Open:
+Langfuse; scores are attributes, not Phoenix annotations or Langfuse scores.
 
 The turn log is local JSONL, read by `python -m rag.cli turns`. That is
 deliberate (Milestone 12), and the sink sits behind an interface so an
