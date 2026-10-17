@@ -11,7 +11,7 @@ Adding a backend is therefore a fixed five-step edit, and **all five are
 required** — a class with no factory branch is unreachable, and a factory
 branch with no config field is unselectable.
 
-## The five interfaces
+## The six interfaces
 
 | Interface | ABC | Factory | Config model |
 |---|---|---|---|
@@ -94,8 +94,8 @@ the heavy dependency for a small fake rather than download a model — see
 - `pytest`.
 - If the new provider changes what retrieval returns, it is **unmeasured**. Do not
   make it the default in `config.yaml` on the strength of it working. Add it as a
-  variant and use the `measure-change` skill — this repo has already shipped
-  four features that turned out to be no better than noise.
+  variant and use the `measure-change` skill — several features here shipped
+  working and still measured no better than noise on the eval sets.
 
 ## Two traps this repo has already hit
 
