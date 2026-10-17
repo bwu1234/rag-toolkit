@@ -163,19 +163,29 @@ They are kept, as the protocol requires.
 ## How to review
 
 ```
-python scripts/build_holdout.py review                 # every pending draft, with context
+python scripts/build_holdout.py review --serve         # review in the browser (127.0.0.1:8765)
+python scripts/build_holdout.py review                 # every pending draft, with context, as text
 python scripts/build_holdout.py review --id fh-aal-...  # one draft
 python scripts/build_holdout.py audit                  # re-run every mechanical check
 ```
 
-Edit `data/eval/drafts/fresh_v1_draft.json` in place. For each draft, fill
-in:
+For each draft, record:
 
 - `review.verdict`: `accept` or `reject`;
 - `review.reviewer`;
 - for each of `answerability`, `usefulness` and `clarity`, a `decision`
   (`pass` or `fail`) and a `reason`;
 - `review.edits`: what was changed, if anything.
+
+`review --serve` shows one draft per screen, with the evidence inside its
+source passage (table rows with their header), and a form that writes the
+`review` block of `data/eval/drafts/fresh_v1_draft.json`. A save refuses a
+record that breaks the rule `finalize` applies (a reviewer, a decision and
+reason on every dimension, an accept that passes all three, a reject that
+fails one), and refuses to overwrite a record that changed on disk since the
+page loaded it. Edits to the draft itself (question, answer, alternative
+quotes) are still made in the file; reload the page to see them. Without the
+server, edit the `review` block in the file directly.
 
 Reject rather than repair a draft whose question you would not have asked.
 Run `audit` after edits; then run `finalize`.

@@ -41,7 +41,9 @@ Lifecycle
     (reported, not refused: the plan keeps those tasks and tracks the loss).
 ``review``
     Print drafts with the context a reviewer needs: the evidence's section
-    and paragraph, other filings with the same text, leakage flags.
+    and paragraph, other filings with the same text, leakage flags. With
+    ``--serve``, show the same in a local browser page whose form writes each
+    draft's review record (:mod:`holdout_review`).
 ``finalize``
     Refuse while any verdict is pending, re-run the audit on the accepted
     samples, then write one file per split and runner plus a freeze record
@@ -54,6 +56,7 @@ Usage
     python scripts/build_holdout.py assemble SRC_DIR
     python scripts/build_holdout.py audit [--config PATH]
     python scripts/build_holdout.py review [--show pending|accept|reject|all] [--id ID]
+    python scripts/build_holdout.py review --serve [--port N]   # browser form; see holdout_review.py
     python scripts/build_holdout.py finalize [--config PATH]
 """
 
@@ -246,6 +249,37 @@ def has_review_decision(sample: dict[str, Any]) -> bool:
     return review.get("verdict") != "pending" or any(
         (review.get(dim) or {}).get("decision") is not None for dim in REVIEW_DIMENSIONS
     )
+
+
+def review_problems(review: dict[str, Any]) -> list[str]:
+    """What keeps a review record from meeting the rubric; empty when it does.
+
+    A pending record may hold partial notes. A verdict needs a reviewer and a
+    decision and reason on every dimension, and has to agree with them: an
+    accept passes every dimension, a reject fails at least one.
+    """
+    verdict = review.get("verdict")
+    if verdict not in VERDICTS:
+        return [f"verdict must be one of {', '.join(VERDICTS)}"]
+    problems: list[str] = []
+    decisions: list[Any] = []
+    for dim in REVIEW_DIMENSIONS:
+        block = review.get(dim) or {}
+        decision = block.get("decision")
+        decisions.append(decision)
+        if decision not in (None, "pass", "fail"):
+            problems.append(f"{dim}: decision must be pass or fail")
+        elif verdict != "pending" and decision is None:
+            problems.append(f"{dim}: needs a decision")
+        if verdict != "pending" and not block.get("reason"):
+            problems.append(f"{dim}: needs a reason")
+    if verdict != "pending" and not review.get("reviewer"):
+        problems.append("needs a reviewer")
+    if not problems and verdict == "accept" and "fail" in decisions:
+        problems.append("an accept must pass every dimension")
+    if not problems and verdict == "reject" and "fail" not in decisions:
+        problems.append("a reject must fail at least one dimension")
+    return problems
 
 
 # --------------------------------------------------------------------------
@@ -715,14 +749,17 @@ def cmd_finalize(path: Path, config_path: str | None) -> int:
     samples = EvalDataset.load(path).samples
     pending = [s.id for s in samples if s.extra["review"]["verdict"] == "pending"]
     unknown = [s.id for s in samples if s.extra["review"]["verdict"] not in VERDICTS]
-    undecided = [
-        s.id for s in samples
+    incomplete = {
+        s.id: problems for s in samples
         if s.extra["review"]["verdict"] in ("accept", "reject")
-        and not all((s.extra["review"].get(d) or {}).get("decision") for d in REVIEW_DIMENSIONS)
-    ]
-    if pending or unknown or undecided:
+        and (problems := review_problems(s.extra["review"]))
+    }
+    if pending or unknown or incomplete:
         print(f"Refusing: {len(pending)} pending, {len(unknown)} unknown verdict(s), "
-              f"{len(undecided)} without a decision on every rubric dimension.")
+              f"{len(incomplete)} without a complete review record "
+              "(reviewer, and a decision and reason on every rubric dimension).")
+        for sample_id, problems in incomplete.items():
+            print(f"  {sample_id}: {'; '.join(problems)}")
         return 1
     accepted = [s for s in samples if s.extra["review"]["verdict"] == "accept"]
     config, corpus, chunk_texts, dev_index = _corpus_and_index(config_path)
@@ -792,6 +829,9 @@ def main() -> int:
     rev.add_argument("--config", default=None)
     rev.add_argument("--show", choices=("all", *VERDICTS), default="pending")
     rev.add_argument("--id", default=None)
+    rev.add_argument("--serve", action="store_true", help="Review in the browser; saves write the draft file")
+    rev.add_argument("--port", type=int, default=8765)
+    rev.add_argument("--no-open", action="store_true", help="With --serve, don't open a browser")
     args = parser.parse_args()
 
     if args.command == "split":
@@ -800,6 +840,10 @@ def main() -> int:
         return cmd_assemble(args.src_dir, args.out, args.drafted_with)
     if args.command == "audit":
         return cmd_audit(args.draft, args.config)
+    if args.command == "review" and args.serve:
+        from holdout_review import serve  # imports this module; only needed here
+
+        return serve(args.draft, args.config, args.port, open_browser=not args.no_open)
     if args.command == "review":
         return cmd_review(args.draft, args.show, args.id, args.config)
     return cmd_finalize(args.draft, args.config)

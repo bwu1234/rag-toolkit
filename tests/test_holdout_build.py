@@ -259,4 +259,4 @@ def test_finalize_refuses_pending_or_undecided_reviews(tmp_path: Path, capsys: p
     raw["review"]["verdict"] = "accept"  # a verdict without rubric decisions
     draft.write_text(json.dumps([raw]))
     assert build_holdout.cmd_finalize(draft, None) == 1
-    assert "without a decision on every rubric dimension" in capsys.readouterr().out
+    assert "without a complete review record" in capsys.readouterr().out
