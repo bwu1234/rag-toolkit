@@ -6,6 +6,8 @@ citation helpers both modes share. Plain strings and one function, as there.
 
 from __future__ import annotations
 
+from rag.generation.prompts import UNTRUSTED_PASSAGES_RULE
+
 # Every clause answers a failure the prototype showed or a guard the plan
 # names: standalone queries (search has no memory), one search per entity
 # (multi-hop coverage), no outside knowledge *even as background* (the 27b's
@@ -25,7 +27,7 @@ AGENT_SYSTEM_PROMPT = (
     "[3][5].{calculate} Do not add facts from your own knowledge, not even as background "
     "or 'for reference'. If the passages don't answer the question, or answer "
     "only part of it, say which parts they don't cover instead of guessing."
-    "{corpus}"
+    "{untrusted}{corpus}"
 )
 
 _REACT_ITERATE = (
@@ -90,12 +92,17 @@ def agent_system_prompt(
     list_documents: bool = False,
     read_document: bool = False,
     calculator: bool = False,
+    passage_delimiters: bool = False,
 ) -> str:
     """The agent's system prompt for `strategy`, naming the corpora it searches.
 
     The corpus description is what lets the model decide *whether* to search
     -- the routing decision the agent replaces a classifier with -- so the
     registry's descriptions are included when the config has them.
+
+    `passage_delimiters` adds the pipeline's rule for tagged passages: tool
+    results carry retrieved text, which is as untrusted in a search result as
+    in the pipeline's prompt.
     """
 
     described = [f"- {name}: {' '.join(text.split())}" for name, text in corpus_descriptions if text]
@@ -105,8 +112,10 @@ def agent_system_prompt(
     listing = _LISTING_HINT if list_documents else ""
     reading = _READING_HINT if read_document else ""
     calculate = _CALCULATOR_HINT if calculator else ""
+    untrusted = f"\n\n{UNTRUSTED_PASSAGES_RULE}" if passage_delimiters else ""
     return AGENT_SYSTEM_PROMPT.format(
-        iterate=iterate, corpus=corpus, filters=filters, listing=listing, reading=reading, calculate=calculate
+        iterate=iterate, corpus=corpus, filters=filters, listing=listing, reading=reading, calculate=calculate,
+        untrusted=untrusted,
     )
 
 

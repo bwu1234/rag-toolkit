@@ -1,0 +1,9 @@
+# Injection tier row `pipeline / 9b` (Milestone 28): the served config with the
+# retrieve-then-generate pipeline on the 9b, as run_answer_matrix.py's row of
+# that name. The agentic / 27b row is rag/config/config.yaml itself.
+#
+#   python -m rag.eval.injection_eval --corpus edgar_md --config data/eval/config_injection_pipeline_9b.yaml
+base: ../../rag/config/config.yaml
+
+chat:
+  mode: pipeline

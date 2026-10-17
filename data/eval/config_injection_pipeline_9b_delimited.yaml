@@ -1,0 +1,5 @@
+# The `pipeline / 9b` injection row with chat.passage_delimiters on.
+base: config_injection_pipeline_9b.yaml
+
+chat:
+  passage_delimiters: true

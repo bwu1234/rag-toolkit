@@ -45,7 +45,7 @@ from rag.events import EventSink
 from rag.query_filter import DOCUMENT_ID, QueryFilter, check_filterable
 from rag.llm.base import LLMClient, ToolDefinition
 from rag.retrieval.builder import build_retriever
-from rag.retrieval.retriever import RetrievalResult, Retriever
+from rag.retrieval.retriever import PassageRetriever, RetrievalResult, RetrieverWrapper
 from rag.retrieval.factory import get_sparse_index, sparse_index_path
 
 logger = logging.getLogger(__name__)
@@ -293,6 +293,7 @@ class RagTools:
         *,
         config: RagConfig | None = None,
         llm_client: LLMClient | None = None,
+        wrap_retriever: RetrieverWrapper | None = None,
     ) -> None:
         """Read config from `config_path` on first use, or take `config` as given.
 
@@ -304,6 +305,9 @@ class RagTools:
         `llm_client` goes to `build_retriever` for query expansion. The agent
         passes its metered client so expansion calls, if expansion is on,
         count toward the turn; MCP leaves it unset.
+
+        `wrap_retriever`, if given, wraps each retriever as it's built, so
+        every search runs through it; only the injection eval passes one.
         """
 
         if config_path is not None and config is not None:
@@ -311,7 +315,8 @@ class RagTools:
         self._config_path = config_path
         self._config: RagConfig | None = config
         self._llm_client = llm_client
-        self._retrievers: dict[str, tuple[CorpusSelection, Retriever]] = {}
+        self._wrap_retriever = wrap_retriever
+        self._retrievers: dict[str, tuple[CorpusSelection, PassageRetriever]] = {}
         # Cleaned documents per corpus selection, for reading and finding:
         # (selection, fingerprint of the files on disk, documents by id).
         self._documents: dict[str, tuple[CorpusSelection, tuple[Any, ...], dict[str, Document]]] = {}
@@ -328,7 +333,7 @@ class RagTools:
 
     def _retriever_for(
         self, corpora: Sequence[str] | None
-    ) -> tuple[CorpusSelection, Retriever]:
+    ) -> tuple[CorpusSelection, PassageRetriever]:
         config = self.config
         # Raises ValueError naming the available corpora on a typo, which the
         # transports surface as a tool error -- an agent that guesses a corpus
@@ -344,7 +349,8 @@ class RagTools:
                 # and fusion, so changing it would change which chunks compete;
                 # `rerank_top_k` only governs how deep the sorted output runs.
                 retriever.rerank_top_k = max(retriever.rerank_top_k, MAX_RESULTS)
-                cached = (selection, retriever)
+                wrapped = retriever if self._wrap_retriever is None else self._wrap_retriever(retriever)
+                cached = (selection, wrapped)
                 self._retrievers[selection.slug] = cached
             return cached
 

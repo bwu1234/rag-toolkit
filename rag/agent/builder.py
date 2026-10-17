@@ -18,7 +18,7 @@ from rag.llm.factory import get_llm_client
 from rag.observability.factory import config_fingerprint
 from rag.observability.sink import TurnSink
 from rag.observability.usage import metered_client
-from rag.tools import RagTools
+from rag.tools import RagTools, RetrieverWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,7 @@ def build_agent_service(
     corpora: Sequence[str] | None = None,
     *,
     turn_sink: TurnSink | None = None,
+    wrap_retriever: RetrieverWrapper | None = None,
 ) -> AgentService:
     """Construct the `chat.mode: agentic` responder.
 
@@ -60,6 +61,8 @@ def build_agent_service(
     Pipeline-only settings are reported, not silently dropped: the condenser
     and CRAG's grader and retries have no place in the loop, and only CRAG's
     groundedness check carries over.
+
+    `wrap_retriever` goes to `RagTools`, which wraps each retriever it builds.
     """
 
     crag = config.crag
@@ -76,7 +79,7 @@ def build_agent_service(
 
     return AgentService(
         build_agent_llm(config),
-        RagTools(config=config, llm_client=utility_client),
+        RagTools(config=config, llm_client=utility_client, wrap_retriever=wrap_retriever),
         system_prompt=agent_system_prompt(
             config.agent.strategy,
             descriptions,
@@ -84,6 +87,7 @@ def build_agent_service(
             list_documents="rag_list_documents" in config.agent.tools,
             read_document="rag_read_document" in config.agent.tools,
             calculator="calculator" in config.agent.tools,
+            passage_delimiters=config.chat.passage_delimiters,
         ),
         corpora=selection.names,
         strategy=config.agent.strategy,
@@ -97,6 +101,7 @@ def build_agent_service(
         max_history_turns=config.chat.max_history_turns,
         model_filters=config.agent.model_filters,
         offered_tools=config.agent.tools,
+        passage_delimiters=config.chat.passage_delimiters,
         groundedness_checker=(
             GroundednessChecker(utility_client) if crag.enabled and crag.check_groundedness else None
         ),

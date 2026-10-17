@@ -1,0 +1,7 @@
+# The `agentic / 27b` injection row (the served config) with
+# chat.passage_delimiters on. Also the candidate config for the clean-answer
+# re-measurement (answer_eval / multihop_eval) the delimiters need.
+base: ../../rag/config/config.yaml
+
+chat:
+  passage_delimiters: true

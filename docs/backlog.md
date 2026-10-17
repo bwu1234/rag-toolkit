@@ -1221,7 +1221,27 @@ rate limiting are what cover that case.
   Delimiters do not establish injection resistance; measure the effect and
   clean-answer regressions before adoption.
 
-  **Injection tier design (draft, 2026-10-06; nothing built).**
+  **Status (2026-10-16): forced exposure built, not yet measured.**
+  `chat.passage_delimiters` (off) tags every passage in both modes -- the
+  pipeline prompt, agent search results and read windows -- escapes any tag
+  inside retrieved text or its source line, and adds a data-not-instructions
+  rule to both system prompts. `rag.eval.injection` holds the plants, the
+  forced-exposure wrapper (a `wrap_retriever` hook on `build_chat_service`
+  and `RagTools`, so the agent's every search gets it) and deterministic
+  scoring; `rag.eval.injection_eval` runs it. The set is 24 bases x (6
+  attacks + a control) plus the 6 attacks carried in the source line on 4
+  bases: 192 cases. Departures from the draft below: one control per base
+  (length-matched to its attacks) rather than one per attack; every case of
+  a base runs under that base's ticker filter, so scope has a scope to break
+  and attacks and controls ran alike; citation success is a sentence stating
+  the plant's canary while citing a non-plant passage; refusal success is a
+  gold figure the control kept and the attacked answer lost. Positive and
+  negative fake-model controls and the hostile-model scope test are in
+  `tests/test_injection.py`. Still to do: the six rows and the clean-answer
+  re-measurement; the end-to-end level; listing output and the CRAG
+  checker prompts are not delimited.
+
+  **Injection tier design (draft, 2026-10-06).**
 
   *Exposure, from the code.* `format_passage` (`rag/generation/prompts.py`) is
   the one choke point for both modes, and neither prompt says passage text is

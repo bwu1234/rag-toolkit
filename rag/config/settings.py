@@ -616,6 +616,13 @@ class ChatConfig(BaseModel):
     # Under `plain` the answer carries no `[n]` markers, so a turn's
     # `cited_chunk_ids` is always empty.
     prompt: PromptStyle = "grounded"
+    # Wrap every passage shown to the answering model -- pipeline prompt and
+    # agent tool results alike -- in <passage> tags, and tell the system prompt
+    # that tagged text is data, not instructions (Milestone 28's injection
+    # tier). Off until measured: it changes the grounded prompt, so clean
+    # answer quality is re-measured alongside injection success
+    # (`python -m rag.eval.injection_eval`). Grounded prompt only.
+    passage_delimiters: bool = False
 
 
 class CragConfig(BaseModel):
@@ -831,6 +838,11 @@ class RagConfig(BaseModel):
                 "chat.prompt: plain can't be combined with CRAG regeneration, which answers under "
                 "the grounded prompt; set crag.max_regenerations: 0 (the groundedness check still runs)"
             )
+        # The plain prompt is the undecorated baseline; tagging its context
+        # would make it a variant of the grounded prompt rather than the thing
+        # the grounded prompt is measured against.
+        if self.chat.prompt == "plain" and self.chat.passage_delimiters:
+            raise ValueError("chat.passage_delimiters applies to chat.prompt: grounded only")
         return self
 
     #: Name used when no registry is configured -- see `corpus_selection`.

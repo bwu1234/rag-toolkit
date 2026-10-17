@@ -75,7 +75,7 @@ HASHED = {
     'retrieval.web_search.top_k', 'retrieval.web_search.min_similarity',
     'retrieval.web_search.dedup_threshold', 'retrieval.web_search.timeout_s',
     'retrieval.document_routing.top_m', 'retrieval.document_routing.record_template',
-    'chat.mode', 'chat.condense_history', 'chat.max_history_turns', 'chat.prompt',
+    'chat.mode', 'chat.condense_history', 'chat.max_history_turns', 'chat.prompt', 'chat.passage_delimiters',
     'crag.enabled', 'crag.grade_documents', 'crag.max_retries', 'crag.check_groundedness',
     'crag.max_regenerations',
     'eval.judge.provider', 'eval.judge.model', 'eval.judge.base_url', 'eval.judge.temperature',
