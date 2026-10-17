@@ -206,6 +206,9 @@ class StageEvent:
     hits: list[Hit] | None = None
     """The stage's ranked output (see `PipelineEvent.hits`); None for stages that don't rank."""
     score_scale: str | None = None
+    ended_ms: float | None = None
+    """When the stage ended, in milliseconds since the turn began, on the clock of
+    `LLMExchange.started_ms`; it started `elapsed_ms` before. None in turns logged before it was kept."""
 
 
 @dataclass(frozen=True)

@@ -412,6 +412,16 @@ agent:
 # never by the eval runners. Inspect with `python -m rag.cli turns`.
 #   jsonl -- append to a local file (gitignored under data/logs/)
 #   none  -- record nothing; the API's /feedback then answers 503
+#
+# `otel` also exports each turn as an OpenTelemetry trace over OTLP (Milestone
+# 26), whichever provider is set: stages and model calls as spans at the times
+# they ran, trace id = turn id. Text (query, prompts, answer) goes only with
+# capture_content. Auth headers come from OTEL_EXPORTER_OTLP_HEADERS. Needs
+# `pip install -e ".[otel]"` for http/protobuf. A local Arize Phoenix:
+#
+#   otel:
+#     endpoint: http://localhost:6006/v1/traces
+#     capture_content: false
 observability:
   turn_log:
     provider: jsonl

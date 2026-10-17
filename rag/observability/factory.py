@@ -7,20 +7,31 @@ from pathlib import Path
 from typing import Any
 
 from rag.config.settings import DEFAULT_CARRY_METADATA, DEFAULT_HNSW_EF_SEARCH, REPO_ROOT, RagConfig, TurnLogConfig
-from rag.observability.sink import JsonlTurnSink, TurnSink
+from rag.observability.sink import FanoutTurnSink, JsonlTurnSink, TurnSink
 
 
 def get_turn_sink(config: TurnLogConfig) -> TurnSink | None:
-    """Instantiate the sink selected by `config.provider`, or `None` for `"none"`."""
+    """The sink selected by `config.provider`, plus the OTel exporter when `config.otel` is set.
 
-    if config.provider == "none":
-        return None
+    `None` when there is neither: provider `"none"` and no exporter.
+    """
+
+    sinks: list[TurnSink] = []
     if config.provider == "jsonl":
-        return JsonlTurnSink(turn_log_path(config))
-    raise ValueError(
-        f"Unknown turn log provider: {config.provider!r}. "
-        "Add a TurnSink adapter and register it here to support a new one."
-    )
+        sinks.append(JsonlTurnSink(turn_log_path(config)))
+    elif config.provider != "none":
+        raise ValueError(
+            f"Unknown turn log provider: {config.provider!r}. "
+            "Add a TurnSink adapter and register it here to support a new one."
+        )
+    if config.otel is not None:
+        # Imported here so the OTel SDK loads only when an exporter is configured.
+        from rag.observability.otel import otlp_turn_sink
+
+        sinks.append(otlp_turn_sink(config.otel))
+    if not sinks:
+        return None
+    return sinks[0] if len(sinks) == 1 else FanoutTurnSink(sinks)
 
 
 def turn_log_path(config: TurnLogConfig) -> Path:

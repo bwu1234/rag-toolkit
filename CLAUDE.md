@@ -145,6 +145,11 @@ Why it's built this way: [milestone notes](docs/milestone-notes.md#named-corpora
   rebuildable), `... serve` opens its UI on 127.0.0.1:5050 with telemetry off,
   and `... compare --baseline RUN:REV --candidate RUN:REV` exports the
   harness's paired comparison, refusing what `rag.eval.report` refuses.
+- OpenTelemetry (`pip install -e ".[otel]"`; Milestone 26, drafted):
+  `observability.turn_log.otel` also exports live turns over OTLP, and
+  `python -m rag.eval.otel_export RUN[:REV] ... | --all [--endpoint URL]`
+  sends stored eval runs (service `rag-toolkit-eval`). Text is sent only with
+  `capture_content` / `--capture-content`.
 - MCP server: `python -m rag.mcp` (stdio), or `POST /mcp` on the running API.
   The `mcp` extra is required only for the streamable HTTP transport; stdio
   uses the fallback implementation without it. The MCP server serves exactly

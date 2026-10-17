@@ -29,6 +29,7 @@ from rag.config.settings import (
 from rag.eval.dataset import EvalDataset
 from rag.eval.provenance import (
     CONFIG_HASH_DENYLIST,
+    DENYLISTED_SECTIONS,
     IndexConflict,
     checked_index,
     config_hash,
@@ -142,6 +143,16 @@ def test_a_field_the_old_fingerprint_missed_changes_the_hash() -> None:
     ):
         changed = RagConfig.model_validate({**base.model_dump(), **change})
         assert config_hash(changed) != config_hash(base), change
+
+
+def test_a_denylisted_section_is_classified_leaf_by_leaf_and_never_hashed() -> None:
+    for section in DENYLISTED_SECTIONS:
+        assert any(leaf.startswith(f"{section}.") for leaf in CONFIG_HASH_DENYLIST)
+        assert not any(leaf.startswith(f"{section}.") for leaf in HASHED)
+    exported = RagConfig.model_validate(
+        {"observability": {"turn_log": {"otel": {"endpoint": "http://localhost:6006/v1/traces"}}}}
+    )
+    assert config_hash(exported) == config_hash(RagConfig())
 
 
 def test_a_denylisted_field_leaves_the_hash_alone() -> None:

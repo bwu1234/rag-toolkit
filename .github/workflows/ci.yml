@@ -29,7 +29,7 @@ jobs:
       - name: Install project (dev and tracking extras)
         run: |
           # tracking: so tests/test_eval_tracking.py runs here rather than skipping.
-          pip install -e .[dev,tracking]
+          pip install -e .[dev,tracking,otel]
           # Pin ruff: an unpinned install picks up whatever rules ruff
           # defaults to on release day, which has broken CI before with no
           # code changes on our side. Bump deliberately, not implicitly.

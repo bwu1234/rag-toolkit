@@ -38,6 +38,15 @@ mcp = [
 tracking = [
     "mlflow>=3.17,<4",
 ]
+# Optional: OTLP export of turns (`observability.turn_log.otel`, Milestone 26).
+# chromadb already brings the SDK and the gRPC exporter; the SDK is named here
+# because `rag.observability.otel` imports it, and the HTTP exporter (which
+# Langfuse requires) is the one addition. It uses `requests`, which
+# google-genai and streamlit already pull in.
+otel = [
+    "opentelemetry-sdk>=1.30",
+    "opentelemetry-exporter-otlp-proto-http>=1.30",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
