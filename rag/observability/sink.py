@@ -8,11 +8,12 @@ local-first system.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import logging
 import threading
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,13 @@ class TurnSink(ABC):
     Reading back is a property of a particular store (a file can be scanned, an
     OTel collector can't), so it isn't part of the interface -- see
     `read_turn_log` for the JSONL case.
+    """
+
+    wants_exchanges: bool = False
+    """Whether `record_turn` should get each LLM call (`TurnRecord.llm_exchanges`).
+
+    Off by default: capturing them keeps every prompt of the turn in memory
+    until it ends. A sink that draws per-call spans turns it on.
     """
 
     @abstractmethod
@@ -53,7 +61,8 @@ class JsonlTurnSink(TurnSink):
         self._lock = threading.Lock()
 
     def record_turn(self, record: TurnRecord) -> None:
-        self._append(record.to_dict())
+        # Never the transcript, even when a sink beside this one asked for it.
+        self._append(dataclasses.replace(record, llm_exchanges=None).to_dict())
 
     def record_feedback(self, record: FeedbackRecord) -> None:
         self._append(record.to_dict())
@@ -64,6 +73,34 @@ class JsonlTurnSink(TurnSink):
             self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("a", encoding="utf-8") as handle:
                 handle.write(line)
+
+
+class FanoutTurnSink(TurnSink):
+    """Hands every record to each of several sinks: the JSONL log and an exporter, say.
+
+    One sink failing doesn't keep the record from the others; the first
+    failure is re-raised once all have had it, so the caller still logs it.
+    """
+
+    def __init__(self, sinks: Sequence[TurnSink]) -> None:
+        self.sinks = list(sinks)
+        self.wants_exchanges = any(sink.wants_exchanges for sink in self.sinks)
+
+    def record_turn(self, record: TurnRecord) -> None:
+        self._each(lambda sink: sink.record_turn(record))
+
+    def record_feedback(self, record: FeedbackRecord) -> None:
+        self._each(lambda sink: sink.record_feedback(record))
+
+    def _each(self, write: Callable[[TurnSink], None]) -> None:
+        failure: Exception | None = None
+        for sink in self.sinks:
+            try:
+                write(sink)
+            except Exception as exc:
+                failure = failure or exc
+        if failure is not None:
+            raise failure
 
 
 def read_turn_log(path: Path) -> Iterator[dict[str, Any]]:

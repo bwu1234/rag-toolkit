@@ -788,6 +788,29 @@ class AgentConfig(BaseModel):
         return list(dict.fromkeys(value))
 
 
+class OtelExportConfig(BaseModel):
+    """Export each turn as an OpenTelemetry trace over OTLP (Milestone 26), beside the turn log.
+
+    The adapter is written against OTel, not a vendor SDK, so any OTLP backend
+    (a self-hosted Arize Phoenix or Langfuse, a collector) takes it. Headers --
+    a Langfuse key, say -- come from `OTEL_EXPORTER_OTLP_HEADERS`, never this
+    file. Needs the `otel` extra for `http/protobuf`.
+    """
+
+    endpoint: str = Field(
+        description="OTLP traces endpoint, e.g. http://localhost:6006/v1/traces (Phoenix)",
+    )
+    protocol: Literal["http/protobuf", "grpc"] = "http/protobuf"
+    service_name: str = "rag-toolkit"
+    capture_content: bool = Field(
+        default=False,
+        description=(
+            "Also send text: the query, answer, prompts, model replies, tool arguments and stage messages. "
+            "Off by default, as the OTel GenAI conventions advise; ids, timings, tokens and scores always go"
+        ),
+    )
+
+
 class TurnLogConfig(BaseModel):
     """Where per-turn records and user feedback are persisted (Milestone 12).
 
@@ -801,6 +824,8 @@ class TurnLogConfig(BaseModel):
         default=Path("data/logs/turns.jsonl"),
         description="JSONL file for the `jsonl` provider; relative paths resolve against the repo root",
     )
+    otel: OtelExportConfig | None = None
+    """Where to also export turns as traces; None exports nothing. Works with either provider."""
 
 
 class ObservabilityConfig(BaseModel):

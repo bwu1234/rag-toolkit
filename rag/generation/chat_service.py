@@ -212,6 +212,8 @@ class TurnTrace:
     """
 
     events: list[PipelineEvent] = field(default_factory=list)
+    #: When each of `events` ended, in ms since the turn began (`StageEvent.ended_ms`).
+    event_ends_ms: list[float] = field(default_factory=list)
     attempts: list[RetrievalAttempt] = field(default_factory=list)
     groundedness_checks: list[bool | None] = field(default_factory=list)
     shown_chunk_ids: list[str] = field(default_factory=list)
@@ -330,7 +332,8 @@ class ChatResponder(ABC):
         `on_record`, if given, asks for a transcript: every LLM call the turn
         makes is kept verbatim (`TurnRecord.llm_exchanges`), and the turn's
         record is passed to it -- failed turns included, before the exception
-        propagates. The turn sink still gets the record without the transcript.
+        propagates. The turn sink gets the record without the transcript unless
+        it asks for one (`TurnSink.wants_exchanges`).
         """
 
         turn_id = new_id()
@@ -342,13 +345,17 @@ class ChatResponder(ABC):
         # Tee every pipeline event into the trace as well as the caller's sink.
         # The events already carry each stage's timing, so latency comes from
         # the same stream the UI renders rather than from a second set of timers.
+        # Each event's end goes on the meter's clock, the one `LLMExchange`
+        # times use, so a stage and the model calls inside it line up.
         def observe(event: PipelineEvent) -> None:
             trace.events.append(event)
+            trace.event_ends_ms.append(meter.since_start_ms(event.at if event.at is not None else time.monotonic()))
             if on_event is not None:
                 on_event(event)
 
         start = time.monotonic()
-        with metered(capture=on_record is not None) as meter:
+        sink_exchanges = self._turn_sink is not None and self._turn_sink.wants_exchanges
+        with metered(capture=on_record is not None or sink_exchanges) as meter:
             try:
                 answer = self._answer(query, history, observe, trace, query_filter)
             except Exception as exc:
@@ -422,8 +429,11 @@ class ChatResponder(ABC):
             prompt_tokens=meter.prompt_tokens,
             completion_tokens=meter.completion_tokens,
             events=[
-                StageEvent(e.stage, e.message, e.elapsed_ms, None if e.hits is None else list(e.hits), e.score_scale)
-                for e in trace.events
+                StageEvent(
+                    e.stage, e.message, e.elapsed_ms, None if e.hits is None else list(e.hits), e.score_scale,
+                    ended_ms=ended,
+                )
+                for e, ended in zip(trace.events, trace.event_ends_ms, strict=True)
             ],
             error=error,
             metadata=self._turn_metadata,
@@ -435,13 +445,14 @@ class ChatResponder(ABC):
             invalid_citations=answer.invalid_citations if answer is not None else [],
             estimated_usage_calls=trace.estimated_usage_calls,
         )
+        transcript = dataclasses.replace(record, llm_exchanges=list(meter.exchanges or []))
         if self._turn_sink is not None:
             try:
-                self._turn_sink.record_turn(record)
+                self._turn_sink.record_turn(transcript if self._turn_sink.wants_exchanges else record)
             except Exception:
                 logger.warning("Failed to record turn %s; the answer is unaffected", turn_id, exc_info=True)
         if on_record is not None:
-            on_record(dataclasses.replace(record, llm_exchanges=list(meter.exchanges or [])))
+            on_record(transcript)
 
 
 class ChatService(ChatResponder):

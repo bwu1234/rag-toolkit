@@ -17,6 +17,13 @@ from typing import Protocol
 
 Stage = str
 
+#: Every stage `Retriever` or `RagTools.retrieve` can emit. A trace drawn after
+#: the fact reads one missing here as a tool's own event, closing the search
+#: that ran it early.
+RETRIEVAL_STAGES = frozenset({
+    "route", "expand", "embed", "vector_search", "sparse_search", "web_search", "fusion", "rerank", "select",
+})
+
 
 class _Scored(Protocol):
     @property
@@ -55,6 +62,9 @@ class PipelineEvent:
     on its own scale, so compare positions across stages, never scores."""
     score_scale: str | None = None
     """What `hits` scores mean, as the component that produced them describes it."""
+    at: float | None = None
+    """The `time.monotonic()` reading `elapsed_ms` ends at, so the stage began at
+    exactly `at - elapsed_ms / 1000`. None for an event built without `emit`."""
 
 
 EventSink = Callable[[PipelineEvent], None]
@@ -77,8 +87,8 @@ def emit(
 
     if on_event is None:
         return
-    elapsed_ms = (time.monotonic() - start) * 1000
+    at = time.monotonic()
     on_event(PipelineEvent(
-        stage=stage, message=message, elapsed_ms=elapsed_ms,
-        hits=None if hits is None else hits_of(hits), score_scale=score_scale,
+        stage=stage, message=message, elapsed_ms=(at - start) * 1000,
+        hits=None if hits is None else hits_of(hits), score_scale=score_scale, at=at,
     ))

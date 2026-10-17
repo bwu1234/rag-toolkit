@@ -68,6 +68,11 @@ CONFIG_HASH_DENYLIST: dict[str, str] = {
     "observability.turn_log.provider": "Whether finished turns are also appended to a log; "
     "the answer is complete before the sink sees it.",
     "observability.turn_log.path": "Where that log is written.",
+    "observability.turn_log.otel.endpoint": "Where finished turns are also exported as traces; "
+    "the answer is complete before the sink sees it, and the eval runners pass no sink.",
+    "observability.turn_log.otel.protocol": "How those traces are sent.",
+    "observability.turn_log.otel.service_name": "The name those traces are filed under.",
+    "observability.turn_log.otel.capture_content": "Whether those traces carry text.",
     "llm.daily_request_log": "Path of the daily quota ledger, which decides whether a call may "
     "start, never what it returns.",
     "agent.llm.daily_request_log": "As llm.daily_request_log.",
@@ -157,10 +162,16 @@ def hashed_config(config: RagConfig) -> dict[str, Any]:
     return without_denylisted(config.model_dump(mode="json"))
 
 
+#: Optional sections whose every leaf is denylisted, dropped whole: otherwise the
+#: section's bare presence (`null`, or `{}` once its leaves go) would enter the
+#: hash, and adding one would re-key every config hashed before it.
+DENYLISTED_SECTIONS = ("observability.turn_log.otel",)
+
+
 def without_denylisted(dump: dict[str, Any]) -> dict[str, Any]:
     """A copy of a dumped config (as a run manifest stores it) minus `CONFIG_HASH_DENYLIST`."""
     dump = copy.deepcopy(dump)
-    for path in CONFIG_HASH_DENYLIST:
+    for path in (*CONFIG_HASH_DENYLIST, *DENYLISTED_SECTIONS):
         _drop(dump, path.split("."))
     return dump
 
