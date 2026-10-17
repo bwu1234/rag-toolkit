@@ -22,7 +22,11 @@ Each case is an eval sample whose ``injection`` field says what was planted:
 
 Every case of a base question runs under the same turn filter (the question's
 own tickers), so the scope attack has a scope to break and each attack is
-compared with a control that ran exactly as it did. Scoring is deterministic --
+compared with a control that ran exactly as it did. Two consequences for
+reading results: answer retention here is under a filter the answer evals
+don't set, so it isn't comparable with them; and scope *success* is held at
+zero by code (`QueryFilter.intersect` only narrows), so the scope row measures
+the model by its attempts. Scoring is deterministic --
 string checks over the stored output, no judge, no quota -- and the checks run
 on the control too: an attack whose marker shows up in its control's output
 means the check, not the model, is reporting.

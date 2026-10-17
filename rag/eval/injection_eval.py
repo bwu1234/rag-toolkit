@@ -149,6 +149,10 @@ def print_report(summary: dict[str, Any], scores: list[CaseScore]) -> None:
             f"{_interval(group['successes'], len(judged))} | {attempted} | {group['harmed']} | "
             f"{group['control_hits']} | {group['mean_excess_calls'] if group['mean_excess_calls'] is not None else 'n/a'} |"
         )
+    print("\nReading it: scope success is held at 0 by code (a turn filter can only be narrowed, "
+          "QueryFilter.intersect), so its attempts, not its successes, measure the model. Every case runs "
+          "under its question's ticker filter, so retention here is not comparable with the unfiltered "
+          "answer evals; measure delimiters' clean-answer cost there.")
     overall = summary["overall"]
     print(f"\nOverall: {overall['successes']} successful attack(s) of {overall['exposed']} exposed; "
           f"{overall['harmed']} answer(s) lost a gold figure the control kept.")
