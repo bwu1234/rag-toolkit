@@ -186,3 +186,66 @@ def test_an_agent_turn_exports_each_llm_call_and_its_transcript(tmp_path: Path, 
     transcript = Path(path).read_text(encoding="utf-8")
     assert transcript.startswith("# Trace: s0") and "## Expected answer" in transcript
     assert "#### Rendered prompt, reconstructed from the messages" in transcript
+
+
+class _TextStore:
+    """Stands in for the run's vector store: text by id, and which ids were asked for."""
+
+    def __init__(self, texts: dict[str, str]) -> None:
+        self.texts, self.asked = texts, list[list[str]]()
+
+    def get_texts(self, ids: list[str]) -> dict[str, str]:
+        self.asked.append(ids)
+        return {i: self.texts[i] for i in ids if i in self.texts}
+
+
+def _staged_outputs() -> dict[str, dict[str, Any]]:
+    """One sample whose fusion ranked c1 (shown to the answer) above c2 and c3 (cut before it)."""
+    hits = [{"chunk_id": c, "document_id": "DAL.md", "score": 1.0} for c in ("c1", "c2", "c3")]
+    return {"s1": {"passages": [{"chunk_id": "c1", "text": "shown"}],
+                   "turn": {"events": [{"stage": "fusion", "message": "", "hits": hits}]}}}
+
+
+def _with_index(manifest: dict[str, Any], current_build: str | None, store: _TextStore,
+                monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
+    build = None if current_build is None else type("Build", (), {"build_id": current_build})()
+    monkeypatch.setattr(tracking, "read_index_build", lambda path: build)
+    monkeypatch.setattr(tracking, "get_vector_store", lambda *args, **kwargs: store)
+    return {**manifest, "config": RagConfig().model_dump(mode="json"),
+            "corpus": {"slug": "default"}, "index": {"index_build_id": "build-1"}}
+
+
+def test_a_cut_hit_reads_its_text_from_the_unchanged_index(monkeypatch: pytest.MonkeyPatch) -> None:
+    store = _TextStore({"c2": "cut text"})
+    text = tracking._stage_text(_with_index({}, "build-1", store, monkeypatch), _staged_outputs())
+
+    passages = _staged_outputs()["s1"]["passages"]
+    by_id = {p["chunk_id"]: p for p in passages}
+    assert store.asked == [["c2", "c3"]]  # one lookup, of the cut hits only
+    assert text.of("c1", by_id) == "shown" and text.of("c2", by_id) == "cut text"
+    assert "not in the index" in text.of("c3", by_id)
+
+
+def test_a_hit_shown_in_one_sample_is_looked_up_where_another_cut_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    outputs = _staged_outputs()
+    outputs["s2"] = {**outputs["s1"], "passages": [{"chunk_id": "c2", "text": "shown in s2"}]}
+    store = _TextStore({"c1": "c1 text", "c2": "c2 text"})
+    text = tracking._stage_text(_with_index({}, "build-1", store, monkeypatch), outputs)
+
+    assert store.asked == [["c1", "c2", "c3"]] and text.of("c2", {}) == "c2 text"
+
+
+@pytest.mark.parametrize("current_build", ["build-2", None])
+def test_a_rebuilt_index_is_not_read(current_build: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
+    store = _TextStore({"c2": "maybe different text now"})
+    text = tracking._stage_text(_with_index({}, current_build, store, monkeypatch), _staged_outputs())
+
+    assert store.asked == [] and "build-1 has since been rebuilt" in text.of("c2", {})
+
+
+def test_a_run_without_cut_hits_never_opens_the_index(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(tracking, "read_index_build", lambda path: pytest.fail("read the index"))
+    outputs = _staged_outputs()
+    outputs["s1"]["turn"]["events"][0]["hits"] = outputs["s1"]["turn"]["events"][0]["hits"][:1]
+
+    assert tracking._stage_text({}, outputs).index == {}

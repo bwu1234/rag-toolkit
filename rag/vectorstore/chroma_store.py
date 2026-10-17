@@ -147,6 +147,14 @@ class ChromaVectorStore(VectorStore):
                 out[cid]["_document_text"] = doc
         return out
 
+    def get_texts(self, ids: list[str]) -> dict[str, str]:
+        """Return the stored chunk text for the given ids that exist."""
+        out: dict[str, str] = {}
+        for start in range(0, len(ids), GET_BATCH_SIZE):  # see `get_metadatas`
+            result = self._collection.get(ids=ids[start : start + GET_BATCH_SIZE], include=["documents"])
+            out.update(zip(result.get("ids") or [], result.get("documents") or []))
+        return out
+
     def query(
         self, embedding: list[float], top_k: int, query_filter: QueryFilter | None = None
     ) -> list[ScoredChunk]:
