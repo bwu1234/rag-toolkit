@@ -24,7 +24,9 @@ installed (``pip install -e ".[tracking]"``).
   feedback (the judge's reply as the rationale), so MLflow's evaluation view
   can show two runs' samples side by side. An answering turn's trace has
   every LLM call verbatim (system prompt, tool results, reasoning) at its
-  recorded time, and the run holds each sample's whole turn as Markdown
+  recorded time, inside the stage that made it (`rag.observability.timeline`,
+  the OTel exporter's layout), then each judge call with its system prompt,
+  prompt and reply (untimed, so at the turn's end). The run holds each sample's whole turn as Markdown
   (``transcripts/<sample>.md``, the `scripts/trace_question.py` layout). For
   a qwen3.8 agent both show each call's rendered prompt, reconstructed
   from the recorded messages (`transcript.with_rendered_prompts`).
@@ -48,7 +50,6 @@ import re
 import shutil
 import sys
 import warnings
-from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
@@ -64,7 +65,8 @@ from rag.eval.report import Ineligible, Pinned, resolve
 from rag.eval.runs import COMPLETE, RUNS_DIR, load_run
 from rag.index_manifest import index_manifest_path, read_index_build
 from rag.logging_config import configure_logging
-from rag.observability.records import AgentToolCall, LLMExchange, StageEvent, TurnRecord
+from rag.observability.records import AgentToolCall, LLMExchange, TurnRecord
+from rag.observability.timeline import TOOL_STAGES, Node, nodes, parents
 from rag.observability.transcript import render_turn_markdown, with_rendered_prompts
 from rag.vectorstore.factory import get_vector_store
 
@@ -94,8 +96,6 @@ _BATCH = 100  # MLflow's MAX_PARAMS_TAGS_PER_BATCH
 #: Characters MLflow refuses in metric and param names (e.g. the parentheses in "(no kind)").
 _UNSAFE_NAME = re.compile(r"[^\w\-. :/]")
 _LATENCY_SPANS = {"embed": "EMBEDDING", "vector_search": "RETRIEVER", "rerank": "RERANKER"}
-#: Turn events that are an LLM call (its exchange has the timing).
-_LLM_EVENTS = {"agent_step", "agent_answer"}
 _SEARCH_STAGES = {
     stage: {**_LATENCY_SPANS, "sparse_search": "RETRIEVER", "web_search": "RETRIEVER"}.get(stage, "UNKNOWN")
     for stage in RETRIEVAL_STAGES
@@ -348,6 +348,7 @@ def _log_traces(mlflow: ModuleType, pinned: Pinned) -> None:
     labels = {s.id: s.to_dict() for s in pinned.run.labels(pinned.scores["dataset_hash"])}
     replies = judge_replies(pinned)
     scorer = AssessmentSource(source_type=AssessmentSourceType.CODE, source_id=pinned.scores["scorer"])
+    judge_model = (pinned.scores["settings"].get("judgment") or {}).get("judge")
     judge = AssessmentSource(
         source_type=AssessmentSourceType.LLM_JUDGE,
         source_id=(pinned.scores["settings"].get("judgment") or {}).get("judge") or "judge",
@@ -368,7 +369,8 @@ def _log_traces(mlflow: ModuleType, pinned: Pinned) -> None:
             if record is not None:
                 tags["rag.transcript"] = f"transcripts/{_UNSAFE_NAME.sub('_', sid)}.md"
                 mlflow.log_text(_transcript(pinned, sid, record, label), tags["rag.transcript"])
-            trace_id, took = _answer_trace(mlflow, out, record, models, stage_text, tags, clock)
+            trace_id, took = _answer_trace(mlflow, out, record, models, stage_text, replies.get(sid, []),
+                                           judge_model, tags, clock)
             feedback = _answer_feedback(stage, score, replies.get(sid, []), scorer, judge)
         clock += took
         for name in ("expected_answer", "expected_doc_ids", "expected_spans"):
@@ -493,7 +495,7 @@ def _ms(value: float | None) -> int:
 
 def _answer_trace(
     mlflow: ModuleType, out: dict[str, Any], record: TurnRecord | None, models: _Models, stage_text: _StageText,
-    tags: dict[str, str], start: int,
+    verdicts: list[dict[str, Any]], judge_model: str | None, tags: dict[str, str], start: int,
 ) -> tuple[str, int]:
     calls = out.get("agent_calls") or []
     took = int((out.get("latency_s") or 0.0) * 1e9)
@@ -510,12 +512,16 @@ def _answer_trace(
         # Only the sample's total latency is recorded, so tool spans are
         # zero-length markers in call order rather than an invented timeline.
         for call in calls:
-            _tool_span(mlflow, root, AgentToolCall.from_dict(call), None, [], passages, stage_text, start)
+            _event_span(mlflow, root, None, AgentToolCall.from_dict(call), passages, stage_text, start).end(
+                end_time_ns=start)
     if passages:
         span = mlflow.start_span_no_context("passages shown", "RETRIEVER", parent_span=root,
                                             start_time_ns=start + took)
         span.set_outputs(_documents(list(passages.values())))
         span.end(end_time_ns=start + took)
+    # Graded after the turn, with no timing kept: markers at its end.
+    for number, verdict in enumerate((v for v in verdicts if v.get("prompt") is not None), 1):
+        _judge_span(mlflow, root, verdict, number, judge_model, start + took)
     root.set_outputs({"answer": out.get("answer") or ""})
     root.end(end_time_ns=start + took)
     return root.trace_id, took
@@ -525,80 +531,99 @@ def _turn_spans(
     mlflow: ModuleType, root: Any, record: TurnRecord, passages: dict[str, dict[str, Any]], stage_text: _StageText,
     models: _Models, start: int,
 ) -> int:
-    """Each LLM call at its recorded time, and each tool call after the call that asked for it; returns the end."""
-    exchanges = record.llm_exchanges or []
-    end = start
-    for number, exchange in enumerate(exchanges, 1):
-        end = max(end, _llm_span(mlflow, root, exchange, number, models, start))
-    calls: dict[int, list[AgentToolCall]] = defaultdict(list)
-    for call in record.agent_calls:
-        calls[call.step].append(call)
-    # A tool's event follows the LLM call that asked for it and comes after the
-    # search stages it ran; its own duration covers theirs. Tools run in order.
-    step, cursor = 0, start
-    stages: list[StageEvent] = []
-    for event in record.events:
-        if event.stage in _LLM_EVENTS:
-            step += 1
-            if step <= len(exchanges):
-                cursor = start + _ms(exchanges[step - 1].started_ms + exchanges[step - 1].elapsed_ms)
-            stages = []
-        elif event.stage in _SEARCH_STAGES:
-            stages.append(event)
+    """Each stage and LLM call at its recorded time, inside the stage that contains it; returns the end."""
+    ordered = nodes(record)
+    spans: list[Any] = []
+    open_stages: list[int] = []
+    drawn: set[int] = set()
+    for index, (node, parent) in enumerate(zip(ordered, parents(ordered), strict=True)):
+        while open_stages and open_stages[-1] != parent:
+            done = open_stages.pop()
+            spans[done].end(end_time_ns=start + _ms(ordered[done].end_ms))
+        within = spans[parent] if parent is not None else root
+        if node.exchange is not None:
+            spans.append(_llm_span(mlflow, within, node.exchange, node.order - len(record.events) + 1, models, start))
+            continue
+        assert node.event is not None
+        if node.call is not None:
+            drawn.add(id(node.call))
+        span = _event_span(mlflow, within, node, node.call, passages, stage_text, start)
+        spans.append(span)
+        if node.end_ms > node.start_ms:
+            open_stages.append(index)
         else:
-            asked = calls[step].pop(0) if calls[step] else None
-            cursor = _tool_span(mlflow, root, asked, event, stages, passages, stage_text, cursor)
-            stages = []
-        end = max(end, cursor)
-    for leftover in (c for step_calls in calls.values() for c in step_calls):  # no event recorded for it
-        _tool_span(mlflow, root, leftover, None, [], passages, stage_text, start)
-    return max(end, start + _ms(record.total_ms))
+            span.end(end_time_ns=start + _ms(node.end_ms))
+    for done in reversed(open_stages):
+        spans[done].end(end_time_ns=start + _ms(ordered[done].end_ms))
+    for call in record.agent_calls:  # no event recorded for it: a marker at the turn's start
+        if id(call) not in drawn:
+            _event_span(mlflow, root, None, call, passages, stage_text, start).end(end_time_ns=start)
+    return max([start + _ms(record.total_ms), *(start + _ms(node.end_ms) for node in ordered)])
 
 
-def _tool_span(
-    mlflow: ModuleType, root: Any, call: AgentToolCall | None, event: StageEvent | None, stages: list[StageEvent],
+def _event_span(
+    mlflow: ModuleType, parent: Any, node: Node | None, call: AgentToolCall | None,
     passages: dict[str, dict[str, Any]], stage_text: _StageText, start: int,
-) -> int:
-    """One tool call with its search stages laid out in order inside it; returns its end."""
-    name = call.tool if call is not None else event.stage if event is not None else "tool"
+) -> Any:
+    """A stage's span, started and left open: a tool call's inputs and results, or a ranking's documents."""
+    event = node.event if node is not None else None
+    stage = event.stage if event is not None else None
+    name = call.tool if call is not None else stage or "tool"
+    span_type = ("TOOL" if call is not None or stage in TOOL_STAGES
+                 else _SEARCH_STAGES.get(stage, "CHAIN") if stage is not None else "TOOL")
     inputs = {} if call is None else {
         k: v for k, v in {"query": call.query, "filters": call.filters, "filters_raw": call.filters_raw,
                           "documents": call.documents, "expression": call.expression, "start": call.start,
                           "end": call.end}.items() if v not in (None, [], "")}
-    attributes: dict[str, Any] = {"timing": "recorded" if event is not None else "not recorded"}
+    attributes: dict[str, Any] = {
+        "timing": "not recorded" if event is None else "recorded" if event.ended_ms is not None else "reconstructed",
+    }
     if call is not None:
         attributes["step"] = call.step
     if event is not None:
         attributes["event"] = event.message
-    span = mlflow.start_span_no_context(name, "TOOL", parent_span=root, inputs=inputs, attributes=attributes,
-                                        start_time_ns=start)
-    t = start
-    for stage in stages:
-        stage_attributes = {"event": stage.message}
-        if stage.hits is not None:
-            stage_attributes["score"] = stage.score_scale or "not recorded"
-        child = mlflow.start_span_no_context(stage.stage, _SEARCH_STAGES[stage.stage], parent_span=span,
-                                             attributes=stage_attributes, start_time_ns=t)
-        if stage.hits is not None:
-            child.set_outputs(_documents([
-                {"chunk_id": h.chunk_id, "document_id": h.document_id, "score": h.score, "rank": rank,
-                 "text": stage_text.of(h.chunk_id, passages)}
-                for rank, h in enumerate(stage.hits, 1)
-            ]))
-        t += _ms(stage.elapsed_ms)
-        child.end(end_time_ns=t)
-    end = start + _ms(event.elapsed_ms) if event is not None else start
+        if event.hits is not None:
+            attributes["score"] = event.score_scale or "not recorded"
+    span = mlflow.start_span_no_context(name, span_type, parent_span=parent, inputs=inputs, attributes=attributes,
+                                        start_time_ns=start + _ms(node.start_ms) if node is not None else start)
+    if event is not None and event.hits is not None:
+        span.set_outputs(_documents([
+            {"chunk_id": h.chunk_id, "document_id": h.document_id, "score": h.score, "rank": rank,
+             "text": stage_text.of(h.chunk_id, passages)}
+            for rank, h in enumerate(event.hits, 1)
+        ]))
     if call is not None:
         found = [passages[c] for c in call.chunk_ids if c in passages]
         span.set_outputs({k: v for k, v in {"status": call.status, "note": call.note, "result": call.result,
                                              "passages": call.passages, "new_passages": call.new_passages,
                                              "documents": _documents(found)}.items() if v not in (None, [])})
-    span.end(end_time_ns=max(end, t))
-    return max(end, t)
+    return span
 
 
-def _llm_span(mlflow: ModuleType, root: Any, exchange: LLMExchange, number: int, models: _Models, start: int) -> int:
-    """One LLM call in OpenAI chat format, which MLflow's trace view renders as a conversation; returns its end."""
+def _judge_span(
+    mlflow: ModuleType, root: Any, verdict: dict[str, Any], number: int, model: str | None, at: int,
+) -> None:
+    """One judge call as recorded in the judgment: its system prompt, prompt and full reply."""
+    from mlflow.tracing.constant import SpanAttributeKey
+
+    label = verdict.get("label")
+    messages = ([{"role": "system", "content": verdict["system"]}] if verdict.get("system") else []) + [
+        {"role": "user", "content": verdict["prompt"]}]
+    span = mlflow.start_span_no_context(
+        f"judge {number}" + (f" · {label}" if label else ""), "CHAT_MODEL", parent_span=root,
+        inputs={"model": model, "messages": messages},
+        attributes={SpanAttributeKey.MESSAGE_FORMAT: "openai", "timing": "not recorded",
+                    "passed": verdict.get("passed"), "verdict": verdict.get("judge_output")},
+        start_time_ns=at,
+    )
+    span.set_outputs({"object": "chat.completion", "model": model, "choices": [
+        {"index": 0, "message": {"role": "assistant", "content": verdict.get("reply") or ""},
+         "finish_reason": None}]})
+    span.end(end_time_ns=at)
+
+
+def _llm_span(mlflow: ModuleType, parent: Any, exchange: LLMExchange, number: int, models: _Models, start: int) -> Any:
+    """One LLM call in OpenAI chat format, which MLflow's trace view renders as a conversation; returns it, ended."""
     from mlflow.tracing.constant import SpanAttributeKey
 
     model = (models.chat if exchange.kind == "chat" else models.generate).get("model")
@@ -626,7 +651,7 @@ def _llm_span(mlflow: ModuleType, root: Any, exchange: LLMExchange, number: int,
         attributes["rendered_prompt" + (" (reconstructed)" if reconstructed else "")] = _verbatim(exchange.raw_prompt)
         if not reconstructed:
             attributes["raw_output"] = _verbatim(exchange.raw_output or "")
-    span = mlflow.start_span_no_context(f"{exchange.kind} {number}", "CHAT_MODEL", parent_span=root,
+    span = mlflow.start_span_no_context(f"{exchange.kind} {number}", "CHAT_MODEL", parent_span=parent,
                                         inputs={"model": model, "messages": messages}, attributes=attributes,
                                         start_time_ns=begin)
     if exchange.error:
@@ -636,9 +661,8 @@ def _llm_span(mlflow: ModuleType, root: Any, exchange: LLMExchange, number: int,
                                    "tool_calls": exchange.tool_calls}, ids)[0]
         span.set_outputs({"object": "chat.completion", "model": model, "choices": [
             {"index": 0, "message": reply, "finish_reason": exchange.stop_reason}]})
-    end = begin + _ms(exchange.elapsed_ms)
-    span.end(end_time_ns=end)
-    return end
+    span.end(end_time_ns=begin + _ms(exchange.elapsed_ms))
+    return span
 
 
 def _verbatim(text: str) -> str:

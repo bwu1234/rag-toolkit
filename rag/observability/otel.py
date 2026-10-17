@@ -1,13 +1,9 @@
 """Turns as OpenTelemetry traces: `TraceWriter` draws them, `OtelTurnSink` exports live ones (Milestone 26).
 
-A turn is drawn after it ends, from its `TurnRecord`, not instrumented live:
-the record holds every stage's timing (`StageEvent.ended_ms`) and every LLM
-call's (`LLMExchange.started_ms`), on one clock, so the spans sit at the times
-they ran, and pipeline code stays free of tracing calls. A span's parent is
-the innermost stage whose interval contains it -- a model call inside its
-agent step, the embed and rerank stages inside the `rag_search` that ran them.
-Records stored before stages kept their end time (eval runs) are laid out
-from the model calls' times instead (`_reconstructed_ends`).
+A turn is drawn after it ends, from its `TurnRecord`, not instrumented live,
+so pipeline code stays free of tracing calls. Its spans sit at the times they
+ran, each inside the innermost stage that contains it: `rag.observability.timeline`,
+which the MLflow export (`rag.eval.tracking`) draws from too.
 
 Attribute names follow the OTel GenAI semantic conventions (`gen_ai.*`) where
 one fits, so a GenAI-aware backend reads token counts and models without
@@ -25,7 +21,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from collections import defaultdict
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -41,22 +36,12 @@ from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
 from opentelemetry.trace import Span, Status, StatusCode
 
 from rag.config.settings import OtelExportConfig
-from rag.events import RETRIEVAL_STAGES
 from rag.observability.records import AgentToolCall, FeedbackRecord, LLMExchange, StageEvent, TurnRecord
 from rag.observability.sink import TurnSink
+from rag.observability.timeline import TOOL_STAGES, Node, nodes, parents
 
 logger = logging.getLogger(__name__)
 
-#: Agent tool events, by stage, and the tool each one ran.
-_TOOL_STAGES = {
-    "search": "rag_search",
-    "search_refused": "rag_search",
-    "list_documents": "rag_list_documents",
-    "read_document": "rag_read_document",
-    "calculate": "calculator",
-}
-#: Turn events that are one agent model call, made in order.
-_LLM_EVENTS = frozenset({"agent_step", "agent_answer"})
 #: Stages that are a GenAI operation of their own.
 _STAGE_OPERATIONS = {
     "embed": "embeddings",
@@ -75,9 +60,6 @@ _STAGE_KINDS = {
     "rerank": "RERANKER",
 }
 _KIND = "openinference.span.kind"
-#: Slack when testing whether one interval contains another: float rounding in
-#: a stage's derived start (`ended_ms - elapsed_ms`), nothing more.
-_EPSILON_MS = 1e-6
 
 
 @dataclass
@@ -109,18 +91,6 @@ class _PlannedIdGenerator(RandomIdGenerator):
     def generate_span_id(self) -> int:
         plan = _PLAN.get()
         return plan.next_span_id() if plan is not None and plan.seed is not None else super().generate_span_id()
-
-
-@dataclass(frozen=True)
-class _Node:
-    """A span to draw: a stage or an LLM call, at its offset into the turn."""
-
-    start_ms: float
-    end_ms: float
-    order: int
-    event: StageEvent | None = None
-    exchange: LLMExchange | None = None
-    call: AgentToolCall | None = None
 
 
 class TraceWriter:
@@ -211,23 +181,23 @@ class TraceWriter:
         )
         if record.outcome in ("error", "generation_failed"):
             root.set_status(Status(StatusCode.ERROR, record.error or record.generation_failure or record.outcome))
-        stack: list[tuple[_Node, Span]] = []
-        end_ms = record.total_ms
-        for node in _nodes(record):
-            # Close every open stage this node isn't inside: one that ended
-            # before it starts, or before it ends.
-            while stack and (node.start_ms >= stack[-1][0].end_ms or node.end_ms > stack[-1][0].end_ms + _EPSILON_MS):
-                done, span = stack.pop()
-                span.end(end_time=t0 + _ns(done.end_ms))
-            span = self._node_span(node, record, stack[-1][1] if stack else root, t0)
+        ordered = nodes(record)
+        spans: list[Span] = []
+        open_stages: list[int] = []
+        for index, (node, parent) in enumerate(zip(ordered, parents(ordered), strict=True)):
+            # A stage ends once a node starts outside it: each span ends as soon
+            # as nothing more goes inside it.
+            while open_stages and open_stages[-1] != parent:
+                done = open_stages.pop()
+                spans[done].end(end_time=t0 + _ns(ordered[done].end_ms))
+            spans.append(self._node_span(node, record, spans[parent] if parent is not None else root, t0))
             if node.event is not None and node.end_ms > node.start_ms:
-                stack.append((node, span))
+                open_stages.append(index)
             else:
-                span.end(end_time=t0 + _ns(node.end_ms))
-            end_ms = max(end_ms, node.end_ms)
-        for node, span in reversed(stack):
-            span.end(end_time=t0 + _ns(node.end_ms))
-        root.end(end_time=t0 + _ns(end_ms))
+                spans[index].end(end_time=t0 + _ns(node.end_ms))
+        for done in reversed(open_stages):
+            spans[done].end(end_time=t0 + _ns(ordered[done].end_ms))
+        root.end(end_time=t0 + _ns(max([record.total_ms, *(node.end_ms for node in ordered)])))
 
     def feedback(self, record: FeedbackRecord) -> None:
         """A thumbs up/down as a zero-length root span, at the time it was given."""
@@ -277,7 +247,7 @@ class TraceWriter:
             }
         return attributes
 
-    def _node_span(self, node: _Node, record: TurnRecord, parent: Span, t0: int) -> Span:
+    def _node_span(self, node: Node, record: TurnRecord, parent: Span, t0: int) -> Span:
         if node.exchange is not None:
             name, attributes = self._exchange_attributes(node.exchange, record)
         else:
@@ -336,7 +306,7 @@ class TraceWriter:
             attributes["rag.timing"] = "reconstructed"
         if self.capture_content:
             attributes["rag.message"] = event.message
-        tool = _TOOL_STAGES.get(event.stage)
+        tool = TOOL_STAGES.get(event.stage)
         if tool is None:
             return event.stage, attributes | stage_attributes(event.stage)
         tool = call.tool if call is not None else tool
@@ -413,69 +383,6 @@ def otlp_turn_sink(config: OtelExportConfig) -> OtelTurnSink:
     )
 
 
-def _nodes(record: TurnRecord) -> list[_Node]:
-    """Every stage and LLM call as an interval, outermost first among those starting together."""
-
-    calls = _calls_by_event(record)
-    ends = (
-        [event.ended_ms for event in record.events]
-        if all(event.ended_ms is not None for event in record.events)
-        else _reconstructed_ends(record)
-    )
-    nodes: list[_Node] = []
-    for order, (event, end) in enumerate(zip(record.events, ends, strict=True)):
-        assert end is not None
-        nodes.append(_Node(end - (event.elapsed_ms or 0.0), end, order, event=event, call=calls.get(order)))
-    for order, exchange in enumerate(record.llm_exchanges or [], start=len(record.events)):
-        start = exchange.started_ms
-        nodes.append(_Node(start, start + exchange.elapsed_ms, order, exchange=exchange))
-    return sorted(nodes, key=lambda n: (n.start_ms, -n.end_ms, n.exchange is not None, n.order))
-
-
-def _reconstructed_ends(record: TurnRecord) -> list[float]:
-    """When each stage ended, for a record that didn't keep it (`StageEvent.ended_ms` unset).
-
-    What is known: events arrive in order as their stages end; each agent
-    step or answer is one `chat` call, whose start and length are recorded; a
-    tool's event follows the retrieval stages it ran, and its length covers
-    theirs. So an agent event ends when its call does (or, if its own length
-    says later, then), a tool event starts
-    with its first retrieval stage, and everything else runs end to end from
-    there. Gaps no event measured -- the pipeline's own model calls, which no
-    event is matched to -- are not recovered, so a pipeline turn's stages can
-    drift early against its calls.
-    """
-
-    chats = iter([exchange for exchange in record.llm_exchanges or [] if exchange.kind == "chat"])
-    ends = [0.0] * len(record.events)
-    cursor = 0.0
-    pending: list[int] = []
-
-    def lay(start: float) -> float:
-        for index in pending:
-            start += record.events[index].elapsed_ms or 0.0
-            ends[index] = start
-        pending.clear()
-        return start
-
-    for index, event in enumerate(record.events):
-        elapsed = event.elapsed_ms or 0.0
-        if event.stage in RETRIEVAL_STAGES:
-            pending.append(index)
-            continue
-        if event.stage in _TOOL_STAGES:
-            ends[index] = max(cursor + elapsed, lay(cursor))
-        elif event.stage in _LLM_EVENTS and (chat := next(chats, None)) is not None:
-            # No earlier than its own length allows: the event also times a
-            # little work after the call returns.
-            ends[index] = max(chat.started_ms + chat.elapsed_ms, lay(cursor) + elapsed)
-        else:
-            ends[index] = lay(cursor) + elapsed
-        cursor = ends[index]
-    lay(cursor)
-    return ends
-
-
 def _semconv_messages(messages: list[dict[str, Any]], ids: int = 0) -> tuple[list[dict[str, Any]], int]:
     """Recorded messages (`usage.message_dict`) in the GenAI conventions' shape: a role and typed parts.
 
@@ -506,35 +413,6 @@ def _semconv_messages(messages: list[dict[str, Any]], ids: int = 0) -> tuple[lis
                               "arguments": call.get("arguments")})
         out.append({"role": role, "parts": parts})
     return out, ids
-
-
-def _calls_by_event(record: TurnRecord) -> dict[int, AgentToolCall]:
-    """Each agent tool call, keyed by the index of the tool event it produced.
-
-    A call's `step` is the agent step that asked for it, and its event follows
-    that step's `agent_step` event, so the two are paired in order within a
-    step. A step whose counts differ -- a call that emitted no event -- is
-    left unpaired rather than guessed: its tool spans carry no call details.
-    """
-
-    events: dict[int, list[int]] = defaultdict(list)
-    step = 0
-    for index, event in enumerate(record.events):
-        if event.stage == "agent_step":
-            step += 1
-        elif event.stage in _TOOL_STAGES:
-            events[step].append(index)
-    calls: dict[int, list[AgentToolCall]] = defaultdict(list)
-    for call in record.agent_calls:
-        calls[call.step].append(call)
-    paired: dict[int, AgentToolCall] = {}
-    for step, indices in events.items():
-        if len(indices) == len(calls[step]):
-            paired |= dict(zip(indices, calls[step], strict=True))
-        else:
-            logger.debug("Turn %s step %d: %d tool events, %d calls; left unpaired",
-                         record.turn_id, step, len(indices), len(calls[step]))
-    return paired
 
 
 def _hex_id(turn_id: str) -> int | None:

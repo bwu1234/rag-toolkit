@@ -1187,8 +1187,12 @@ the harness plan's publication.
   prunes lists. Pad to k instead. The `baseline` corpus's `eval_set.json` is
   document-matched only and hasn't been measured since the reranker change:
   add spans or retire it as a control.
-- **MLflow export: recognize tool events directly.** `rag/eval/tracking.py`
-  groups an agent turn's events by elimination: any stage that isn't an LLM
+- **MLflow export: recognize tool events directly.** *(Shipped 2026-10-17, by
+  a different route: the MLflow export now draws a turn from
+  `rag.observability.timeline`, the OTel exporter's layout, so every span sits
+  inside the stage whose recorded interval contains it and no stage list
+  decides grouping; a never-seen stage is tested.)* `rag/eval/tracking.py`
+  grouped an agent turn's events by elimination: any stage that isn't an LLM
   call or listed in `_SEARCH_STAGES` is taken to be a tool's own event, closes
   the open search span and takes the next queued `AgentToolCall`. A new
   retrieval stage missing from that list therefore shifts every later tool

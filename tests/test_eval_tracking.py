@@ -11,6 +11,7 @@ recorded time, with its reconstructed prompt and a Markdown transcript. Skipped 
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -28,13 +29,14 @@ from rag.eval.judge import judge_run  # noqa: E402
 from rag.eval.report import resolve  # noqa: E402
 from rag.eval.runs import Run, open_run  # noqa: E402
 from rag.eval.score import rescore  # noqa: E402
-from rag.events import PipelineEvent, hits_of  # noqa: E402
+from rag.events import emit  # noqa: E402
 from rag.llm.base import AssistantTurn, ToolCall  # noqa: E402
 from rag.observability.usage import metered_client  # noqa: E402
 from tests.fakes import ScriptedToolLLM  # noqa: E402
 from tests.test_agent import _chunk, _FakeTools  # noqa: E402
 from tests.test_eval_compare import pair, retrieval_run  # noqa: E402
-from tests.test_eval_judge import JUDGE, _Judge  # noqa: E402
+from tests.test_eval_judge import JUDGE, _Judge, _multihop  # noqa: E402
+from tests.test_eval_judge import _run as _pipeline_run  # noqa: E402
 from tests.test_eval_runs import VERIFIED, _dataset  # noqa: E402
 from tests.test_eval_score_report import _edited  # noqa: E402
 
@@ -126,10 +128,12 @@ class _StagedTools(_FakeTools):
     """Reports the search stages a real `RagTools.retrieve` does, so their spans can be checked."""
 
     def retrieve(self, query: str, *args: Any, on_event: Any = None, **kwargs: Any) -> Any:  # type: ignore[override]
-        for stage in ("route", "expand", "web_search", "rerank", "select"):
-            hits = hits_of(self.results.get(query, [])) if stage in ("rerank", "select") else None
-            scale = None if hits is None else f"{stage} scale"
-            on_event(PipelineEvent(stage=stage, message=stage, elapsed_ms=1.0, hits=hits, score_scale=scale))
+        # Timed by `emit`, as the real retriever's are: a stage's length and end
+        # must agree for the export to place it inside its tool call.
+        for stage in ("route", "expand", "web_search", "a_stage_no_list_names", "rerank", "select"):
+            ranks = stage in ("rerank", "select")
+            emit(on_event, time.monotonic(), stage, stage, self.results.get(query, []) if ranks else None,
+                 f"{stage} scale" if ranks else None)
         return super().retrieve(query, *args, on_event=on_event, **kwargs)
 
 
@@ -173,7 +177,9 @@ def test_an_agent_turn_exports_each_llm_call_and_its_transcript(tmp_path: Path, 
     # At their recorded times: the search after the call that asked for it, before the next.
     assert first.end_time_ns <= search.start_time_ns <= second.start_time_ns
     # Its retrieval stages sit inside it, not as tool calls of their own.
-    assert all(spans[s].parent_id == search.span_id for s in ("route", "expand", "web_search", "rerank", "select"))
+    # Placed by time, not looked up in a list: a stage the exporter has never seen lands there too.
+    assert all(spans[s].parent_id == search.span_id
+               for s in ("route", "expand", "web_search", "a_stage_no_list_names", "rerank", "select"))
     # A ranking stage lists what it ranked, labelled, with the text where the model was shown it.
     [hit] = spans["rerank"].outputs
     assert hit["id"] == "c1" and hit["metadata"]["doc_uri"] == "DAL.md"
@@ -186,6 +192,41 @@ def test_an_agent_turn_exports_each_llm_call_and_its_transcript(tmp_path: Path, 
     transcript = Path(path).read_text(encoding="utf-8")
     assert transcript.startswith("# Trace: s0") and "## Expected answer" in transcript
     assert "#### Rendered prompt, reconstructed from the messages" in transcript
+
+
+def test_a_pipeline_turn_nests_its_model_call_in_the_stage_that_made_it(tmp_path: Path, store: tracking.Store) -> None:
+    run = _pipeline_run(tmp_path / "runs", _multihop(), stage="multihop")
+    judge_run(run, _Judge("PASS A", "FAIL B"), JUDGE)  # type: ignore[arg-type]
+    rescore(run)
+    [trace] = _traces(store, tracking.export_run(store, resolve(str(run.path))))
+    spans = {s.name: s for s in trace.data.spans}
+    root = next(s for s in trace.data.spans if s.parent_id is None)
+
+    # The prompt the model got sits inside `generate`; `prompt` holds nothing and calls nothing.
+    assert spans["generate 1"].parent_id == spans["generate"].span_id
+    assert spans["generate"].parent_id == spans["prompt"].parent_id == root.span_id
+    assert spans["prompt"].span_type == "CHAIN" and not any(s.parent_id == spans["prompt"].span_id
+                                                            for s in trace.data.spans)
+    assert spans["generate 1"].inputs["messages"][-1]["content"].startswith("Context passages:")
+
+
+def test_each_judge_call_is_in_the_trace_with_everything_it_was_sent(tmp_path: Path, store: tracking.Store) -> None:
+    run = _pipeline_run(tmp_path / "runs", _multihop(), stage="multihop")
+    judge_run(run, _Judge("PASS A", "FAIL B"), JUDGE)  # type: ignore[arg-type]
+    rescore(run)
+    [trace] = _traces(store, tracking.export_run(store, resolve(str(run.path))))
+    judges = [s for s in trace.data.spans if s.name.startswith("judge ")]
+
+    # One per part, and one for the conclusion the question asks for.
+    assert [s.name for s in judges] == ["judge 1 · A", "judge 2 · B",
+                                        "judge 3 · The overall comparison or conclusion the question asks for"]
+    first = judges[0]
+    system, user = first.inputs["messages"]
+    assert system["role"] == "system" and "You grade ONE part" in system["content"]
+    assert user["role"] == "user" and "Part being graded: A" in user["content"]
+    assert first.outputs["choices"][0]["message"]["content"] == "PASS A"
+    assert first.attributes["timing"] == "not recorded" and first.attributes["passed"] is True
+    assert judges[1].attributes["passed"] is False
 
 
 class _TextStore:
