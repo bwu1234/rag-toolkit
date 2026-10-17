@@ -100,6 +100,10 @@ class GeminiLLMClient(ToolCallingLLM):
     refuses once this machine's daily budget for the model is spent.
     """
 
+    # Thought summaries are for people: `_to_contents` sends a turn's content
+    # and calls back, and its thoughts only as a call's `thoughtSignature`.
+    replays_thinking = False
+
     def __init__(
         self,
         model: str,
@@ -389,9 +393,12 @@ def _response_parts(
     if reason == "MAX_TOKENS":
         # Thoughts can use the whole cap, and then the candidate has no parts at all.
         if not text.strip() and not calls:
+            # The call raises, so nothing records its summary: keep it here.
+            summary = f" Its thought summary: {thinking}" if thinking else ""
             raise RuntimeError(
                 f"Gemini hit max_tokens={max_tokens} before writing any answer. With a thinking model "
                 "the thoughts count toward that cap: raise llm.max_tokens or lower llm.thinking_level."
+                + summary
             )
         logger.warning("Gemini answer truncated at max_tokens=%d", max_tokens)
     elif not isinstance(parts, list):

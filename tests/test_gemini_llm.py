@@ -242,6 +242,21 @@ def test_hitting_max_tokens_with_no_answer_raises_and_names_the_fix(candidate: d
         client.generate("q")
 
 
+def test_hitting_max_tokens_mid_thought_keeps_the_summary_in_the_error() -> None:
+    candidate = {"content": {"parts": [{"text": "Summing every lease line.", "thought": True}]},
+                 "finishReason": "MAX_TOKENS"}
+    client, _ = _client(lambda request: httpx.Response(200, json={"candidates": [candidate]}))
+
+    with pytest.raises(RuntimeError, match="Its thought summary: Summing every lease line."):
+        client.generate("q")
+
+
+def test_gemini_does_not_replay_thinking_and_ollama_does() -> None:
+    from rag.llm.ollama_llm import OllamaLLMClient
+
+    assert GeminiLLMClient.replays_thinking is False and OllamaLLMClient.replays_thinking is True
+
+
 def test_an_answer_cut_short_by_max_tokens_is_still_returned(caplog: pytest.LogCaptureFixture) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"candidates": [

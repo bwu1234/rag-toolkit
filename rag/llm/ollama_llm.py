@@ -86,6 +86,9 @@ class OllamaLLMClient(ToolCallingLLM):
     agent's model, which only calls `chat()`.
     """
 
+    # `_to_wire` sends an assistant turn's thinking back, so the model sees it.
+    replays_thinking = True
+
     def __init__(
         self,
         model: str,
@@ -123,22 +126,18 @@ class OllamaLLMClient(ToolCallingLLM):
 
         payload = self._post_chat(messages)
         message = payload["message"]
-        thinking = message.get("thinking")
-        return Completion(
-            message["content"], self._usage(payload), thinking if isinstance(thinking, str) and thinking else None
-        )
+        return Completion(message["content"], self._usage(payload), _thinking(message))
 
     def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:
         if self.raw:
             return self._chat_raw([_to_wire(m) for m in messages], [_tool_to_wire(t) for t in tools])
         payload = self._post_chat([_to_wire(m) for m in messages], [_tool_to_wire(t) for t in tools])
         message = payload["message"]
-        thinking = message.get("thinking")
         done_reason = payload.get("done_reason")
         return AssistantTurn(
             content=message["content"],
             tool_calls=tuple(_parse_tool_call(raw, payload) for raw in message.get("tool_calls") or ()),
-            thinking=thinking if isinstance(thinking, str) and thinking else None,
+            thinking=_thinking(message),
             usage=self._usage(payload),
             stop_reason=done_reason if isinstance(done_reason, str) else None,
         )
@@ -350,6 +349,13 @@ def _tool_to_wire(tool: ToolDefinition) -> dict[str, Any]:
         "type": "function",
         "function": {"name": tool.name, "description": tool.description, "parameters": tool.parameters},
     }
+
+
+def _thinking(message: dict[str, Any]) -> str | None:
+    """A response message's `thinking`, or None when it has none (or it isn't text)."""
+
+    thinking = message.get("thinking")
+    return thinking if isinstance(thinking, str) and thinking else None
 
 
 def _parse_tool_call(raw: object, payload: object) -> ToolCall:

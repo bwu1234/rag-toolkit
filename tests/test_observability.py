@@ -22,7 +22,7 @@ from rag.generation.chat_service import ChatAnswer, ChatService
 from rag.generation.crag import GradedChunks
 from rag.agent.builder import build_agent_llm
 from rag.llm.gemini_llm import GeminiLLMClient
-from rag.llm.base import AssistantTurn, ChatMessage, Completion, LLMClient, LLMUsage, ToolCallingLLM
+from rag.llm.base import AssistantTurn, ChatMessage, Completion, LLMClient, LLMUsage, Message, ToolCallingLLM
 from rag.llm.ollama_llm import OllamaLLMClient
 from rag.generation.prompts import parse_cited_passages
 from rag.observability.factory import config_fingerprint, get_turn_sink as build_turn_sink
@@ -168,6 +168,23 @@ def test_metered_tool_client_records_chat_usage_into_the_active_meter() -> None:
     assert meter.calls == 2  # a call with unknown usage still counts as a call
     assert (meter.prompt_tokens, meter.completion_tokens) == (1000, 50)
     assert meter.llm_ms >= 0
+
+
+@pytest.mark.parametrize("replays", [False, True])
+def test_a_recorded_conversation_keeps_earlier_thinking_only_if_the_client_sent_it(replays: bool) -> None:
+    inner = ScriptedToolLLM([AssistantTurn("a", thinking="plan"), AssistantTurn("b", thinking="check")])
+    inner.replays_thinking = replays
+    client = metered_client(inner)
+    with metered(capture=True) as meter:
+        history: list[Message] = [ChatMessage("user", "q")]
+        history.append(client.chat(history))
+        client.chat(history)
+
+    assert meter.exchanges is not None
+    first, second = meter.exchanges
+    assert client.replays_thinking is replays
+    assert ("thinking" in second.messages[1]) is replays  # the earlier turn, as sent
+    assert (first.thinking, second.thinking) == ("plan", "check")  # each reply keeps its own
 
 
 def test_metered_tool_client_meters_generate_too_and_passes_through_outside_a_meter() -> None:

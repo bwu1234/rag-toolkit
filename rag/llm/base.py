@@ -150,9 +150,8 @@ class AssistantTurn:
     content: str
     tool_calls: tuple[ToolCall, ...] = ()
     # The reasoning trace, when the provider returns one (Ollama with `think`
-    # on; Gemini's thought summaries). Ollama sends it back with the turn so the
-    # model sees its own earlier reasoning; Gemini's goes back only as a call's
-    # `thoughtSignature`, so its summary is a record for people, never input.
+    # on; Gemini's thought summaries). Whether it goes back to the model with
+    # the turn is the client's `ToolCallingLLM.replays_thinking`.
     thinking: str | None = None
     usage: LLMUsage | None = None
     # Why the provider stopped generating, as it names it (Ollama's
@@ -211,6 +210,11 @@ class ToolCallingLLM(LLMClient):
     a `ToolCallingLLM`, so selecting a provider without tool support fails when
     the agent is built, not mid-conversation.
     """
+
+    #: Whether `chat` sends an earlier turn's `thinking` back to the model.
+    #: A record of what a call sent keeps that thinking only when this is true,
+    #: so a trace never shows the model reasoning it was not given.
+    replays_thinking: bool = False
 
     @abstractmethod
     def chat(self, messages: Sequence[Message], tools: Sequence[ToolDefinition] = ()) -> AssistantTurn:
