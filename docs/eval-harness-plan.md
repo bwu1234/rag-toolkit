@@ -899,8 +899,9 @@ Remaining gaps:
   byte-identical. It is only done for a qwen3.8 agent, assumes the server
   still renders as the port does (raw mode's token check is what would catch
   drift), and the model's unparsed output isn't reconstructed. MLflow's chat
-  view drops OpenAI-format reasoning, so reasoning shows under the span's
-  attributes and in the transcript.
+  view drops OpenAI-format reasoning, so each call's reasoning is a child
+  `thinking` span (and in the transcript). How to read the result:
+  [Viewing evaluation runs](eval-runs.md#read-an-agent-trace).
 - Results from before the run store (2026-10-13) aren't in run folders, so
   they can't be exported.
 - The UI was checked with headless screenshots of each view, not by clicking
