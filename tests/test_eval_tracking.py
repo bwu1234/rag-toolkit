@@ -149,7 +149,8 @@ def _agent_run(tmp_path: Path) -> Run:
         selected=dataset, selection_method="all", index=VERIFIED, code="abc",
     )
     llm = ScriptedToolLLM([
-        AssistantTurn(content="", tool_calls=(ToolCall(name="rag_search", arguments={"query": "fuel"}),)),
+        AssistantTurn(content="", tool_calls=(ToolCall(name="rag_search", arguments={"query": "fuel"}),),
+                      thinking="Search for fuel costs first."),
         AssistantTurn(content="Delta, up 67% [1]."),
     ])
     tools = _StagedTools({"fuel": [_chunk("c1", text="Aircraft fuel | 4,109 | 2,458", doc="DAL.md")]})
@@ -187,6 +188,9 @@ def test_an_agent_turn_exports_each_llm_call_and_its_transcript(tmp_path: Path, 
     assert "Aircraft fuel" in hit["page_content"]
     assert spans["rerank"].attributes["score"] == "rerank scale"  # as the component described it
     assert spans["route"].outputs is None and "score" not in spans["route"].attributes
+    # The chat view drops reasoning, so it is a span of its own inside the call that produced it.
+    [thinking] = [s for s in trace.data.spans if s.name == "thinking"]
+    assert thinking.parent_id == first.span_id and thinking.outputs == "Search for fuel costs first."
 
     path = store.client.download_artifacts(exported.run_id, trace.info.tags["rag.transcript"], str(tmp_path))
     transcript = Path(path).read_text(encoding="utf-8")
