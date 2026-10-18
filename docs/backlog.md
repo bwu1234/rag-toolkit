@@ -367,8 +367,47 @@ tables and the cost of refusals. Listing, calculator support and model-set
 filters are built but remain off and unmeasured. Windowed read and literal
 find are built in the shared tool surface and served over MCP (2026-10-04).
 Read is offered to our agent as an opt-in tool with ledger citations, scope
-checks and a per-turn read budget (2026-10-10); find is not yet. Measure each addition with its evidence/token budget and
+checks and a per-turn read budget (2026-10-10); find is not yet, and wiring
+it the same way, opt-in, is the next step (2026-10-17), since the planned
+`+ list + read + find` row needs it. Measure each addition with its evidence/token budget and
 the injection tier before adoption.
+
+**Gaps from the frontier comparison (2026-10-17).** The
+[comparison](milestone-19-plan.md#deferred-approaches) against published
+corpus-search harnesses (Chroma Context-1, Anthropic's research system,
+OpenAI Deep Research) found the loop's foundations matched and these gaps,
+each with its owner:
+
+- *Literal find not offered to the agent:* the
+  [`rag_find` "Next" note](milestone-19-plan.md#tool-surface-navigation-not-only-search).
+- *Repeat searches spend result slots on passages already shown* (19–30% of
+  slots in stored runs): [enhancement 7](milestone-19-plan.md#enhancement-follow-ups),
+  excluding seen chunk ids before fusion so the reranker scores fresh
+  candidates. Not in any earlier plan.
+- *A step's tool calls run one after another:* [enhancement 8](milestone-19-plan.md#enhancement-follow-ups),
+  gated on stored trajectories showing multi-search steps and search time
+  worth saving.
+- *No context pruning:* [context retirement](milestone-19-plan.md#context-retirement),
+  ordering unchanged.
+- *No claim-level citation check:* eval harness Phase 4a, then enhancement 2.
+
+Two more gaps are recorded but deliberately not scheduled. They stay here so
+they can be revisited:
+
+- *No trained search policy.* The largest published gains (Deep Research,
+  Context-1, Search-R1) come from models trained with RL to search. Here the
+  lever is model choice: a credible tool-calling model gets a matrix row like
+  the 27b's. Revisit as its own research milestone with a compute budget, if
+  model choice stops closing the gap to the oracle.
+- *No multi-agent orchestration.* Anthropic's lead-agent-plus-subagents
+  design pays off on broad questions by giving each subagent its own context
+  and running them in parallel, at about 15 times a chat's tokens. Revisit
+  when measured single-agent limits on independently explorable work (coverage,
+  context capacity or latency) show up, for example on Milestone 27's research
+  holdout. Compare at matched total budgets, coordination cost included.
+
+The [deferral rationale](milestone-19-plan.md#deferred-approaches) has the
+full argument for both.
 
 **Order of this work (2026-10-06).** (1) Wire list, read and find into the
 agent: ledger citations, scope and read budgets, and the
@@ -380,7 +419,10 @@ forced-exposure level first; it needs no index and gates (3), adoption of the
 navigation tools, which put more untrusted text in front of the model.
 (4) [Context retirement](milestone-19-plan.md#context-retirement), last: the
 recorded runs do not establish window exhaustion, and retirement is tested
-with `read` and wider budgets. (1), (2), and calibrated scoring/holdout
+with `read` and wider budgets. Fresh results on repeat searches
+(enhancement 7) touches neither the tool surface nor untrusted-text exposure,
+so it can be built and measured alongside (1); concurrent step execution
+(enhancement 8) waits on its trajectory check. (1), (2), and calibrated scoring/holdout
 preparation can proceed independently; scoring gates quality-based stopping
 and repair adoption. See the current priorities at the top of this backlog.
 
@@ -475,7 +517,8 @@ offline scoring can proceed alongside it. Prioritize calibrated claim/citation
 scoring, then an opt-in
 bounded draft-check/repair loop; evaluate dynamic retriever routing
 separately. Two cheap rows test a wider search budget and a search-strategy
-prompt. Corpus routing within the caller's scope waits for a second real
+prompt. Two more come from the 2026-10-17 frontier comparison: fresh results
+on repeat searches and concurrent execution of a step's calls. Corpus routing within the caller's scope waits for a second real
 corpus that EDGAR questions need. Scoring stays owned by
 [eval harness Phase 4a](eval-harness-plan.md#phase-4a--grounding-completeness-and-citation-scoring-estimate-pending)
 and trace export by [Milestone 26](#milestone-26--opentelemetry-trace-export).

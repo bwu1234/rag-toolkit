@@ -716,6 +716,18 @@ credited to one tool:
    now governs adoption after paired evaluation, not wiring an opt-in candidate
    for that evaluation. It scans `edgar_md` in about 20 ms
    once loaded; at BEIR scale the FTS5 question above still applies.
+   *Next: offer it to the agent, opt-in (gap noted 2026-10-17).* The
+   `+ list + read + find` row below can't run until it is, and literal search
+   is a core tool in the published corpus-search harnesses
+   ([Context-1](https://www.trychroma.com/research/context-1)'s
+   `grep_corpus`, Claude Code's grep). Wire it the way read was wired:
+   `rag_find` in `agent.tools`, with `corpus` pinned and the turn's filter as
+   its scope; each match snippet a ledger passage with id
+   `find:<document>@<version>:<start>-<end>`, deduplicated against read
+   windows over the same range; one of `max_tool_calls` per find; a prompt
+   sentence for when to reach for it (an exact name, ticker or figure that
+   search ranked out). Wiring it is not adopting it: the gate above and the
+   injection tier still decide that.
 
 **Beside navigation: `calculator(expression)`.** Not a navigation tool, so
 not in the list above and none of the constraints below apply: it reads no
@@ -1019,6 +1031,60 @@ conditional, as written above.
      need a description field, because the model routes on what the listing
      says.
 
+7. **Fresh results on a repeat search.** A search that returns a passage the
+   ledger already holds renders it as `Passage [n] (source: …): already shown
+   above.`, and that passage still takes one of the `rerank_top_k` slots. So a
+   reworded search returns old evidence in place of the next candidates: on
+   `ad-airline-fuel` the 27b spent four of eight searches rewording a Delta
+   query whose table ranked seventh. Measured offline on 2026-10-17 from
+   stored trajectories (`passages` against `new_passages` per search call):
+   in `results_m19/phase4_repeats_eedc787`, 672 of 3,550 returned slots (19%)
+   were already shown, and 240 of 710 searches had at least one; in
+   `results_m19/adr0015_refusal_recheck`, 186 of 630 (30%). Chroma's
+   [Context-1](https://www.trychroma.com/research/context-1) harness passes
+   the chunk ids of earlier results as exclusion filters, so each later
+   search returns new material.
+   - *Mechanism.* An optional `exclude_chunk_ids` on `rag.tools` retrieval,
+     applied in `Retriever._candidates` before fusion cuts the union to
+     `top_k`, so the reranker still scores `top_k` unseen candidates. Each
+     ranked list over-fetches by the number of excluded ids so the pool
+     doesn't shrink. That works through the existing `VectorStore` and sparse
+     interfaces, with no store-specific id filter. *Rejected:* dropping seen
+     passages after reranking. It shows fewer passages and finds nothing new.
+   - *Agent side.* `agent.fresh_results` (off by default) passes the chunk
+     ids the ledger holds from searches. The result keeps a one-line note of
+     the earlier passages the query also matched (`Also matched [3][7], shown
+     above.`), so the model can still tell that a rewording found the same
+     evidence, the signal to change approach or stop. Read windows and find
+     snippets are not chunks and are not excluded. Duplicate-query refusal is
+     unchanged, and evidence recall still counts a gold chunk the model saw
+     on an earlier search.
+   - *Boundary.* The agent reaches it only through `rag.tools`. MCP
+     `rag_search` is unchanged; exposing exclusion to outside agents is a
+     contract revision ([MCP server](mcp-server.md)), decided separately.
+   - *Measure.* `agentic react / 27b, think=low + fresh results`, paired
+     against the row without, on all four sets under `measure-change`. Report
+     pass rates, evidence recall, searches per turn, new passages per search
+     and latency, by kind; refusal cost is where the 30% above suggests the
+     effect. Risk: a seen passage is no longer ranked against the new
+     candidates, so a model that reads rank as confidence loses that cue.
+
+8. **Run a step's independent calls concurrently.** Verified 2026-10-17:
+   both adapters return several tool calls per step (`AssistantTurn.tool_calls`)
+   and `_run_calls` answers every one, but in order, one after another.
+   Context-1 averages 2.56 calls per turn, so parallel issuing is the
+   published pattern; what is unmeasured here is whether *executing* them
+   concurrently saves anything. Model steps, not searches, dominate turn
+   latency, and on one local GPU embedding and reranking may serialize anyway.
+   - *First, from stored trajectories:* the share of steps with more than one
+     search (`AgentToolCall.step`), and the share of turn time spent inside
+     searches (`search` events). Stop if either is small.
+   - *Then:* run a step's searches concurrently, then number their passages in
+     call order so the ledger stays deterministic, and keep every budget
+     check (`max_tool_calls`, deadline) applied as if they ran in order.
+     Calculator calls stay inline. Paired row on latency p50/p95 with quality
+     held; no prompt change.
+
 #### Execution and output contracts
 
 **Shipped 2026-10-05, except the prompt's citation-scope wording** (the last
@@ -1305,13 +1371,44 @@ against them.
   None of this changes the deferral above.
 - *Unverified candidates from reading this plan, not from the research.* Two
   things have no entry here, and no source above confirms them. (1) Several
-  independent searches issued in one agent step: the 27b spends 1–2 minutes on
-  hard questions, so check whether `ToolCallingLLM` and both adapters handle
-  multiple calls per step, then measure latency and quality against the
-  sequential default under the same call cap. (2) Sampling several trajectories
-  and voting: it multiplies the latency already counted as the main cost, so
-  treat it as probably wrong for this workload until a measured failure says
-  otherwise. Neither is scheduled.
+  independent searches issued in one agent step: checked 2026-10-17, the
+  adapters and `_run_calls` handle them, sequentially; concurrent execution is
+  now [enhancement 8](#enhancement-follow-ups). (2) Sampling several
+  trajectories and voting: it multiplies the latency already counted as the
+  main cost, so treat it as probably wrong for this workload until a measured
+  failure says otherwise. Not scheduled.
+
+**Frontier comparison (2026-10-17).** Checked the shipped agent against the
+published corpus-search and research harnesses: Chroma's
+[Context-1](https://www.trychroma.com/research/context-1) (closest to this
+setup: a fixed corpus, hybrid search + RRF + rerank, grep, read, prune,
+seen-chunk exclusion, a visible token budget), Anthropic's
+[research system](https://www.anthropic.com/engineering/multi-agent-research-system)
+and [context-engineering guidance](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents),
+and OpenAI's [Deep Research](https://cdn.openai.com/deep-research-system-card.pdf).
+Matched: the model decides whether and what to search, hybrid search with
+reranking as the tool, iteration and decomposition, ledger citations, and
+budgets with a forced answer turn. Gaps and their owners:
+
+| gap | owner |
+|---|---|
+| literal find not offered to the agent | [`rag_find`](#tool-surface-navigation-not-only-search), "Next" note |
+| list and read built but unmeasured | the navigation rows and the Milestone 28 injection tier |
+| repeat searches spend slots on seen passages | [enhancement 7](#enhancement-follow-ups) |
+| a step's calls run sequentially | [enhancement 8](#enhancement-follow-ups) |
+| no context pruning or tokens-left feedback | [context retirement](#context-retirement), unchanged: `fallback` first, since Context-1's `prune_chunks` came from a trained model and an unpublished harness |
+| groundedness check reports, never checks claims | eval harness Phase 4a, then [enhancement 2](#enhancement-follow-ups) |
+| no trained search policy | deferred, not scheduled (above); revisit as a research milestone if model choice stops closing the gap to the oracle |
+| no multi-agent orchestration | deferred, not scheduled (above); revisit on measured single-agent limits, e.g. on Milestone 27's research holdout |
+
+The last two are kept as recorded gaps on purpose, so a future revisit
+starts from this comparison rather than from scratch. Context-1 also separates search from answering (it returns
+ranked documents for another model to answer from); that is a design
+alternative, not a gap. The 2026-10-07 check's uncovered areas
+(self-reflection, orchestration patterns, source-version consistency,
+long-running recovery, reasoning-aware retrieval) remain unchecked against
+the literature; rerun the research check on those before claiming parity
+there.
 
 ## Open questions
 
